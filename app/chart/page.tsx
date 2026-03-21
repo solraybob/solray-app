@@ -108,24 +108,57 @@ function parseBlueprint(blueprint: any): ChartData {
       })
     : [];
 
+  // defined_centres can be a dict {Head: true, Sacral: true} or array of strings
+  let definedCentres: string[] = [];
+  let undefinedCentres: string[] = [];
+  if (hd?.defined_centres) {
+    if (Array.isArray(hd.defined_centres)) {
+      definedCentres = hd.defined_centres;
+    } else if (typeof hd.defined_centres === 'object') {
+      definedCentres = Object.entries(hd.defined_centres).filter(([,v]) => v).map(([k]) => k);
+      undefinedCentres = Object.entries(hd.defined_centres).filter(([,v]) => !v).map(([k]) => k);
+    }
+  }
+  if (hd?.undefined_centres && Array.isArray(hd.undefined_centres)) {
+    undefinedCentres = hd.undefined_centres;
+  }
+
   const humanDesign: HumanDesign = {
     type: hd?.type ?? "",
     strategy: hd?.strategy ?? "",
     authority: hd?.authority ?? "",
     profile: hd?.profile ?? "",
-    defined_centres: hd?.defined_centres ?? [],
-    undefined_centres: hd?.undefined_centres ?? [],
+    defined_centres: definedCentres,
+    undefined_centres: undefinedCentres,
     key_channels: keyChannels,
   };
 
-  const geneKeys = {
-    lifes_work: { name: "Life's Work", gate: gk?.lifes_work?.gate ?? 0, shadow: gk?.lifes_work?.shadow ?? "", gift: gk?.lifes_work?.gift ?? "", siddhi: gk?.lifes_work?.siddhi ?? "" },
-    evolution: { name: "Evolution", gate: gk?.evolution?.gate ?? 0, shadow: gk?.evolution?.shadow ?? "", gift: gk?.evolution?.gift ?? "", siddhi: gk?.evolution?.siddhi ?? "" },
-    radiance: { name: "Radiance", gate: gk?.radiance?.gate ?? 0, shadow: gk?.radiance?.shadow ?? "", gift: gk?.radiance?.gift ?? "", siddhi: gk?.radiance?.siddhi ?? "" },
-    vocation: gk?.vocation ? { name: "Vocation", gate: gk.vocation.gate, shadow: gk.vocation.shadow, gift: gk.vocation.gift, siddhi: gk.vocation.siddhi } : undefined,
-    culture: gk?.culture ? { name: "Culture", gate: gk.culture.gate, shadow: gk.culture.shadow, gift: gk.culture.gift, siddhi: gk.culture.siddhi } : undefined,
-    pearl: gk?.pearl ? { name: "Pearl", gate: gk.pearl.gate, shadow: gk.pearl.shadow, gift: gk.pearl.gift, siddhi: gk.pearl.siddhi } : undefined,
-  };
+  // Gene keys can come in two formats:
+  // 1. {lifes_work: {...}, evolution: {...}} — hologenetic profile format
+  // 2. {natal_gene_keys: {"64": {...}, "63": {...}}} — gate dict format
+  const gkBuild = (name: string, data: any) => data ? { name, gate: data.gate ?? 0, shadow: data.shadow ?? "", gift: data.gift ?? "", siddhi: data.siddhi ?? "" } : undefined;
+
+  let geneKeys: any = {};
+  if (gk?.lifes_work || gk?.evolution) {
+    // Hologenetic profile format
+    geneKeys = {
+      lifes_work: gkBuild("Life's Work", gk.lifes_work),
+      evolution: gkBuild("Evolution", gk.evolution),
+      radiance: gkBuild("Radiance", gk.radiance),
+      vocation: gkBuild("Vocation", gk.vocation),
+      culture: gkBuild("Culture", gk.culture),
+      pearl: gkBuild("Pearl", gk.pearl),
+    };
+  } else if (gk?.natal_gene_keys) {
+    // Gate dict format — show top active gates
+    const gkLabels = ["Life's Work", "Evolution", "Radiance", "Vocation", "Culture", "Pearl"];
+    const entries = Object.values(gk.natal_gene_keys as Record<string, any>).slice(0, 6);
+    geneKeys = {};
+    entries.forEach((entry: any, i: number) => {
+      const key = gkLabels[i].toLowerCase().replace(/[' ]/g, '_');
+      geneKeys[key] = { name: gkLabels[i], gate: entry.gate, shadow: entry.shadow ?? "", gift: entry.gift ?? "", siddhi: entry.siddhi ?? "" };
+    });
+  }
 
   return { natal: planetsRaw, human_design: humanDesign, gene_keys: geneKeys };
 }
