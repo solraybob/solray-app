@@ -6,6 +6,21 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
+async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      { headers: { "Accept-Language": "en" } }
+    );
+    const data = await res.json();
+    const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "";
+    const country = data.address?.country || "";
+    return city && country ? `${city}, ${country}` : data.display_name?.split(",").slice(0, 2).join(",").trim() || "";
+  } catch {
+    return "";
+  }
+}
+
 const TOTAL_STEPS = 5;
 
 export default function OnboardPage() {
@@ -15,6 +30,7 @@ export default function OnboardPage() {
   const [birthTime, setBirthTime] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
   const [birthPlace, setBirthPlace] = useState("");
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -164,6 +180,30 @@ export default function OnboardPage() {
                 placeholder="City, Country"
                 className="onboard-input"
               />
+              <button
+                onClick={async () => {
+                  if (!navigator.geolocation) return;
+                  setGpsLoading(true);
+                  navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                      const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                      if (city) setBirthPlace(city);
+                      setGpsLoading(false);
+                    },
+                    () => setGpsLoading(false)
+                  );
+                }}
+                className="mt-3 flex items-center gap-2 text-xs font-body tracking-wider text-text-secondary hover:text-amber-sun transition-colors"
+              >
+                {gpsLoading ? (
+                  <span>Locating...</span>
+                ) : (
+                  <>
+                    <span>📍</span>
+                    <span>Use my current location</span>
+                  </>
+                )}
+              </button>
               <p className="text-text-secondary text-xs mt-2 font-body">e.g. Barcelona, Spain</p>
             </StepWrapper>
           )}
