@@ -495,7 +495,7 @@ export default function ChatPage() {
                 </button>
               </div>
               {/* Scrollable list */}
-              <div className="overflow-y-auto flex-1 px-5 pb-8">
+              <div className="overflow-y-auto flex-1 px-5 pb-8" style={{WebkitOverflowScrolling: 'touch', overflowY: 'scroll'}}>
                 {pastSessions.length === 0 ? (
                   <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
                 ) : (
