@@ -161,7 +161,7 @@ function parseBlueprint(blueprint: any): ChartData {
       { name: "Life's Work", gateKey: String(cc.Sun?.gate     || 64) }, // Conscious Sun
       { name: "Evolution",   gateKey: String(cc.Earth?.gate   || 63) }, // Conscious Earth
       { name: "Radiance",    gateKey: String(uc.Sun?.gate     || 35) }, // Design Sun
-      { name: "Vocation",    gateKey: String(uc.Earth?.gate   || 5)  }, // Design Earth
+      { name: "Purpose",     gateKey: String(uc.Earth?.gate   || 5)  }, // Design Earth
       { name: "Culture",     gateKey: String(uc.Jupiter?.gate || 45) }, // Design Jupiter
       { name: "Pearl",       gateKey: String(uc.Moon?.gate    || 52) }, // Design Moon
     ];
