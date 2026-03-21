@@ -158,12 +158,12 @@ function parseBlueprint(blueprint: any): ChartData {
     const cc = hd2.conscious_chart || {};
     const uc = hd2.unconscious_chart || {};
     const profileMap = [
-      { name: "Life's Work", gateKey: String(cc.Sun?.gate   || 64) },
-      { name: "Evolution",   gateKey: String(cc.Earth?.gate || 63) },
-      { name: "Radiance",    gateKey: String(cc.Moon?.gate  || 28) },
-      { name: "Vocation",    gateKey: String(uc.Sun?.gate   || 35) },
-      { name: "Culture",     gateKey: String(uc.Earth?.gate || 5)  },
-      { name: "Pearl",       gateKey: String(uc.Moon?.gate  || 52) },
+      { name: "Life's Work", gateKey: String(cc.Sun?.gate     || 64) }, // Conscious Sun
+      { name: "Evolution",   gateKey: String(cc.Earth?.gate   || 63) }, // Conscious Earth
+      { name: "Radiance",    gateKey: String(uc.Sun?.gate     || 35) }, // Design Sun
+      { name: "Vocation",    gateKey: String(uc.Earth?.gate   || 5)  }, // Design Earth
+      { name: "Culture",     gateKey: String(uc.Jupiter?.gate || 45) }, // Design Jupiter
+      { name: "Pearl",       gateKey: String(uc.Moon?.gate    || 52) }, // Design Moon
     ];
     geneKeys = {};
     profileMap.forEach(({ name, gateKey }) => {
