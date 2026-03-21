@@ -54,7 +54,7 @@ export default function OnboardPage() {
           name,
           birth_date: birthDate,
           birth_time: timeUnknown ? "12:00" : birthTime,
-          birth_place: birthPlace,
+          birth_city: birthPlace,
           email,
           password,
         }),
