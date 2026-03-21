@@ -92,7 +92,7 @@ export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [energyTag, setEnergyTag] = useState("Gate 57 — Intuition");
+  const [energyTag, setEnergyTag] = useState("Gate 57. Intuition");
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -179,7 +179,7 @@ export default function ChatPage() {
           setEnergyTag(data.tags.human_design);
         }
       } catch {
-        // Forecast failed — fall back to natal chart from /users/me
+        // Forecast failed, fall back to natal chart from /users/me
         try {
           const user = await apiFetch("/users/me", {}, forToken);
           const natalSun =
@@ -339,7 +339,7 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, reply]);
     } catch {
       const mockReplies = [
-        "The pattern you're sensing is real. Trust that recognition — your intuition rarely lies at this depth.",
+        "The pattern you're sensing is real. Trust that recognition. Your intuition rarely lies at this depth.",
         "There is wisdom in what you're sitting with. Let it breathe a little longer before you act.",
         "I see the tension you're holding. What would it feel like to release just one layer of it today?",
         "This is the question beneath the question. What does your body tell you when you sit quietly with it?",

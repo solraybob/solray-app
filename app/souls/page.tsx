@@ -17,7 +17,7 @@ interface Soul {
 
 const MOCK_SOULS: Soul[] = [
   { id: "1", name: "Luna", sun_sign: "Pisces", hd_type: "Generator", synergy_preview: "A deep creative resonance flows between you." },
-  { id: "2", name: "Enzo", sun_sign: "Aries", hd_type: "Manifestor", synergy_preview: "Complementary energies — you ground their fire." },
+  { id: "2", name: "Enzo", sun_sign: "Aries", hd_type: "Manifestor", synergy_preview: "Complementary energies, you ground their fire." },
 ];
 
 const SIGN_SYMBOLS: Record<string, string> = {

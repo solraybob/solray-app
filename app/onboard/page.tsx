@@ -212,7 +212,7 @@ export default function OnboardPage() {
                   timeUnknown ? "text-amber-sun" : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                {timeUnknown ? "✓ I don't know — using noon" : "I don't know my birth time"}
+                {timeUnknown ? "✓ Using noon" : "I don't know my birth time"}
               </button>
             </StepWrapper>
           )}

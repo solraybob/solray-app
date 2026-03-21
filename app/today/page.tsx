@@ -40,10 +40,10 @@ interface ForecastData {
 const MOCK_FORECAST: ForecastData = {
   day_title: "Let the wave pass before you decide",
   reading:
-    "The cosmos invites a softening today. You are not behind — you are being prepared. There is momentum building beneath the surface, and your awareness of it is the catalyst. Trust the timing that arrives without forcing. What unfolds in stillness carries far more weight than what is seized in urgency.",
+    "The cosmos invites a softening today. You are not behind. You are being prepared. There is momentum building beneath the surface, and your awareness of it is the catalyst. Trust the timing that arrives without forcing. What unfolds in stillness carries far more weight than what is seized in urgency.",
   tags: {
     astrology: "Venus trine Neptune",
-    human_design: "Gate 57 — Intuition",
+    human_design: "Gate 57. Intuition",
     gene_keys: "Gift of Clarity",
   },
   energy: {

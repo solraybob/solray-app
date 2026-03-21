@@ -136,8 +136,8 @@ function parseBlueprint(blueprint: any): ChartData {
   };
 
   // Gene keys can come in two formats:
-  // 1. {lifes_work: {...}, evolution: {...}} — hologenetic profile format
-  // 2. {natal_gene_keys: {"64": {...}, "63": {...}}} — gate dict format
+  // 1. {lifes_work: {...}, evolution: {...}}, hologenetic profile format
+  // 2. {natal_gene_keys: {"64": {...}, "63": {...}}}, gate dict format
   const gkBuild = (name: string, data: any) => data ? { name, gate: data.gate ?? 0, shadow: data.shadow ?? "", gift: data.gift ?? "", siddhi: data.siddhi ?? "" } : undefined;
 
   let geneKeys: any = {};
@@ -152,7 +152,7 @@ function parseBlueprint(blueprint: any): ChartData {
       pearl: gkBuild("Pearl", gk.pearl),
     };
   } else if (gk?.natal_gene_keys) {
-    // Gate dict format — map to hologenetic profile using natal planet gates
+    // Gate dict format, map to hologenetic profile using natal planet gates
     const natalGK = gk.natal_gene_keys as Record<string, any>;
     const hd2 = blueprint?.human_design || {};
     // Conscious Sun gate = Life's Work, Conscious Earth = Evolution
@@ -209,7 +209,7 @@ const MOCK_CHART: ChartData = {
     type: "Projector",
     strategy: "Wait for the invitation",
     authority: "Splenic",
-    profile: "1/3 — Investigator / Martyr",
+    profile: "1/3. Investigator / Martyr",
     defined_centres: ["Spleen", "G Centre", "Heart"],
     undefined_centres: ["Root", "Sacral", "Solar Plexus", "Throat", "Ajna", "Head"],
     key_channels: ["Channel 57-10: Perfected Form", "Channel 26-44: Surrender"],
@@ -368,7 +368,7 @@ export default function ChartPage() {
                   <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Key Channels</p>
                   <div className="space-y-1">
                     {chart.human_design.key_channels.map((ch) => (
-                      <p key={ch} className="text-text-primary text-sm font-body">— {ch}</p>
+                      <p key={ch} className="text-text-primary text-sm font-body">. {ch}</p>
                     ))}
                   </div>
                 </div>
@@ -382,7 +382,7 @@ export default function ChartPage() {
                   <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                      <span className="text-text-secondary text-xs font-body">— Gate {gk!.gate}</span>
+                      <span className="text-text-secondary text-xs font-body">. Gate {gk!.gate}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
