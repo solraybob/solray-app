@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
@@ -85,7 +86,8 @@ export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
+  const router = useRouter();
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -140,7 +142,15 @@ export default function TodayPage() {
               </div>
               <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">Solray AI</span>
             </div>
-            <span className="text-text-secondary text-xs font-body">{today}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-text-secondary text-xs font-body">{today}</span>
+              <button
+                onClick={() => { logout(); router.push("/login"); }}
+                className="text-text-secondary text-xs font-body hover:text-amber-sun transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
 
