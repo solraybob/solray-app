@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -11,57 +11,203 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  timestamp: Date;
+  timestamp: string; // ISO string for serialisation
 }
 
-const MORNING_GREETING =
-  "Good morning. I feel your energy today — a quiet readiness beneath the surface. The universe is arranging something for you. What's on your mind?";
+interface StoredSession {
+  sessionId: string;
+  date: string; // human-readable date label
+  messages: Message[];
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function generateSessionId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function getSessionIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem("solray_chat_sessions") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveSessionIds(ids: string[]) {
+  localStorage.setItem("solray_chat_sessions", JSON.stringify(ids));
+}
+
+function loadSession(sessionId: string): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(`solray_chat_${sessionId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session: StoredSession) {
+  localStorage.setItem(`solray_chat_${session.sessionId}`, JSON.stringify(session));
+  const ids = getSessionIds();
+  if (!ids.includes(session.sessionId)) {
+    ids.unshift(session.sessionId);
+    saveSessionIds(ids);
+  }
+}
+
+// ─── Text renderer ──────────────────────────────────────────────────────────
+
+function MessageContent({ content }: { content: string }) {
+  const paragraphs = content.split(/\n\n+/);
+  return (
+    <>
+      {paragraphs.map((para, pi) => (
+        <p key={pi} className={`font-body text-sm leading-relaxed ${pi < paragraphs.length - 1 ? "mb-3" : ""}`}>
+          {para.split(/\n/).map((line, li, arr) => (
+            <span key={li}>
+              {line}
+              {li < arr.length - 1 && <br />}
+            </span>
+          ))}
+        </p>
+      ))}
+    </>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "greeting",
-      role: "assistant",
-      content: MORNING_GREETING,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sessionId, setSessionId] = useState<string>("");
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [energyTag, setEnergyTag] = useState("Gate 57 — Intuition");
+  const [showHistory, setShowHistory] = useState(false);
+  const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuth();
 
-  useEffect(() => {
-    // Try to load greeting from forecast
-    async function loadGreeting() {
+  // ── Build a greeting message ──────────────────────────────────────────────
+  const buildGreeting = useCallback(
+    async (forToken: string | null): Promise<Message> => {
+      const today = todayLabel();
+      let content = `Good day — it's ${today}. The universe is arranging something for you. What's on your mind?`;
+
       try {
-        const data = await apiFetch("/forecast/today", {}, token);
-        if (data.morning_greeting) {
-          setMessages([
-            {
-              id: "greeting",
-              role: "assistant",
-              content: data.morning_greeting,
-              timestamp: new Date(),
-            },
-          ]);
+        const data = await apiFetch("/forecast/today", {}, forToken);
+        if (data?.morning_greeting) {
+          content = data.morning_greeting;
+        } else {
+          content = `Today is ${today}. The stars have their eye on you. What's stirring?`;
         }
-        if (data.tags?.human_design) {
+        if (data?.tags?.human_design) {
           setEnergyTag(data.tags.human_design);
         }
       } catch {
-        // keep defaults
+        // keep fallback
+      }
+
+      return {
+        id: "greeting",
+        role: "assistant",
+        content,
+        timestamp: new Date().toISOString(),
+      };
+    },
+    []
+  );
+
+  // ── Initialise session on mount ───────────────────────────────────────────
+  useEffect(() => {
+    if (!token) return;
+
+    async function init() {
+      const ids = getSessionIds();
+      const lastId = ids[0];
+      const last = lastId ? loadSession(lastId) : null;
+
+      if (last && last.messages.length > 0) {
+        // restore last session
+        setSessionId(last.sessionId);
+        setMessages(last.messages);
+      } else {
+        // new session with fresh greeting
+        const sid = generateSessionId();
+        setSessionId(sid);
+        const greeting = await buildGreeting(token);
+        const newSession: StoredSession = {
+          sessionId: sid,
+          date: todayLabel(),
+          messages: [greeting],
+        };
+        saveSession(newSession);
+        setMessages([greeting]);
       }
     }
-    if (token) loadGreeting();
-  }, [token]);
 
+    init();
+  }, [token, buildGreeting]);
+
+  // ── Persist messages whenever they change ─────────────────────────────────
+  useEffect(() => {
+    if (!sessionId || messages.length === 0) return;
+    saveSession({ sessionId, date: todayLabel(), messages });
+  }, [messages, sessionId]);
+
+  // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ── New Chat ──────────────────────────────────────────────────────────────
+  const startNewChat = useCallback(async () => {
+    if (!token) return;
+    const sid = generateSessionId();
+    setSessionId(sid);
+    const greeting = await buildGreeting(token);
+    const newSession: StoredSession = {
+      sessionId: sid,
+      date: todayLabel(),
+      messages: [greeting],
+    };
+    saveSession(newSession);
+    setMessages([greeting]);
+    setShowHistory(false);
+  }, [token, buildGreeting]);
+
+  // ── Load past session ─────────────────────────────────────────────────────
+  const loadPastSession = useCallback((sid: string) => {
+    const session = loadSession(sid);
+    if (session) {
+      setSessionId(session.sessionId);
+      setMessages(session.messages);
+      setShowHistory(false);
+    }
+  }, []);
+
+  // ── Open history panel ────────────────────────────────────────────────────
+  const openHistory = useCallback(() => {
+    const ids = getSessionIds();
+    const sessions = ids
+      .map((id) => loadSession(id))
+      .filter((s): s is StoredSession => s !== null);
+    setPastSessions(sessions);
+    setShowHistory(true);
+  }, []);
+
+  // ── Send message ──────────────────────────────────────────────────────────
   const sendMessage = async () => {
     if (!input.trim() || sending) return;
 
@@ -69,19 +215,29 @@ export default function ChatPage() {
       id: Date.now().toString(),
       role: "user",
       content: input.trim(),
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput("");
     setSending(true);
+
+    // Build conversation history (exclude greeting if it's the only prior message)
+    const history = updatedMessages
+      .filter((m) => m.id !== "greeting")
+      .slice(0, -1) // exclude the message we just added (it's sent as "message")
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       const data = await apiFetch(
         "/chat",
         {
           method: "POST",
-          body: JSON.stringify({ message: userMsg.content }),
+          body: JSON.stringify({
+            message: userMsg.content,
+            conversation_history: history,
+          }),
         },
         token
       );
@@ -90,11 +246,10 @@ export default function ChatPage() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.response || data.message || "I hear you.",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, reply]);
     } catch {
-      // Mock response when API unavailable
       const mockReplies = [
         "The pattern you're sensing is real. Trust that recognition — your intuition rarely lies at this depth.",
         "There is wisdom in what you're sitting with. Let it breathe a little longer before you act.",
@@ -106,7 +261,7 @@ export default function ChatPage() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: mockReplies[Math.floor(Math.random() * mockReplies.length)],
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, reply]);
     } finally {
@@ -121,8 +276,11 @@ export default function ChatPage() {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (iso: string) => {
+    return new Date(iso).toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -136,9 +294,29 @@ export default function ChatPage() {
             </p>
             <div className="flex items-center justify-between">
               <h1 className="font-heading text-2xl text-text-primary">Solray</h1>
-              <span className="px-3 py-1 rounded-full border border-forest-border text-text-secondary text-[10px] font-body tracking-wide">
-                {energyTag}
-              </span>
+              <div className="flex items-center gap-2">
+                {/* Previous chats icon */}
+                <button
+                  onClick={openHistory}
+                  title="Previous chats"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-forest-card transition-colors"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </button>
+                {/* New chat button */}
+                <button
+                  onClick={startNewChat}
+                  title="New chat"
+                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border text-text-secondary text-[10px] font-body tracking-wide hover:border-amber-sun hover:text-amber-sun transition-colors"
+                >
+                  + New
+                </button>
+                <span className="px-3 py-1 rounded-full border border-forest-border text-text-secondary text-[10px] font-body tracking-wide">
+                  {energyTag}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -159,7 +337,7 @@ export default function ChatPage() {
                         : "bg-forest-card border border-forest-border text-text-primary rounded-bl-sm"
                     }`}
                   >
-                    <p className="font-body text-sm leading-relaxed">{msg.content}</p>
+                    <MessageContent content={msg.content} />
                   </div>
                   <span className="text-text-secondary text-[10px] font-body mt-1 px-1">
                     {formatTime(msg.timestamp)}
@@ -211,6 +389,47 @@ export default function ChatPage() {
             </button>
           </div>
         </div>
+
+        {/* History Panel */}
+        {showHistory && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowHistory(false)}>
+            <div
+              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg p-5 pb-10 max-h-[60vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-heading text-lg text-text-primary">Previous Chats</h2>
+                <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              {pastSessions.length === 0 ? (
+                <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {pastSessions.map((s) => (
+                    <button
+                      key={s.sessionId}
+                      onClick={() => loadPastSession(s.sessionId)}
+                      className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
+                        s.sessionId === sessionId
+                          ? "border-amber-sun bg-forest-card text-text-primary"
+                          : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
+                      }`}
+                    >
+                      <p className="font-body text-xs tracking-wide mb-1">{s.date}</p>
+                      <p className="font-body text-sm truncate">
+                        {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <BottomNav />
       </div>
