@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(err.detail || "Login failed");
     }
     const data = await res.json();
-    setToken(data.token || data.access_token, data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email });
+    const userObj = data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email };
+    setToken(data.token || data.access_token, { id: userObj.id || data.user_id, email: userObj.email || email, name: userObj.name || email });
   };
 
   const logout = () => {
