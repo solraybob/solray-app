@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-deep: #050f08;
+  --bg-dark: #071510;
+  --card: #0a1f12;
+  --border: #1a3020;
+  --amber: #e8821a;
+  --text-primary: #f5f0e8;
+  --text-secondary: #8a9e8d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #050f08;
+  color: #f5f0e8;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #071510;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a3020;
+  border-radius: 2px;
+}
+
+/* Input reset */
+input, textarea {
+  outline: none;
+  background: transparent;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Bottom nav safe area */
+.nav-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
