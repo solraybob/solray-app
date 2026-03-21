@@ -160,10 +160,10 @@ function parseBlueprint(blueprint: any): ChartData {
     const profileMap = [
       { name: "Life's Work", gateKey: String(cc.Sun?.gate   || 64) },
       { name: "Evolution",   gateKey: String(cc.Earth?.gate || 63) },
-      { name: "Radiance",    gateKey: String(uc.Moon?.gate  || 30) },
+      { name: "Radiance",    gateKey: String(cc.Moon?.gate  || 28) },
       { name: "Vocation",    gateKey: String(uc.Sun?.gate   || 35) },
       { name: "Culture",     gateKey: String(uc.Earth?.gate || 5)  },
-      { name: "Pearl",       gateKey: String(cc.Moon?.gate  || 40) },
+      { name: "Pearl",       gateKey: String(uc.Moon?.gate  || 52) },
     ];
     geneKeys = {};
     profileMap.forEach(({ name, gateKey }) => {
