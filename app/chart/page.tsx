@@ -318,16 +318,16 @@ export default function ChartPage() {
             {/* Gene Keys */}
             <CollapsibleSection title="Gene Keys">
               <div className="space-y-5 mt-2">
-                {Object.values(chart.gene_keys).map((gk) => (
-                  <div key={gk.name} className="bg-forest-card rounded-xl p-4">
+                {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
+                  <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk.name}</span>
-                      <span className="text-forest-border text-xs font-body">— Gate {gk.gate}</span>
+                      <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
+                      <span className="text-forest-border text-xs font-body">— Gate {gk!.gate}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <GKPill label="Shadow" value={gk.shadow} color="text-red-400/70" />
-                      <GKPill label="Gift" value={gk.gift} color="text-amber-sun" />
-                      <GKPill label="Siddhi" value={gk.siddhi} color="text-text-primary" />
+                      <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
+                      <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
+                      <GKPill label="Siddhi" value={gk!.siddhi} color="text-text-primary" />
                     </div>
                   </div>
                 ))}
