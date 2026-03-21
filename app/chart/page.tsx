@@ -40,7 +40,92 @@ interface ChartData {
     lifes_work: GeneKey;
     evolution: GeneKey;
     radiance: GeneKey;
+    vocation?: GeneKey;
+    culture?: GeneKey;
+    pearl?: GeneKey;
   };
+}
+
+const PLANET_SYMBOLS: Record<string, string> = {
+  Sun: "☉",
+  Moon: "☽",
+  Mercury: "☿",
+  Venus: "♀",
+  Mars: "♂",
+  Jupiter: "♃",
+  Saturn: "♄",
+  Uranus: "♅",
+  Neptune: "♆",
+  Pluto: "♇",
+  NorthNode: "☊",
+  Chiron: "⚷",
+  Ceres: "⚳",
+  ASC: "↑",
+};
+
+function formatDegree(decimalDegree: number): string {
+  const deg = Math.floor(decimalDegree);
+  const minutes = Math.round((decimalDegree - deg) * 60);
+  return `${deg}°${String(minutes).padStart(2, "0")}'`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseBlueprint(blueprint: any): ChartData {
+  const natal = blueprint?.astrology?.natal;
+  const hd = blueprint?.human_design;
+  const gk = blueprint?.gene_keys;
+
+  // Build planets array
+  const planetsRaw: NatalPlanet[] = [];
+  if (natal?.planets) {
+    for (const [name, data] of Object.entries(natal.planets as Record<string, { sign: string; degree: number; house: number; retrograde: boolean }>)) {
+      planetsRaw.push({
+        planet: name,
+        symbol: PLANET_SYMBOLS[name] ?? "●",
+        sign: data.sign,
+        degree: formatDegree(data.degree),
+        house: data.house,
+      });
+    }
+  }
+  // Add ASC
+  if (natal?.ascendant) {
+    planetsRaw.push({
+      planet: "ASC",
+      symbol: "↑",
+      sign: natal.ascendant.sign,
+      degree: formatDegree(natal.ascendant.degree),
+      house: 1,
+    });
+  }
+
+  // Build key_channels from defined_channels
+  const keyChannels: string[] = hd?.defined_channels
+    ? (hd.defined_channels as Array<[number, number, string]>).map(
+        ([a, b, name]) => `Channel ${a}-${b}: ${name}`
+      )
+    : [];
+
+  const humanDesign: HumanDesign = {
+    type: hd?.type ?? "",
+    strategy: hd?.strategy ?? "",
+    authority: hd?.authority ?? "",
+    profile: hd?.profile ?? "",
+    defined_centres: hd?.defined_centres ?? [],
+    undefined_centres: hd?.undefined_centres ?? [],
+    key_channels: keyChannels,
+  };
+
+  const geneKeys = {
+    lifes_work: { name: "Life's Work", gate: gk?.lifes_work?.gate ?? 0, shadow: gk?.lifes_work?.shadow ?? "", gift: gk?.lifes_work?.gift ?? "", siddhi: gk?.lifes_work?.siddhi ?? "" },
+    evolution: { name: "Evolution", gate: gk?.evolution?.gate ?? 0, shadow: gk?.evolution?.shadow ?? "", gift: gk?.evolution?.gift ?? "", siddhi: gk?.evolution?.siddhi ?? "" },
+    radiance: { name: "Radiance", gate: gk?.radiance?.gate ?? 0, shadow: gk?.radiance?.shadow ?? "", gift: gk?.radiance?.gift ?? "", siddhi: gk?.radiance?.siddhi ?? "" },
+    vocation: gk?.vocation ? { name: "Vocation", gate: gk.vocation.gate, shadow: gk.vocation.shadow, gift: gk.vocation.gift, siddhi: gk.vocation.siddhi } : undefined,
+    culture: gk?.culture ? { name: "Culture", gate: gk.culture.gate, shadow: gk.culture.shadow, gift: gk.culture.gift, siddhi: gk.culture.siddhi } : undefined,
+    pearl: gk?.pearl ? { name: "Pearl", gate: gk.pearl.gate, shadow: gk.pearl.shadow, gift: gk.pearl.gift, siddhi: gk.pearl.siddhi } : undefined,
+  };
+
+  return { natal: planetsRaw, human_design: humanDesign, gene_keys: geneKeys };
 }
 
 const MOCK_CHART: ChartData = {
@@ -136,8 +221,11 @@ export default function ChartPage() {
     async function loadChart() {
       try {
         const data = await apiFetch("/users/me", {}, token);
-        if (data.chart) setChart(data.chart);
-        else setChart(MOCK_CHART);
+        if (data.blueprint) {
+          setChart(parseBlueprint(data.blueprint));
+        } else {
+          setChart(MOCK_CHART);
+        }
       } catch {
         setChart(MOCK_CHART);
       } finally {
