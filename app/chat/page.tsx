@@ -482,7 +482,7 @@ export default function ChatPage() {
         {showHistory && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowHistory(false)}>
             <div
-              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg flex flex-col max-h-[60vh]"
+              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg flex flex-col max-h-[70vh] mb-16"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Fixed header */}
