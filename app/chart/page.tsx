@@ -150,14 +150,39 @@ function parseBlueprint(blueprint: any): ChartData {
       pearl: gkBuild("Pearl", gk.pearl),
     };
   } else if (gk?.natal_gene_keys) {
-    // Gate dict format — show top active gates
-    const gkLabels = ["Life's Work", "Evolution", "Radiance", "Vocation", "Culture", "Pearl"];
-    const entries = Object.values(gk.natal_gene_keys as Record<string, any>).slice(0, 6);
+    // Gate dict format — map to hologenetic profile using natal planet gates
+    const natalGK = gk.natal_gene_keys as Record<string, any>;
+    const hd2 = blueprint?.human_design || {};
+    // Conscious Sun gate = Life's Work, Conscious Earth = Evolution
+    // Design Moon = Radiance, Design Sun = Vocation, Design Earth = Culture, Conscious Moon = Pearl
+    const cc = hd2.conscious_chart || {};
+    const uc = hd2.unconscious_chart || {};
+    const profileMap = [
+      { name: "Life's Work", gateKey: String(cc.Sun?.gate   || 64) },
+      { name: "Evolution",   gateKey: String(cc.Earth?.gate || 63) },
+      { name: "Radiance",    gateKey: String(uc.Moon?.gate  || 30) },
+      { name: "Vocation",    gateKey: String(uc.Sun?.gate   || 35) },
+      { name: "Culture",     gateKey: String(uc.Earth?.gate || 5)  },
+      { name: "Pearl",       gateKey: String(cc.Moon?.gate  || 40) },
+    ];
     geneKeys = {};
-    entries.forEach((entry: any, i: number) => {
-      const key = gkLabels[i].toLowerCase().replace(/[' ]/g, '_');
-      geneKeys[key] = { name: gkLabels[i], gate: entry.gate, shadow: entry.shadow ?? "", gift: entry.gift ?? "", siddhi: entry.siddhi ?? "" };
+    profileMap.forEach(({ name, gateKey }) => {
+      const entry = natalGK[gateKey];
+      if (entry) {
+        const key = name.toLowerCase().replace(/[' ]/g, '_');
+        geneKeys[key] = { name, gate: entry.gate, shadow: entry.shadow ?? "", gift: entry.gift ?? "", siddhi: entry.siddhi ?? "" };
+      }
     });
+    // Fallback: if profile gates not in blueprint, use first 6 sorted by gate number
+    if (Object.keys(geneKeys).length < 3) {
+      const gkLabels = ["Life's Work", "Evolution", "Radiance", "Vocation", "Culture", "Pearl"];
+      const sorted = Object.values(natalGK).sort((a: any, b: any) => a.gate - b.gate).slice(0, 6);
+      geneKeys = {};
+      sorted.forEach((entry: any, i: number) => {
+        const key = gkLabels[i].toLowerCase().replace(/[' ]/g, '_');
+        geneKeys[key] = { name: gkLabels[i], gate: entry.gate, shadow: entry.shadow ?? "", gift: entry.gift ?? "", siddhi: entry.siddhi ?? "" };
+      });
+    }
   }
 
   return { natal: planetsRaw, human_design: humanDesign, gene_keys: geneKeys };
@@ -355,7 +380,7 @@ export default function ChartPage() {
                   <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                      <span className="text-forest-border text-xs font-body">— Gate {gk!.gate}</span>
+                      <span className="text-text-secondary text-xs font-body">— Gate {gk!.gate}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
