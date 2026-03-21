@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -17,6 +18,7 @@ interface Message {
 interface StoredSession {
   sessionId: string;
   date: string; // human-readable date label
+  customName?: string; // user-renamed label
   messages: Message[];
 }
 
@@ -67,27 +69,68 @@ function saveSession(session: StoredSession) {
 
 // ─── Text renderer ──────────────────────────────────────────────────────────
 
-function MessageContent({ content }: { content: string }) {
+function MessageContent({ content, showCursor }: { content: string; showCursor?: boolean }) {
   const paragraphs = content.split(/\n\n+/);
+
   return (
     <>
-      {paragraphs.map((para, pi) => (
-        <p key={pi} className={`font-body text-sm leading-relaxed ${pi < paragraphs.length - 1 ? "mb-3" : ""}`}>
-          {para.split(/\n/).map((line, li, arr) => (
-            <span key={li}>
-              {line}
-              {li < arr.length - 1 && <br />}
-            </span>
-          ))}
-        </p>
-      ))}
+      {paragraphs.map((para, pi) => {
+        const trimmed = para.trim();
+        const isLast = pi === paragraphs.length - 1;
+
+        // Short paragraph (< 40 chars, no newlines) → section header
+        if (trimmed.length < 40 && trimmed.length > 0 && !trimmed.includes("\n") && !isLast) {
+          return (
+            <p key={pi} className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0">
+              {trimmed}
+              {showCursor && isLast && (
+                <span className="inline-block w-0.5 h-5 bg-current ml-0.5 animate-pulse align-middle" />
+              )}
+            </p>
+          );
+        }
+
+        // Detect "Label: rest" pattern – bold the label
+        const colonMatch = trimmed.match(/^([^\n:]{1,60}):\s*([\s\S]*)$/);
+
+        return (
+          <p key={pi} className={`font-body text-sm leading-relaxed ${!isLast ? "mb-3" : ""}`}>
+            {colonMatch ? (
+              <>
+                <strong className="font-semibold">{colonMatch[1]}:</strong>
+                {colonMatch[2] ? (
+                  <>
+                    {" "}
+                    {colonMatch[2].split(/\n/).map((line, li, arr) => (
+                      <span key={li}>
+                        {line}
+                        {li < arr.length - 1 && <br />}
+                      </span>
+                    ))}
+                  </>
+                ) : null}
+              </>
+            ) : (
+              trimmed.split(/\n/).map((line, li, arr) => (
+                <span key={li}>
+                  {line}
+                  {li < arr.length - 1 && <br />}
+                </span>
+              ))
+            )}
+            {showCursor && isLast && (
+              <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle" />
+            )}
+          </p>
+        );
+      })}
     </>
   );
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
-export default function ChatPage() {
+function ChatPageInner() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
   const [input, setInput] = useState("");
@@ -95,9 +138,38 @@ export default function ChatPage() {
   const [energyTag, setEnergyTag] = useState("Gate 57. Intuition");
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
+
+  // Streaming state
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [streamedLength, setStreamedLength] = useState(0);
+
+  // Rename state
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuth();
+  const searchParams = useSearchParams();
+
+  // ── Streaming effect ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!streamingId) return;
+    const msg = messages.find((m) => m.id === streamingId);
+    if (!msg) return;
+
+    if (streamedLength >= msg.content.length) {
+      setStreamingId(null);
+      return;
+    }
+
+    const charDelay = msg.content.length > 600 ? 5 : 10;
+    const timer = setTimeout(() => {
+      setStreamedLength((l) => l + 1);
+    }, charDelay);
+
+    return () => clearTimeout(timer);
+  }, [streamingId, streamedLength, messages]);
 
   // ── Build a greeting message ──────────────────────────────────────────────
   const buildGreeting = useCallback(
@@ -108,10 +180,8 @@ export default function ChatPage() {
         const data = await apiFetch("/forecast/today", {}, forToken);
 
         if (data?.morning_greeting) {
-          // AI-generated greeting takes priority
           content = data.morning_greeting;
         } else {
-          // Build from raw transit data
           let sunSign = "";
           let moonSign = "";
 
@@ -132,7 +202,6 @@ export default function ChatPage() {
             moonSign = t.moon?.sign || t.Moon?.sign || "";
           }
 
-          // Most significant aspect = lowest orb
           let aspectStr = "";
           if (Array.isArray(data?.aspects) && data.aspects.length > 0) {
             const sorted = [...data.aspects].sort(
@@ -179,7 +248,6 @@ export default function ChatPage() {
           setEnergyTag(data.tags.human_design);
         }
       } catch {
-        // Forecast failed, fall back to natal chart from /users/me
         try {
           const user = await apiFetch("/users/me", {}, forToken);
           const natalSun =
@@ -222,16 +290,92 @@ export default function ChatPage() {
     if (!token) return;
 
     async function init() {
+      // Check for compatibility context injected from Souls page
+      const isCompat = searchParams?.get("compat") === "1";
+      if (isCompat) {
+        try {
+          const raw = sessionStorage.getItem("solray_compat_context");
+          if (raw) {
+            const ctx = JSON.parse(raw) as {
+              soulName: string;
+              introMessage: string;
+            };
+            sessionStorage.removeItem("solray_compat_context");
+
+            const sid = generateSessionId();
+            setSessionId(sid);
+
+            const greeting: Message = {
+              id: "greeting",
+              role: "assistant",
+              content: `Reading the dynamic between you and ${ctx.soulName}…`,
+              timestamp: new Date().toISOString(),
+            };
+            const userMsg: Message = {
+              id: `${Date.now()}`,
+              role: "user",
+              content: ctx.introMessage,
+              timestamp: new Date().toISOString(),
+            };
+
+            const newSession: StoredSession = {
+              sessionId: sid,
+              date: todayLabel(),
+              customName: `You & ${ctx.soulName}`,
+              messages: [greeting, userMsg],
+            };
+            saveSession(newSession);
+            setMessages([greeting, userMsg]);
+
+            // Auto-send the compatibility message
+            try {
+              const data = await apiFetch(
+                "/chat",
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    message: ctx.introMessage,
+                    conversation_history: [],
+                  }),
+                },
+                token
+              );
+              const reply: Message = {
+                id: (Date.now() + 1).toString(),
+                role: "assistant",
+                content: data.response || data.message || `I feel the thread between you and ${ctx.soulName}. Let me read it.`,
+                timestamp: new Date().toISOString(),
+              };
+              setMessages((prev) => [...prev, reply]);
+              setStreamedLength(0);
+              setStreamingId(reply.id);
+              saveSession({ ...newSession, messages: [...newSession.messages, reply] });
+            } catch {
+              const reply: Message = {
+                id: (Date.now() + 1).toString(),
+                role: "assistant",
+                content: `I feel the thread between you and ${ctx.soulName}. Your energies hold a particular kind of mirror for each other — one that invites both recognition and growth.`,
+                timestamp: new Date().toISOString(),
+              };
+              setMessages((prev) => [...prev, reply]);
+              setStreamedLength(0);
+              setStreamingId(reply.id);
+            }
+            return;
+          }
+        } catch {
+          // Fall through to normal init
+        }
+      }
+
       const ids = getSessionIds();
       const lastId = ids[0];
       const last = lastId ? loadSession(lastId) : null;
 
       if (last && last.messages.length > 0) {
-        // restore last session
         setSessionId(last.sessionId);
         setMessages(last.messages);
       } else {
-        // new session with fresh greeting
         const sid = generateSessionId();
         setSessionId(sid);
         const greeting = await buildGreeting(token);
@@ -246,18 +390,25 @@ export default function ChatPage() {
     }
 
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, buildGreeting]);
 
   // ── Persist messages whenever they change ─────────────────────────────────
   useEffect(() => {
     if (!sessionId || messages.length === 0) return;
-    saveSession({ sessionId, date: todayLabel(), messages });
+    const existing = loadSession(sessionId);
+    saveSession({
+      sessionId,
+      date: todayLabel(),
+      customName: existing?.customName,
+      messages,
+    });
   }, [messages, sessionId]);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamedLength]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
@@ -282,6 +433,7 @@ export default function ChatPage() {
       setSessionId(session.sessionId);
       setMessages(session.messages);
       setShowHistory(false);
+      setRenamingId(null);
     }
   }, []);
 
@@ -293,7 +445,36 @@ export default function ChatPage() {
       .filter((s): s is StoredSession => s !== null);
     setPastSessions(sessions);
     setShowHistory(true);
+    setRenamingId(null);
   }, []);
+
+  // ── Rename helpers ────────────────────────────────────────────────────────
+  const startRename = useCallback(
+    (e: React.MouseEvent, sid: string, currentName: string) => {
+      e.stopPropagation();
+      setRenamingId(sid);
+      setRenameValue(currentName);
+    },
+    []
+  );
+
+  const commitRename = useCallback(
+    (sid: string) => {
+      const session = loadSession(sid);
+      if (!session) return;
+      const newName = renameValue.trim();
+      const updated: StoredSession = {
+        ...session,
+        customName: newName || undefined,
+      };
+      saveSession(updated);
+      setPastSessions((prev) =>
+        prev.map((s) => (s.sessionId === sid ? updated : s))
+      );
+      setRenamingId(null);
+    },
+    [renameValue]
+  );
 
   // ── Send message ──────────────────────────────────────────────────────────
   const sendMessage = async () => {
@@ -311,10 +492,9 @@ export default function ChatPage() {
     setInput("");
     setSending(true);
 
-    // Build conversation history (exclude greeting if it's the only prior message)
     const history = updatedMessages
       .filter((m) => m.id !== "greeting")
-      .slice(0, -1) // exclude the message we just added (it's sent as "message")
+      .slice(0, -1)
       .map((m) => ({ role: m.role, content: m.content }));
 
     try {
@@ -337,6 +517,9 @@ export default function ChatPage() {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, reply]);
+      // Kick off streaming effect
+      setStreamedLength(0);
+      setStreamingId(reply.id);
     } catch {
       const mockReplies = [
         "The pattern you're sensing is real. Trust that recognition. Your intuition rarely lies at this depth.",
@@ -352,6 +535,8 @@ export default function ChatPage() {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, reply]);
+      setStreamedLength(0);
+      setStreamingId(reply.id);
     } finally {
       setSending(false);
     }
@@ -383,7 +568,6 @@ export default function ChatPage() {
             <div className="flex items-center justify-between">
               <h1 className="font-heading text-2xl text-text-primary">Solray</h1>
               <div className="flex items-center gap-2">
-                {/* Previous chats icon */}
                 <button
                   onClick={openHistory}
                   title="Previous chats"
@@ -393,7 +577,6 @@ export default function ChatPage() {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </button>
-                {/* New chat button */}
                 <button
                   onClick={startNewChat}
                   title="New chat"
@@ -412,27 +595,34 @@ export default function ChatPage() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-32">
           <div className="max-w-lg mx-auto space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex animate-slide-up ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-                  <div
-                    className={`rounded-2xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "bg-amber-sun text-forest-deep rounded-br-sm"
-                        : "bg-forest-card border border-forest-border text-text-primary rounded-bl-sm"
-                    }`}
-                  >
-                    <MessageContent content={msg.content} />
+            {messages.map((msg) => {
+              const isStreaming = streamingId === msg.id;
+              const displayContent = isStreaming
+                ? msg.content.slice(0, streamedLength)
+                : msg.content;
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex animate-slide-up ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                    <div
+                      className={`rounded-2xl px-4 py-3 ${
+                        msg.role === "user"
+                          ? "bg-amber-sun text-forest-deep rounded-br-sm"
+                          : "bg-forest-card border border-forest-border text-text-primary rounded-bl-sm"
+                      }`}
+                    >
+                      <MessageContent content={displayContent} showCursor={isStreaming} />
+                    </div>
+                    <span className="text-text-secondary text-[10px] font-body mt-1 px-1">
+                      {formatTime(msg.timestamp)}
+                    </span>
                   </div>
-                  <span className="text-text-secondary text-[10px] font-body mt-1 px-1">
-                    {formatTime(msg.timestamp)}
-                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {sending && (
               <div className="flex justify-start animate-fade-in">
@@ -495,26 +685,67 @@ export default function ChatPage() {
                 </button>
               </div>
               {/* Scrollable list */}
-              <div className="overflow-y-auto flex-1 px-5 pb-8" style={{WebkitOverflowScrolling: 'touch', overflowY: 'scroll'}}>
+              <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
                   <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {pastSessions.map((s) => (
-                      <button
-                        key={s.sessionId}
-                        onClick={() => loadPastSession(s.sessionId)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
-                          s.sessionId === sessionId
-                            ? "border-amber-sun bg-forest-card text-text-primary"
-                            : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
-                        }`}
-                      >
-                        <p className="font-body text-xs tracking-wide mb-1">{s.date}</p>
-                        <p className="font-body text-sm truncate">
-                          {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
-                        </p>
-                      </button>
+                      <div key={s.sessionId} className="relative">
+                        {renamingId === s.sessionId ? (
+                          /* Inline rename input */
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-sun bg-forest-card">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitRename(s.sessionId);
+                                if (e.key === "Escape") setRenamingId(null);
+                              }}
+                              onBlur={() => commitRename(s.sessionId)}
+                              placeholder={s.date}
+                              className="flex-1 bg-transparent text-text-primary font-body text-sm outline-none placeholder-text-secondary"
+                            />
+                            <button
+                              onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
+                              className="text-amber-sun text-xs font-body"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => loadPastSession(s.sessionId)}
+                              className={`flex-1 text-left px-4 py-3 rounded-xl border transition-colors ${
+                                s.sessionId === sessionId
+                                  ? "border-amber-sun bg-forest-card text-text-primary"
+                                  : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
+                              }`}
+                            >
+                              <p className="font-body text-xs tracking-wide mb-1 text-text-secondary">
+                                {s.customName || s.date}
+                              </p>
+                              <p className="font-body text-sm truncate">
+                                {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
+                              </p>
+                            </button>
+                            {/* Rename pencil */}
+                            <button
+                              onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
+                              title="Rename chat"
+                              className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-amber-sun transition-colors shrink-0"
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -526,5 +757,13 @@ export default function ChatPage() {
         <BottomNav />
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-forest-deep flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+      <ChatPageInner />
+    </Suspense>
   );
 }
