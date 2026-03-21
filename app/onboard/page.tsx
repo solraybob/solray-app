@@ -127,7 +127,7 @@ export default function OnboardPage() {
         throw new Error(err.detail || "Registration failed");
       }
       const data = await res.json();
-      setToken(data.token || data.access_token, data.user || { id: data.id, email, name });
+      setToken(data.token || data.access_token, data.profile || data.user || { id: data.user_id, email, name });
       router.push("/today");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");

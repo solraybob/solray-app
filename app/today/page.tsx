@@ -97,9 +97,29 @@ export default function TodayPage() {
     async function loadForecast() {
       try {
         const data = await apiFetch("/forecast/today", {}, token);
-        setForecast(data);
+        // If AI fields are present, use real data; otherwise use mock
+        if (data.day_title && data.reading && data.tags && data.energy) {
+          // Build planet strip from transits if available
+          const planets: Planet[] = data.planets || Object.entries(data.transits || {}).map(([name, p]: [string, any]) => ({
+            name,
+            symbol: { Sun:"☉", Moon:"☽", Mercury:"☿", Venus:"♀", Mars:"♂", Jupiter:"♃", Saturn:"♄", Uranus:"♅", Neptune:"♆", Pluto:"♇" }[name] || "✦",
+            sign: p.sign,
+            degree: `${Math.floor(p.degree)}°`,
+            retrograde: p.retrograde,
+          }));
+          setForecast({ ...data, planets });
+        } else {
+          // AI not ready yet, show mock with real planet positions
+          const planets: Planet[] = Object.entries(data.transits || {}).slice(0, 10).map(([name, p]: [string, any]) => ({
+            name,
+            symbol: { Sun:"☉", Moon:"☽", Mercury:"☿", Venus:"♀", Mars:"♂", Jupiter:"♃", Saturn:"♄", Uranus:"♅", Neptune:"♆", Pluto:"♇" }[name] || "✦",
+            sign: p.sign,
+            degree: `${Math.floor(p.degree)}°`,
+            retrograde: p.retrograde,
+          }));
+          setForecast({ ...MOCK_FORECAST, planets: planets.length > 0 ? planets : MOCK_FORECAST.planets });
+        }
       } catch {
-        // Use mock data if API not available
         setForecast(MOCK_FORECAST);
       } finally {
         setLoading(false);
