@@ -101,9 +101,11 @@ function parseBlueprint(blueprint: any): ChartData {
 
   // Build key_channels from defined_channels
   const keyChannels: string[] = hd?.defined_channels
-    ? (hd.defined_channels as Array<[number, number, string]>).map(
-        ([a, b, name]) => `Channel ${a}-${b}: ${name}`
-      )
+    ? (hd.defined_channels as Array<any>).map((ch) => {
+        if (Array.isArray(ch)) return `Channel ${ch[0]}-${ch[1]}: ${ch[2]}`;
+        if (ch && typeof ch === 'object') return `Channel ${ch.gate_a}-${ch.gate_b}: ${ch.name}`;
+        return String(ch);
+      })
     : [];
 
   const humanDesign: HumanDesign = {
@@ -222,11 +224,14 @@ export default function ChartPage() {
       try {
         const data = await apiFetch("/users/me", {}, token);
         if (data.blueprint) {
-          setChart(parseBlueprint(data.blueprint));
+          const parsed = parseBlueprint(data.blueprint);
+          setChart(parsed);
         } else {
+          console.error("No blueprint in response", data);
           setChart(MOCK_CHART);
         }
-      } catch {
+      } catch (err) {
+        console.error("Chart load error:", err);
         setChart(MOCK_CHART);
       } finally {
         setLoading(false);
