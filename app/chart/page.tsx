@@ -78,7 +78,9 @@ function parseBlueprint(blueprint: any): ChartData {
   // Build planets array
   const planetsRaw: NatalPlanet[] = [];
   if (natal?.planets) {
-    for (const [name, data] of Object.entries(natal.planets as Record<string, { sign: string; degree: number; house: number; retrograde: boolean }>)) {
+    for (const [name, data] of Object.entries(natal.planets as Record<string, any>)) {
+      // Skip planets with no valid data (e.g. Chiron when ephemeris file missing)
+      if (!data.sign || data.sign === 'Unknown' || data.longitude === null) continue;
       planetsRaw.push({
         planet: name,
         symbol: PLANET_SYMBOLS[name] ?? "●",
