@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
@@ -16,12 +16,74 @@ export default function OnboardPage() {
   const [birthTime, setBirthTime] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
   const [birthPlace, setBirthPlace] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState<{ display: string }[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { setToken } = useAuth();
   const router = useRouter();
+
+  // City autocomplete debounce
+  useEffect(() => {
+    if (birthPlace.trim().length < 2) {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    setCityLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(birthPlace)}&type=city&limit=6&format=json&addressdetails=1`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data = await res.json();
+        const suggestions = data
+          .map((item: { address: { city?: string; town?: string; village?: string; municipality?: string; country?: string } }) => {
+            const city = item.address.city || item.address.town || item.address.village || item.address.municipality;
+            const country = item.address.country;
+            if (!city) return null;
+            return { display: country ? `${city}, ${country}` : city };
+          })
+          .filter(Boolean) as { display: string }[];
+        // deduplicate
+        const seen = new Set<string>();
+        const unique = suggestions.filter((s) => {
+          if (seen.has(s.display)) return false;
+          seen.add(s.display);
+          return true;
+        });
+        setCitySuggestions(unique);
+        setShowSuggestions(unique.length > 0);
+      } catch {
+        // silently fail
+      } finally {
+        setCityLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [birthPlace]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        cityInputRef.current &&
+        !cityInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const next = () => {
     setError("");
@@ -156,15 +218,53 @@ export default function OnboardPage() {
 
           {step === 4 && (
             <StepWrapper label="Where were you born?">
-              <input
-                autoFocus
-                type="text"
-                value={birthPlace}
-                onChange={(e) => setBirthPlace(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="City, Country"
-                className="onboard-input"
-              />
+              <div className="relative">
+                <input
+                  ref={cityInputRef}
+                  autoFocus
+                  type="text"
+                  value={birthPlace}
+                  onChange={(e) => {
+                    setBirthPlace(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="City, Country"
+                  className="onboard-input"
+                  style={{ paddingRight: cityLoading ? "2rem" : undefined }}
+                  autoComplete="off"
+                />
+                {cityLoading && (
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 text-text-secondary">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  </span>
+                )}
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="city-dropdown"
+                  >
+                    {citySuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="city-dropdown-item"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setBirthPlace(s.display);
+                          setCitySuggestions([]);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {s.display}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <p className="text-text-secondary text-xs mt-2 font-body">e.g. Barcelona, Spain</p>
             </StepWrapper>
           )}
@@ -236,6 +336,40 @@ export default function OnboardPage() {
         }
         .onboard-input::placeholder {
           color: #8a9e8d;
+        }
+        .city-dropdown {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          background: #0a1f12;
+          border: 1px solid #1a3020;
+          border-radius: 8px;
+          overflow: hidden;
+          z-index: 50;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .city-dropdown-item {
+          display: block;
+          width: 100%;
+          text-align: left;
+          padding: 12px 16px;
+          color: #f5f0e8;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+        }
+        .city-dropdown-item:hover,
+        .city-dropdown-item:focus {
+          background: rgba(232,130,26,0.15);
+          color: #e8821a;
+          outline: none;
+        }
+        .city-dropdown-item + .city-dropdown-item {
+          border-top: 1px solid #1a3020;
         }
       `}</style>
     </div>
