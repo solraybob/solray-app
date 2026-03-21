@@ -102,21 +102,109 @@ export default function ChatPage() {
   // ── Build a greeting message ──────────────────────────────────────────────
   const buildGreeting = useCallback(
     async (forToken: string | null): Promise<Message> => {
-      const today = todayLabel();
-      let content = `Good day — it's ${today}. The universe is arranging something for you. What's on your mind?`;
+      let content = "";
 
       try {
         const data = await apiFetch("/forecast/today", {}, forToken);
+
         if (data?.morning_greeting) {
+          // AI-generated greeting takes priority
           content = data.morning_greeting;
         } else {
-          content = `Today is ${today}. The stars have their eye on you. What's stirring?`;
+          // Build from raw transit data
+          let sunSign = "";
+          let moonSign = "";
+
+          if (Array.isArray(data?.transits)) {
+            const sunT = data.transits.find(
+              (t: { planet?: string; name?: string }) =>
+                t.planet?.toLowerCase() === "sun" || t.name?.toLowerCase() === "sun"
+            );
+            const moonT = data.transits.find(
+              (t: { planet?: string; name?: string }) =>
+                t.planet?.toLowerCase() === "moon" || t.name?.toLowerCase() === "moon"
+            );
+            sunSign = (sunT as { sign?: string })?.sign || "";
+            moonSign = (moonT as { sign?: string })?.sign || "";
+          } else if (data?.transits && typeof data.transits === "object") {
+            const t = data.transits as Record<string, { sign?: string }>;
+            sunSign = t.sun?.sign || t.Sun?.sign || "";
+            moonSign = t.moon?.sign || t.Moon?.sign || "";
+          }
+
+          // Most significant aspect = lowest orb
+          let aspectStr = "";
+          if (Array.isArray(data?.aspects) && data.aspects.length > 0) {
+            const sorted = [...data.aspects].sort(
+              (a: { orb?: number }, b: { orb?: number }) =>
+                (a.orb ?? 99) - (b.orb ?? 99)
+            );
+            const top = sorted[0] as {
+              planet?: string;
+              transiting_planet?: string;
+              aspect?: string;
+              type?: string;
+              target?: string;
+              natal_planet?: string;
+              orb?: number;
+            };
+            const planet = top.planet || top.transiting_planet || "";
+            const aspectType = top.aspect || top.type || "";
+            const target = top.target || top.natal_planet || "";
+            const orb =
+              top.orb != null
+                ? ` within ${Math.round(top.orb * 10) / 10} degrees`
+                : "";
+            if (planet && aspectType && target) {
+              aspectStr = `${planet} ${aspectType}s your natal ${target} today${orb}.`;
+            }
+          }
+
+          if (sunSign || moonSign) {
+            const skyLine = [
+              sunSign && `Sun in ${sunSign}`,
+              moonSign && `Moon in ${moonSign}`,
+            ]
+              .filter(Boolean)
+              .join(", ");
+            content = `${skyLine}.${aspectStr ? " " + aspectStr : ""} What does your body already know about this?`;
+          } else if (aspectStr) {
+            content = `${aspectStr} What does your body already know about this?`;
+          } else {
+            content = "The sky is moving today. What's stirring in you?";
+          }
         }
+
         if (data?.tags?.human_design) {
           setEnergyTag(data.tags.human_design);
         }
       } catch {
-        // keep fallback
+        // Forecast failed — fall back to natal chart from /users/me
+        try {
+          const user = await apiFetch("/users/me", {}, forToken);
+          const natalSun =
+            (user?.natal_chart as { sun?: { sign?: string } })?.sun?.sign ||
+            (user as { sun_sign?: string })?.sun_sign ||
+            "";
+          const natalMoon =
+            (user?.natal_chart as { moon?: { sign?: string } })?.moon?.sign ||
+            (user as { moon_sign?: string })?.moon_sign ||
+            "";
+
+          if (natalSun || natalMoon) {
+            const parts = [
+              natalSun && `${natalSun} Sun`,
+              natalMoon && `${natalMoon} Moon`,
+            ]
+              .filter(Boolean)
+              .join(", ");
+            content = `${parts}. The morning is yours. What needs clarity today?`;
+          } else {
+            content = "The morning is yours. What needs clarity today?";
+          }
+        } catch {
+          content = "The morning is yours. What needs clarity today?";
+        }
       }
 
       return {
@@ -394,10 +482,11 @@ export default function ChatPage() {
         {showHistory && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowHistory(false)}>
             <div
-              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg p-5 pb-10 max-h-[60vh] overflow-y-auto"
+              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg flex flex-col max-h-[60vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
+              {/* Fixed header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
                 <h2 className="font-heading text-lg text-text-primary">Previous Chats</h2>
                 <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -405,28 +494,31 @@ export default function ChatPage() {
                   </svg>
                 </button>
               </div>
-              {pastSessions.length === 0 ? (
-                <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {pastSessions.map((s) => (
-                    <button
-                      key={s.sessionId}
-                      onClick={() => loadPastSession(s.sessionId)}
-                      className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
-                        s.sessionId === sessionId
-                          ? "border-amber-sun bg-forest-card text-text-primary"
-                          : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
-                      }`}
-                    >
-                      <p className="font-body text-xs tracking-wide mb-1">{s.date}</p>
-                      <p className="font-body text-sm truncate">
-                        {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Scrollable list */}
+              <div className="overflow-y-auto flex-1 px-5 pb-8">
+                {pastSessions.length === 0 ? (
+                  <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {pastSessions.map((s) => (
+                      <button
+                        key={s.sessionId}
+                        onClick={() => loadPastSession(s.sessionId)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
+                          s.sessionId === sessionId
+                            ? "border-amber-sun bg-forest-card text-text-primary"
+                            : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
+                        }`}
+                      >
+                        <p className="font-body text-xs tracking-wide mb-1">{s.date}</p>
+                        <p className="font-body text-sm truncate">
+                          {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
