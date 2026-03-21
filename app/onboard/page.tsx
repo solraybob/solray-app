@@ -79,7 +79,7 @@ export default function OnboardPage() {
       <div className="flex items-center justify-between px-6 pt-12 pb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
+            <Image src="/logo.svg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <span className="font-heading text-sm tracking-widest uppercase text-text-secondary">Solray AI</span>
         </div>

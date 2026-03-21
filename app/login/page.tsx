@@ -39,7 +39,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-12">
           <div className="w-16 h-16 rounded-full overflow-hidden mb-4">
-            <Image src="/logo.jpg" alt="Solray" width={64} height={64} className="w-full h-full object-cover" />
+            <Image src="/logo.svg" alt="Solray" width={64} height={64} className="w-full h-full object-cover" />
           </div>
           <h1 className="font-heading text-2xl tracking-widest text-text-primary uppercase">Solray AI</h1>
           <p className="text-text-secondary text-xs mt-1 tracking-widest">Your cosmic intelligence</p>

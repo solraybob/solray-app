@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="100" fill="#050f08"/>
+  
+  <!-- Sun rays (flame-like, organic) -->
+  <g fill="#e8821a">
+    <!-- Ray 1 - top -->
+    <path d="M100 100 Q96 72 100 45 Q104 72 100 100Z" opacity="0.95"/>
+    <!-- Ray 2 - top right -->
+    <path d="M100 100 Q120 76 138 55 Q118 78 100 100Z" opacity="0.95"/>
+    <!-- Ray 3 - right -->
+    <path d="M100 100 Q128 96 155 100 Q128 104 100 100Z" opacity="0.95"/>
+    <!-- Ray 4 - bottom right -->
+    <path d="M100 100 Q120 124 138 145 Q118 122 100 100Z" opacity="0.95"/>
+    <!-- Ray 5 - bottom -->
+    <path d="M100 100 Q104 128 100 155 Q96 128 100 100Z" opacity="0.95"/>
+    <!-- Ray 6 - bottom left -->
+    <path d="M100 100 Q80 124 62 145 Q82 122 100 100Z" opacity="0.95"/>
+    <!-- Ray 7 - left -->
+    <path d="M100 100 Q72 104 45 100 Q72 96 100 100Z" opacity="0.95"/>
+    <!-- Ray 8 - top left -->
+    <path d="M100 100 Q80 76 62 55 Q82 78 100 100Z" opacity="0.95"/>
+    
+    <!-- Secondary shorter rays between main rays -->
+    <path d="M100 100 Q109 74 113 52 Q107 76 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q126 109 148 113 Q124 107 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q109 126 113 148 Q107 124 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q74 126 52 130 Q76 124 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q91 74 87 52 Q93 76 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q74 91 52 87 Q76 93 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q91 126 87 148 Q93 124 100 100Z" opacity="0.7"/>
+    <path d="M100 100 Q126 91 148 87 Q124 93 100 100Z" opacity="0.7"/>
+  </g>
+  
+  <!-- Central sun circle -->
+  <circle cx="100" cy="100" r="28" fill="#e8821a"/>
+  <circle cx="100" cy="100" r="22" fill="#c9681a"/>
+  <circle cx="100" cy="100" r="16" fill="#e8821a"/>
+</svg>
