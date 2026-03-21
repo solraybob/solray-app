@@ -130,7 +130,8 @@ export default function OnboardPage() {
       setToken(data.token || data.access_token, data.profile || data.user || { id: data.user_id, email, name });
       router.push("/today");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : "Something went wrong. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
