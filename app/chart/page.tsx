@@ -224,10 +224,14 @@ export default function ChartPage() {
       try {
         const data = await apiFetch("/users/me", {}, token);
         if (data.blueprint) {
-          const parsed = parseBlueprint(data.blueprint);
-          setChart(parsed);
+          try {
+            const parsed = parseBlueprint(data.blueprint);
+            setChart(parsed);
+          } catch (parseErr) {
+            console.error("Blueprint parse error:", parseErr);
+            setChart(MOCK_CHART);
+          }
         } else {
-          console.error("No blueprint in response", data);
           setChart(MOCK_CHART);
         }
       } catch (err) {
