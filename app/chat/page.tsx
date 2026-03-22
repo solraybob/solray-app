@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -70,61 +71,43 @@ function saveSession(session: StoredSession) {
 // ─── Text renderer ──────────────────────────────────────────────────────────
 
 function MessageContent({ content, showCursor }: { content: string; showCursor?: boolean }) {
-  const paragraphs = content.split(/\n\n+/);
-
   return (
-    <>
-      {paragraphs.map((para, pi) => {
-        const trimmed = para.trim();
-        const isLast = pi === paragraphs.length - 1;
-
-        // Short paragraph (< 40 chars, no newlines) → section header
-        if (trimmed.length < 40 && trimmed.length > 0 && !trimmed.includes("\n") && !isLast) {
-          return (
-            <p key={pi} className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0">
-              {trimmed}
-              {showCursor && isLast && (
-                <span className="inline-block w-0.5 h-5 bg-current ml-0.5 animate-pulse align-middle" />
-              )}
-            </p>
-          );
-        }
-
-        // Detect "Label: rest" pattern – bold the label
-        const colonMatch = trimmed.match(/^([^\n:]{1,60}):\s*([\s\S]*)$/);
-
-        return (
-          <p key={pi} className={`font-body text-sm leading-relaxed ${!isLast ? "mb-3" : ""}`}>
-            {colonMatch ? (
-              <>
-                <strong className="font-semibold">{colonMatch[1]}:</strong>
-                {colonMatch[2] ? (
-                  <>
-                    {" "}
-                    {colonMatch[2].split(/\n/).map((line, li, arr) => (
-                      <span key={li}>
-                        {line}
-                        {li < arr.length - 1 && <br />}
-                      </span>
-                    ))}
-                  </>
-                ) : null}
-              </>
-            ) : (
-              trimmed.split(/\n/).map((line, li, arr) => (
-                <span key={li}>
-                  {line}
-                  {li < arr.length - 1 && <br />}
-                </span>
-              ))
-            )}
-            {showCursor && isLast && (
-              <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle" />
-            )}
-          </p>
-        );
-      })}
-    </>
+    <div className="font-body text-sm leading-relaxed">
+      <ReactMarkdown
+        components={{
+          p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+          strong: ({ children }) => (
+            <strong className="font-semibold text-text-primary">{children}</strong>
+          ),
+          h1: ({ children }) => (
+            <h1 className="font-heading text-xl text-text-primary mb-2 mt-3 first:mt-0">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="font-heading text-base text-amber-sun mb-1 mt-2 first:mt-0">{children}</h3>
+          ),
+          em: ({ children }) => (
+            <em className="italic text-text-secondary">{children}</em>
+          ),
+          ul: ({ children }) => (
+            <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>
+          ),
+          li: ({ children }) => (
+            <li className="text-text-primary">{children}</li>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+      {showCursor && (
+        <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle" />
+      )}
+    </div>
   );
 }
 
