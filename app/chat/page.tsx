@@ -627,11 +627,17 @@ function ChatPageInner() {
 
             {sending && (
               <div className="flex justify-start animate-fade-in">
-                <div className="bg-forest-card border border-forest-border rounded-2xl rounded-bl-sm px-4 py-3">
-                  <div className="flex gap-1.5 items-center h-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="bg-forest-card border border-forest-border rounded-2xl rounded-bl-sm px-3 py-3">
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      animation: "spin 1.2s linear infinite",
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img src="/logo.jpg" alt="thinking" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 </div>
               </div>
