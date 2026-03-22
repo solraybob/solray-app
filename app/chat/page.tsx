@@ -388,10 +388,28 @@ function ChatPageInner() {
     });
   }, [messages, sessionId]);
 
-  // ── Auto-scroll ───────────────────────────────────────────────────────────
+  // ── Auto-scroll (only if user hasn't scrolled up) ────────────────────────
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
+
+  // Detect if user has scrolled up
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distFromBottom > 80;
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userScrolledUp.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, streamedLength]);
+
+  // Reset scroll lock when user sends a new message
+  const resetScroll = useCallback(() => {
+    userScrolledUp.current = false;
+  }, []);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
@@ -576,7 +594,7 @@ function ChatPageInner() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 pb-32">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" onScroll={handleScroll}>
           <div className="max-w-lg mx-auto space-y-4">
             {messages.map((msg) => {
               const isStreaming = streamingId === msg.id;
