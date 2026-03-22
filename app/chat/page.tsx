@@ -397,12 +397,17 @@ function ChatPageInner() {
     const el = scrollContainerRef.current;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    userScrolledUp.current = distFromBottom > 80;
+    // If user scrolled more than 50px from bottom, lock auto-scroll
+    userScrolledUp.current = distFromBottom > 50;
   }, []);
 
   useEffect(() => {
     if (!userScrolledUp.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      // Use instant scroll during streaming to avoid fighting user
+      const el = scrollContainerRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
     }
   }, [messages, streamedLength]);
 
