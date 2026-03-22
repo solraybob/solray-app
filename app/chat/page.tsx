@@ -390,30 +390,27 @@ function ChatPageInner() {
 
   // ── Auto-scroll (only if user hasn't scrolled up) ────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const userScrolledUp = useRef(false);
+  const [autoScroll, setAutoScroll] = useState(true);
 
-  // Detect if user has scrolled up
+  // Detect if user has manually scrolled up
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // If user scrolled more than 50px from bottom, lock auto-scroll
-    userScrolledUp.current = distFromBottom > 50;
+    setAutoScroll(distFromBottom < 60);
   }, []);
 
+  // Auto-scroll when new content arrives, but only if user is near the bottom
   useEffect(() => {
-    if (!userScrolledUp.current) {
-      // Use instant scroll during streaming to avoid fighting user
+    if (autoScroll) {
       const el = scrollContainerRef.current;
-      if (el) {
-        el.scrollTop = el.scrollHeight;
-      }
+      if (el) el.scrollTop = el.scrollHeight;
     }
-  }, [messages, streamedLength]);
+  }, [messages, streamedLength, autoScroll]);
 
-  // Reset scroll lock when user sends a new message
+  // When user sends message, re-enable auto-scroll
   const resetScroll = useCallback(() => {
-    userScrolledUp.current = false;
+    setAutoScroll(true);
   }, []);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
