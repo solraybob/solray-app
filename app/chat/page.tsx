@@ -626,20 +626,18 @@ function ChatPageInner() {
             })}
 
             {sending && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="bg-forest-card border border-forest-border rounded-2xl rounded-bl-sm px-3 py-3">
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      animation: "spin 1.2s linear infinite",
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img src="/logo.jpg" alt="thinking" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                </div>
+              <div className="flex justify-start animate-fade-in pl-2">
+                <img
+                  src="/logo.jpg"
+                  alt="thinking"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    animation: "spin 1.2s linear infinite",
+                    objectFit: "cover",
+                  }}
+                />
               </div>
             )}
 
