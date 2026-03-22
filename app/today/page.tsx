@@ -67,14 +67,14 @@ const MOCK_FORECAST: ForecastData = {
   morning_greeting: "Good morning. The day opens gently. I am here.",
 };
 
-function EnergyBar({ label, value }: { label: string; value: number }) {
+function EnergyBar({ label, value, animate }: { label: string; value: number; animate: boolean }) {
   return (
     <div className="flex items-center gap-3">
       <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase">{label}</span>
       <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
         <div
           className="h-full bg-amber-sun rounded-full transition-all duration-1000"
-          style={{ width: `${value * 10}%` }}
+          style={{ width: animate ? `${value * 10}%` : '0%' }}
         />
       </div>
       <span className="text-text-secondary text-xs font-body w-4 text-right">{value}</span>
@@ -86,6 +86,7 @@ export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [barsAnimated, setBarsAnimated] = useState(false);
   const { token, logout } = useAuth();
   const router = useRouter();
 
@@ -110,6 +111,7 @@ export default function TodayPage() {
             retrograde: p.retrograde,
           }));
           setForecast({ ...data, planets });
+          setTimeout(() => setBarsAnimated(true), 100);
         } else {
           // AI not ready yet, show mock with real planet positions
           const planets: Planet[] = Object.entries(data.transits || {}).slice(0, 10).map(([name, p]: [string, any]) => ({
@@ -120,6 +122,7 @@ export default function TodayPage() {
             retrograde: p.retrograde,
           }));
           setForecast({ ...MOCK_FORECAST, planets: planets.length > 0 ? planets : MOCK_FORECAST.planets });
+          setTimeout(() => setBarsAnimated(true), 100);
         }
       } catch {
         setForecast(MOCK_FORECAST);
@@ -189,10 +192,10 @@ export default function TodayPage() {
             <div className="bg-forest-card border border-forest-border rounded-2xl p-5 mb-6">
               <h3 className="font-heading text-lg text-text-primary mb-4">Energy Today</h3>
               <div className="space-y-3">
-                <EnergyBar label="Mental" value={forecast.energy.mental} />
-                <EnergyBar label="Emotional" value={forecast.energy.emotional} />
-                <EnergyBar label="Physical" value={forecast.energy.physical} />
-                <EnergyBar label="Intuitive" value={forecast.energy.intuitive} />
+                <EnergyBar label="Mental" value={forecast.energy.mental} animate={barsAnimated} />
+                <EnergyBar label="Emotional" value={forecast.energy.emotional} animate={barsAnimated} />
+                <EnergyBar label="Physical" value={forecast.energy.physical} animate={barsAnimated} />
+                <EnergyBar label="Intuitive" value={forecast.energy.intuitive} animate={barsAnimated} />
               </div>
             </div>
 
