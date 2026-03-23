@@ -141,7 +141,7 @@ export default function TodayPage() {
           <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full overflow-hidden">
-                <Image src="/logo.png" alt="Solray" width={28} height={28} className="w-full h-full object-cover" />
+                <Image src="/logo.jpg" alt="Solray" width={28} height={28} className="w-full h-full object-cover" />
               </div>
               <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">Solray AI</span>
             </div>
