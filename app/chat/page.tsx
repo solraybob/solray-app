@@ -630,7 +630,7 @@ function ChatPageInner() {
             {sending && (
               <div className="flex justify-start animate-fade-in pl-2">
                 <img
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="thinking"
                   style={{
                     width: 48,
