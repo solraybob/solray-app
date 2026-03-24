@@ -87,6 +87,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
+  const [visibleSections, setVisibleSections] = useState(0);
   const { token, logout } = useAuth();
   const router = useRouter();
 
@@ -111,7 +112,6 @@ export default function TodayPage() {
             retrograde: p.retrograde,
           }));
           setForecast({ ...data, planets });
-          setTimeout(() => setBarsAnimated(true), 100);
         } else {
           // AI not ready yet, show mock with real planet positions
           const planets: Planet[] = Object.entries(data.transits || {}).slice(0, 10).map(([name, p]: [string, any]) => ({
@@ -122,7 +122,6 @@ export default function TodayPage() {
             retrograde: p.retrograde,
           }));
           setForecast({ ...MOCK_FORECAST, planets: planets.length > 0 ? planets : MOCK_FORECAST.planets });
-          setTimeout(() => setBarsAnimated(true), 100);
         }
       } catch {
         setForecast(MOCK_FORECAST);
@@ -132,6 +131,22 @@ export default function TodayPage() {
     }
     if (token) loadForecast();
   }, [token]);
+
+  // Staggered section reveal after data loads
+  useEffect(() => {
+    if (!forecast) return;
+    // Section 0: title (immediate)
+    // Section 1: reading (100ms)
+    // Section 2: energy bars (500ms)
+    // Section 3: tags (700ms)
+    // Section 4: planet strip (900ms)
+    const timings = [0, 100, 500, 700, 900];
+    timings.forEach((delay, index) => {
+      setTimeout(() => setVisibleSections(index + 1), delay);
+    });
+    // Animate bars 500ms after data loads
+    setTimeout(() => setBarsAnimated(true), 600);
+  }, [forecast]);
 
   return (
     <ProtectedRoute>
@@ -166,31 +181,53 @@ export default function TodayPage() {
             <p className="text-text-secondary font-body text-sm">{error}</p>
           </div>
         ) : forecast ? (
-          <div className="max-w-lg mx-auto px-5 animate-fade-in">
-            {/* Hero */}
-            <div className="pt-10 pb-8">
-              <h1 className="font-heading text-4xl leading-tight text-text-primary italic">
+          <div className="max-w-lg mx-auto px-5">
+
+            {/* HERO: Day Title — dominant, takes the stage */}
+            <div
+              className="pt-12 pb-10 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 1 ? 1 : 0,
+                transform: visibleSections >= 1 ? 'translateY(0)' : 'translateY(12px)',
+              }}
+            >
+              <h1
+                className="font-heading text-5xl leading-[1.15] text-text-primary"
+                style={{ fontWeight: 300, fontStyle: 'italic', letterSpacing: '-0.01em' }}
+              >
                 {forecast.day_title}
               </h1>
             </div>
 
-            {/* Reading */}
-            <div className="mb-8">
-              <p className="font-body text-text-secondary leading-relaxed text-sm">
+            {/* READING — single paragraph, generous breathing room */}
+            <div
+              className="pb-10 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 2 ? 1 : 0,
+                transform: visibleSections >= 2 ? 'translateY(0)' : 'translateY(12px)',
+              }}
+            >
+              <p className="font-body text-text-secondary text-base leading-[1.85]">
                 {forecast.reading}
               </p>
             </div>
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              <Tag>{forecast.tags.astrology}</Tag>
-              <Tag>{forecast.tags.human_design}</Tag>
-              <Tag>{forecast.tags.gene_keys}</Tag>
+            {/* Divider */}
+            <div
+              className="transition-all duration-500"
+              style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
+            >
+              <div className="border-t border-forest-border/40 mb-8" />
             </div>
 
-            {/* Energy Levels */}
-            <div className="bg-forest-card border border-forest-border rounded-2xl p-5 mb-6">
-              <h3 className="font-heading text-lg text-text-primary mb-4">Energy Today</h3>
+            {/* ENERGY BARS — arrive 500ms after title */}
+            <div
+              className="mb-8 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 3 ? 1 : 0,
+                transform: visibleSections >= 3 ? 'translateY(0)' : 'translateY(12px)',
+              }}
+            >
               <div className="space-y-3">
                 <EnergyBar label="Mental" value={forecast.energy.mental} animate={barsAnimated} />
                 <EnergyBar label="Emotional" value={forecast.energy.emotional} animate={barsAnimated} />
@@ -199,27 +236,46 @@ export default function TodayPage() {
               </div>
             </div>
 
-            {/* Planetary Strip */}
-            <div className="mb-6">
-              <h3 className="font-heading text-lg text-text-primary mb-3">Planets Now</h3>
+            {/* TAGS — small, understated */}
+            <div
+              className="flex flex-wrap gap-2 mb-8 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 4 ? 1 : 0,
+                transform: visibleSections >= 4 ? 'translateY(0)' : 'translateY(8px)',
+              }}
+            >
+              <Tag>{forecast.tags.astrology}</Tag>
+              <Tag>{forecast.tags.human_design}</Tag>
+              <Tag>{forecast.tags.gene_keys}</Tag>
+            </div>
+
+            {/* PLANET STRIP — subtle, at the bottom */}
+            <div
+              className="mb-6 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 5 ? 1 : 0,
+                transform: visibleSections >= 5 ? 'translateY(0)' : 'translateY(8px)',
+              }}
+            >
               <div className="overflow-x-auto -mx-5 px-5">
                 <div className="flex gap-3 pb-2" style={{ width: "max-content" }}>
                   {forecast.planets.map((planet) => (
                     <div
                       key={planet.name}
-                      className="bg-forest-card border border-forest-border rounded-xl p-3 text-center min-w-[72px]"
+                      className="bg-forest-card/60 border border-forest-border/60 rounded-xl p-3 text-center min-w-[64px]"
                     >
-                      <div className="text-2xl mb-1">{planet.symbol}</div>
-                      <div className="text-text-primary text-xs font-body">{planet.sign}</div>
-                      <div className="text-text-secondary text-[10px] font-body">{planet.degree}</div>
+                      <div className="text-xl mb-1 opacity-70">{planet.symbol}</div>
+                      <div className="text-text-secondary text-xs font-body">{planet.sign}</div>
+                      <div className="text-text-secondary/60 text-[10px] font-body">{planet.degree}</div>
                       {planet.retrograde && (
-                        <div className="text-amber-sun text-[9px] font-body mt-0.5">℞</div>
+                        <div className="text-amber-sun/70 text-[9px] font-body mt-0.5">℞</div>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+
           </div>
         ) : null}
 
@@ -231,7 +287,7 @@ export default function TodayPage() {
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-3 py-1.5 rounded-full border border-forest-border text-text-secondary text-xs font-body tracking-wide">
+    <span className="px-3 py-1.5 rounded-full border border-forest-border/60 text-text-secondary/70 text-xs font-body tracking-wide">
       {children}
     </span>
   );

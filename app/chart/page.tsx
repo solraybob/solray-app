@@ -239,6 +239,60 @@ const MOCK_CHART: ChartData = {
   },
 };
 
+// Pattern-style interpretation templates for Sun, Moon, Rising
+function buildCoreInterpretation(sun: string, moon: string, rising: string): string {
+  const sunLines: Record<string, string> = {
+    Aries: "You act before you think. The courage is real, but so is the cost of not waiting.",
+    Taurus: "You move slowly and mean it. Stability isn't stubbornness — it's how you build things that last.",
+    Gemini: "Your mind runs faster than the conversation. You're already three steps ahead, wondering if anyone will catch up.",
+    Cancer: "You absorb the emotional temperature of every room you enter. Most people don't notice. You can't turn it off.",
+    Leo: "You present with warmth and certainty. The private self questions more than the public one ever shows.",
+    Virgo: "You analyze before you act. Even when you appear decisive, the calculation never stops.",
+    Libra: "You see every side so clearly that choosing one feels like a betrayal of the others.",
+    Scorpio: "You don't just observe — you read underneath. You know what's really happening long before it's said out loud.",
+    Sagittarius: "You move toward meaning. When a situation stops teaching you something, you're already halfway out the door.",
+    Capricorn: "You build. Quietly, methodically, often alone. The ambition runs deeper than most people suspect.",
+    Aquarius: "You think at a distance from the crowd. The ideas feel obvious to you and unreachable to everyone else.",
+    Pisces: "You feel everything — and not just your own. The boundaries between you and others are thinner than people realize.",
+  };
+
+  const moonLines: Record<string, string> = {
+    Aries: "Emotionally, you react first and process later. The feelings arrive fast and honest.",
+    Taurus: "You need emotional safety before you can open. Push too hard and the door closes completely.",
+    Gemini: "You process feelings by talking them through. The words help you figure out what you actually feel.",
+    Cancer: "You feel everything twice as hard as you show. The softness runs deep, even when the surface looks composed.",
+    Leo: "You need to know the people you love are proud of you. Not often. Just sometimes. It matters more than you admit.",
+    Virgo: "You critique yourself privately in ways you'd never say aloud. The standard is always slightly out of reach.",
+    Libra: "You smooth things over instinctively, sometimes before you've even registered that you're upset.",
+    Scorpio: "You take it in, hold it, and wait. The emotional world is private territory. Access is earned, not assumed.",
+    Sagittarius: "You need room. Emotional confinement is worse for you than almost anything else.",
+    Capricorn: "You learned early that feelings were less useful than results. You still carry that bargain.",
+    Aquarius: "You observe your emotions from a slight distance. Not cold — just wired differently.",
+    Pisces: "The boundary between your feelings and everyone else's is porous. You pick things up without meaning to.",
+  };
+
+  const risingLines: Record<string, string> = {
+    Aries: "You arrive with energy before you arrive with words. People feel your presence before they hear your name.",
+    Taurus: "You project calm even when everything inside is moving. The steadiness is real, and also sometimes a mask.",
+    Gemini: "You adapt to the room instantly. People see what they need to see — and you give it to them naturally.",
+    Cancer: "You lead with warmth. Strangers feel safe around you before you've said anything significant.",
+    Leo: "You are noticed. That's not ego — it's just how the light falls on you when you enter a space.",
+    Virgo: "You present as precise and considered. The impression you make is careful, even when you're not trying.",
+    Libra: "You make people feel included. The grace is genuine, but it's also armor — few get past it easily.",
+    Scorpio: "You read the room completely before speaking. The intensity is quiet but unmistakable.",
+    Sagittarius: "You project openness and forward motion. People want to follow you before they know where you're going.",
+    Capricorn: "You project authority. Not loudly — just structurally. People assume competence before you've proven it.",
+    Aquarius: "You come across as independent, a little electric, a little removed. It's exactly what you're going for.",
+    Pisces: "You appear soft and approachable. The depth underneath takes people by surprise.",
+  };
+
+  const sunLine = sunLines[sun] || `The ${sun} Sun shapes how you move through the world.`;
+  const moonLine = moonLines[moon] || `The ${moon} Moon is how you feel things when no one is watching.`;
+  const risingLine = risingLines[rising] || `${rising} Rising is the door people walk through to find you.`;
+
+  return `${sunLine} That's the ${sun} Sun.\n\n${moonLine} That's the ${moon} Moon.\n\n${risingLine} That's the ${rising} Rising.`;
+}
+
 function CollapsibleSection({
   title,
   children,
@@ -270,6 +324,86 @@ function CollapsibleSection({
         </svg>
       </button>
       {open && <div className="px-5 pb-5">{children}</div>}
+    </div>
+  );
+}
+
+function NatalSection({ planets }: { planets: NatalPlanet[] }) {
+  const [showAll, setShowAll] = useState(false);
+
+  const corePlanets = ["Sun", "Moon", "ASC"];
+  const core = planets.filter((p) => corePlanets.includes(p.planet));
+  const rest = planets.filter((p) => !corePlanets.includes(p.planet));
+
+  const sun = core.find((p) => p.planet === "Sun");
+  const moon = core.find((p) => p.planet === "Moon");
+  const rising = core.find((p) => p.planet === "ASC");
+
+  const interpretation =
+    sun && moon && rising
+      ? buildCoreInterpretation(sun.sign, moon.sign, rising.sign)
+      : null;
+
+  return (
+    <div className="mt-2">
+      {/* Core trio — prominent */}
+      <div className="space-y-1 mb-5">
+        {core.map((p) => (
+          <div
+            key={p.planet}
+            className="flex items-center gap-3 py-2.5 border-b border-forest-border/50 last:border-0"
+          >
+            <span className="text-2xl w-8 text-center">{p.symbol}</span>
+            <span className="text-text-primary font-body font-medium text-base flex-1">{p.planet === "ASC" ? "Rising" : p.planet}</span>
+            <span className="text-amber-sun font-heading text-lg">{p.sign}</span>
+            <span className="text-text-secondary font-body text-xs">{p.degree}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Pattern-style interpretation */}
+      {interpretation && (
+        <div className="mb-6 p-4 bg-forest-card/40 rounded-xl border border-forest-border/30">
+          {interpretation.split('\n\n').map((line, i) => (
+            <p key={i} className={`font-body text-text-secondary text-sm leading-relaxed ${i > 0 ? 'mt-3' : ''}`}>
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Collapsible: rest of planets */}
+      <button
+        onClick={() => setShowAll(!showAll)}
+        className="flex items-center gap-2 text-text-secondary text-xs font-body tracking-wider uppercase mb-3 hover:text-text-primary transition-colors"
+      >
+        <span>{showAll ? "Hide planets" : "See all planets"}</span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {showAll && (
+        <div className="space-y-1">
+          {rest.map((p) => (
+            <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
+              <span className="text-xl w-7 text-center opacity-70">{p.symbol}</span>
+              <span className="text-text-primary font-body text-sm flex-1">{p.planet}</span>
+              <span className="text-text-secondary font-body text-sm">{p.sign}</span>
+              <span className="text-text-secondary font-body text-xs">{p.degree}</span>
+              <span className="text-text-secondary font-body text-xs">H{p.house}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -319,19 +453,9 @@ export default function ChartPage() {
           </div>
         ) : chart ? (
           <div className="max-w-lg mx-auto px-5 animate-fade-in">
-            {/* Natal Chart */}
+            {/* Natal Chart — open by default, shows Sun/Moon/Rising hero */}
             <CollapsibleSection title="Natal Chart" defaultOpen={true}>
-              <div className="space-y-2 mt-2">
-                {chart.natal.map((p) => (
-                  <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
-                    <span className="text-xl w-7 text-center">{p.symbol}</span>
-                    <span className="text-text-primary font-body text-sm flex-1">{p.planet}</span>
-                    <span className="text-text-secondary font-body text-sm">{p.sign}</span>
-                    <span className="text-text-secondary font-body text-xs">{p.degree}</span>
-                    <span className="text-text-secondary font-body text-xs">H{p.house}</span>
-                  </div>
-                ))}
-              </div>
+              <NatalSection planets={chart.natal} />
             </CollapsibleSection>
 
             {/* Human Design */}
@@ -368,7 +492,7 @@ export default function ChartPage() {
                   <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Key Channels</p>
                   <div className="space-y-1">
                     {chart.human_design.key_channels.map((ch) => (
-                      <p key={ch} className="text-text-primary text-sm font-body">. {ch}</p>
+                      <p key={ch} className="text-text-primary text-sm font-body">· {ch}</p>
                     ))}
                   </div>
                 </div>
@@ -382,7 +506,7 @@ export default function ChartPage() {
                   <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                      <span className="text-text-secondary text-xs font-body">. Gate {gk!.gate}</span>
+                      <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
