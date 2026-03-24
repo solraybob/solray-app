@@ -337,19 +337,32 @@ function NatalSection({ planets }: { planets: NatalPlanet[] }) {
 
   return (
     <div className="mt-2">
-      {/* Core trio — prominent */}
-      <div className="space-y-1 mb-5">
-        {core.map((p) => (
-          <div
-            key={p.planet}
-            className="flex items-center gap-3 py-2.5 border-b border-forest-border/50 last:border-0"
-          >
-            <span className="text-2xl w-8 text-center">{p.symbol}</span>
-            <span className="text-text-primary font-body font-medium text-base flex-1">{p.planet === "ASC" ? "Rising" : p.planet}</span>
-            <span className="text-amber-sun font-heading text-lg">{p.sign}</span>
-            <span className="text-text-secondary font-body text-xs">{p.degree}</span>
-          </div>
-        ))}
+      {/* Core trio — very prominent */}
+      <div className="space-y-4 mb-6">
+        {core.map((p) => {
+          const label = p.planet === "ASC" ? "Rising" : p.planet;
+          const subtitles: Record<string, string> = {
+            Sun: "Your core identity — how you shine",
+            Moon: "Your emotional nature — how you feel",
+            Rising: "Your outer mask — how the world sees you",
+          };
+          return (
+            <div
+              key={p.planet}
+              className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0"
+            >
+              <span className="text-3xl w-10 text-center leading-none">{p.symbol}</span>
+              <div className="flex-1">
+                <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
+                <p className="text-text-secondary/50 text-[10px] font-body">{subtitles[label]}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-amber-sun font-heading text-2xl leading-tight">{p.sign}</p>
+                <p className="text-text-secondary/60 font-body text-[10px]">{p.degree}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Pattern-style interpretation */}
@@ -457,7 +470,13 @@ export default function ChartPage() {
             {/* Human Design */}
             <CollapsibleSection title="Human Design">
               <div className="space-y-4 mt-2">
-                <HDRow label="Type" value={chart.human_design.type} highlight />
+                {/* Type — hero display */}
+                {chart.human_design.type && (
+                  <div className="pb-4 mb-1 border-b border-forest-border/40">
+                    <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">Type</p>
+                    <p className="text-amber-sun font-heading text-3xl leading-tight">{chart.human_design.type}</p>
+                  </div>
+                )}
                 <HDRow label="Strategy" value={chart.human_design.strategy} />
                 <HDRow label="Authority" value={chart.human_design.authority} />
                 <HDRow label="Profile" value={chart.human_design.profile} />

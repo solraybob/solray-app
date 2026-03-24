@@ -162,9 +162,13 @@ function ChatPageInner() {
       try {
         const data = await apiFetch("/forecast/today", {}, forToken);
 
-        if (data?.morning_greeting) {
-          content = data.morning_greeting;
+        // Use the AI morning greeting if it exists and is specific (more than 10 words)
+        const mg: string = data?.morning_greeting || "";
+        const wordCount = mg.trim().split(/\s+/).length;
+        if (mg && wordCount > 10) {
+          content = mg;
         } else {
+          // Build a rich greeting from today's transits + tightest aspect
           let sunSign = "";
           let moonSign = "";
 
@@ -185,7 +189,9 @@ function ChatPageInner() {
             moonSign = t.moon?.sign || t.Moon?.sign || "";
           }
 
+          // Find the tightest (most exact) natal aspect active today
           let aspectStr = "";
+          let aspectQuestion = "";
           if (Array.isArray(data?.aspects) && data.aspects.length > 0) {
             const sorted = [...data.aspects].sort(
               (a: { orb?: number }, b: { orb?: number }) =>
@@ -203,25 +209,36 @@ function ChatPageInner() {
             const planet = top.planet || top.transiting_planet || "";
             const aspectType = top.aspect || top.type || "";
             const target = top.target || top.natal_planet || "";
-            const orb =
-              top.orb != null
-                ? ` within ${Math.round(top.orb * 10) / 10} degrees`
-                : "";
             if (planet && aspectType && target) {
-              aspectStr = `${planet} ${aspectType}s your natal ${target} today${orb}.`;
+              aspectStr = `${planet} ${aspectType}s your natal ${target} today.`;
+              // Frame a personal question based on the planet involved
+              const planetQ: Record<string, string> = {
+                mars: "Where are you pushing against something that might need to breathe?",
+                venus: "What relationship or desire has been quietly asking for your attention?",
+                mercury: "What conversation have you been rehearsing but not yet had?",
+                jupiter: "What is expanding in your life that you haven't fully acknowledged yet?",
+                saturn: "What structure in your life is being tested right now?",
+                uranus: "What change is arriving that part of you already knew was coming?",
+                neptune: "What have you been sensing that you haven't quite put into words?",
+                pluto: "What are you ready to let go of, even if it's uncomfortable?",
+                moon: "What are you feeling right now that you haven't allowed yourself to feel fully?",
+                sun: "What part of yourself are you being asked to step into more completely?",
+              };
+              const pKey = planet.toLowerCase();
+              aspectQuestion = planetQ[pKey] || "What does your body already know about this?";
             }
           }
 
-          if (sunSign || moonSign) {
-            const skyLine = [
-              sunSign && `Sun in ${sunSign}`,
-              moonSign && `Moon in ${moonSign}`,
-            ]
-              .filter(Boolean)
-              .join(", ");
-            content = `${skyLine}.${aspectStr ? " " + aspectStr : ""} What does your body already know about this?`;
-          } else if (aspectStr) {
-            content = `${aspectStr} What does your body already know about this?`;
+          // Compose the greeting
+          const skyParts = [sunSign && `Sun in ${sunSign}`, moonSign && `Moon in ${moonSign}`]
+            .filter(Boolean)
+            .join(", ");
+
+          if (aspectStr) {
+            const skyIntro = skyParts ? `${skyParts}. ` : "";
+            content = `${skyIntro}${aspectStr} ${aspectQuestion}`;
+          } else if (skyParts) {
+            content = `${skyParts}. The sky is holding something specific for you today. What's already stirring?`;
           } else {
             content = "The sky is moving today. What's stirring in you?";
           }
@@ -231,6 +248,7 @@ function ChatPageInner() {
           setEnergyTag(data.tags.human_design);
         }
       } catch {
+        // Forecast API failed — try to build something personal from the user profile
         try {
           const user = await apiFetch("/users/me", {}, forToken);
           const natalSun =
@@ -243,10 +261,7 @@ function ChatPageInner() {
             "";
 
           if (natalSun || natalMoon) {
-            const parts = [
-              natalSun && `${natalSun} Sun`,
-              natalMoon && `${natalMoon} Moon`,
-            ]
+            const parts = [natalSun && `${natalSun} Sun`, natalMoon && `${natalMoon} Moon`]
               .filter(Boolean)
               .join(", ");
             content = `${parts}. The morning is yours. What needs clarity today?`;

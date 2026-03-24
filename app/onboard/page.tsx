@@ -6,8 +6,80 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-
 const TOTAL_STEPS = 5;
+
+// Magical blueprint calculation loading screen
+const BLUEPRINT_STEPS = [
+  "Mapping your astrology…",
+  "Deriving your Human Design…",
+  "Unlocking your Gene Keys…",
+  "Weaving your blueprint together…",
+];
+
+function BlueprintLoader() {
+  const [visibleCount, setVisibleCount] = useState(1);
+
+  useEffect(() => {
+    const intervals: ReturnType<typeof setTimeout>[] = [];
+    BLUEPRINT_STEPS.forEach((_, i) => {
+      if (i === 0) return; // first is visible immediately
+      intervals.push(
+        setTimeout(() => setVisibleCount(i + 1), i * 800)
+      );
+    });
+    return () => intervals.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-forest-deep flex flex-col items-center justify-center px-8">
+      {/* Subtle pulsing orb */}
+      <div
+        className="w-20 h-20 rounded-full mb-10"
+        style={{
+          background: "radial-gradient(circle at 40% 35%, #e8821a55, #0a1f1200 70%)",
+          border: "1px solid rgba(232,130,26,0.2)",
+          animation: "pulse 2s ease-in-out infinite",
+          boxShadow: "0 0 40px rgba(232,130,26,0.1)",
+        }}
+      />
+      <div className="space-y-4 w-full max-w-xs">
+        {BLUEPRINT_STEPS.map((text, i) => (
+          <div
+            key={i}
+            className="transition-all duration-700"
+            style={{
+              opacity: i < visibleCount ? 1 : 0,
+              transform: i < visibleCount ? "translateY(0)" : "translateY(8px)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="text-amber-sun text-sm"
+                style={{ opacity: i < visibleCount ? 1 : 0 }}
+              >
+                {i < visibleCount - 1 ? "✓" : "·"}
+              </span>
+              <p
+                className="font-body text-sm"
+                style={{
+                  color: i === visibleCount - 1 ? "#f5f0e8" : "#8a9e8d",
+                }}
+              >
+                {text}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.08); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function OnboardPage() {
   const [step, setStep] = useState(1);
@@ -25,6 +97,7 @@ export default function OnboardPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [calculatingBlueprint, setCalculatingBlueprint] = useState(false);
   const { setToken } = useAuth();
   const router = useRouter();
 
@@ -128,10 +201,14 @@ export default function OnboardPage() {
       }
       const data = await res.json();
       setToken(data.token || data.access_token, data.profile || data.user || { id: data.user_id, email, name });
+      // Show magical blueprint loading screen for at least 3.5 seconds
+      setCalculatingBlueprint(true);
+      await new Promise((resolve) => setTimeout(resolve, 3500));
       router.push("/today");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : "Something went wrong. Please try again.";
       setError(msg);
+      setCalculatingBlueprint(false);
     } finally {
       setLoading(false);
     }
@@ -139,6 +216,9 @@ export default function OnboardPage() {
 
   return (
     <div className="min-h-screen bg-forest-deep flex flex-col">
+      {/* Magical blueprint calculation screen */}
+      {calculatingBlueprint && <BlueprintLoader />}
+
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-12 pb-6">
         <div className="flex items-center gap-2">
