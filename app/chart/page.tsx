@@ -20,6 +20,7 @@ interface HumanDesign {
   strategy: string;
   authority: string;
   profile: string;
+  incarnation_cross: string;
   defined_centres: string[];
   undefined_centres: string[];
   key_channels: string[];
@@ -69,6 +70,22 @@ function formatDegree(decimalDegree: number): string {
   return `${deg}°${String(minutes).padStart(2, "0")}'`;
 }
 
+// Normalise HD centre names from backend keys to display labels
+function normaliseCentreName(key: string): string {
+  const MAP: Record<string, string> = {
+    G: "G Centre",
+    SolarPlexus: "Solar Plexus",
+    Head: "Head",
+    Ajna: "Ajna",
+    Throat: "Throat",
+    Heart: "Heart / Ego",
+    Sacral: "Sacral",
+    Spleen: "Spleen",
+    Root: "Root",
+  };
+  return MAP[key] ?? key;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseBlueprint(blueprint: any): ChartData {
   const natal = blueprint?.astrology?.natal;
@@ -115,21 +132,44 @@ function parseBlueprint(blueprint: any): ChartData {
   let undefinedCentres: string[] = [];
   if (hd?.defined_centres) {
     if (Array.isArray(hd.defined_centres)) {
-      definedCentres = hd.defined_centres;
+      definedCentres = hd.defined_centres.map(normaliseCentreName);
     } else if (typeof hd.defined_centres === 'object') {
-      definedCentres = Object.entries(hd.defined_centres).filter(([,v]) => v).map(([k]) => k);
-      undefinedCentres = Object.entries(hd.defined_centres).filter(([,v]) => !v).map(([k]) => k);
+      definedCentres = Object.entries(hd.defined_centres).filter(([,v]) => v).map(([k]) => normaliseCentreName(k));
+      undefinedCentres = Object.entries(hd.defined_centres).filter(([,v]) => !v).map(([k]) => normaliseCentreName(k));
     }
   }
   if (hd?.undefined_centres && Array.isArray(hd.undefined_centres)) {
-    undefinedCentres = hd.undefined_centres;
+    undefinedCentres = hd.undefined_centres.map(normaliseCentreName);
   }
+
+  // Expand numeric profile to include descriptive name
+  const PROFILE_NAMES: Record<string, string> = {
+    "1/3": "Investigator / Martyr",
+    "1/4": "Investigator / Opportunist",
+    "2/4": "Hermit / Opportunist",
+    "2/5": "Hermit / Heretic",
+    "3/5": "Martyr / Heretic",
+    "3/6": "Martyr / Role Model",
+    "4/1": "Opportunist / Investigator",
+    "4/6": "Opportunist / Role Model",
+    "5/1": "Heretic / Investigator",
+    "5/2": "Heretic / Hermit",
+    "6/2": "Role Model / Hermit",
+    "6/3": "Role Model / Martyr",
+  };
+  const rawProfile = hd?.profile ?? "";
+  const profileDisplay = rawProfile && PROFILE_NAMES[rawProfile]
+    ? `${rawProfile} — ${PROFILE_NAMES[rawProfile]}`
+    : rawProfile;
+
+  const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
 
   const humanDesign: HumanDesign = {
     type: hd?.type ?? "",
     strategy: hd?.strategy ?? "",
     authority: hd?.authority ?? "",
-    profile: hd?.profile ?? "",
+    profile: profileDisplay,
+    incarnation_cross: typeof crossLabel === "string" ? crossLabel : String(crossLabel),
     defined_centres: definedCentres,
     undefined_centres: undefinedCentres,
     key_channels: keyChannels,
@@ -163,7 +203,7 @@ function parseBlueprint(blueprint: any): ChartData {
       { name: "Life's Work", gateKey: String(cc.Sun?.gate     || 64) }, // Conscious Sun
       { name: "Evolution",   gateKey: String(cc.Earth?.gate   || 63) }, // Conscious Earth
       { name: "Radiance",    gateKey: String(uc.Sun?.gate     || 35) }, // Design Sun
-      { name: "Purpose",     gateKey: String(uc.Earth?.gate   || 5)  }, // Design Earth
+      { name: "Vocation",    gateKey: String(uc.Earth?.gate   || 5)  }, // Design Earth
       { name: "Culture",     gateKey: String(uc.Jupiter?.gate || 45) }, // Design Jupiter
       { name: "Pearl",       gateKey: String(uc.Moon?.gate    || 52) }, // Design Moon
     ];
@@ -190,70 +230,21 @@ function parseBlueprint(blueprint: any): ChartData {
   return { natal: planetsRaw, human_design: humanDesign, gene_keys: geneKeys };
 }
 
-const MOCK_CHART: ChartData = {
-  natal: [
-    { planet: "Sun", symbol: "☉", sign: "Scorpio", degree: "14°32'", house: 8 },
-    { planet: "Moon", symbol: "☽", sign: "Cancer", degree: "3°17'", house: 5 },
-    { planet: "Mercury", symbol: "☿", sign: "Scorpio", degree: "2°45'", house: 8 },
-    { planet: "Venus", symbol: "♀", sign: "Libra", degree: "27°08'", house: 7 },
-    { planet: "Mars", symbol: "♂", sign: "Virgo", degree: "19°54'", house: 7 },
-    { planet: "Jupiter", symbol: "♃", sign: "Pisces", degree: "8°22'", house: 1 },
-    { planet: "Saturn", symbol: "♄", sign: "Capricorn", degree: "22°01'", house: 10 },
-    { planet: "Uranus", symbol: "♅", sign: "Capricorn", degree: "4°38'", house: 10 },
-    { planet: "Neptune", symbol: "♆", sign: "Capricorn", degree: "12°15'", house: 10 },
-    { planet: "Pluto", symbol: "♇", sign: "Scorpio", degree: "17°33'", house: 9 },
-    { planet: "ASC", symbol: "↑", sign: "Pisces", degree: "12°44'", house: 1 },
-    { planet: "MC", symbol: "↑", sign: "Sagittarius", degree: "21°19'", house: 10 },
-  ],
-  human_design: {
-    type: "Projector",
-    strategy: "Wait for the invitation",
-    authority: "Splenic",
-    profile: "1/3. Investigator / Martyr",
-    defined_centres: ["Spleen", "G Centre", "Heart"],
-    undefined_centres: ["Root", "Sacral", "Solar Plexus", "Throat", "Ajna", "Head"],
-    key_channels: ["Channel 57-10: Perfected Form", "Channel 26-44: Surrender"],
-  },
-  gene_keys: {
-    lifes_work: {
-      name: "Life's Work",
-      gate: 57,
-      shadow: "Unease",
-      gift: "Intuition",
-      siddhi: "Clarity",
-    },
-    evolution: {
-      name: "Evolution",
-      gate: 51,
-      shadow: "Agitation",
-      gift: "Initiative",
-      siddhi: "Awakening",
-    },
-    radiance: {
-      name: "Radiance",
-      gate: 44,
-      shadow: "Interference",
-      gift: "Teamwork",
-      siddhi: "Synarchy",
-    },
-  },
-};
-
 // Pattern-style interpretation templates for Sun, Moon, Rising
 function buildCoreInterpretation(sun: string, moon: string, rising: string): string {
   const sunLines: Record<string, string> = {
     Aries: "You act before you think. The courage is real, but so is the cost of not waiting.",
-    Taurus: "You move slowly and mean it. Stability isn't stubbornness — it's how you build things that last.",
+    Taurus: "You move slowly and mean it. Stability isn't stubbornness. It's how you build things that last.",
     Gemini: "Your mind runs faster than the conversation. You're already three steps ahead, wondering if anyone will catch up.",
     Cancer: "You absorb the emotional temperature of every room you enter. Most people don't notice. You can't turn it off.",
     Leo: "You present with warmth and certainty. The private self questions more than the public one ever shows.",
     Virgo: "You analyze before you act. Even when you appear decisive, the calculation never stops.",
     Libra: "You see every side so clearly that choosing one feels like a betrayal of the others.",
-    Scorpio: "You don't just observe — you read underneath. You know what's really happening long before it's said out loud.",
+    Scorpio: "You don't just observe. You read underneath. You know what's really happening long before it's said out loud.",
     Sagittarius: "You move toward meaning. When a situation stops teaching you something, you're already halfway out the door.",
     Capricorn: "You build. Quietly, methodically, often alone. The ambition runs deeper than most people suspect.",
     Aquarius: "You think at a distance from the crowd. The ideas feel obvious to you and unreachable to everyone else.",
-    Pisces: "You feel everything — and not just your own. The boundaries between you and others are thinner than people realize.",
+    Pisces: "You feel everything, and not just your own. The boundaries between you and others are thinner than people realize.",
   };
 
   const moonLines: Record<string, string> = {
@@ -267,21 +258,21 @@ function buildCoreInterpretation(sun: string, moon: string, rising: string): str
     Scorpio: "You take it in, hold it, and wait. The emotional world is private territory. Access is earned, not assumed.",
     Sagittarius: "You need room. Emotional confinement is worse for you than almost anything else.",
     Capricorn: "You learned early that feelings were less useful than results. You still carry that bargain.",
-    Aquarius: "You observe your emotions from a slight distance. Not cold — just wired differently.",
+    Aquarius: "You observe your emotions from a slight distance. Not cold, just wired differently.",
     Pisces: "The boundary between your feelings and everyone else's is porous. You pick things up without meaning to.",
   };
 
   const risingLines: Record<string, string> = {
     Aries: "You arrive with energy before you arrive with words. People feel your presence before they hear your name.",
     Taurus: "You project calm even when everything inside is moving. The steadiness is real, and also sometimes a mask.",
-    Gemini: "You adapt to the room instantly. People see what they need to see — and you give it to them naturally.",
+    Gemini: "You adapt to the room instantly. People see what they need to see, and you give it to them naturally.",
     Cancer: "You lead with warmth. Strangers feel safe around you before you've said anything significant.",
-    Leo: "You are noticed. That's not ego — it's just how the light falls on you when you enter a space.",
+    Leo: "You are noticed. That's not ego. It's just how the light falls on you when you enter a space.",
     Virgo: "You present as precise and considered. The impression you make is careful, even when you're not trying.",
-    Libra: "You make people feel included. The grace is genuine, but it's also armor — few get past it easily.",
+    Libra: "You make people feel included. The grace is genuine, but it's also armor. Few get past it easily.",
     Scorpio: "You read the room completely before speaking. The intensity is quiet but unmistakable.",
     Sagittarius: "You project openness and forward motion. People want to follow you before they know where you're going.",
-    Capricorn: "You project authority. Not loudly — just structurally. People assume competence before you've proven it.",
+    Capricorn: "You project authority. Not loudly, just structurally. People assume competence before you've proven it.",
     Aquarius: "You come across as independent, a little electric, a little removed. It's exactly what you're going for.",
     Pisces: "You appear soft and approachable. The depth underneath takes people by surprise.",
   };
@@ -411,6 +402,7 @@ function NatalSection({ planets }: { planets: NatalPlanet[] }) {
 export default function ChartPage() {
   const [chart, setChart] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const { token } = useAuth();
 
   useEffect(() => {
@@ -423,14 +415,14 @@ export default function ChartPage() {
             setChart(parsed);
           } catch (parseErr) {
             console.error("Blueprint parse error:", parseErr);
-            setChart(MOCK_CHART);
+            setError("Could not parse your blueprint. Please try again.");
           }
         } else {
-          setChart(MOCK_CHART);
+          setError("Your blueprint is still being calculated. Check back shortly.");
         }
       } catch (err) {
         console.error("Chart load error:", err);
-        setChart(MOCK_CHART);
+        setError("Unable to load your chart. Please check your connection and try again.");
       } finally {
         setLoading(false);
       }
@@ -451,6 +443,10 @@ export default function ChartPage() {
           <div className="flex items-center justify-center pt-16">
             <LoadingSpinner size="lg" />
           </div>
+        ) : error ? (
+          <div className="max-w-lg mx-auto px-5 pt-12 text-center">
+            <p className="text-text-secondary font-body text-sm leading-relaxed">{error}</p>
+          </div>
         ) : chart ? (
           <div className="max-w-lg mx-auto px-5 animate-fade-in">
             {/* Natal Chart — open by default, shows Sun/Moon/Rising hero */}
@@ -465,6 +461,9 @@ export default function ChartPage() {
                 <HDRow label="Strategy" value={chart.human_design.strategy} />
                 <HDRow label="Authority" value={chart.human_design.authority} />
                 <HDRow label="Profile" value={chart.human_design.profile} />
+                {chart.human_design.incarnation_cross && (
+                  <HDRow label="Cross" value={chart.human_design.incarnation_cross} />
+                )}
 
                 <div>
                   <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Defined Centres</p>

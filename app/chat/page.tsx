@@ -337,7 +337,7 @@ function ChatPageInner() {
               const reply: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: `I feel the thread between you and ${ctx.soulName}. Your energies hold a particular kind of mirror for each other — one that invites both recognition and growth.`,
+                content: `I feel the thread between you and ${ctx.soulName}. Your energies hold a particular kind of mirror for each other, one that invites both recognition and growth.`,
                 timestamp: new Date().toISOString(),
               };
               setMessages((prev) => [...prev, reply]);

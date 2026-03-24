@@ -87,17 +87,18 @@ function AddSoulForm({ onClose, onSave, token }: AddSoulFormProps) {
           body: JSON.stringify({
             name: name.trim(),
             birth_date: birthDate,
-            birth_time: birthTime || undefined,
+            birth_time: birthTime || "12:00",
             birth_city: birthCity.trim(),
           }),
         },
         token
       );
-      blueprint = data;
-      sun_sign = data?.sun_sign || data?.natal_chart?.sun?.sign || data?.sun?.sign;
-      moon_sign = data?.moon_sign || data?.natal_chart?.moon?.sign || data?.moon?.sign;
-      rising_sign = data?.rising_sign || data?.natal_chart?.rising?.sign || data?.rising?.sign;
-      hd_type = data?.hd_type || data?.human_design?.type;
+      blueprint = data?.blueprint || data;
+      const profile = data?.profile || data;
+      sun_sign = profile?.sun_sign || data?.sun_sign;
+      moon_sign = profile?.moon_sign || data?.moon_sign;
+      rising_sign = profile?.rising_sign || data?.rising_sign;
+      hd_type = profile?.hd_type || data?.hd_type || data?.human_design?.type;
     } catch {
       // Blueprint calc failed – we still save birth data
     }
@@ -311,24 +312,25 @@ export default function SoulsPage() {
             body: JSON.stringify({
               name: soul.name,
               birth_date: soul.birth_date,
-              birth_time: soul.birth_time || undefined,
+              birth_time: soul.birth_time || "12:00",
               birth_city: soul.birth_city,
             }),
           },
           token
         );
-        soulBlueprint = data;
+        soulBlueprint = data?.blueprint || data;
+        const profile = data?.profile || data;
 
         // Cache the result
         const updated = souls.map((s) =>
           s.id === soul.id
             ? {
                 ...s,
-                blueprint: data,
-                sun_sign: s.sun_sign || data?.sun_sign || data?.natal_chart?.sun?.sign,
-                moon_sign: s.moon_sign || data?.moon_sign || data?.natal_chart?.moon?.sign,
-                rising_sign: s.rising_sign || data?.rising_sign || data?.natal_chart?.rising?.sign,
-                hd_type: s.hd_type || data?.hd_type || data?.human_design?.type,
+                blueprint: soulBlueprint,
+                sun_sign: s.sun_sign || profile?.sun_sign || data?.sun_sign,
+                moon_sign: s.moon_sign || profile?.moon_sign || data?.moon_sign,
+                rising_sign: s.rising_sign || profile?.rising_sign || data?.rising_sign,
+                hd_type: s.hd_type || profile?.hd_type || data?.hd_type || data?.human_design?.type,
               }
             : s
         );

@@ -85,7 +85,6 @@ function EnergyBar({ label, value, animate }: { label: string; value: number; an
 export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
   const { token, logout } = useAuth();
@@ -176,10 +175,6 @@ export default function TodayPage() {
           <div className="flex items-center justify-center pt-32">
             <LoadingSpinner size="lg" />
           </div>
-        ) : error ? (
-          <div className="max-w-lg mx-auto px-5 pt-16 text-center">
-            <p className="text-text-secondary font-body text-sm">{error}</p>
-          </div>
         ) : forecast ? (
           <div className="max-w-lg mx-auto px-5">
 
@@ -199,7 +194,7 @@ export default function TodayPage() {
               </h1>
             </div>
 
-            {/* READING — single paragraph, generous breathing room */}
+            {/* READING — supports single or multi-paragraph, generous breathing room */}
             <div
               className="pb-10 transition-all duration-700"
               style={{
@@ -207,9 +202,11 @@ export default function TodayPage() {
                 transform: visibleSections >= 2 ? 'translateY(0)' : 'translateY(12px)',
               }}
             >
-              <p className="font-body text-text-secondary text-base leading-[1.85]">
-                {forecast.reading}
-              </p>
+              {forecast.reading.split(/\n\n+/).map((para, i) => (
+                <p key={i} className={`font-body text-text-secondary text-base leading-[1.85] ${i > 0 ? 'mt-5' : ''}`}>
+                  {para.trim()}
+                </p>
+              ))}
             </div>
 
             {/* Divider */}
