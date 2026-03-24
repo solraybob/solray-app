@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 
+// Capture client-side navigation transitions
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 if (SENTRY_DSN) {
