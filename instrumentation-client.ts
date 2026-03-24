@@ -7,7 +7,7 @@ if (SENTRY_DSN) {
     dsn: SENTRY_DSN,
     tracesSampleRate: 0.1,
     environment: process.env.NODE_ENV,
-    // Only capture errors in production/preview, not local dev noise
+    // Suppress dev noise — only track errors in production
     beforeSend(event) {
       if (process.env.NODE_ENV === "development") {
         return null;
