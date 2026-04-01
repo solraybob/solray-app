@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
+import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -463,6 +464,17 @@ export default function TodayPage() {
                 <EnergyBar label="Physical" value={forecast.energy.physical} animate={barsAnimated} />
                 <EnergyBar label="Intuitive" value={forecast.energy.intuitive} animate={barsAnimated} />
               </div>
+            </div>
+
+            {/* CURRENT CYCLES */}
+            <div
+              className="transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 4 ? 1 : 0,
+                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
+              }}
+            >
+              <CurrentCycles token={token} />
             </div>
 
             {/* TAGS */}
