@@ -50,7 +50,8 @@ function clamp(v: number, min = 0, max = 100) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
-  const planets = blueprint?.astrology?.natal?.planets ?? {};
+  const natal = blueprint?.astrology?.natal ?? {};
+  const planets = natal?.planets ?? {};
   const hd = blueprint?.human_design ?? {};
 
   let fire = 0, earth = 0, air = 0, water = 0;
