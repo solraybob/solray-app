@@ -7,15 +7,15 @@ import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Types
 
 interface RadarValues {
   fire: number;
   earth: number;
   air: number;
   water: number;
-  defined: number;
-  intuitive: number;
+  spirit: number;
+  fixed: number;
 }
 
 interface ProfileData {
@@ -37,27 +37,27 @@ interface ProfileData {
   radar: RadarValues;
 }
 
-// ─── Sign classification ──────────────────────────────────────────────────────
+// Sign classification
 
 const FIRE_SIGNS = new Set(["Aries", "Leo", "Sagittarius"]);
 const EARTH_SIGNS = new Set(["Taurus", "Virgo", "Capricorn"]);
 const AIR_SIGNS = new Set(["Gemini", "Libra", "Aquarius"]);
 const WATER_SIGNS = new Set(["Cancer", "Scorpio", "Pisces"]);
+const FIXED_SIGNS = new Set(["Taurus", "Leo", "Scorpio", "Aquarius"]);
 
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
+function computeRadar(blueprint: any): RadarValues {
   const natal = blueprint?.astrology?.natal ?? {};
   const planets = natal?.planets ?? {};
-  const hd = blueprint?.human_design ?? {};
 
   let fire = 0, earth = 0, air = 0, water = 0;
   const POINTS_PER_PLANET = 14;
 
-  // Count planets
+  // Count planets by element
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
     const sign = p?.sign ?? "";
     if (FIRE_SIGNS.has(sign)) fire += POINTS_PER_PLANET;
@@ -66,7 +66,7 @@ function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
     else if (WATER_SIGNS.has(sign)) water += POINTS_PER_PLANET;
   });
 
-  // Count ASC and MC (chart angles carry extra weight)
+  // Chart angles carry extra weight
   const ASC_POINTS = 20;
   const ascSign = (natal?.ascendant as Record<string, string> | undefined)?.sign ?? "";
   const mcSign = (natal?.mc as Record<string, string> | undefined)?.sign ?? "";
@@ -78,46 +78,36 @@ function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
     else if (WATER_SIGNS.has(angleSign)) water += ASC_POINTS;
   });
 
-  // Defined centres score
-  let definedCount = 0;
-  const TOTAL_CENTRES = 9;
-  if (hd.defined_centres) {
-    if (Array.isArray(hd.defined_centres)) {
-      definedCount = hd.defined_centres.length;
-    } else if (typeof hd.defined_centres === "object") {
-      definedCount = Object.values(hd.defined_centres).filter(Boolean).length;
-    }
-  }
-  const defined = clamp((definedCount / TOTAL_CENTRES) * 100);
+  // Spirit: outer planet prominence in water or air signs
+  // Neptune (home: Pisces), Uranus (home: Aquarius), Pluto (intensifies: Scorpio)
+  const outerPlanetKeys = ["Neptune", "Uranus", "Pluto"];
+  let outerInReceptiveSign = 0;
+  outerPlanetKeys.forEach((key) => {
+    const sign = (planets as Record<string, { sign?: string }>)[key]?.sign ?? "";
+    if (WATER_SIGNS.has(sign) || AIR_SIGNS.has(sign)) outerInReceptiveSign += 1;
+  });
+  const spirit = clamp((outerInReceptiveSign / 3) * 100);
 
-  // Intuitive score
-  let intuitive = 50;
-  if (cachedForecast?.energy?.intuitive != null) {
-    // forecast intuitive is 1-10, convert to 0-100
-    intuitive = clamp(cachedForecast.energy.intuitive * 10);
-  } else {
-    // Estimate from Neptune / Moon sign strength
-    const moon = planets?.Moon?.sign ?? "";
-    const neptune = planets?.Neptune?.sign ?? "";
-    let bonus = 0;
-    if (WATER_SIGNS.has(moon)) bonus += 15;
-    if (WATER_SIGNS.has(neptune)) bonus += 10;
-    if (moon === "Scorpio" || moon === "Pisces") bonus += 10;
-    intuitive = clamp(50 + bonus);
-  }
+  // Fixed: concentration of fixed-sign planets
+  const allPlanetSigns = Object.values(planets as Record<string, { sign?: string }>).map(
+    (p) => p?.sign ?? ""
+  );
+  const totalPlanets = allPlanetSigns.filter(Boolean).length;
+  const fixedPlanets = allPlanetSigns.filter((s) => FIXED_SIGNS.has(s)).length;
+  const fixed = totalPlanets > 0 ? clamp((fixedPlanets / totalPlanets) * 100) : 50;
 
   return {
     fire: clamp(fire),
     earth: clamp(earth),
     air: clamp(air),
     water: clamp(water),
-    defined,
-    intuitive,
+    spirit,
+    fixed,
   };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseProfile(blueprint: any, cachedForecast?: any): ProfileData {
+function parseProfile(blueprint: any): ProfileData {
   const natal = blueprint?.astrology?.natal ?? {};
   const hd = blueprint?.human_design ?? {};
   const gk = blueprint?.gene_keys ?? {};
@@ -127,14 +117,13 @@ function parseProfile(blueprint: any, cachedForecast?: any): ProfileData {
   const moonSign = natal?.planets?.Moon?.sign ?? "";
   const risingSign = natal?.ascendant?.sign ?? "";
 
-  // Gene Keys — support both formats
   let lifesWork = { gate: 64, gift: "Imagination", shadow: "Confusion" };
   let evolution = { gate: 63, gift: "Inquiry", shadow: "Doubt" };
 
   if (gk.lifes_work) {
     lifesWork = { gate: gk.lifes_work.gate ?? 64, gift: gk.lifes_work.gift ?? "", shadow: gk.lifes_work.shadow ?? "" };
   } else if (gk.natal_gene_keys) {
-    // pick first two gates sorted by gate number as rough proxy
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const vals = Object.values(gk.natal_gene_keys as Record<string, any>).sort((a: any, b: any) => a.gate - b.gate);
     if (vals[0]) lifesWork = { gate: vals[0].gate, gift: vals[0].gift ?? "", shadow: vals[0].shadow ?? "" };
     if (vals[1]) evolution = { gate: vals[1].gate, gift: vals[1].gift ?? "", shadow: vals[1].shadow ?? "" };
@@ -144,7 +133,6 @@ function parseProfile(blueprint: any, cachedForecast?: any): ProfileData {
   }
 
   const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
-
   const name = user?.name ?? blueprint?.name ?? "Your Name";
   const handle = user?.handle ?? blueprint?.handle ?? user?.email?.split("@")[0] ?? "you";
 
@@ -164,23 +152,98 @@ function parseProfile(blueprint: any, cachedForecast?: any): ProfileData {
     evolutionGate: evolution.gate,
     evolutionGift: evolution.gift,
     evolutionShadow: evolution.shadow,
-    radar: computeRadar(blueprint, cachedForecast),
+    radar: computeRadar(blueprint),
   };
 }
 
-// ─── Radar Chart (pure SVG) ──────────────────────────────────────────────────
+// SVG Icons (stroke-based, 16px, consistent with app design language)
 
-const RADAR_DIMS = ["Fire", "Earth", "Air", "Water", "Defined", "Intuitive"] as const;
+function IconFire({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2c0 3.5-4 6.5-4 10a4 4 0 0 0 8 0c0-3.5-4-6.5-4-10z" />
+      <path d="M12 21.5c-1.1 0-2-1-2-2.5 0-1.2.8-2.2 2-3.5 1.2 1.3 2 2.3 2 3.5 0 1.5-.9 2.5-2 2.5z" />
+    </svg>
+  );
+}
+
+function IconEarth({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 3 22 20 2 20" />
+    </svg>
+  );
+}
+
+function IconAir({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8h10c2 0 3-1 3-2s-1-2-3-2-2 1-2 2" />
+      <path d="M3 12h15" />
+      <path d="M3 16h8c2 0 3 1 3 2s-1 2-3 2-2-1-2-2" />
+    </svg>
+  );
+}
+
+function IconWater({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L6 13a6 6 0 0 0 12 0z" />
+    </svg>
+  );
+}
+
+function IconSpirit({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1l2.1-2.1M17 7l2.1-2.1" />
+    </svg>
+  );
+}
+
+function IconFixed({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l8 10-8 10-8-10z" />
+    </svg>
+  );
+}
+
+function IconSignOut({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+// Radar Chart (pure SVG)
+
+const RADAR_DIMS = ["Fire", "Earth", "Air", "Water", "Spirit", "Fixed"] as const;
 type RadarDim = (typeof RADAR_DIMS)[number];
 
-const DIM_ICONS: Record<RadarDim, string> = {
-  Fire: "🔥",
-  Earth: "🌿",
-  Air: "🌬",
-  Water: "💧",
-  Defined: "⬡",
-  Intuitive: "✦",
+const DIM_DESCRIPTIONS: Record<RadarDim, string> = {
+  Fire: "action, will",
+  Earth: "form, matter",
+  Air: "thought, connection",
+  Water: "feeling, depth",
+  Spirit: "transpersonal",
+  Fixed: "persistence, focus",
 };
+
+function getDimIcon(dim: RadarDim, color: string) {
+  switch (dim) {
+    case "Fire": return <IconFire color={color} />;
+    case "Earth": return <IconEarth color={color} />;
+    case "Air": return <IconAir color={color} />;
+    case "Water": return <IconWater color={color} />;
+    case "Spirit": return <IconSpirit color={color} />;
+    case "Fixed": return <IconFixed color={color} />;
+  }
+}
 
 function getRadarPoint(
   cx: number,
@@ -188,9 +251,8 @@ function getRadarPoint(
   radius: number,
   index: number,
   total: number,
-  progress: number // 0 → 1 animation
+  progress: number
 ): [number, number] {
-  // Start from top, go clockwise
   const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
   const r = radius * progress;
   return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
@@ -264,14 +326,12 @@ function RadarChart({ values }: RadarChartProps) {
       if (startRef.current === null) startRef.current = ts;
       const elapsed = ts - startRef.current;
       const t = Math.min(elapsed / DURATION, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - t, 3);
       setProgress(eased);
       if (t < 1) {
         rafRef.current = requestAnimationFrame(animate);
       }
     }
-    // Small delay for entrance effect
     const timeout = setTimeout(() => {
       rafRef.current = requestAnimationFrame(animate);
     }, 150);
@@ -291,8 +351,8 @@ function RadarChart({ values }: RadarChartProps) {
     values.earth,
     values.air,
     values.water,
-    values.defined,
-    values.intuitive,
+    values.spirit,
+    values.fixed,
   ];
 
   const gridLevels = [25, 50, 75, 100];
@@ -340,7 +400,7 @@ function RadarChart({ values }: RadarChartProps) {
         );
       })}
 
-      {/* Balanced reference polygon (50 on all axes) */}
+      {/* Reference hexagon at 50 on all axes */}
       <polygon
         points={balancedPolygonPoints(cx, cy, OUTER, 6)}
         fill="none"
@@ -418,7 +478,7 @@ function RadarChart({ values }: RadarChartProps) {
   );
 }
 
-// ─── Collapsible Section ─────────────────────────────────────────────────────
+// Collapsible Section
 
 function CollapsibleSection({
   title,
@@ -455,7 +515,7 @@ function CollapsibleSection({
   );
 }
 
-// ─── Tag ─────────────────────────────────────────────────────────────────────
+// Tag
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
@@ -465,7 +525,7 @@ function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
+// Skeleton
 
 function ProfileSkeleton() {
   return (
@@ -490,7 +550,7 @@ function ProfileSkeleton() {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -503,17 +563,10 @@ export default function ProfilePage() {
     if (!token) return;
 
     const BP_CACHE_KEY = "solray_blueprint";
-    const dateKey = new Date().toISOString().split("T")[0];
-    const forecastCacheKey = `solray_forecast_${dateKey}`;
 
     function loadFromBlueprint(bp: any) {
       try {
-        let cachedForecast = null;
-        try {
-          const fc = localStorage.getItem(forecastCacheKey);
-          if (fc) cachedForecast = JSON.parse(fc);
-        } catch (_) {}
-        const p = parseProfile(bp, cachedForecast);
+        const p = parseProfile(bp);
         setProfile(p);
         setLoading(false);
         setTimeout(() => setVisible(true), 50);
@@ -528,7 +581,7 @@ export default function ProfilePage() {
       if (cached) {
         const bp = JSON.parse(cached);
         loadFromBlueprint(bp);
-        return; // Instant — no API wait
+        return;
       }
     } catch (_) {}
 
@@ -544,7 +597,6 @@ export default function ProfilePage() {
           } catch (_) {}
           loadFromBlueprint(data.blueprint);
         } else {
-          // No blueprint yet — show placeholder
           setLoading(false);
           setTimeout(() => setVisible(true), 50);
         }
@@ -573,7 +625,6 @@ export default function ProfilePage() {
             <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">
               Profile
             </span>
-            {/* Pencil icon — edit placeholder */}
             <button
               className="text-text-secondary hover:text-amber-sun transition-colors"
               title="Edit profile (coming soon)"
@@ -598,9 +649,8 @@ export default function ProfilePage() {
             }}
           >
             <div className="max-w-lg mx-auto px-5">
-              {/* ── Avatar + Identity ── */}
+              {/* Avatar + Identity */}
               <div className="pt-10 pb-8 flex flex-col items-center gap-2">
-                {/* Avatar circle */}
                 <div
                   className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg mb-1"
                   style={{ background: "#e8821a" }}
@@ -608,14 +658,12 @@ export default function ProfilePage() {
                   {initials}
                 </div>
 
-                {/* @handle */}
                 {profile?.handle && (
                   <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
                     @{profile.handle}
                   </p>
                 )}
 
-                {/* Name */}
                 <h1
                   className="font-heading text-4xl text-text-primary leading-tight text-center"
                   style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
@@ -623,7 +671,6 @@ export default function ProfilePage() {
                   {profile?.name || "Your Name"}
                 </h1>
 
-                {/* Tags row */}
                 {profile && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2">
                     {profile.sunSign && <Tag>{profile.sunSign} Sun</Tag>}
@@ -633,7 +680,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* ── Radar / Soul Map ── */}
+              {/* Radar / Soul Map */}
               <div className="mb-6">
                 <p className="text-text-secondary/40 text-[9px] font-body tracking-[0.25em] uppercase mb-4 text-center">
                   Soul Map
@@ -644,17 +691,22 @@ export default function ProfilePage() {
                     <RadarChart values={profile.radar} />
 
                     {/* Dimension legend */}
-                    <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3">
                       {RADAR_DIMS.map((dim) => {
                         const val = profile.radar[dim.toLowerCase() as keyof RadarValues];
                         return (
-                          <div key={dim} className="flex items-center gap-1.5">
-                            <span className="text-sm">{DIM_ICONS[dim]}</span>
-                            <div className="flex-1">
-                              <p className="text-text-secondary text-[9px] font-body tracking-wider uppercase">
+                          <div key={dim} className="flex items-start gap-1.5">
+                            <span className="mt-0.5 shrink-0">
+                              {getDimIcon(dim, "#8a9e8d")}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-text-secondary text-[9px] font-body tracking-wider uppercase leading-none">
                                 {dim}
                               </p>
-                              <div className="h-1 bg-forest-border rounded-full overflow-hidden mt-0.5">
+                              <p className="text-text-secondary/50 text-[8px] font-body mt-0.5 leading-none">
+                                {DIM_DESCRIPTIONS[dim]}
+                              </p>
+                              <div className="h-1 bg-forest-border rounded-full overflow-hidden mt-1">
                                 <div
                                   className="h-full rounded-full transition-all duration-1000 delay-500"
                                   style={{
@@ -679,11 +731,10 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* ── Chart Summary ── */}
+              {/* Chart Summary */}
               {profile && (
                 <CollapsibleSection title="Chart Summary" defaultOpen={false}>
                   <div className="space-y-4 mt-2">
-                    {/* Big three */}
                     {(profile.sunSign || profile.moonSign || profile.risingSign) && (
                       <div className="pb-4 border-b border-forest-border/40">
                         <p className="font-body text-text-primary text-sm leading-relaxed">
@@ -698,7 +749,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* HD row */}
                     {profile.hdType && (
                       <div className="flex items-start gap-3">
                         <span className="text-text-secondary text-[10px] font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">
@@ -712,7 +762,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Incarnation cross */}
                     {profile.incarnationCross && (
                       <div className="flex items-start gap-3">
                         <span className="text-text-secondary text-[10px] font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">
@@ -727,14 +776,13 @@ export default function ProfilePage() {
                 </CollapsibleSection>
               )}
 
-              {/* ── Gene Keys Highlights ── */}
+              {/* Gene Keys Highlights */}
               {profile && (profile.lifesWorkGift || profile.evolutionGift) && (
                 <div className="mb-4 border border-forest-border rounded-2xl overflow-hidden">
                   <div className="px-5 pt-4 pb-2">
                     <h2 className="font-heading text-xl text-text-primary">Gene Keys</h2>
                   </div>
                   <div className="px-5 pb-5 space-y-4">
-                    {/* Life's Work */}
                     {profile.lifesWorkGift && (
                       <div className="bg-forest-card/50 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -742,18 +790,17 @@ export default function ProfilePage() {
                             Life&apos;s Work
                           </span>
                           <span className="text-text-secondary text-[10px] font-body">
-                            · Gate {profile.lifesWorkGate}
+                            Gate {profile.lifesWorkGate}
                           </span>
                         </div>
                         <p className="font-heading text-lg text-text-primary leading-tight">
                           {profile.lifesWorkShadow}
-                          <span className="text-text-secondary/50 mx-2">→</span>
+                          <span className="text-text-secondary/50 mx-2">&#8594;</span>
                           {profile.lifesWorkGift}
                         </p>
                       </div>
                     )}
 
-                    {/* Evolution */}
                     {profile.evolutionGift && (
                       <div className="bg-forest-card/50 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -761,12 +808,12 @@ export default function ProfilePage() {
                             Evolution
                           </span>
                           <span className="text-text-secondary text-[10px] font-body">
-                            · Gate {profile.evolutionGate}
+                            Gate {profile.evolutionGate}
                           </span>
                         </div>
                         <p className="font-heading text-lg text-text-primary leading-tight">
                           {profile.evolutionShadow}
-                          <span className="text-text-secondary/50 mx-2">→</span>
+                          <span className="text-text-secondary/50 mx-2">&#8594;</span>
                           {profile.evolutionGift}
                         </p>
                       </div>
@@ -775,12 +822,13 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* ── Sign Out ── */}
+              {/* Sign Out */}
               <div className="mt-4 mb-6">
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-3 rounded-2xl border border-forest-border/60 text-text-secondary text-xs font-body tracking-wider uppercase hover:border-amber-sun/40 hover:text-amber-sun transition-all duration-200"
+                  className="w-full py-3 rounded-2xl border border-forest-border/60 text-text-secondary text-xs font-body tracking-wider uppercase hover:border-amber-sun/40 hover:text-amber-sun transition-all duration-200 flex items-center justify-center gap-2"
                 >
+                  <IconSignOut />
                   Sign Out
                 </button>
               </div>
