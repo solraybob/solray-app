@@ -164,6 +164,7 @@ interface CurrentCyclesProps {
 export default function CurrentCycles({ token }: CurrentCyclesProps) {
   const [cycles, setCycles] = useState<Cycle[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     if (!token) return;
@@ -198,32 +199,73 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  // Show at most 4, sorted by orb (tightest = most significant)
-  const displayCycles = cycles ? cycles.slice(0, 4) : [];
+  const displayCycles = cycles ? cycles.slice(0, 6) : [];
+  const total = displayCycles.length;
 
-  // Hide entirely if loaded and no active cycles
-  if (!loading && displayCycles.length === 0) return null;
+  if (!loading && total === 0) return null;
+
+  const handlePrev = () => setActiveIndex((i) => Math.max(0, i - 1));
+  const handleNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1));
 
   return (
     <div className="mb-8">
-      {/* Section header */}
-      <p
-        className="font-heading text-text-secondary/60 mb-4"
-        style={{ fontSize: "0.85rem", letterSpacing: "0.08em" }}
-      >
-        Current Cycles
-      </p>
+      {/* Section header with pagination */}
+      <div className="flex items-center justify-between mb-4">
+        <p
+          className="font-heading text-text-secondary/60"
+          style={{ fontSize: "0.85rem", letterSpacing: "0.08em" }}
+        >
+          Current Cycles
+        </p>
+        {!loading && total > 1 && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handlePrev}
+              disabled={activeIndex === 0}
+              className="text-text-secondary/60 hover:text-amber-sun transition-colors disabled:opacity-30"
+              style={{ fontSize: "1.1rem", lineHeight: 1 }}
+            >
+              ‹
+            </button>
+            <span className="font-body text-text-secondary/50" style={{ fontSize: "0.7rem", letterSpacing: "0.1em" }}>
+              {activeIndex + 1} / {total}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={activeIndex === total - 1}
+              className="text-text-secondary/60 hover:text-amber-sun transition-colors disabled:opacity-30"
+              style={{ fontSize: "1.1rem", lineHeight: 1 }}
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex flex-col gap-3">
           <CycleCardSkeleton />
-          <CycleCardSkeleton />
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {displayCycles.map((cycle, i) => (
-            <CycleCard key={`${cycle.transit_planet}-${cycle.natal_point}-${i}`} cycle={cycle} />
-          ))}
+        <div>
+          <CycleCard key={`${displayCycles[activeIndex]?.transit_planet}-${activeIndex}`} cycle={displayCycles[activeIndex]} />
+          {/* Dot indicators */}
+          {total > 1 && (
+            <div className="flex justify-center gap-1.5 mt-3">
+              {displayCycles.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(i)}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: i === activeIndex ? 16 : 6,
+                    height: 6,
+                    background: i === activeIndex ? "#e8821a" : "#1a3020",
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
