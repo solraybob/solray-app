@@ -78,3 +78,20 @@ html {
 .page-enter {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #0a1f12 0%,
+    #112a18 40%,
+    #0a1f12 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}

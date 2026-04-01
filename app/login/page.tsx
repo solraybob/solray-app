@@ -25,6 +25,34 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      // Fix 5: Prefetch blueprint in background after login
+      // so Chart screen is instant on first visit
+      const storedToken = localStorage.getItem("solray_token");
+      if (storedToken) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        fetch(`${apiUrl}/users/me`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${storedToken}`,
+          },
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.blueprint) {
+              try {
+                localStorage.setItem(
+                  "solray_blueprint",
+                  JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() })
+                );
+              } catch (_) {
+                // ignore storage errors
+              }
+            }
+          })
+          .catch(() => {
+            // prefetch failure is silent — doesn't block login
+          });
+      }
       router.push("/today");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

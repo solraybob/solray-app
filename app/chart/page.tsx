@@ -419,28 +419,80 @@ export default function ChartPage() {
   const { token } = useAuth();
 
   useEffect(() => {
-    async function loadChart() {
+    if (!token) return;
+
+    const BP_CACHE_KEY = "solray_blueprint";
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+    async function fetchAndCacheBlueprint(isBackground: boolean) {
       try {
         const data = await apiFetch("/users/me", {}, token);
         if (data.blueprint) {
           try {
             const parsed = parseBlueprint(data.blueprint);
-            setChart(parsed);
+            // Cache blueprint with timestamp
+            try {
+              localStorage.setItem(
+                BP_CACHE_KEY,
+                JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() })
+              );
+            } catch (_) {
+              // ignore storage errors
+            }
+            if (!isBackground) {
+              setChart(parsed);
+              setLoading(false);
+            } else {
+              setChart(parsed);
+            }
           } catch (parseErr) {
             console.error("Blueprint parse error:", parseErr);
-            setError("Could not parse your blueprint. Please try again.");
+            if (!isBackground) {
+              setError("Could not parse your blueprint. Please try again.");
+              setLoading(false);
+            }
           }
         } else {
-          setError("Your blueprint is still being calculated. Check back shortly.");
+          if (!isBackground) {
+            setError("Your blueprint is still being calculated. Check back shortly.");
+            setLoading(false);
+          }
         }
       } catch (err) {
         console.error("Chart load error:", err);
-        setError("Unable to load your chart. Please check your connection and try again.");
-      } finally {
-        setLoading(false);
+        if (!isBackground) {
+          setError("Unable to load your chart. Please check your connection and try again.");
+          setLoading(false);
+        }
       }
     }
-    if (token) loadChart();
+
+    // Fix 4: Try localStorage cache first
+    try {
+      const cached = localStorage.getItem(BP_CACHE_KEY);
+      if (cached) {
+        const bp = JSON.parse(cached);
+        const cachedAt = bp._cachedAt || 0;
+        const isStale = Date.now() - cachedAt > ONE_WEEK_MS;
+        try {
+          const parsed = parseBlueprint(bp);
+          setChart(parsed);
+          setLoading(false);
+          // Refresh in background if stale (older than 1 week)
+          if (isStale) {
+            fetchAndCacheBlueprint(true);
+          }
+          return;
+        } catch (_) {
+          // Cache corrupt, fetch fresh
+        }
+      }
+    } catch (_) {
+      // ignore parse errors
+    }
+
+    // No valid cache — fetch fresh
+    fetchAndCacheBlueprint(false);
   }, [token]);
 
   return (

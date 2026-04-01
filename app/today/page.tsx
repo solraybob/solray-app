@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -152,6 +151,118 @@ function PlanetCard({ planet }: { planet: Planet }) {
   );
 }
 
+// Skeleton components for instant perceived loading
+function SkeletonToday() {
+  return (
+    <div className="max-w-lg mx-auto px-5">
+      {/* Hero title skeleton */}
+      <div className="pt-12 pb-10">
+        <div className="skeleton-shimmer h-14 w-4/5 rounded-lg mb-3" />
+        <div className="skeleton-shimmer h-14 w-2/3 rounded-lg" />
+      </div>
+
+      {/* Reading skeleton — 4 lines */}
+      <div className="pb-10 space-y-3">
+        <div className="skeleton-shimmer h-4 w-full rounded" />
+        <div className="skeleton-shimmer h-4 w-full rounded" />
+        <div className="skeleton-shimmer h-4 w-5/6 rounded" />
+        <div className="skeleton-shimmer h-4 w-3/4 rounded" />
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-forest-border/40 mb-8" />
+
+      {/* Energy bars skeleton */}
+      <div className="mb-8 space-y-4">
+        {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
+          <div key={label} className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
+                {label}
+              </span>
+              <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
+                <div className="h-full w-0 bg-amber-sun rounded-full" />
+              </div>
+              <span className="text-text-secondary text-xs font-body w-4 text-right opacity-0">0</span>
+            </div>
+            <div className="skeleton-shimmer h-3 w-1/2 rounded ml-[92px]" />
+          </div>
+        ))}
+      </div>
+
+      {/* Tags skeleton */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        <div className="skeleton-shimmer h-7 w-32 rounded-full" />
+        <div className="skeleton-shimmer h-7 w-28 rounded-full" />
+        <div className="skeleton-shimmer h-7 w-24 rounded-full" />
+      </div>
+
+      {/* Planet strip skeleton */}
+      <div className="mb-6">
+        <div className="skeleton-shimmer h-3 w-16 rounded mb-3" />
+        <div className="flex gap-2.5 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton-shimmer min-w-[76px] h-[90px] rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Parse raw forecast API response into ForecastData
+function parseForecastData(data: any): ForecastData {
+  if (data.day_title && data.reading && data.tags && data.energy) {
+    const planets: Planet[] =
+      data.planets ||
+      Object.entries(data.transits || {}).map(([name, p]: [string, any]) => ({
+        name,
+        symbol: {
+          Sun: "☉",
+          Moon: "☽",
+          Mercury: "☿",
+          Venus: "♀",
+          Mars: "♂",
+          Jupiter: "♃",
+          Saturn: "♄",
+          Uranus: "♅",
+          Neptune: "♆",
+          Pluto: "♇",
+        }[name] || "✦",
+        sign: p.sign,
+        degree: `${Math.floor(p.degree)}°`,
+        retrograde: p.retrograde,
+      }));
+    return { ...data, planets };
+  } else {
+    // AI not ready yet, show mock with real planet positions
+    const planets: Planet[] = Object.entries(data.transits || {})
+      .slice(0, 10)
+      .map(([name, p]: [string, any]) => ({
+        name,
+        symbol: {
+          Sun: "☉",
+          Moon: "☽",
+          Mercury: "☿",
+          Venus: "♀",
+          Mars: "♂",
+          Jupiter: "♃",
+          Saturn: "♄",
+          Uranus: "♅",
+          Neptune: "♆",
+          Pluto: "♇",
+        }[name] || "✦",
+        sign: p.sign,
+        degree: `${Math.floor(p.degree)}°`,
+        retrograde: p.retrograde,
+      }));
+    return {
+      ...MOCK_FORECAST,
+      planets: planets.length > 0 ? planets : MOCK_FORECAST.planets,
+    };
+  }
+}
+
 export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,6 +271,7 @@ export default function TodayPage() {
   const [visibleSections, setVisibleSections] = useState(0);
   const { token, logout } = useAuth();
   const router = useRouter();
+  const backgroundFetchDone = useRef(false);
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -168,68 +280,85 @@ export default function TodayPage() {
   });
 
   useEffect(() => {
-    async function loadForecast() {
+    if (!token) return;
+
+    const dateKey = new Date().toISOString().split("T")[0];
+    const cacheKey = `solray_forecast_${dateKey}`;
+
+    async function fetchAndUpdate(isBackground: boolean) {
       try {
-        const data = await apiFetch("/forecast/today", {}, token);
-        // If AI fields are present, use real data; otherwise use mock
-        if (data.day_title && data.reading && data.tags && data.energy) {
-          const planets: Planet[] =
-            data.planets ||
-            Object.entries(data.transits || {}).map(([name, p]: [string, any]) => ({
-              name,
-              symbol: {
-                Sun: "☉",
-                Moon: "☽",
-                Mercury: "☿",
-                Venus: "♀",
-                Mars: "♂",
-                Jupiter: "♃",
-                Saturn: "♄",
-                Uranus: "♅",
-                Neptune: "♆",
-                Pluto: "♇",
-              }[name] || "✦",
-              sign: p.sign,
-              degree: `${Math.floor(p.degree)}°`,
-              retrograde: p.retrograde,
-            }));
-          setForecast({ ...data, planets });
+        // Fix 2: Run /forecast/today and /users/me in parallel
+        const [forecastData] = await Promise.all([
+          apiFetch("/forecast/today", {}, token),
+          // prefetch user data in parallel (used by other screens)
+          apiFetch("/users/me", {}, token).then((userData) => {
+            if (userData.blueprint) {
+              // Cache blueprint for chart screen
+              try {
+                const bpCacheKey = "solray_blueprint";
+                const existing = localStorage.getItem(bpCacheKey);
+                const existingParsed = existing ? JSON.parse(existing) : null;
+                // Only update if newer or missing
+                if (!existingParsed || !existingParsed._cachedAt) {
+                  localStorage.setItem(
+                    bpCacheKey,
+                    JSON.stringify({ ...userData.blueprint, _cachedAt: Date.now() })
+                  );
+                }
+              } catch (_) {
+                // ignore cache errors
+              }
+            }
+          }).catch(() => {
+            // /users/me failing shouldn't block forecast
+          }),
+        ]);
+
+        const parsed = parseForecastData(forecastData);
+
+        // Cache for next load
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(parsed));
+        } catch (_) {
+          // ignore storage errors
+        }
+
+        if (!isBackground) {
+          setForecast(parsed);
+          setLoading(false);
         } else {
-          // AI not ready yet, show mock with real planet positions
-          const planets: Planet[] = Object.entries(data.transits || {})
-            .slice(0, 10)
-            .map(([name, p]: [string, any]) => ({
-              name,
-              symbol: {
-                Sun: "☉",
-                Moon: "☽",
-                Mercury: "☿",
-                Venus: "♀",
-                Mars: "♂",
-                Jupiter: "♃",
-                Saturn: "♄",
-                Uranus: "♅",
-                Neptune: "♆",
-                Pluto: "♇",
-              }[name] || "✦",
-              sign: p.sign,
-              degree: `${Math.floor(p.degree)}°`,
-              retrograde: p.retrograde,
-            }));
-          setForecast({
-            ...MOCK_FORECAST,
-            planets: planets.length > 0 ? planets : MOCK_FORECAST.planets,
-          });
+          // Background refresh — update silently if different
+          setForecast(parsed);
         }
       } catch {
-        // Network failure — fall back to mock and show a subtle note
-        setForecast(MOCK_FORECAST);
-        setError("Showing cached reading. Reconnect to see today's live forecast.");
-      } finally {
-        setLoading(false);
+        if (!isBackground) {
+          setForecast(MOCK_FORECAST);
+          setError("Showing cached reading. Reconnect to see today's live forecast.");
+          setLoading(false);
+        }
       }
     }
-    if (token) loadForecast();
+
+    // Fix 3: Try localStorage cache first
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed: ForecastData = JSON.parse(cached);
+        setForecast(parsed);
+        setLoading(false);
+        // Still fetch fresh in background
+        if (!backgroundFetchDone.current) {
+          backgroundFetchDone.current = true;
+          fetchAndUpdate(true);
+        }
+        return;
+      }
+    } catch (_) {
+      // ignore parse errors
+    }
+
+    // No cache — fetch and show skeleton while loading
+    fetchAndUpdate(false);
   }, [token]);
 
   // Staggered section reveal
@@ -278,9 +407,8 @@ export default function TodayPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center pt-32">
-            <LoadingSpinner size="lg" />
-          </div>
+          // Fix 1: Beautiful skeleton instead of spinner
+          <SkeletonToday />
         ) : forecast ? (
           <div className="max-w-lg mx-auto px-5">
             {/* Subtle offline/error notice */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
@@ -8,173 +8,108 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface StoredSoul {
-  id: string;
-  name: string;
-  birth_date: string;       // YYYY-MM-DD
-  birth_time?: string;      // HH:MM (optional)
-  birth_city: string;
-  // Cached from blueprint calculation
-  sun_sign?: string;
-  moon_sign?: string;
-  rising_sign?: string;
-  hd_type?: string;
-  blueprint?: Record<string, unknown>;
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
+// Sign symbols
 const SIGN_SYMBOLS: Record<string, string> = {
   Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋",
   Leo: "♌", Virgo: "♍", Libra: "♎", Scorpio: "♏",
   Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
 };
 
-function loadSouls(): StoredSoul[] {
-  try {
-    return JSON.parse(localStorage.getItem("solray_souls") || "[]");
-  } catch {
-    return [];
-  }
+// Types
+interface SearchResult {
+  id: string;
+  username: string;
+  name: string;
+  sun_sign: string | null;
+  hd_type: string | null;
+  hd_profile: string | null;
 }
 
-function persistSouls(souls: StoredSoul[]) {
-  localStorage.setItem("solray_souls", JSON.stringify(souls));
-}
-
-function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
-// ─── Add Soul Form ────────────────────────────────────────────────────────────
-
-interface AddSoulFormProps {
-  onClose: () => void;
-  onSave: (soul: StoredSoul) => void;
-  token: string | null;
-}
-
-function AddSoulForm({ onClose, onSave, token }: AddSoulFormProps) {
-  const [name, setName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [birthTime, setBirthTime] = useState("");
-  const [birthCity, setBirthCity] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSave = async () => {
-    if (!name.trim() || !birthDate || !birthCity.trim()) {
-      setError("Name, birth date, and city are required.");
-      return;
-    }
-    setSaving(true);
-    setError("");
-
-    let blueprint: Record<string, unknown> | undefined;
-    let sun_sign: string | undefined;
-    let moon_sign: string | undefined;
-    let rising_sign: string | undefined;
-    let hd_type: string | undefined;
-
-    // Try to calculate blueprint via API
-    try {
-      const data = await apiFetch(
-        "/souls/calculate-blueprint",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: name.trim(),
-            birth_date: birthDate,
-            birth_time: birthTime || "12:00",
-            birth_city: birthCity.trim(),
-          }),
-        },
-        token
-      );
-      blueprint = data?.blueprint || data;
-      const profile = data?.profile || data;
-      sun_sign = profile?.sun_sign || data?.sun_sign;
-      moon_sign = profile?.moon_sign || data?.moon_sign;
-      rising_sign = profile?.rising_sign || data?.rising_sign;
-      hd_type = profile?.hd_type || data?.hd_type || data?.human_design?.type;
-    } catch {
-      // Blueprint calc failed – we still save birth data
-    }
-
-    const soul: StoredSoul = {
-      id: generateId(),
-      name: name.trim(),
-      birth_date: birthDate,
-      birth_time: birthTime || undefined,
-      birth_city: birthCity.trim(),
-      sun_sign,
-      moon_sign,
-      rising_sign,
-      hd_type,
-      blueprint,
-    };
-
-    onSave(soul);
-    setSaving(false);
+interface PendingInvite {
+  invite_id: string;
+  requester: {
+    id: string;
+    username: string;
+    name: string;
+    sun_sign: string | null;
+    hd_type: string | null;
+    hd_profile: string | null;
   };
+  created_at: string;
+}
 
+interface ConnectedSoul {
+  connection_id: string;
+  soul: {
+    id: string;
+    username: string;
+    name: string;
+    sun_sign: string | null;
+    moon_sign: string | null;
+    hd_type: string | null;
+    hd_profile: string | null;
+  };
+  connected_since: string;
+}
+
+// Generate a short session code
+function generateSessionCode(): string {
+  return Math.random().toString(36).slice(2, 9).toUpperCase();
+}
+
+// Soul action sheet shown when tapping a connected soul
+interface SoulActionsProps {
+  soul: ConnectedSoul;
+  onClose: () => void;
+  onSoloReading: () => void;
+  onGroupReading: () => void;
+}
+
+function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActionsProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div
-        className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12 animate-slide-up">
+      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
-        <h2 className="font-heading text-3xl text-text-primary mb-1">Add a Soul</h2>
-        <p className="text-text-secondary text-sm font-body mb-6">
-          Enter their birth data to read your compatibility.
-        </p>
-
-        <div className="space-y-3">
-          <input
-            autoFocus
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
-            className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors"
-          />
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary font-body text-sm focus:border-amber-sun transition-colors"
-          />
-          <div className="flex gap-3">
-            <input
-              type="time"
-              value={birthTime}
-              onChange={(e) => setBirthTime(e.target.value)}
-              placeholder="Birth time (optional)"
-              className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary font-body text-sm focus:border-amber-sun transition-colors"
-            />
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+            <span className="font-heading text-xl text-text-primary">{soul.soul.name[0]}</span>
           </div>
-          <input
-            type="text"
-            value={birthCity}
-            onChange={(e) => setBirthCity(e.target.value)}
-            placeholder="Birth city"
-            className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors"
-          />
-
-          {error && (
-            <p className="text-red-400 text-xs font-body">{error}</p>
-          )}
-
+          <div>
+            <h3 className="font-heading text-2xl text-text-primary">{soul.soul.name}</h3>
+            <p className="text-text-secondary text-sm font-body">
+              {soul.soul.sun_sign && (
+                <>{SIGN_SYMBOLS[soul.soul.sun_sign] || ""} {soul.soul.sun_sign}</>
+              )}
+              {soul.soul.sun_sign && soul.soul.hd_type && " · "}
+              {soul.soul.hd_type}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
+            onClick={onSoloReading}
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-amber-sun/30"
           >
-            {saving ? <LoadingSpinner size="sm" /> : "Add to Constellation"}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-body text-text-primary font-semibold text-sm">Your Reading</p>
+                <p className="text-text-secondary text-xs font-body mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
+              </div>
+              <span className="text-amber-sun text-xs font-body">Open</span>
+            </div>
+          </button>
+          <button
+            onClick={onGroupReading}
+            className="w-full text-left px-5 py-4 bg-amber-sun/5 border border-amber-sun/30 rounded-2xl transition-all hover:bg-amber-sun/10"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-body text-text-primary font-semibold text-sm">Group Reading</p>
+                <p className="text-text-secondary text-xs font-body mt-0.5">Invite {soul.soul.name} into a shared session together</p>
+              </div>
+              <span className="text-amber-sun text-xs font-body">Share</span>
+            </div>
           </button>
         </div>
       </div>
@@ -182,312 +117,426 @@ function AddSoulForm({ onClose, onSave, token }: AddSoulFormProps) {
   );
 }
 
-// ─── Soul Card ────────────────────────────────────────────────────────────────
-
-interface SoulCardProps {
-  soul: StoredSoul;
-  onOpenChat: (soul: StoredSoul) => void;
-  onDelete: (id: string) => void;
+// Group session share sheet
+interface GroupShareProps {
+  soul: ConnectedSoul;
+  sessionCode: string;
+  onEnterSession: () => void;
+  onClose: () => void;
 }
 
-function SoulCard({ soul, onOpenChat, onDelete }: SoulCardProps) {
-  const [showActions, setShowActions] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupShareProps) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://solray-app.vercel.app"}/group/${sessionCode}`;
 
-  const handleTouchStart = () => {
-    longPressTimer.current = setTimeout(() => setShowActions(true), 600);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  };
-
-  const sunSymbol = soul.sun_sign ? (SIGN_SYMBOLS[soul.sun_sign] || "☉") : "✦";
-
-  // Extract Gene Keys Life's Work gift from blueprint if available
-  const gkLifesWorkGift = (() => {
-    if (!soul.blueprint) return null;
+  const handleCopy = async () => {
     try {
-      const bp = soul.blueprint as Record<string, unknown>;
-      const hd = bp.human_design as Record<string, unknown> | undefined;
-      const cc = hd?.conscious_chart as Record<string, unknown> | undefined;
-      const sunGate = cc?.Sun as Record<string, unknown> | undefined;
-      const gateNum = sunGate?.gate ? String(sunGate.gate) : null;
-      if (!gateNum) return null;
-      const gk = bp.gene_keys as Record<string, unknown> | undefined;
-      const natal_gk = gk?.natal_gene_keys as Record<string, unknown> | undefined;
-      const gateData = natal_gk?.[gateNum] as Record<string, unknown> | undefined;
-      return gateData?.gift ? `Gate ${gateNum}: ${gateData.gift}` : null;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      return null;
+      // fallback: select the text
     }
-  })();
-
-  // Extract profile from blueprint
-  const hdProfile = (() => {
-    if (!soul.blueprint) return null;
-    try {
-      const bp = soul.blueprint as Record<string, unknown>;
-      const hd = bp.human_design as Record<string, unknown> | undefined;
-      return hd?.profile ? String(hd.profile) : null;
-    } catch {
-      return null;
-    }
-  })();
+  };
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => !showActions && onOpenChat(soul)}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchEnd}
-        onMouseLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
-        className="w-full text-left bg-forest-card border border-forest-border rounded-2xl p-5 transition-all hover:border-amber-sun/30 active:scale-[0.99]"
-      >
-        <div className="flex items-center gap-4">
-          {/* Avatar */}
-          <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-            <span className="font-heading text-xl text-text-primary">{soul.name[0]}</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-heading text-xl text-text-primary">{soul.name}</h3>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              {soul.sun_sign && (
-                <span className="text-text-secondary text-sm">
-                  {sunSymbol} {soul.sun_sign}
-                </span>
-              )}
-              {soul.sun_sign && soul.hd_type && (
-                <span className="text-forest-border text-xs">·</span>
-              )}
-              {soul.hd_type && (
-                <span className="text-text-secondary text-xs font-body">
-                  {soul.hd_type}{hdProfile ? ` ${hdProfile}` : ""}
-                </span>
-              )}
-              {!soul.sun_sign && !soul.hd_type && (
-                <span className="text-text-secondary text-xs font-body">
-                  {soul.birth_city} · {soul.birth_date}
-                </span>
-              )}
-            </div>
-            {/* Gene Keys gift — only shown when blueprint is available */}
-            {gkLifesWorkGift && (
-              <div className="mt-1.5">
-                <span className="text-amber-sun/70 text-[11px] font-body tracking-wide">
-                  ✦ {gkLifesWorkGift}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-amber-sun text-xs font-body tracking-wider opacity-70">Read →</span>
-          </div>
-        </div>
-      </button>
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
+        <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
+        <h2 className="font-heading text-3xl text-text-primary mb-1">Group Reading</h2>
+        <p className="text-text-secondary text-sm font-body mb-6">
+          Share this link with {soul.soul.name} to join your shared session. Both of you can ask questions and the guide speaks to you together.
+        </p>
 
-      {/* Long-press actions overlay */}
-      {showActions && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center gap-4 bg-forest-deep/90 rounded-2xl"
-          onClick={() => setShowActions(false)}
-        >
+        <div className="bg-forest-card border border-forest-border rounded-xl px-4 py-3 mb-3 font-mono text-xs text-text-secondary break-all">
+          {shareUrl}
+        </div>
+
+        <div className="space-y-3">
           <button
-            onClick={(e) => { e.stopPropagation(); setShowActions(false); onOpenChat(soul); }}
-            className="px-4 py-2 bg-amber-sun text-forest-deep rounded-xl font-body text-sm font-semibold"
+            onClick={handleCopy}
+            className="w-full py-3.5 bg-amber-sun/10 border border-amber-sun/30 rounded-xl text-amber-sun text-sm font-body tracking-wider transition-all hover:bg-amber-sun/20"
           >
-            Compatibility Reading
+            {copied ? "Copied!" : `Copy link for ${soul.soul.name}`}
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setShowActions(false); onDelete(soul.id); }}
-            className="px-4 py-2 bg-forest-card border border-red-400/40 text-red-400 rounded-xl font-body text-sm"
+            onClick={onEnterSession}
+            className="w-full py-3.5 bg-amber-sun text-forest-deep font-body font-semibold rounded-xl text-sm tracking-wider transition-all hover:opacity-90"
           >
-            Remove
+            Enter Session
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
+// Main page
 export default function SoulsPage() {
-  const [souls, setSouls] = useState<StoredSoul[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [loading, setLoading] = useState(false);
   const { token } = useAuth();
   const router = useRouter();
 
+  const [myUsername, setMyUsername] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [connectedSouls, setConnectedSouls] = useState<ConnectedSoul[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null);
+  const [inviteSent, setInviteSent] = useState<Set<string>>(new Set());
+  const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
+  const [activeSoul, setActiveSoul] = useState<ConnectedSoul | null>(null);
+  const [groupSession, setGroupSession] = useState<{ soul: ConnectedSoul; code: string } | null>(null);
+
+  // Load profile + connections on mount
   useEffect(() => {
-    setSouls(loadSouls());
-  }, []);
-
-  const handleSaveSoul = (soul: StoredSoul) => {
-    const updated = [soul, ...souls];
-    setSouls(updated);
-    persistSouls(updated);
-    setShowAdd(false);
-  };
-
-  const handleDeleteSoul = (id: string) => {
-    const updated = souls.filter((s) => s.id !== id);
-    setSouls(updated);
-    persistSouls(updated);
-  };
-
-  // Open a compatibility chat: store context in sessionStorage then navigate to chat
-  const openCompatibilityChat = async (soul: StoredSoul) => {
-    setLoading(true);
-
-    let soulBlueprint = soul.blueprint;
-
-    // Try to refresh/calculate blueprint if we don't have it
-    if (!soulBlueprint && token) {
+    if (!token) return;
+    const load = async () => {
       try {
-        const data = await apiFetch(
-          "/souls/calculate-blueprint",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              name: soul.name,
-              birth_date: soul.birth_date,
-              birth_time: soul.birth_time || "12:00",
-              birth_city: soul.birth_city,
-            }),
-          },
-          token
-        );
-        soulBlueprint = data?.blueprint || data;
-        const profile = data?.profile || data;
-
-        // Cache the result
-        const updated = souls.map((s) =>
-          s.id === soul.id
-            ? {
-                ...s,
-                blueprint: soulBlueprint,
-                sun_sign: s.sun_sign || profile?.sun_sign || data?.sun_sign,
-                moon_sign: s.moon_sign || profile?.moon_sign || data?.moon_sign,
-                rising_sign: s.rising_sign || profile?.rising_sign || data?.rising_sign,
-                hd_type: s.hd_type || profile?.hd_type || data?.hd_type || data?.human_design?.type,
-              }
-            : s
-        );
-        setSouls(updated);
-        persistSouls(updated);
-      } catch {
-        // Proceed without blueprint – chat message will still carry birth info
+        const [me, pending, souls] = await Promise.all([
+          apiFetch("/users/me", {}, token),
+          apiFetch("/souls/pending", {}, token),
+          apiFetch("/souls", {}, token),
+        ]);
+        setMyUsername(me?.profile?.username || null);
+        setMyName(me?.profile?.name || null);
+        setPendingInvites(pending?.pending || []);
+        setConnectedSouls(souls?.souls || []);
+      } catch (e) {
+        // ignore
+      } finally {
+        setLoading(false);
       }
+    };
+    load();
+  }, [token]);
+
+  // Search users
+  const handleSearch = useCallback(async (q: string) => {
+    setSearchQuery(q);
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token);
+      setSearchResults(data?.results || []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }, [token]);
+
+  // Send connection invite
+  const handleSendInvite = async (identifier: string) => {
+    setSendingInvite(identifier);
+    try {
+      await apiFetch("/souls/invite", {
+        method: "POST",
+        body: JSON.stringify({ identifier }),
+      }, token);
+      setInviteSent(prev => new Set(prev).add(identifier));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to send invite";
+      alert(msg);
+    } finally {
+      setSendingInvite(null);
+    }
+  };
+
+  // Accept or decline invite
+  const handleInviteResponse = async (inviteId: string, accept: boolean) => {
+    setRespondingInvite(inviteId);
+    try {
+      const endpoint = accept ? `/souls/accept/${inviteId}` : `/souls/decline/${inviteId}`;
+      await apiFetch(endpoint, { method: "POST" }, token);
+      setPendingInvites(prev => prev.filter(i => i.invite_id !== inviteId));
+      if (accept) {
+        // Reload connected souls
+        const souls = await apiFetch("/souls", {}, token);
+        setConnectedSouls(souls?.souls || []);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed";
+      alert(msg);
+    } finally {
+      setRespondingInvite(null);
+    }
+  };
+
+  // Open solo compatibility chat
+  const openSoloReading = async (soul: ConnectedSoul) => {
+    setActiveSoul(null);
+    // Fetch their full blueprint for the chat
+    let soulBlueprint = null;
+    try {
+      const data = await apiFetch(`/souls/${soul.connection_id}/blueprint`, {}, token);
+      soulBlueprint = data?.blueprint || null;
+    } catch {
+      // proceed without blueprint
     }
 
-    // Build the opening message for the compatibility chat
     const chartSummary = [
-      soul.sun_sign && `Sun in ${soul.sun_sign}`,
-      soul.moon_sign && `Moon in ${soul.moon_sign}`,
-      soul.rising_sign && `${soul.rising_sign} Rising`,
-      soul.hd_type && `Human Design: ${soul.hd_type}`,
-    ]
-      .filter(Boolean)
-      .join(", ");
+      soul.soul.sun_sign && `Sun in ${soul.soul.sun_sign}`,
+      soul.soul.moon_sign && `Moon in ${soul.soul.moon_sign}`,
+      soul.soul.hd_type && `Human Design: ${soul.soul.hd_type}`,
+    ].filter(Boolean).join(", ");
 
     const introMessage = chartSummary
-      ? `I want to understand the dynamic between me and ${soul.name}. Here is their chart: ${chartSummary}. How do our energies interact?`
-      : `I want to understand the dynamic between me and ${soul.name}. Their birth details: ${soul.birth_date}, ${soul.birth_city}${soul.birth_time ? `, ${soul.birth_time}` : ""}. How do our energies interact?`;
+      ? `I want to understand the dynamic between me and ${soul.soul.name}. Their chart: ${chartSummary}. How do our energies interact?`
+      : `I want to understand the dynamic between me and ${soul.soul.name}. How do our energies interact?`;
 
-    // Store the compatibility context so the chat page can pick it up
-    sessionStorage.setItem(
-      "solray_compat_context",
-      JSON.stringify({
-        soulName: soul.name,
-        introMessage,
-        soulBlueprint: soulBlueprint || null,
-      })
-    );
+    sessionStorage.setItem("solray_compat_context", JSON.stringify({
+      soulName: soul.soul.name,
+      introMessage,
+      soulBlueprint,
+    }));
 
-    setLoading(false);
     router.push("/chat?compat=1");
+  };
+
+  // Start a group session
+  const startGroupSession = (soul: ConnectedSoul) => {
+    setActiveSoul(null);
+    const code = generateSessionCode();
+    // Store the session mapping
+    const sessions = JSON.parse(localStorage.getItem("solray_group_sessions") || "{}");
+    sessions[code] = {
+      connection_id: soul.connection_id,
+      soul_name: soul.soul.name,
+      soul_id: soul.soul.id,
+      created_at: Date.now(),
+    };
+    localStorage.setItem("solray_group_sessions", JSON.stringify(sessions));
+    setGroupSession({ soul, code });
+  };
+
+  const enterGroupSession = (code: string) => {
+    setGroupSession(null);
+    router.push(`/group/${code}`);
   };
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-24">
         {/* Header */}
-        <div className="px-5 pt-12 pb-6 max-w-lg mx-auto">
+        <div className="px-5 pt-12 pb-4 max-w-lg mx-auto">
           <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-1">Your Field</p>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-4xl text-text-primary">Your Constellation</h1>
-              <p className="text-text-secondary text-sm font-body mt-1">The people in your field</p>
-            </div>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-sun/10 border border-amber-sun/30 rounded-xl text-amber-sun text-xs font-body tracking-wider transition-all hover:bg-amber-sun/20 shrink-0"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Soul
-            </button>
-          </div>
+          <h1 className="font-heading text-4xl text-text-primary">Souls</h1>
+          {myUsername && (
+            <p className="text-text-secondary text-sm font-body mt-1">
+              Your username: <span className="text-amber-sun font-mono">@{myUsername}</span>
+            </p>
+          )}
         </div>
 
-        <div className="max-w-lg mx-auto px-5 animate-fade-in">
-          {souls.length === 0 ? (
-            <div className="text-center pt-16">
-              <div className="text-4xl mb-4">✦</div>
-              <p className="font-heading text-2xl text-text-primary mb-2">Your constellation is empty</p>
-              <p className="text-text-secondary text-sm font-body mb-6 max-w-xs mx-auto">
-                Add someone's birth data to explore your compatibility and the dynamics between you.
-              </p>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="px-6 py-3 bg-amber-sun/10 border border-amber-sun/30 rounded-xl text-amber-sun text-sm font-body tracking-wider transition-all hover:bg-amber-sun/20"
-              >
-                + Add your first soul
-              </button>
+        <div className="max-w-lg mx-auto px-5 space-y-6 animate-fade-in">
+          {/* Search */}
+          <div>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => handleSearch(e.target.value)}
+                placeholder="Search by @username or email"
+                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors pr-10"
+              />
+              {searching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
+            </div>
+
+            {/* Search results */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {searchResults.map(user => (
+                  <div key={user.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
+                    <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                      <span className="font-heading text-base text-text-primary">{user.name[0]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-text-primary text-sm font-semibold truncate">{user.name}</p>
+                      <p className="text-text-secondary text-xs font-body">
+                        @{user.username}
+                        {user.sun_sign && ` · ${SIGN_SYMBOLS[user.sun_sign] || ""}${user.sun_sign}`}
+                        {user.hd_type && ` · ${user.hd_type}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleSendInvite(user.username)}
+                      disabled={sendingInvite === user.username || inviteSent.has(user.username)}
+                      className="shrink-0 px-3 py-1.5 bg-amber-sun/10 border border-amber-sun/30 text-amber-sun rounded-lg text-xs font-body transition-all hover:bg-amber-sun/20 disabled:opacity-40"
+                    >
+                      {sendingInvite === user.username ? (
+                        <LoadingSpinner size="sm" />
+                      ) : inviteSent.has(user.username) ? (
+                        "Sent"
+                      ) : (
+                        "Connect"
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+              <p className="text-text-secondary text-xs font-body mt-2 px-1">No users found. They may not have an account yet.</p>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center pt-8">
+              <LoadingSpinner size="md" />
             </div>
           ) : (
             <>
-              <p className="text-text-secondary text-xs font-body mb-4 tracking-wide">
-                Tap a soul to open a compatibility reading. Long press to remove.
-              </p>
-              <div className="space-y-3">
-                {souls.map((soul) => (
-                  <SoulCard
-                    key={soul.id}
-                    soul={soul}
-                    onOpenChat={openCompatibilityChat}
-                    onDelete={handleDeleteSoul}
-                  />
-                ))}
+              {/* Pending requests */}
+              {pendingInvites.length > 0 && (
+                <div>
+                  <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-3">Pending Requests</p>
+                  <div className="space-y-2">
+                    {pendingInvites.map(invite => (
+                      <div key={invite.invite_id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-amber-sun/20 rounded-2xl">
+                        <div className="w-10 h-10 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                          <span className="font-heading text-lg text-text-primary">{invite.requester.name[0]}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body text-text-primary text-sm font-semibold truncate">{invite.requester.name}</p>
+                          <p className="text-text-secondary text-xs font-body">
+                            @{invite.requester.username}
+                            {invite.requester.sun_sign && ` · ${SIGN_SYMBOLS[invite.requester.sun_sign] || ""}${invite.requester.sun_sign}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleInviteResponse(invite.invite_id, false)}
+                            disabled={respondingInvite === invite.invite_id}
+                            className="px-3 py-1.5 border border-forest-border text-text-secondary rounded-lg text-xs font-body transition-all hover:border-red-400/40 hover:text-red-400"
+                          >
+                            Decline
+                          </button>
+                          <button
+                            onClick={() => handleInviteResponse(invite.invite_id, true)}
+                            disabled={respondingInvite === invite.invite_id}
+                            className="px-3 py-1.5 bg-amber-sun text-forest-deep rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
+                          >
+                            {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : "Accept"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Connected souls */}
+              <div>
+                {connectedSouls.length > 0 ? (
+                  <>
+                    <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-3">Your Constellation</p>
+                    <div className="space-y-3">
+                      {connectedSouls.map(connection => (
+                        <SoulCard
+                          key={connection.connection_id}
+                          connection={connection}
+                          onOpen={() => setActiveSoul(connection)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center pt-8">
+                    <div className="text-4xl mb-4">✦</div>
+                    <p className="font-heading text-2xl text-text-primary mb-2">Your constellation is empty</p>
+                    <p className="text-text-secondary text-sm font-body max-w-xs mx-auto">
+                      Search for someone by their @username or email to send a connection request.
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}
         </div>
 
-        {/* Loading overlay */}
-        {loading && (
-          <div className="fixed inset-0 z-50 bg-forest-deep/80 backdrop-blur-sm flex items-center justify-center">
-            <div className="text-center">
-              <LoadingSpinner size="lg" />
-              <p className="text-text-secondary text-sm font-body mt-4">Reading the stars…</p>
-            </div>
-          </div>
+        {/* Soul action sheet */}
+        {activeSoul && (
+          <SoulActions
+            soul={activeSoul}
+            onClose={() => setActiveSoul(null)}
+            onSoloReading={() => openSoloReading(activeSoul)}
+            onGroupReading={() => startGroupSession(activeSoul)}
+          />
         )}
 
-        {showAdd && (
-          <AddSoulForm
-            onClose={() => setShowAdd(false)}
-            onSave={handleSaveSoul}
-            token={token}
+        {/* Group session share sheet */}
+        {groupSession && (
+          <GroupShareSheet
+            soul={groupSession.soul}
+            sessionCode={groupSession.code}
+            onEnterSession={() => enterGroupSession(groupSession.code)}
+            onClose={() => setGroupSession(null)}
           />
         )}
 
         <BottomNav />
       </div>
     </ProtectedRoute>
+  );
+}
+
+// Soul card component
+interface SoulCardProps {
+  connection: ConnectedSoul;
+  onOpen: () => void;
+}
+
+function SoulCard({ connection, onOpen }: SoulCardProps) {
+  const { soul } = connection;
+  const sunSymbol = soul.sun_sign ? (SIGN_SYMBOLS[soul.sun_sign] || "") : "";
+
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left bg-forest-card border border-forest-border rounded-2xl p-5 transition-all hover:border-amber-sun/30 active:scale-[0.99]"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+          <span className="font-heading text-xl text-text-primary">{soul.name[0]}</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-heading text-xl text-text-primary">{soul.name}</h3>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            {soul.sun_sign && (
+              <span className="text-text-secondary text-sm">
+                {sunSymbol} {soul.sun_sign}
+              </span>
+            )}
+            {soul.sun_sign && soul.hd_type && (
+              <span className="text-forest-border text-xs">·</span>
+            )}
+            {soul.hd_type && (
+              <span className="text-text-secondary text-xs font-body">
+                {soul.hd_type}{soul.hd_profile ? ` ${soul.hd_profile}` : ""}
+              </span>
+            )}
+            {soul.username && (
+              <>
+                <span className="text-forest-border text-xs">·</span>
+                <span className="text-text-secondary text-xs font-mono">@{soul.username}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <span className="text-amber-sun text-xs font-body tracking-wider opacity-70 shrink-0">Open →</span>
+      </div>
+    </button>
   );
 }
