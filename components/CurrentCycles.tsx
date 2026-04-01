@@ -16,9 +16,24 @@ interface Cycle {
   summary: string | null;
 }
 
+interface UpcomingCycle {
+  transit_planet: string;
+  natal_point: string;
+  aspect: string;
+  title: string;
+  status: "upcoming";
+  days_until_orb: number;
+  enters_orb: string; // YYYY-MM-DD
+  summary: string | null;
+}
+
 interface CyclesResponse {
   cycles: Cycle[];
-  count: number;
+  upcoming?: UpcomingCycle[];
+  total_active?: number;
+  total_upcoming?: number;
+  // legacy
+  count?: number;
   generated_at: string;
 }
 
@@ -27,6 +42,13 @@ function fmtDate(dateStr: string): string {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00:00Z");
   return d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+}
+
+// Format date like "May 31, 2026"
+function fmtDateLong(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T12:00:00Z");
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
 // Calculate progress 0–100 through the transit window
@@ -146,6 +168,63 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
   );
 }
 
+function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
+  const [expanded, setExpanded] = useState(false);
+  const summary = cycle.summary || "";
+
+  return (
+    <div
+      className="border border-forest-border/30 rounded-xl px-4 py-3 cursor-pointer transition-all duration-200 hover:border-forest-border/50 active:scale-[0.99]"
+      style={{ background: "rgba(15, 28, 18, 0.5)" }}
+      onClick={() => setExpanded((v) => !v)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h4
+              className="font-heading text-text-secondary/80 leading-tight"
+              style={{ fontSize: "0.95rem", fontWeight: 400 }}
+            >
+              {cycle.title}
+            </h4>
+            {/* "In X days" badge */}
+            <span
+              className="text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-forest-border/50 text-text-secondary/40 shrink-0"
+            >
+              {cycle.days_until_orb >= 60
+                  ? `in ~${Math.round(cycle.days_until_orb / 30)}mo`
+                  : `in ${cycle.days_until_orb}d`}
+            </span>
+          </div>
+          <p className="text-text-secondary/40 text-[11px] font-body leading-snug">
+            Enters orb {fmtDateLong(cycle.enters_orb)}
+          </p>
+        </div>
+        <span
+          className="text-text-secondary/30 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          ▾
+        </span>
+      </div>
+
+      {/* Collapsed: one-line description */}
+      {summary && !expanded && (
+        <p className="text-text-secondary/40 text-[12px] font-body leading-snug mt-2 italic">
+          "{summary.split(/(?<=[.!?])\s+/)[0] || summary}"
+        </p>
+      )}
+
+      {/* Expanded: full summary */}
+      {expanded && summary && (
+        <p className="text-text-secondary/50 text-[12px] font-body leading-snug mt-2 italic">
+          "{summary}"
+        </p>
+      )}
+    </div>
+  );
+}
+
 function CycleCardSkeleton() {
   return (
     <div className="bg-forest-card border border-forest-border/40 rounded-2xl p-4 animate-pulse">
@@ -163,6 +242,7 @@ interface CurrentCyclesProps {
 
 export default function CurrentCycles({ token }: CurrentCyclesProps) {
   const [cycles, setCycles] = useState<Cycle[] | null>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -178,6 +258,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
       if (cached) {
         const data: CyclesResponse = JSON.parse(cached);
         setCycles(data.cycles || []);
+        setUpcoming(data.upcoming || []);
         setLoading(false);
         return; // Don't re-fetch for monthly cache
       }
@@ -187,7 +268,9 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
     apiFetch("/transits/long-range", {}, token)
       .then((data: CyclesResponse) => {
         const cycleList = data.cycles || [];
+        const upcomingList = data.upcoming || [];
         setCycles(cycleList);
+        setUpcoming(upcomingList);
         // Cache monthly
         try {
           localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -195,6 +278,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
       })
       .catch(() => {
         setCycles([]);
+        setUpcoming([]);
       })
       .finally(() => setLoading(false));
   }, [token]);
@@ -202,7 +286,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
   const displayCycles = cycles ? cycles.slice(0, 6) : [];
   const total = displayCycles.length;
 
-  if (!loading && total === 0) return null;
+  if (!loading && total === 0 && upcoming.length === 0) return null;
 
   const handlePrev = () => setActiveIndex((i) => Math.max(0, i - 1));
   const handleNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1));
@@ -247,26 +331,53 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
           <CycleCardSkeleton />
         </div>
       ) : (
-        <div>
-          <CycleCard key={`${displayCycles[activeIndex]?.transit_planet}-${activeIndex}`} cycle={displayCycles[activeIndex]} />
-          {/* Dot indicators */}
-          {total > 1 && (
-            <div className="flex justify-center gap-1.5 mt-3">
-              {displayCycles.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveIndex(i)}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: i === activeIndex ? 16 : 6,
-                    height: 6,
-                    background: i === activeIndex ? "#e8821a" : "#1a3020",
-                  }}
-                />
-              ))}
+        <>
+          {/* Active cycles carousel */}
+          {total > 0 && (
+            <div>
+              <CycleCard key={`${displayCycles[activeIndex]?.transit_planet}-${activeIndex}`} cycle={displayCycles[activeIndex]} />
+              {/* Dot indicators */}
+              {total > 1 && (
+                <div className="flex justify-center gap-1.5 mt-3">
+                  {displayCycles.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveIndex(i)}
+                      className="rounded-full transition-all"
+                      style={{
+                        width: i === activeIndex ? 16 : 6,
+                        height: 6,
+                        background: i === activeIndex ? "#e8821a" : "#1a3020",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
+
+          {/* Upcoming cycles section */}
+          {upcoming.length > 0 && (
+            <div className={total > 0 ? "mt-6" : ""}>
+              {/* Section label */}
+              <div className="flex items-center gap-3 mb-3">
+                <p
+                  className="font-heading text-text-secondary/40"
+                  style={{ fontSize: "0.75rem", letterSpacing: "0.1em" }}
+                >
+                  Coming Up
+                </p>
+                <div className="flex-1 h-px bg-forest-border/30" />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {upcoming.map((cycle, i) => (
+                  <UpcomingCycleCard key={`${cycle.transit_planet}-${cycle.natal_point}-${i}`} cycle={cycle} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
