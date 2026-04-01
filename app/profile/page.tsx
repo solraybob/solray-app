@@ -56,6 +56,7 @@ function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
   let fire = 0, earth = 0, air = 0, water = 0;
   const POINTS_PER_PLANET = 14;
 
+  // Count planets
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
     const sign = p?.sign ?? "";
     if (FIRE_SIGNS.has(sign)) fire += POINTS_PER_PLANET;
@@ -63,6 +64,18 @@ function computeRadar(blueprint: any, cachedForecast?: any): RadarValues {
     else if (AIR_SIGNS.has(sign)) air += POINTS_PER_PLANET;
     else if (WATER_SIGNS.has(sign)) water += POINTS_PER_PLANET;
   });
+
+  // Count ASC and MC (they carry double weight as chart angles)
+  const ASC_POINTS = 20;
+  const ascSign = (natal?.ascendant as { sign?: string } | undefined)?.sign ?? "";
+  const mcSign = (natal?.mc as { sign?: string } | undefined)?.sign ?? "";
+  for (const angleSign of [ascSign, mcSign]) {
+    if (!angleSign) continue;
+    if (FIRE_SIGNS.has(angleSign)) fire += ASC_POINTS;
+    else if (EARTH_SIGNS.has(angleSign)) earth += ASC_POINTS;
+    else if (AIR_SIGNS.has(angleSign)) air += ASC_POINTS;
+    else if (WATER_SIGNS.has(angleSign)) water += ASC_POINTS;
+  }
 
   // Defined centres score
   let definedCount = 0;
