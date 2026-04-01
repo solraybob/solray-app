@@ -80,6 +80,53 @@ function formatDegree(decimalDegree: number): string {
   return `${deg}°${String(minutes).padStart(2, "0")}'`;
 }
 
+// Human-first translations for HD attributes
+const HD_TYPE_MEANINGS: Record<string, string> = {
+  "Generator": "You're built to respond. Your energy is sustainable when you love what you do.",
+  "Manifesting Generator": "You're built to respond and move fast. Multiple things at once is your nature.",
+  "Projector": "You're built to guide. Wait for the invitation before sharing your wisdom.",
+  "Manifestor": "You're built to initiate. Inform the people around you before you act.",
+  "Reflector": "You're a mirror for your community. You need a full lunar cycle before major decisions.",
+};
+
+const HD_STRATEGY_MEANINGS: Record<string, string> = {
+  "Wait to respond": "Don't initiate. Let life present itself, then check your response.",
+  "Wait for the invitation": "Your wisdom lands when invited. Share it when asked.",
+  "Inform and initiate": "Tell people what you're doing before you do it.",
+  "Wait a lunar cycle": "Give yourself a full month before deciding anything significant.",
+};
+
+const HD_AUTHORITY_MEANINGS: Record<string, string> = {
+  "Sacral": "Your gut knows before your mind does. The yes or no in your body is your truth.",
+  "Emotional": "You need time. Never decide in the heat or the low. Clarity comes in waves.",
+  "Solar Plexus": "You need time. Never decide in the heat or the low. Clarity comes in waves.",
+  "Emotional / Solar Plexus": "You need time. Never decide in the heat or the low. Clarity comes in waves.",
+  "Splenic": "A quiet whisper in the moment. It only speaks once. Trust the first feeling.",
+  "Spleen": "A quiet whisper in the moment. It only speaks once. Trust the first feeling.",
+  "Self-Projected": "Talk it through out loud. Your truth emerges in your own voice.",
+  "Mental": "Discuss it with people you trust. The answer comes through conversation.",
+  "Mental / Sounding Board": "Discuss it with people you trust. The answer comes through conversation.",
+  "Ego": "You know what you want when you commit from the heart. Only commit when it's real.",
+  "Ego / Will": "You know what you want when you commit from the heart. Only commit when it's real.",
+  "Lunar": "You reflect your environment. One full moon cycle before any major decision.",
+  "None / Lunar": "You reflect your environment. One full moon cycle before any major decision.",
+};
+
+const HD_PROFILE_MEANINGS: Record<string, string> = {
+  "1/3": "Investigator / Martyr. You learn by researching and by trial and error. Your mistakes are your teacher.",
+  "1/4": "Investigator / Opportunist. You build through deep foundations and trusted networks.",
+  "2/4": "Hermit / Opportunist. You need solitude to develop mastery, then your network calls you out.",
+  "2/5": "Hermit / Heretic. You need alone time but people project practical solutions onto you.",
+  "3/5": "Martyr / Heretic. You learn through experience and are seen as a practical problem-solver.",
+  "3/6": "Martyr / Role Model. First half of life: trial and error. Second half: becoming the example.",
+  "4/6": "Opportunist / Role Model. Your network is everything. You become a trusted authority.",
+  "4/1": "Opportunist / Investigator. Security through relationships and solid foundations.",
+  "5/1": "Heretic / Investigator. People project savior qualities onto you. Deep research backs your authority.",
+  "5/2": "Heretic / Hermit. Called out of solitude to solve others' problems. Research gives you credibility.",
+  "6/2": "Role Model / Hermit. Three life phases: trial, retreat, role model.",
+  "6/3": "Role Model / Martyr. Experience-driven. You live it before you teach it.",
+};
+
 // Normalise HD centre names from backend keys to display labels
 function normaliseCentreName(key: string): string {
   const MAP: Record<string, string> = {
@@ -548,11 +595,14 @@ export default function ChartPage() {
                   <div className="pb-4 mb-1 border-b border-forest-border/40">
                     <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">Type</p>
                     <p className="text-amber-sun font-heading text-3xl leading-tight">{chart.human_design.type}</p>
+                    {HD_TYPE_MEANINGS[chart.human_design.type] && (
+                      <p className="text-text-secondary/50 text-xs font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
+                    )}
                   </div>
                 )}
-                <HDRow label="Strategy" value={chart.human_design.strategy} />
-                <HDRow label="Authority" value={chart.human_design.authority} />
-                <HDRow label="Profile" value={chart.human_design.profile} />
+                <HDRow label="Strategy" value={chart.human_design.strategy} meaning={HD_STRATEGY_MEANINGS[chart.human_design.strategy]} />
+                <HDRow label="Authority" value={chart.human_design.authority} meaning={Object.entries(HD_AUTHORITY_MEANINGS).find(([k]) => chart.human_design.authority.includes(k) || k.includes(chart.human_design.authority))?.[1] || HD_AUTHORITY_MEANINGS[chart.human_design.authority]} />
+                <HDRow label="Profile" value={chart.human_design.profile} meaning={(() => { const num = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return num ? HD_PROFILE_MEANINGS[num] : undefined; })()} />
                 {chart.human_design.incarnation_cross && (
                   <HDRow label="Cross" value={chart.human_design.incarnation_cross} />
                 )}
@@ -654,13 +704,18 @@ function NumerologySection({ data }: { data: NumerologyData }) {
   );
 }
 
-function HDRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function HDRow({ label, value, highlight, meaning }: { label: string; value: string; highlight?: boolean; meaning?: string }) {
   return (
     <div className="flex items-start gap-3">
       <span className="text-text-secondary text-xs font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">{label}</span>
-      <span className={`font-body text-sm ${highlight ? "text-amber-sun font-medium" : "text-text-primary"}`}>
-        {value}
-      </span>
+      <div className="flex-1">
+        <span className={`font-body text-sm ${highlight ? "text-amber-sun font-medium" : "text-text-primary"}`}>
+          {value}
+        </span>
+        {meaning && (
+          <p className="text-text-secondary/50 text-xs font-body leading-snug mt-0.5">{meaning}</p>
+        )}
+      </div>
     </div>
   );
 }

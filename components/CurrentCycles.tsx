@@ -37,6 +37,25 @@ interface CyclesResponse {
   generated_at: string;
 }
 
+// Human-readable cycle title transformations
+const CYCLE_TITLE_MAP: Record<string, string> = {
+  "Jupiter meets your Chiron": "Jupiter opens your deepest wound into wisdom",
+  "Nodal Return": "Your 18-year chapter completes",
+  "Pluto meets your Moon": "Your emotional foundations transform",
+  "Neptune meets your Sun": "Your identity dissolves and reforms",
+  "Uranus meets your ASC": "Your outer self breaks free",
+};
+
+function humanizeCycleTitle(title: string): string {
+  // Exact match first
+  if (CYCLE_TITLE_MAP[title]) return CYCLE_TITLE_MAP[title];
+  // Partial match
+  for (const [key, value] of Object.entries(CYCLE_TITLE_MAP)) {
+    if (title.toLowerCase().includes(key.toLowerCase())) return value;
+  }
+  return title;
+}
+
 // Format date like "Jan 2026"
 function fmtDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -91,7 +110,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           className="font-heading text-text-primary leading-tight"
           style={{ fontSize: "1.05rem", fontWeight: 400 }}
         >
-          {cycle.title}
+          {humanizeCycleTitle(cycle.title)}
         </h3>
         <span
           className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
@@ -185,15 +204,15 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
               className="font-heading text-text-secondary/80 leading-tight"
               style={{ fontSize: "0.95rem", fontWeight: 400 }}
             >
-              {cycle.title}
+              {humanizeCycleTitle(cycle.title)}
             </h4>
             {/* "In X days" badge */}
             <span
               className="text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-forest-border/50 text-text-secondary/40 shrink-0"
             >
               {cycle.days_until_orb >= 60
-                  ? `in ~${Math.round(cycle.days_until_orb / 30)}mo`
-                  : `in ${cycle.days_until_orb}d`}
+                  ? `arriving in ${Math.round(cycle.days_until_orb / 30)} months`
+                  : `arriving in ${cycle.days_until_orb} days`}
             </span>
           </div>
           <p className="text-text-secondary/40 text-[11px] font-body leading-snug">
