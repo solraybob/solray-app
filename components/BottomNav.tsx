@@ -51,6 +51,16 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/profile",
+    label: "Profile",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function BottomNav() {
@@ -65,14 +75,14 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 py-3 px-4 transition-all duration-200 ${
+              className={`flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200 ${
                 isActive
                   ? "text-amber-sun"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
               {item.icon}
-              <span className="text-[10px] font-body tracking-wider uppercase">
+              <span className="text-[9px] font-body tracking-wider uppercase">
                 {item.label}
               </span>
             </Link>

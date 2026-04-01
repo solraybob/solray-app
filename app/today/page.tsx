@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
@@ -269,8 +268,7 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
-  const { token, logout } = useAuth();
-  const router = useRouter();
+  const { token } = useAuth();
   const backgroundFetchDone = useRef(false);
 
   const today = new Date().toLocaleDateString("en-GB", {
@@ -393,15 +391,6 @@ export default function TodayPage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-text-secondary text-xs font-body">{today}</span>
-              <button
-                onClick={() => {
-                  logout();
-                  router.push("/login");
-                }}
-                className="text-text-secondary text-xs font-body hover:text-amber-sun transition-colors"
-              >
-                Sign out
-              </button>
             </div>
           </div>
         </div>
