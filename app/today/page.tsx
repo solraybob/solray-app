@@ -120,24 +120,18 @@ function EnergyBar({
   value: number;
   animate: boolean;
 }) {
-  const note = getEnergyNote(label, value);
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-3">
-        <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase">
-          {label}
-        </span>
-        <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-amber-sun rounded-full transition-all duration-1000"
-            style={{ width: animate ? `${value * 10}%` : "0%" }}
-          />
-        </div>
-        <span className="text-text-secondary text-xs font-body w-4 text-right">{value}</span>
+    <div className="flex items-center gap-3">
+      <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase">
+        {label}
+      </span>
+      <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
+        <div
+          className="h-full bg-amber-sun rounded-full transition-all duration-1000"
+          style={{ width: animate ? `${value * 10}%` : "0%" }}
+        />
       </div>
-      <p className="text-text-secondary/50 text-[10px] font-body pl-[92px] leading-tight">
-        {note}
-      </p>
+      <span className="text-text-secondary text-xs font-body w-4 text-right">{value}</span>
     </div>
   );
 }
@@ -175,37 +169,37 @@ function SkeletonToday() {
         <div className="skeleton-shimmer h-14 w-2/3 rounded-lg" />
       </div>
 
+      {/* Energy bars skeleton */}
+      <div className="mb-8 space-y-4">
+        {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
+          <div key={label} className="flex items-center gap-3">
+            <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
+              {label}
+            </span>
+            <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
+              <div className="h-full w-0 bg-amber-sun rounded-full" />
+            </div>
+            <span className="text-text-secondary text-xs font-body w-4 text-right opacity-0">0</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Cycles skeleton */}
+      <div className="skeleton-shimmer h-32 w-full rounded-2xl mb-10" />
+
+      {/* Divider */}
+      <div className="border-t border-forest-border/40 mb-8" />
+
       {/* Reading skeleton — 4 lines */}
-      <div className="pb-10 space-y-3">
+      <div className="pb-8 space-y-3">
         <div className="skeleton-shimmer h-4 w-full rounded" />
         <div className="skeleton-shimmer h-4 w-full rounded" />
         <div className="skeleton-shimmer h-4 w-5/6 rounded" />
         <div className="skeleton-shimmer h-4 w-3/4 rounded" />
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-forest-border/40 mb-8" />
-
-      {/* Energy bars skeleton */}
-      <div className="mb-8 space-y-4">
-        {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
-          <div key={label} className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-3">
-              <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
-                {label}
-              </span>
-              <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
-                <div className="h-full w-0 bg-amber-sun rounded-full" />
-              </div>
-              <span className="text-text-secondary text-xs font-body w-4 text-right opacity-0">0</span>
-            </div>
-            <div className="skeleton-shimmer h-3 w-1/2 rounded ml-[92px]" />
-          </div>
-        ))}
-      </div>
-
       {/* Tags skeleton */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-2 mb-10">
         <div className="skeleton-shimmer h-7 w-32 rounded-full" />
         <div className="skeleton-shimmer h-7 w-28 rounded-full" />
         <div className="skeleton-shimmer h-7 w-24 rounded-full" />
@@ -378,11 +372,11 @@ export default function TodayPage() {
   // Staggered section reveal
   useEffect(() => {
     if (!forecast) return;
-    const timings = [0, 100, 500, 700, 900];
+    const timings = [0, 100, 400, 700, 900];
     timings.forEach((delay, index) => {
       setTimeout(() => setVisibleSections(index + 1), delay);
     });
-    setTimeout(() => setBarsAnimated(true), 600);
+    setTimeout(() => setBarsAnimated(true), 300);
   }, [forecast]);
 
   return (
@@ -452,38 +446,12 @@ export default function TodayPage() {
               </h1>
             </div>
 
-            {/* READING */}
-            <div
-              className="pb-10 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 2 ? 1 : 0,
-                transform: visibleSections >= 2 ? "translateY(0)" : "translateY(12px)",
-              }}
-            >
-              {forecast.reading.split(/\n\n+/).map((para, i) => (
-                <p
-                  key={i}
-                  className={`font-body text-text-secondary text-base leading-[1.85] ${i > 0 ? "mt-5" : ""}`}
-                >
-                  {para.trim()}
-                </p>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div
-              className="transition-all duration-500"
-              style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
-            >
-              <div className="border-t border-forest-border/40 mb-8" />
-            </div>
-
             {/* ENERGY BARS */}
             <div
               className="mb-8 transition-all duration-700"
               style={{
-                opacity: visibleSections >= 3 ? 1 : 0,
-                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
+                opacity: visibleSections >= 2 ? 1 : 0,
+                transform: visibleSections >= 2 ? "translateY(0)" : "translateY(12px)",
               }}
             >
               <div className="space-y-4">
@@ -496,18 +464,44 @@ export default function TodayPage() {
 
             {/* CURRENT CYCLES */}
             <div
-              className="transition-all duration-700"
+              className="mb-10 transition-all duration-700"
               style={{
-                opacity: visibleSections >= 4 ? 1 : 0,
-                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
+                opacity: visibleSections >= 3 ? 1 : 0,
+                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
               }}
             >
               <CurrentCycles token={token} />
             </div>
 
+            {/* Divider */}
+            <div
+              className="transition-all duration-500"
+              style={{ opacity: visibleSections >= 4 ? 1 : 0 }}
+            >
+              <div className="border-t border-forest-border/40 mb-8" />
+            </div>
+
+            {/* READING */}
+            <div
+              className="pb-8 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 4 ? 1 : 0,
+                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(12px)",
+              }}
+            >
+              {forecast.reading.split(/\n\n+/).map((para, i) => (
+                <p
+                  key={i}
+                  className={`font-body text-text-secondary text-base leading-[1.85] ${i > 0 ? "mt-5" : ""}`}
+                >
+                  {para.trim()}
+                </p>
+              ))}
+            </div>
+
             {/* TAGS */}
             <div
-              className="flex flex-wrap gap-2 mb-8 transition-all duration-700"
+              className="flex flex-wrap gap-2 mb-10 transition-all duration-700"
               style={{
                 opacity: visibleSections >= 4 ? 1 : 0,
                 transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
