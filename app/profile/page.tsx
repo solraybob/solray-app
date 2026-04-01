@@ -20,6 +20,7 @@ interface ModalRadar {
   cardinal: ElementScores;
   fixed: ElementScores;
   mutable: ElementScores;
+  totals?: { cardinal: number; fixed: number; mutable: number };
 }
 
 interface ProfileData {
@@ -76,20 +77,21 @@ function computeRadar(blueprint: any): ModalRadar {
   const cardinal = { fire: 0, earth: 0, air: 0, water: 0 };
   const fixed = { fire: 0, earth: 0, air: 0, water: 0 };
   const mutable = { fire: 0, earth: 0, air: 0, water: 0 };
+  const counts = { cardinal: 0, fixed: 0, mutable: 0 };
 
   function scoreSign(sign: string, points: number) {
-    if (CARDINAL_FIRE.has(sign)) cardinal.fire += points;
-    else if (CARDINAL_EARTH.has(sign)) cardinal.earth += points;
-    else if (CARDINAL_AIR.has(sign)) cardinal.air += points;
-    else if (CARDINAL_WATER.has(sign)) cardinal.water += points;
-    else if (FIXED_FIRE.has(sign)) fixed.fire += points;
-    else if (FIXED_EARTH.has(sign)) fixed.earth += points;
-    else if (FIXED_AIR.has(sign)) fixed.air += points;
-    else if (FIXED_WATER.has(sign)) fixed.water += points;
-    else if (MUTABLE_FIRE.has(sign)) mutable.fire += points;
-    else if (MUTABLE_EARTH.has(sign)) mutable.earth += points;
-    else if (MUTABLE_AIR.has(sign)) mutable.air += points;
-    else if (MUTABLE_WATER.has(sign)) mutable.water += points;
+    if (CARDINAL_FIRE.has(sign)) { cardinal.fire += points; counts.cardinal++; }
+    else if (CARDINAL_EARTH.has(sign)) { cardinal.earth += points; counts.cardinal++; }
+    else if (CARDINAL_AIR.has(sign)) { cardinal.air += points; counts.cardinal++; }
+    else if (CARDINAL_WATER.has(sign)) { cardinal.water += points; counts.cardinal++; }
+    else if (FIXED_FIRE.has(sign)) { fixed.fire += points; counts.fixed++; }
+    else if (FIXED_EARTH.has(sign)) { fixed.earth += points; counts.fixed++; }
+    else if (FIXED_AIR.has(sign)) { fixed.air += points; counts.fixed++; }
+    else if (FIXED_WATER.has(sign)) { fixed.water += points; counts.fixed++; }
+    else if (MUTABLE_FIRE.has(sign)) { mutable.fire += points; counts.mutable++; }
+    else if (MUTABLE_EARTH.has(sign)) { mutable.earth += points; counts.mutable++; }
+    else if (MUTABLE_AIR.has(sign)) { mutable.air += points; counts.mutable++; }
+    else if (MUTABLE_WATER.has(sign)) { mutable.water += points; counts.mutable++; }
   }
 
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
@@ -116,6 +118,7 @@ function computeRadar(blueprint: any): ModalRadar {
     cardinal: normalizeRing(cardinal),
     fixed: normalizeRing(fixed),
     mutable: normalizeRing(mutable),
+    totals: counts,
   };
 }
 
@@ -229,9 +232,9 @@ const AXIS_ICONS_MAP: Record<RadarAxis, (color: string) => React.ReactNode> = {
 };
 
 const MODAL_CONFIG = [
-  { key: "cardinal" as const, label: "Cardinal", color: "#e8821a", fillOpacity: 0.28, strokeOpacity: 0.9, delay: 0 },
-  { key: "fixed"    as const, label: "Fixed",    color: "#c9681a", fillOpacity: 0.22, strokeOpacity: 0.7, delay: 150 },
-  { key: "mutable"  as const, label: "Mutable",  color: "#a04d10", fillOpacity: 0.16, strokeOpacity: 0.5, delay: 300 },
+  { key: "cardinal" as const, label: "Cardinal", color: "#e8821a", fillOpacity: 0.38, strokeOpacity: 0.95, delay: 0 },
+  { key: "fixed"    as const, label: "Fixed",    color: "#2a9d8f", fillOpacity: 0.35, strokeOpacity: 0.90, delay: 150 },
+  { key: "mutable"  as const, label: "Mutable",  color: "#7c6fcd", fillOpacity: 0.30, strokeOpacity: 0.85, delay: 300 },
 ];
 
 function getPoint(
@@ -306,18 +309,20 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
 
   const progressMap = { cardinal: progressCardinal, fixed: progressFixed, mutable: progressMutable };
 
-  const SIZE = 280;
-  const cx = SIZE / 2;
-  const cy = SIZE / 2;
-  const OUTER = 96;
+  const SIZE = 320;
+  const LABEL_PAD = 36;
+  const TOTAL = SIZE + LABEL_PAD * 2;
+  const cx = TOTAL / 2;
+  const cy = TOTAL / 2;
+  const OUTER = 128;
   const gridLevels = [25, 50, 75, 100];
 
   return (
     <svg
-      width={SIZE}
-      height={SIZE}
-      viewBox={`0 0 ${SIZE} ${SIZE}`}
-      className="w-full max-w-[280px] mx-auto"
+      width={TOTAL}
+      height={TOTAL}
+      viewBox={`0 0 ${TOTAL} ${TOTAL}`}
+      className="w-full max-w-[360px] mx-auto"
       aria-label="Soul modal radar chart"
     >
       {/* Grid rings */}
@@ -361,34 +366,38 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
             fill={color}
             fillOpacity={fillOpacity * p}
             stroke={color}
-            strokeWidth={1.6}
+            strokeWidth={2}
             strokeLinejoin="round"
             strokeOpacity={strokeOpacity * p}
           />
         );
       })}
 
-      {/* Vertex dots for cardinal ring (frontmost) */}
-      {[radar.cardinal.fire, radar.cardinal.earth, radar.cardinal.air, radar.cardinal.water].map((v, i) => {
-        const r = (v / 100) * OUTER * progressCardinal;
-        const [x, y] = getPoint(cx, cy, r, i, 4);
-        return (
-          <circle
-            key={i}
-            cx={x} cy={y}
-            r={2.5}
-            fill="#e8821a"
-            opacity={progressCardinal * 0.9}
-          />
-        );
+      {/* Vertex dots — one per modality per axis */}
+      {MODAL_CONFIG.map(({ key, color }) => {
+        const p = progressMap[key];
+        const vals = [radar[key].fire, radar[key].earth, radar[key].air, radar[key].water];
+        return vals.map((v, i) => {
+          const r = (v / 100) * OUTER * p;
+          const [x, y] = getPoint(cx, cy, r, i, 4);
+          return (
+            <circle
+              key={`${key}-${i}`}
+              cx={x} cy={y}
+              r={2.5}
+              fill={color}
+              opacity={p * 0.9}
+            />
+          );
+        });
       })}
 
       {/* Center dot */}
       <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.4} />
 
-      {/* Axis labels */}
+      {/* Axis labels — placed outside the chart with extra spacing */}
       {RADAR_AXES.map((axis, i) => {
-        const [lx, ly] = getPoint(cx, cy, OUTER + 22, i, 4);
+        const [lx, ly] = getPoint(cx, cy, OUTER + 30, i, 4);
         return (
           <text
             key={axis}
@@ -397,9 +406,9 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
             textAnchor="middle"
             dominantBaseline="middle"
             fill="#8a9e8d"
-            fontSize="9"
+            fontSize="9.5"
             fontFamily="Inter, system-ui, sans-serif"
-            letterSpacing="0.12em"
+            letterSpacing="0.14em"
             style={{ textTransform: "uppercase" }}
           >
             {axis}
@@ -627,22 +636,28 @@ export default function ProfilePage() {
                       ))}
                     </div>
 
-                    {/* Modal legend */}
-                    <div className="mt-4 flex justify-center gap-5">
-                      {MODAL_CONFIG.map(({ label, color }) => (
-                        <div key={label} className="flex items-center gap-1.5">
-                          <span
-                            className="inline-block w-2 h-2 rounded-full"
-                            style={{ background: color }}
-                          />
-                          <span
-                            className="text-[9px] font-body tracking-wider uppercase"
-                            style={{ color }}
-                          >
-                            {label}
-                          </span>
-                        </div>
-                      ))}
+                    {/* Modal legend with planet counts */}
+                    <div className="mt-4 flex justify-center gap-5 flex-wrap">
+                      {MODAL_CONFIG.map(({ label, color, key }) => {
+                        const count = profile.radar.totals?.[key] ?? 0;
+                        return (
+                          <div key={label} className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ background: color }}
+                            />
+                            <span
+                              className="text-[9px] font-body tracking-wider uppercase"
+                              style={{ color }}
+                            >
+                              {label}
+                              {count > 0 && (
+                                <span className="ml-1 opacity-70">({count})</span>
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
