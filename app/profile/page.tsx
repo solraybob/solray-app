@@ -9,13 +9,17 @@ import { apiFetch } from "@/lib/api";
 
 // Types
 
-interface RadarValues {
+interface ElementScores {
   fire: number;
   earth: number;
   air: number;
   water: number;
-  spirit: number;
-  fixed: number;
+}
+
+interface ModalRadar {
+  cardinal: ElementScores;
+  fixed: ElementScores;
+  mutable: ElementScores;
 }
 
 interface ProfileData {
@@ -34,75 +38,84 @@ interface ProfileData {
   evolutionGate: number;
   evolutionGift: string;
   evolutionShadow: string;
-  radar: RadarValues;
+  radar: ModalRadar;
 }
 
-// Sign classification
+// Sign classification by modality + element
 
-const FIRE_SIGNS = new Set(["Aries", "Leo", "Sagittarius"]);
-const EARTH_SIGNS = new Set(["Taurus", "Virgo", "Capricorn"]);
-const AIR_SIGNS = new Set(["Gemini", "Libra", "Aquarius"]);
-const WATER_SIGNS = new Set(["Cancer", "Scorpio", "Pisces"]);
-const FIXED_SIGNS = new Set(["Taurus", "Leo", "Scorpio", "Aquarius"]);
+// Cardinal signs
+const CARDINAL_FIRE = new Set(["Aries"]);
+const CARDINAL_EARTH = new Set(["Capricorn"]);
+const CARDINAL_AIR = new Set(["Libra"]);
+const CARDINAL_WATER = new Set(["Cancer"]);
+
+// Fixed signs
+const FIXED_FIRE = new Set(["Leo"]);
+const FIXED_EARTH = new Set(["Taurus"]);
+const FIXED_AIR = new Set(["Aquarius"]);
+const FIXED_WATER = new Set(["Scorpio"]);
+
+// Mutable signs
+const MUTABLE_FIRE = new Set(["Sagittarius"]);
+const MUTABLE_EARTH = new Set(["Virgo"]);
+const MUTABLE_AIR = new Set(["Gemini"]);
+const MUTABLE_WATER = new Set(["Pisces"]);
 
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeRadar(blueprint: any): RadarValues {
+function computeRadar(blueprint: any): ModalRadar {
   const natal = blueprint?.astrology?.natal ?? {};
   const planets = natal?.planets ?? {};
 
-  let fire = 0, earth = 0, air = 0, water = 0;
   const POINTS_PER_PLANET = 14;
+  const ASC_POINTS = 20;
 
-  // Count planets by element
+  const cardinal = { fire: 0, earth: 0, air: 0, water: 0 };
+  const fixed = { fire: 0, earth: 0, air: 0, water: 0 };
+  const mutable = { fire: 0, earth: 0, air: 0, water: 0 };
+
+  function scoreSign(sign: string, points: number) {
+    if (CARDINAL_FIRE.has(sign)) cardinal.fire += points;
+    else if (CARDINAL_EARTH.has(sign)) cardinal.earth += points;
+    else if (CARDINAL_AIR.has(sign)) cardinal.air += points;
+    else if (CARDINAL_WATER.has(sign)) cardinal.water += points;
+    else if (FIXED_FIRE.has(sign)) fixed.fire += points;
+    else if (FIXED_EARTH.has(sign)) fixed.earth += points;
+    else if (FIXED_AIR.has(sign)) fixed.air += points;
+    else if (FIXED_WATER.has(sign)) fixed.water += points;
+    else if (MUTABLE_FIRE.has(sign)) mutable.fire += points;
+    else if (MUTABLE_EARTH.has(sign)) mutable.earth += points;
+    else if (MUTABLE_AIR.has(sign)) mutable.air += points;
+    else if (MUTABLE_WATER.has(sign)) mutable.water += points;
+  }
+
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
-    const sign = p?.sign ?? "";
-    if (FIRE_SIGNS.has(sign)) fire += POINTS_PER_PLANET;
-    else if (EARTH_SIGNS.has(sign)) earth += POINTS_PER_PLANET;
-    else if (AIR_SIGNS.has(sign)) air += POINTS_PER_PLANET;
-    else if (WATER_SIGNS.has(sign)) water += POINTS_PER_PLANET;
+    scoreSign(p?.sign ?? "", POINTS_PER_PLANET);
   });
 
-  // Chart angles carry extra weight
-  const ASC_POINTS = 20;
   const ascSign = (natal?.ascendant as Record<string, string> | undefined)?.sign ?? "";
   const mcSign = (natal?.mc as Record<string, string> | undefined)?.sign ?? "";
-  [ascSign, mcSign].forEach((angleSign) => {
-    if (!angleSign) return;
-    if (FIRE_SIGNS.has(angleSign)) fire += ASC_POINTS;
-    else if (EARTH_SIGNS.has(angleSign)) earth += ASC_POINTS;
-    else if (AIR_SIGNS.has(angleSign)) air += ASC_POINTS;
-    else if (WATER_SIGNS.has(angleSign)) water += ASC_POINTS;
-  });
+  [ascSign, mcSign].forEach((s) => s && scoreSign(s, ASC_POINTS));
 
-  // Spirit: outer planet prominence in water or air signs
-  // Neptune (home: Pisces), Uranus (home: Aquarius), Pluto (intensifies: Scorpio)
-  const outerPlanetKeys = ["Neptune", "Uranus", "Pluto"];
-  let outerInReceptiveSign = 0;
-  outerPlanetKeys.forEach((key) => {
-    const sign = (planets as Record<string, { sign?: string }>)[key]?.sign ?? "";
-    if (WATER_SIGNS.has(sign) || AIR_SIGNS.has(sign)) outerInReceptiveSign += 1;
-  });
-  const spirit = clamp((outerInReceptiveSign / 3) * 100);
-
-  // Fixed: concentration of fixed-sign planets
-  const allPlanetSigns = Object.values(planets as Record<string, { sign?: string }>).map(
-    (p) => p?.sign ?? ""
-  );
-  const totalPlanets = allPlanetSigns.filter(Boolean).length;
-  const fixedPlanets = allPlanetSigns.filter((s) => FIXED_SIGNS.has(s)).length;
-  const fixed = totalPlanets > 0 ? clamp((fixedPlanets / totalPlanets) * 100) : 50;
+  // Normalize each ring separately so each element axis is 0-100
+  function normalizeRing(ring: ElementScores): ElementScores {
+    const max = Math.max(ring.fire, ring.earth, ring.air, ring.water, 1);
+    const scale = 100 / max;
+    return {
+      fire: clamp(ring.fire * scale),
+      earth: clamp(ring.earth * scale),
+      air: clamp(ring.air * scale),
+      water: clamp(ring.water * scale),
+    };
+  }
 
   return {
-    fire: clamp(fire),
-    earth: clamp(earth),
-    air: clamp(air),
-    water: clamp(water),
-    spirit,
-    fixed,
+    cardinal: normalizeRing(cardinal),
+    fixed: normalizeRing(fixed),
+    mutable: normalizeRing(mutable),
   };
 }
 
@@ -156,7 +169,7 @@ function parseProfile(blueprint: any): ProfileData {
   };
 }
 
-// SVG Icons (stroke-based, 16px, consistent with app design language)
+// SVG Icons
 
 function IconFire({ color = "currentColor" }: { color?: string }) {
   return (
@@ -193,23 +206,6 @@ function IconWater({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-function IconSpirit({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1l2.1-2.1M17 7l2.1-2.1" />
-    </svg>
-  );
-}
-
-function IconFixed({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l8 10-8 10-8-10z" />
-    </svg>
-  );
-}
-
 function IconSignOut({ color = "currentColor" }: { color?: string }) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -220,141 +216,100 @@ function IconSignOut({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-// Radar Chart (pure SVG)
+// Radar Chart — 4 axes, 3 modal polygons
 
-const RADAR_DIMS = ["Fire", "Earth", "Air", "Water", "Spirit", "Fixed"] as const;
-type RadarDim = (typeof RADAR_DIMS)[number];
+const RADAR_AXES = ["Fire", "Earth", "Air", "Water"] as const;
+type RadarAxis = (typeof RADAR_AXES)[number];
 
-const DIM_DESCRIPTIONS: Record<RadarDim, string> = {
-  Fire: "action, will",
-  Earth: "form, matter",
-  Air: "thought, connection",
-  Water: "feeling, depth",
-  Spirit: "transpersonal",
-  Fixed: "persistence, focus",
+const AXIS_ICONS_MAP: Record<RadarAxis, (color: string) => React.ReactNode> = {
+  Fire: (c) => <IconFire color={c} />,
+  Earth: (c) => <IconEarth color={c} />,
+  Air: (c) => <IconAir color={c} />,
+  Water: (c) => <IconWater color={c} />,
 };
 
-function getDimIcon(dim: RadarDim, color: string) {
-  switch (dim) {
-    case "Fire": return <IconFire color={color} />;
-    case "Earth": return <IconEarth color={color} />;
-    case "Air": return <IconAir color={color} />;
-    case "Water": return <IconWater color={color} />;
-    case "Spirit": return <IconSpirit color={color} />;
-    case "Fixed": return <IconFixed color={color} />;
-  }
-}
+const MODAL_CONFIG = [
+  { key: "cardinal" as const, label: "Cardinal", color: "#e8821a", fillOpacity: 0.28, strokeOpacity: 0.9, delay: 0 },
+  { key: "fixed"    as const, label: "Fixed",    color: "#c9681a", fillOpacity: 0.22, strokeOpacity: 0.7, delay: 150 },
+  { key: "mutable"  as const, label: "Mutable",  color: "#a04d10", fillOpacity: 0.16, strokeOpacity: 0.5, delay: 300 },
+];
 
-function getRadarPoint(
+function getPoint(
   cx: number,
   cy: number,
   radius: number,
   index: number,
-  total: number,
-  progress: number
-): [number, number] {
-  const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
-  const r = radius * progress;
-  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
-}
-
-function getLabelPoint(
-  cx: number,
-  cy: number,
-  outerRadius: number,
-  index: number,
   total: number
 ): [number, number] {
   const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
-  const r = outerRadius + 22;
-  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
 }
 
-function radarPolygonPoints(
-  values: number[],
+function polygonPoints(
+  scores: ElementScores,
   cx: number,
   cy: number,
   outerRadius: number,
   progress: number
 ): string {
-  return values
+  const vals = [scores.fire, scores.earth, scores.air, scores.water];
+  return vals
     .map((v, i) => {
-      const normalised = (v / 100) * outerRadius;
-      const [x, y] = getRadarPoint(cx, cy, normalised, i, values.length, progress);
+      const r = (v / 100) * outerRadius * progress;
+      const [x, y] = getPoint(cx, cy, r, i, 4);
       return `${x},${y}`;
     })
     .join(" ");
 }
 
-function balancedPolygonPoints(
-  cx: number,
-  cy: number,
-  outerRadius: number,
-  total: number
-): string {
-  const r = (50 / 100) * outerRadius;
-  return Array.from({ length: total }, (_, i) => {
-    const angle = (Math.PI * 2 * i) / total - Math.PI / 2;
-    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
+function gridPolygon(cx: number, cy: number, radius: number): string {
+  return Array.from({ length: 4 }, (_, i) => {
+    const [x, y] = getPoint(cx, cy, radius, i, 4);
+    return `${x},${y}`;
   }).join(" ");
 }
 
-function gridPolygonPoints(
-  cx: number,
-  cy: number,
-  radius: number,
-  total: number
-): string {
-  return Array.from({ length: total }, (_, i) => {
-    const angle = (Math.PI * 2 * i) / total - Math.PI / 2;
-    return `${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`;
-  }).join(" ");
+interface ModalRadarChartProps {
+  radar: ModalRadar;
 }
 
-interface RadarChartProps {
-  values: RadarValues;
-}
-
-function RadarChart({ values }: RadarChartProps) {
+function useAnimatedProgress(delay: number): number {
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
   const DURATION = 800;
 
   useEffect(() => {
-    function animate(ts: number) {
-      if (startRef.current === null) startRef.current = ts;
-      const elapsed = ts - startRef.current;
-      const t = Math.min(elapsed / DURATION, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setProgress(eased);
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(animate);
-      }
-    }
     const timeout = setTimeout(() => {
+      function animate(ts: number) {
+        if (startRef.current === null) startRef.current = ts;
+        const elapsed = ts - startRef.current;
+        const t = Math.min(elapsed / DURATION, 1);
+        setProgress(1 - Math.pow(1 - t, 3));
+        if (t < 1) rafRef.current = requestAnimationFrame(animate);
+      }
       rafRef.current = requestAnimationFrame(animate);
-    }, 150);
+    }, 150 + delay);
     return () => {
       clearTimeout(timeout);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [delay]);
+
+  return progress;
+}
+
+function ModalRadarChart({ radar }: ModalRadarChartProps) {
+  const progressCardinal = useAnimatedProgress(0);
+  const progressFixed = useAnimatedProgress(150);
+  const progressMutable = useAnimatedProgress(300);
+
+  const progressMap = { cardinal: progressCardinal, fixed: progressFixed, mutable: progressMutable };
 
   const SIZE = 280;
   const cx = SIZE / 2;
   const cy = SIZE / 2;
-  const OUTER = 100;
-
-  const dimValues: number[] = [
-    values.fire,
-    values.earth,
-    values.air,
-    values.water,
-    values.spirit,
-    values.fixed,
-  ];
-
+  const OUTER = 96;
   const gridLevels = [25, 50, 75, 100];
 
   return (
@@ -363,7 +318,7 @@ function RadarChart({ values }: RadarChartProps) {
       height={SIZE}
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       className="w-full max-w-[280px] mx-auto"
-      aria-label="Soul radar chart"
+      aria-label="Soul modal radar chart"
     >
       {/* Grid rings */}
       {gridLevels.map((level) => {
@@ -371,7 +326,7 @@ function RadarChart({ values }: RadarChartProps) {
         return (
           <polygon
             key={level}
-            points={gridPolygonPoints(cx, cy, r, 6)}
+            points={gridPolygon(cx, cy, r)}
             fill="none"
             stroke="#1a3020"
             strokeWidth={level === 50 ? 1.5 : 0.8}
@@ -382,17 +337,13 @@ function RadarChart({ values }: RadarChartProps) {
       })}
 
       {/* Grid spokes */}
-      {RADAR_DIMS.map((_, i) => {
-        const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
-        const x2 = cx + OUTER * Math.cos(angle);
-        const y2 = cy + OUTER * Math.sin(angle);
+      {RADAR_AXES.map((_, i) => {
+        const [x2, y2] = getPoint(cx, cy, OUTER, i, 4);
         return (
           <line
             key={i}
-            x1={cx}
-            y1={cy}
-            x2={x2}
-            y2={y2}
+            x1={cx} y1={cy}
+            x2={x2} y2={y2}
             stroke="#1a3020"
             strokeWidth={0.8}
             opacity={0.5}
@@ -400,38 +351,34 @@ function RadarChart({ values }: RadarChartProps) {
         );
       })}
 
-      {/* Reference hexagon at 50 on all axes */}
-      <polygon
-        points={balancedPolygonPoints(cx, cy, OUTER, 6)}
-        fill="none"
-        stroke="#8a9e8d"
-        strokeWidth={1}
-        strokeDasharray="4,4"
-        opacity={0.3}
-      />
+      {/* Three modal polygons — mutable first (back), cardinal last (front) */}
+      {[...MODAL_CONFIG].reverse().map(({ key, color, fillOpacity, strokeOpacity }) => {
+        const p = progressMap[key];
+        return (
+          <polygon
+            key={key}
+            points={polygonPoints(radar[key], cx, cy, OUTER, p)}
+            fill={color}
+            fillOpacity={fillOpacity * p}
+            stroke={color}
+            strokeWidth={1.6}
+            strokeLinejoin="round"
+            strokeOpacity={strokeOpacity * p}
+          />
+        );
+      })}
 
-      {/* User's radar polygon — animated */}
-      <polygon
-        points={radarPolygonPoints(dimValues, cx, cy, OUTER, progress)}
-        fill="rgba(232, 130, 26, 0.18)"
-        stroke="#e8821a"
-        strokeWidth={1.8}
-        strokeLinejoin="round"
-        opacity={progress}
-      />
-
-      {/* Dot at each vertex */}
-      {dimValues.map((v, i) => {
-        const normalised = (v / 100) * OUTER;
-        const [x, y] = getRadarPoint(cx, cy, normalised, i, 6, progress);
+      {/* Vertex dots for cardinal ring (frontmost) */}
+      {[radar.cardinal.fire, radar.cardinal.earth, radar.cardinal.air, radar.cardinal.water].map((v, i) => {
+        const r = (v / 100) * OUTER * progressCardinal;
+        const [x, y] = getPoint(cx, cy, r, i, 4);
         return (
           <circle
             key={i}
-            cx={x}
-            cy={y}
-            r={3}
+            cx={x} cy={y}
+            r={2.5}
             fill="#e8821a"
-            opacity={progress * 0.9}
+            opacity={progressCardinal * 0.9}
           />
         );
       })}
@@ -440,38 +387,23 @@ function RadarChart({ values }: RadarChartProps) {
       <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.4} />
 
       {/* Axis labels */}
-      {RADAR_DIMS.map((dim, i) => {
-        const [lx, ly] = getLabelPoint(cx, cy, OUTER, i, 6);
-        const value = dimValues[i];
+      {RADAR_AXES.map((axis, i) => {
+        const [lx, ly] = getPoint(cx, cy, OUTER + 22, i, 4);
         return (
-          <g key={dim}>
-            <text
-              x={lx}
-              y={ly - 5}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="#8a9e8d"
-              fontSize="9"
-              fontFamily="Inter, system-ui, sans-serif"
-              letterSpacing="0.12em"
-              style={{ textTransform: "uppercase" }}
-            >
-              {dim}
-            </text>
-            <text
-              x={lx}
-              y={ly + 8}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="#e8821a"
-              fontSize="10"
-              fontFamily="Inter, system-ui, sans-serif"
-              fontWeight="500"
-              opacity={progress}
-            >
-              {Math.round(value)}
-            </text>
-          </g>
+          <text
+            key={axis}
+            x={lx}
+            y={ly}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="#8a9e8d"
+            fontSize="9"
+            fontFamily="Inter, system-ui, sans-serif"
+            letterSpacing="0.12em"
+            style={{ textTransform: "uppercase" }}
+          >
+            {axis}
+          </text>
         );
       })}
     </svg>
@@ -564,6 +496,7 @@ export default function ProfilePage() {
 
     const BP_CACHE_KEY = "solray_blueprint";
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function loadFromBlueprint(bp: any) {
       try {
         const p = parseProfile(bp);
@@ -575,25 +508,19 @@ export default function ProfilePage() {
       }
     }
 
-    // 1. Check cache first
     try {
       const cached = localStorage.getItem(BP_CACHE_KEY);
       if (cached) {
-        const bp = JSON.parse(cached);
-        loadFromBlueprint(bp);
+        loadFromBlueprint(JSON.parse(cached));
         return;
       }
     } catch (_) {}
 
-    // 2. Fetch from API
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
           try {
-            localStorage.setItem(
-              BP_CACHE_KEY,
-              JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() })
-            );
+            localStorage.setItem(BP_CACHE_KEY, JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() }));
           } catch (_) {}
           loadFromBlueprint(data.blueprint);
         } else {
@@ -612,9 +539,7 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
-  const initials = profile?.name
-    ? profile.name.charAt(0).toUpperCase()
-    : "S";
+  const initials = profile?.name ? profile.name.charAt(0).toUpperCase() : "S";
 
   return (
     <ProtectedRoute>
@@ -688,38 +613,36 @@ export default function ProfilePage() {
 
                 {profile ? (
                   <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4">
-                    <RadarChart values={profile.radar} />
+                    <ModalRadarChart radar={profile.radar} />
 
-                    {/* Dimension legend */}
-                    <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3">
-                      {RADAR_DIMS.map((dim) => {
-                        const val = profile.radar[dim.toLowerCase() as keyof RadarValues];
-                        return (
-                          <div key={dim} className="flex items-start gap-1.5">
-                            <span className="mt-0.5 shrink-0">
-                              {getDimIcon(dim, "#8a9e8d")}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-text-secondary text-[9px] font-body tracking-wider uppercase leading-none">
-                                {dim}
-                              </p>
-                              <p className="text-text-secondary/50 text-[8px] font-body mt-0.5 leading-none">
-                                {DIM_DESCRIPTIONS[dim]}
-                              </p>
-                              <div className="h-1 bg-forest-border rounded-full overflow-hidden mt-1">
-                                <div
-                                  className="h-full rounded-full transition-all duration-1000 delay-500"
-                                  style={{
-                                    width: visible ? `${val}%` : "0%",
-                                    background: "#e8821a",
-                                    opacity: 0.7,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    {/* Axis icons row */}
+                    <div className="mt-2 flex justify-center gap-5">
+                      {RADAR_AXES.map((axis) => (
+                        <div key={axis} className="flex flex-col items-center gap-1">
+                          {AXIS_ICONS_MAP[axis]("#8a9e8d")}
+                          <span className="text-text-secondary/60 text-[8px] font-body tracking-wider uppercase">
+                            {axis}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Modal legend */}
+                    <div className="mt-4 flex justify-center gap-5">
+                      {MODAL_CONFIG.map(({ label, color }) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                          <span
+                            className="inline-block w-2 h-2 rounded-full"
+                            style={{ background: color }}
+                          />
+                          <span
+                            className="text-[9px] font-body tracking-wider uppercase"
+                            style={{ color }}
+                          >
+                            {label}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : (
