@@ -297,6 +297,7 @@ function ChatPageInner() {
             const ctx = JSON.parse(raw) as {
               soulName: string;
               introMessage: string;
+              soulBlueprint?: Record<string, unknown> | null;
             };
             sessionStorage.removeItem("solray_compat_context");
 
@@ -334,6 +335,7 @@ function ChatPageInner() {
                   body: JSON.stringify({
                     message: ctx.introMessage,
                     conversation_history: [],
+                    soul_blueprint: ctx.soulBlueprint || null,
                   }),
                 },
                 token

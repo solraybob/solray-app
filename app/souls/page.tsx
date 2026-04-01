@@ -204,6 +204,37 @@ function SoulCard({ soul, onOpenChat, onDelete }: SoulCardProps) {
 
   const sunSymbol = soul.sun_sign ? (SIGN_SYMBOLS[soul.sun_sign] || "☉") : "✦";
 
+  // Extract Gene Keys Life's Work gift from blueprint if available
+  const gkLifesWorkGift = (() => {
+    if (!soul.blueprint) return null;
+    try {
+      const bp = soul.blueprint as Record<string, unknown>;
+      const hd = bp.human_design as Record<string, unknown> | undefined;
+      const cc = hd?.conscious_chart as Record<string, unknown> | undefined;
+      const sunGate = cc?.Sun as Record<string, unknown> | undefined;
+      const gateNum = sunGate?.gate ? String(sunGate.gate) : null;
+      if (!gateNum) return null;
+      const gk = bp.gene_keys as Record<string, unknown> | undefined;
+      const natal_gk = gk?.natal_gene_keys as Record<string, unknown> | undefined;
+      const gateData = natal_gk?.[gateNum] as Record<string, unknown> | undefined;
+      return gateData?.gift ? `Gate ${gateNum}: ${gateData.gift}` : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  // Extract profile from blueprint
+  const hdProfile = (() => {
+    if (!soul.blueprint) return null;
+    try {
+      const bp = soul.blueprint as Record<string, unknown>;
+      const hd = bp.human_design as Record<string, unknown> | undefined;
+      return hd?.profile ? String(hd.profile) : null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div className="relative">
       <button
@@ -231,7 +262,9 @@ function SoulCard({ soul, onOpenChat, onDelete }: SoulCardProps) {
                 <span className="text-forest-border text-xs">·</span>
               )}
               {soul.hd_type && (
-                <span className="text-text-secondary text-xs font-body">{soul.hd_type}</span>
+                <span className="text-text-secondary text-xs font-body">
+                  {soul.hd_type}{hdProfile ? ` ${hdProfile}` : ""}
+                </span>
               )}
               {!soul.sun_sign && !soul.hd_type && (
                 <span className="text-text-secondary text-xs font-body">
@@ -239,6 +272,14 @@ function SoulCard({ soul, onOpenChat, onDelete }: SoulCardProps) {
                 </span>
               )}
             </div>
+            {/* Gene Keys gift — only shown when blueprint is available */}
+            {gkLifesWorkGift && (
+              <div className="mt-1.5">
+                <span className="text-amber-sun/70 text-[11px] font-body tracking-wide">
+                  ✦ {gkLifesWorkGift}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <span className="text-amber-sun text-xs font-body tracking-wider opacity-70">Read →</span>
