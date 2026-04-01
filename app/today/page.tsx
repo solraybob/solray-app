@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import LunarPhaseCard from "@/components/LunarPhaseCard";
 
 interface Planet {
   name: string;
@@ -23,6 +24,18 @@ interface EnergyLevels {
   intuitive: number;
 }
 
+interface LunarEvent {
+  type: "New Moon" | "Full Moon";
+  sign: string;
+  degree: number;
+  house: number;
+  house_meaning: string;
+  date: string;
+  days_until: number;
+  is_today: boolean;
+  note: string;
+}
+
 interface ForecastData {
   day_title: string;
   reading: string;
@@ -34,6 +47,7 @@ interface ForecastData {
   energy: EnergyLevels;
   planets: Planet[];
   morning_greeting?: string;
+  lunar_event?: LunarEvent;
 }
 
 const MOCK_FORECAST: ForecastData = {
@@ -233,7 +247,8 @@ function parseForecastData(data: any): ForecastData {
         degree: `${Math.floor(p.degree)}°`,
         retrograde: p.retrograde,
       }));
-    return { ...data, planets };
+    // Pass through lunar_event if present
+    return { ...data, planets, lunar_event: data.lunar_event ?? undefined };
   } else {
     // AI not ready yet, show mock with real planet positions
     const planets: Planet[] = Object.entries(data.transits || {})
@@ -405,6 +420,19 @@ export default function TodayPage() {
             {error && (
               <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
                 <p className="text-text-secondary/60 text-[10px] font-body text-center">{error}</p>
+              </div>
+            )}
+
+            {/* LUNAR PHASE ALERT — shown when within 3-day window */}
+            {forecast.lunar_event && (
+              <div
+                className="pt-6 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 1 ? 1 : 0,
+                  transform: visibleSections >= 1 ? "translateY(0)" : "translateY(12px)",
+                }}
+              >
+                <LunarPhaseCard event={forecast.lunar_event} />
               </div>
             )}
 
