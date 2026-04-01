@@ -481,6 +481,21 @@ export default function TodayPage() {
               <div className="border-t border-forest-border/40 mb-8" />
             </div>
 
+            {/* DIVIDER + TODAY'S READING LABEL */}
+            <div
+              className="flex items-center gap-3 mb-6 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 4 ? 1 : 0,
+                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(12px)",
+              }}
+            >
+              <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
+              <p className="font-body text-text-secondary/50 uppercase tracking-widest" style={{ fontSize: "0.65rem" }}>
+                Today&apos;s Weather
+              </p>
+              <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
+            </div>
+
             {/* READING */}
             <div
               className="pb-8 transition-all duration-700"
