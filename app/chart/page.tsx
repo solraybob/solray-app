@@ -34,9 +34,19 @@ interface GeneKey {
   siddhi: string;
 }
 
+interface NumerologyData {
+  life_path: number;
+  expression: number;
+  soul_urge: number;
+  personal_year: number;
+  current_year: number;
+  short_meanings: Record<string, string>;
+}
+
 interface ChartData {
   natal: NatalPlanet[];
   human_design: HumanDesign;
+  numerology: NumerologyData | null;
   gene_keys: {
     lifes_work: GeneKey;
     evolution: GeneKey;
@@ -91,6 +101,7 @@ function parseBlueprint(blueprint: any): ChartData {
   const natal = blueprint?.astrology?.natal;
   const hd = blueprint?.human_design;
   const gk = blueprint?.gene_keys;
+  const numRaw = blueprint?.numerology;
 
   // Build planets array
   const planetsRaw: NatalPlanet[] = [];
@@ -227,7 +238,17 @@ function parseBlueprint(blueprint: any): ChartData {
     }
   }
 
-  return { natal: planetsRaw, human_design: humanDesign, gene_keys: geneKeys };
+  // Numerology
+  const numerology: NumerologyData | null = numRaw ? {
+    life_path: numRaw.life_path ?? 0,
+    expression: numRaw.expression ?? 0,
+    soul_urge: numRaw.soul_urge ?? 0,
+    personal_year: numRaw.personal_year ?? 0,
+    current_year: numRaw.current_year ?? new Date().getFullYear(),
+    short_meanings: numRaw.short_meanings ?? {},
+  } : null;
+
+  return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
 }
 
 // Pattern-style interpretation templates for Sun, Moon, Rising
@@ -569,6 +590,13 @@ export default function ChartPage() {
               </div>
             </CollapsibleSection>
 
+            {/* Numerology */}
+            {chart.numerology && (
+              <CollapsibleSection title="Numerology">
+                <NumerologySection data={chart.numerology} />
+              </CollapsibleSection>
+            )}
+
             {/* Gene Keys */}
             <CollapsibleSection title="Gene Keys">
               <div className="space-y-5 mt-2">
@@ -593,6 +621,36 @@ export default function ChartPage() {
         <BottomNav />
       </div>
     </ProtectedRoute>
+  );
+}
+
+function NumerologySection({ data }: { data: NumerologyData }) {
+  const numbers = [
+    { label: "Life Path", value: data.life_path, key: String(data.life_path) },
+    { label: "Expression", value: data.expression, key: String(data.expression) },
+    { label: "Soul Urge", value: data.soul_urge, key: String(data.soul_urge) },
+    { label: `Personal Year ${data.current_year}`, value: data.personal_year, key: String(data.personal_year) },
+  ];
+
+  return (
+    <div className="space-y-3 mt-2">
+      {numbers.map(({ label, value, key }) => (
+        <div
+          key={label}
+          className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0"
+        >
+          <span className="text-amber-sun font-heading text-3xl w-10 text-center leading-none">
+            {value}
+          </span>
+          <div className="flex-1">
+            <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
+            <p className="text-text-secondary/60 text-xs font-body mt-0.5">
+              {data.short_meanings[key] || ""}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
