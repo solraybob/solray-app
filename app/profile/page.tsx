@@ -21,6 +21,7 @@ interface ModalRadar {
   fixed: ElementScores;
   mutable: ElementScores;
   totals?: { cardinal: number; fixed: number; mutable: number };
+  aspects?: ElementScores;
 }
 
 interface NatalAspect {
@@ -69,6 +70,12 @@ const MUTABLE_FIRE = new Set(["Sagittarius"]);
 const MUTABLE_EARTH = new Set(["Virgo"]);
 const MUTABLE_AIR = new Set(["Gemini"]);
 const MUTABLE_WATER = new Set(["Pisces"]);
+
+// Element sets (for aspect activity)
+const FIRE_SIGNS = new Set(["Aries", "Leo", "Sagittarius"]);
+const EARTH_SIGNS = new Set(["Taurus", "Virgo", "Capricorn"]);
+const AIR_SIGNS = new Set(["Gemini", "Libra", "Aquarius"]);
+const WATER_SIGNS = new Set(["Cancer", "Scorpio", "Pisces"]);
 
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
@@ -122,11 +129,39 @@ function computeRadar(blueprint: any): ModalRadar {
     };
   }
 
+  // Aspect activity per element
+  const aspectActivity = { fire: 0, earth: 0, air: 0, water: 0 };
+  const aspects = (natal?.aspects || []) as Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
+
+  const planetSigns: Record<string, string> = {};
+  Object.entries(planets as Record<string, { sign?: string }>).forEach(([name, p]) => {
+    if (p?.sign) planetSigns[name] = p.sign;
+  });
+
+  aspects.forEach(({ planet1, planet2, orb }) => {
+    if (orb > 8) return;
+    const sign1 = planetSigns[planet1] || "";
+    const sign2 = planetSigns[planet2] || "";
+    if (FIRE_SIGNS.has(sign1) || FIRE_SIGNS.has(sign2)) aspectActivity.fire++;
+    if (EARTH_SIGNS.has(sign1) || EARTH_SIGNS.has(sign2)) aspectActivity.earth++;
+    if (AIR_SIGNS.has(sign1) || AIR_SIGNS.has(sign2)) aspectActivity.air++;
+    if (WATER_SIGNS.has(sign1) || WATER_SIGNS.has(sign2)) aspectActivity.water++;
+  });
+
+  const maxActivity = Math.max(...Object.values(aspectActivity), 1);
+  const aspectScores: ElementScores = {
+    fire: Math.min(100, Math.round((aspectActivity.fire / maxActivity) * 100)),
+    earth: Math.min(100, Math.round((aspectActivity.earth / maxActivity) * 100)),
+    air: Math.min(100, Math.round((aspectActivity.air / maxActivity) * 100)),
+    water: Math.min(100, Math.round((aspectActivity.water / maxActivity) * 100)),
+  };
+
   return {
     cardinal: normalizeRing(cardinal),
     fixed: normalizeRing(fixed),
     mutable: normalizeRing(mutable),
     totals: counts,
+    aspects: aspectScores,
   };
 }
 
@@ -325,6 +360,7 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
   const progressCardinal = useAnimatedProgress(0);
   const progressFixed = useAnimatedProgress(150);
   const progressMutable = useAnimatedProgress(300);
+  const progressAspects = useAnimatedProgress(450);
 
   const progressMap = { cardinal: progressCardinal, fixed: progressFixed, mutable: progressMutable };
 
@@ -391,6 +427,20 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
           />
         );
       })}
+
+      {/* Fourth layer: Aspect Activity polygon (innermost, dashed cream) */}
+      {radar.aspects && (
+        <polygon
+          points={polygonPoints(radar.aspects, cx, cy, OUTER, progressAspects)}
+          fill="#f5f0e8"
+          fillOpacity={0.25 * progressAspects}
+          stroke="#f5f0e8"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeOpacity={0.5 * progressAspects}
+          strokeDasharray="3 3"
+        />
+      )}
 
       {/* Vertex dots — one per modality per axis */}
       {MODAL_CONFIG.map(({ key, color }) => {
@@ -1013,6 +1063,19 @@ export default function ProfilePage() {
                           </div>
                         );
                       })}
+                      {/* Aspects layer legend */}
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full border flex-shrink-0"
+                          style={{ borderColor: "#f5f0e8", background: "transparent" }}
+                        />
+                        <span
+                          className="text-[9px] font-body tracking-wider uppercase"
+                          style={{ color: "#f5f0e8" }}
+                        >
+                          Aspects
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ) : (
