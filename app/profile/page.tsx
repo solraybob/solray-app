@@ -644,9 +644,10 @@ export default function ProfilePage() {
               Profile
             </span>
             <button
-              className="text-text-secondary hover:text-amber-sun transition-colors"
+              className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
               title="Edit profile"
               aria-label="Edit profile"
+              style={{ minWidth: "44px", minHeight: "44px" }}
               onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

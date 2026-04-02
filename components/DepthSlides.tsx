@@ -66,10 +66,18 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
-    const scrollLeft = container.scrollLeft;
-    const cardWidth = container.scrollWidth / SLIDES.length;
-    const activeIndex = Math.round(scrollLeft / cardWidth);
-    setExpandedKey(KEYS[activeIndex] || KEYS[0]);
+    const cards = container.querySelectorAll('[data-card]');
+    let activeIndex = 0;
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    cards.forEach((card, i) => {
+      const el = card as HTMLElement;
+      const cardCenter = el.offsetLeft + el.offsetWidth / 2;
+      if (Math.abs(cardCenter - containerCenter) < el.offsetWidth / 2) {
+        activeIndex = i;
+      }
+    });
+    const keys = ["astrology", "human_design", "gene_keys"] as const;
+    setExpandedKey(keys[activeIndex]);
   };
 
   return (
@@ -93,6 +101,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           return (
             <div
               key={key}
+              data-card
               style={{
                 minWidth: "72vw",
                 maxWidth: "72vw",
@@ -137,18 +146,19 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
               </p>
 
               {/* Expanded detail — auto-shows when card is centered */}
-              {isExpanded && detail && (
+              {isExpanded && (
                 <p
                   className="font-body mt-3"
                   style={{
                     fontSize: "0.8rem",
-                    color: "#8a9e8d",
+                    color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
                     lineHeight: 1.7,
                     borderTop: "1px solid rgba(26,48,32,0.8)",
                     paddingTop: "12px",
+                    fontStyle: detail ? "normal" : "italic",
                   }}
                 >
-                  {detail}
+                  {detail || "Deeper interpretation coming soon."}
                 </p>
               )}
             </div>

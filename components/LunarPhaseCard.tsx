@@ -107,6 +107,9 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
   return (
     <div
       className="rounded-2xl border px-4 py-4 mb-6"
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
       style={{
         borderColor: "rgba(212, 160, 23, 0.45)",
         background:
@@ -115,8 +118,11 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
         cursor: "pointer",
         position: "relative",
         zIndex: 1,
+        WebkitTapHighlightColor: "transparent",
+        userSelect: "none",
       }}
       onClick={() => setExpanded((v) => !v)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded((v) => !v); } }}
     >
       {/* Top row: icon + title + timing badge */}
       <div className="flex items-center gap-3 mb-2.5">
