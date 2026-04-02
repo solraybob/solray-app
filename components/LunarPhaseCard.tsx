@@ -106,12 +106,15 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
 
   return (
     <div
-      className="rounded-2xl border px-4 py-4 mb-6 cursor-pointer"
+      className="rounded-2xl border px-4 py-4 mb-6"
       style={{
         borderColor: "rgba(212, 160, 23, 0.45)",
         background:
           "linear-gradient(135deg, rgba(20, 38, 24, 0.95) 0%, rgba(14, 28, 18, 0.98) 100%)",
         boxShadow: "0 2px 16px rgba(212, 160, 23, 0.08), inset 0 1px 0 rgba(245, 200, 66, 0.06)",
+        cursor: "pointer",
+        position: "relative",
+        zIndex: 1,
       }}
       onClick={() => setExpanded((v) => !v)}
     >
@@ -170,7 +173,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       {/* Read more / Close toggle */}
       <button
         className="mt-2.5 text-[11px] font-body tracking-wider"
-        style={{ color: "rgba(245, 200, 66, 0.6)" }}
+        style={{ color: "rgba(245, 200, 66, 0.6)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
         onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
       >
         {expanded ? "Close ∧" : "Read more ∨"}

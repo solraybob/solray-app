@@ -729,8 +729,9 @@ export default function ProfilePage() {
                       </p>
                       <button
                         onClick={() => { setHandleInput(profile.handle); setEditingHandle(true); setSaveError(null); }}
-                        className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors"
+                        className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors flex items-center justify-center"
                         title="Edit username"
+                        style={{ minWidth: "44px", minHeight: "44px" }}
                       >
                         <IconPencil />
                       </button>
@@ -767,8 +768,9 @@ export default function ProfilePage() {
                     </h1>
                     <button
                       onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
-                      className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors mt-1"
+                      className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors flex items-center justify-center"
                       title="Edit display name"
+                      style={{ minWidth: "44px", minHeight: "44px" }}
                     >
                       <IconPencil />
                     </button>

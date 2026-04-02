@@ -249,8 +249,13 @@ function parseForecastData(data: any): ForecastData {
         degree: `${Math.floor(p.degree)}°`,
         retrograde: p.retrograde,
       }));
-    // Pass through lunar_event if present
-    return { ...data, planets, lunar_event: data.lunar_event ?? undefined };
+    // Explicitly pass through optional fields so cache round-trips preserve them
+    return {
+      ...data,
+      planets,
+      tag_details: data.tag_details ?? undefined,
+      lunar_event: data.lunar_event ?? undefined,
+    };
   } else {
     // AI not ready yet, show mock with real planet positions
     const planets: Planet[] = Object.entries(data.transits || {})
