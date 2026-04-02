@@ -113,6 +113,9 @@ function parseProfile(blueprint: any): ProfileData {
   const hd = blueprint?.human_design ?? {};
   const gk = blueprint?.gene_keys ?? {};
   const user = blueprint?.user ?? {};
+  // Name and username stored in cache with underscore prefix
+  const _cachedName = blueprint?._name || "";
+  const _cachedUsername = blueprint?._username || "";
 
   const sunSign = natal?.planets?.Sun?.sign ?? "";
   const moonSign = natal?.planets?.Moon?.sign ?? "";
@@ -134,8 +137,8 @@ function parseProfile(blueprint: any): ProfileData {
   }
 
   const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
-  const name = user?.name ?? blueprint?.name ?? "Your Name";
-  const handle = user?.handle ?? blueprint?.handle ?? user?.email?.split("@")[0] ?? "you";
+  const name = _cachedName || user?.name || blueprint?.name || "Your Name";
+  const handle = _cachedUsername || user?.handle || blueprint?.handle || user?.email?.split("@")[0] || "you";
 
   // Parse natal aspects with orb filtering
   const MAJOR_ASPECTS = new Set(["trine", "sextile", "conjunction", "opposition", "square"]);
@@ -654,10 +657,17 @@ export default function ProfilePage() {
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
+          // Store name and username with the blueprint so they survive cache
+          const bpWithUser = {
+            ...data.blueprint,
+            _name: data.profile?.name || data.name || "",
+            _username: data.profile?.username || data.username || "",
+            _cachedAt: Date.now()
+          };
           try {
-            localStorage.setItem(BP_CACHE_KEY, JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() }));
+            localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser));
           } catch (_) {}
-          loadFromBlueprint(data.blueprint);
+          loadFromBlueprint(bpWithUser);
         } else {
           setLoading(false);
           setTimeout(() => setVisible(true), 50);
