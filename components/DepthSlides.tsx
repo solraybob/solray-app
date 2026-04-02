@@ -58,6 +58,7 @@ const KEYS = ["astrology", "human_design", "gene_keys"] as const;
 
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
   const [expandedKey, setExpandedKey] = useState<string>("astrology");
+  const [collapsed, setCollapsed] = useState(false);
 
   // Set first card expanded on mount
   useEffect(() => {
@@ -82,12 +83,22 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
 
   return (
     <div>
-      <p
-        className="font-body uppercase mb-3"
-        style={{ fontSize: "0.65rem", letterSpacing: "0.15em", color: "rgba(138,158,141,0.5)" }}
+      {/* Collapsible header */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="w-full flex items-center justify-between mb-3"
+        style={{ background: "none", border: "none", cursor: "pointer" }}
       >
-        Today&apos;s Dimensions
-      </p>
+        <p style={{ fontSize: "0.65rem", letterSpacing: "0.15em", color: "rgba(138,158,141,0.5)", textTransform: "uppercase", fontFamily: "Inter, sans-serif" }}>
+          Today&apos;s Dimensions
+        </p>
+        <span style={{ color: "#8a9e8d", fontSize: "0.9rem" }}>
+          {collapsed ? "∧" : "∨"}
+        </span>
+      </button>
+
+      {/* Collapsible content */}
+      {!collapsed && (
       <div
         className="flex gap-3 pb-2"
         style={{ overflowX: "scroll", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -165,6 +176,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -475,21 +475,10 @@ export default function TodayPage() {
               </div>
             </div>
 
-            {/* CURRENT CYCLES */}
-            <div
-              className="mb-10 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 3 ? 1 : 0,
-                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
-              }}
-            >
-              <CurrentCycles token={token} />
-            </div>
-
             {/* Divider */}
             <div
               className="transition-all duration-500"
-              style={{ opacity: visibleSections >= 4 ? 1 : 0 }}
+              style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
             >
               <div className="border-t border-forest-border/40 mb-8" />
             </div>
@@ -498,8 +487,8 @@ export default function TodayPage() {
             <div
               className="flex items-center gap-3 mb-6 transition-all duration-700"
               style={{
-                opacity: visibleSections >= 4 ? 1 : 0,
-                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(12px)",
+                opacity: visibleSections >= 3 ? 1 : 0,
+                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
               }}
             >
               <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
@@ -513,8 +502,8 @@ export default function TodayPage() {
             <div
               className="pb-8 transition-all duration-700"
               style={{
-                opacity: visibleSections >= 4 ? 1 : 0,
-                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(12px)",
+                opacity: visibleSections >= 3 ? 1 : 0,
+                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
               }}
             >
               {forecast.reading.split(/\n\n+/).map((para, i) => (
@@ -531,14 +520,25 @@ export default function TodayPage() {
             <div
               className="mb-10 transition-all duration-700"
               style={{
-                opacity: visibleSections >= 4 ? 1 : 0,
-                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
+                opacity: visibleSections >= 3 ? 1 : 0,
+                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
               }}
             >
               <DepthSlides
                 tags={forecast.tags}
                 tagDetails={forecast.tag_details}
               />
+            </div>
+
+            {/* CURRENT CYCLES */}
+            <div
+              className="mb-10 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 4 ? 1 : 0,
+                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
+              }}
+            >
+              <CurrentCycles token={token} />
             </div>
 
             {/* PLANET STRIP — live cosmic ticker */}
@@ -549,6 +549,7 @@ export default function TodayPage() {
                 transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
               }}
             >
+
               <p className="text-text-secondary/40 text-[9px] font-body tracking-[0.25em] uppercase mb-3">
                 Sky Now
               </p>
