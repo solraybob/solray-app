@@ -8,6 +8,7 @@ import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
+import DepthSlides from "@/components/DepthSlides";
 
 interface Planet {
   name: string;
@@ -36,6 +37,12 @@ interface LunarEvent {
   note: string;
 }
 
+interface TagDetails {
+  astrology: string;
+  human_design: string;
+  gene_keys: string;
+}
+
 interface ForecastData {
   day_title: string;
   reading: string;
@@ -44,6 +51,7 @@ interface ForecastData {
     human_design: string;
     gene_keys: string;
   };
+  tag_details?: TagDetails;
   energy: EnergyLevels;
   planets: Planet[];
   morning_greeting?: string;
@@ -514,17 +522,18 @@ export default function TodayPage() {
               ))}
             </div>
 
-            {/* TAGS */}
+            {/* DEPTH SLIDES */}
             <div
-              className="flex flex-wrap gap-2 mb-10 transition-all duration-700"
+              className="mb-10 transition-all duration-700"
               style={{
                 opacity: visibleSections >= 4 ? 1 : 0,
                 transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
               }}
             >
-              <Tag>{forecast.tags.astrology}</Tag>
-              <Tag>{forecast.tags.human_design}</Tag>
-              <Tag>{forecast.tags.gene_keys}</Tag>
+              <DepthSlides
+                tags={forecast.tags}
+                tagDetails={forecast.tag_details}
+              />
             </div>
 
             {/* PLANET STRIP — live cosmic ticker */}
