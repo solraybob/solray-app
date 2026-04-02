@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface DepthSlidesProps {
   tags: {
@@ -54,8 +54,23 @@ const SLIDES = [
   },
 ];
 
+const KEYS = ["astrology", "human_design", "gene_keys"] as const;
+
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string>("astrology");
+
+  // Set first card expanded on mount
+  useEffect(() => {
+    setExpandedKey("astrology");
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.scrollWidth / SLIDES.length;
+    const activeIndex = Math.round(scrollLeft / cardWidth);
+    setExpandedKey(KEYS[activeIndex] || KEYS[0]);
+  };
 
   return (
     <div>
@@ -68,6 +83,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
       <div
         className="flex gap-3 pb-2"
         style={{ overflowX: "scroll", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
+        onScroll={handleScroll}
       >
         {SLIDES.map(({ key, label, icon }) => {
           const headline = tags[key] || "";
@@ -77,16 +93,14 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           return (
             <div
               key={key}
-              onClick={() => setExpandedKey(isExpanded ? null : key)}
               style={{
                 minWidth: "72vw",
                 maxWidth: "72vw",
                 scrollSnapAlign: "start",
                 background: "#0a1f12",
-                borderLeft: "3px solid #e8821a",
+                borderLeft: `3px solid ${isExpanded ? "#e8821a" : "rgba(232, 130, 26, 0.35)"}`,
                 borderRadius: "12px",
                 padding: "16px",
-                cursor: "pointer",
                 transition: "all 0.3s ease",
                 flexShrink: 0,
               }}
@@ -122,7 +136,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 {headline}
               </p>
 
-              {/* Expanded detail */}
+              {/* Expanded detail — auto-shows when card is centered */}
               {isExpanded && detail && (
                 <p
                   className="font-body mt-3"
@@ -135,16 +149,6 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   }}
                 >
                   {detail}
-                </p>
-              )}
-
-              {/* "Tap to expand" hint when no detail yet */}
-              {!isExpanded && !detail && (
-                <p
-                  className="font-body mt-2"
-                  style={{ fontSize: "0.65rem", color: "rgba(138,158,141,0.4)", fontStyle: "italic" }}
-                >
-                  Tap for deeper reading
                 </p>
               )}
             </div>

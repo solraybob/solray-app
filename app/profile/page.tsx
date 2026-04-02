@@ -491,6 +491,26 @@ function ProfileSkeleton() {
   );
 }
 
+// Pencil icon
+function IconPencil() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  );
+}
+
+// Camera icon
+function IconCamera() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+  );
+}
+
 // Main Page
 
 export default function ProfilePage() {
@@ -499,6 +519,25 @@ export default function ProfilePage() {
   const [visible, setVisible] = useState(false);
   const { token, logout } = useAuth();
   const router = useRouter();
+
+  // Edit state
+  const [editingName, setEditingName] = useState(false);
+  const [editingHandle, setEditingHandle] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [handleInput, setHandleInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [savingHandle, setSavingHandle] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Load avatar from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("solray_avatar");
+      if (stored) setAvatarUrl(stored);
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -550,6 +589,51 @@ export default function ProfilePage() {
 
   const initials = profile?.name ? profile.name.charAt(0).toUpperCase() : "S";
 
+  // Save display name
+  const handleSaveName = async () => {
+    if (!nameInput.trim() || !token) return;
+    setSavingName(true);
+    setSaveError(null);
+    try {
+      const data = await apiFetch("/users/profile", { method: "PATCH", body: JSON.stringify({ name: nameInput.trim() }) }, token);
+      setProfile((p) => p ? { ...p, name: data.name } : p);
+      setEditingName(false);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  // Save username
+  const handleSaveHandle = async () => {
+    if (!handleInput.trim() || !token) return;
+    setSavingHandle(true);
+    setSaveError(null);
+    try {
+      const data = await apiFetch("/users/profile", { method: "PATCH", body: JSON.stringify({ username: handleInput.trim() }) }, token);
+      setProfile((p) => p ? { ...p, handle: data.username } : p);
+      setEditingHandle(false);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSavingHandle(false);
+    }
+  };
+
+  // Handle avatar selection
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      try { localStorage.setItem("solray_avatar", base64); } catch (_) {}
+      setAvatarUrl(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-28">
@@ -561,8 +645,9 @@ export default function ProfilePage() {
             </span>
             <button
               className="text-text-secondary hover:text-amber-sun transition-colors"
-              title="Edit profile (coming soon)"
+              title="Edit profile"
               aria-label="Edit profile"
+              onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -585,25 +670,114 @@ export default function ProfilePage() {
             <div className="max-w-lg mx-auto px-5">
               {/* Avatar + Identity */}
               <div className="pt-10 pb-8 flex flex-col items-center gap-2">
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg mb-1"
-                  style={{ background: "#e8821a" }}
-                >
-                  {initials}
+                {/* Avatar with camera overlay */}
+                <div className="relative mb-1">
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg overflow-hidden"
+                    style={{ background: "#e8821a" }}
+                  >
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center border border-forest-border"
+                    style={{ background: "#0a1f12", color: "#8a9e8d" }}
+                    title="Change profile picture"
+                  >
+                    <IconCamera />
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
                 </div>
 
-                {profile?.handle && (
-                  <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
-                    @{profile.handle}
-                  </p>
+                {/* Handle (username) */}
+                {editingHandle ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">@</span>
+                    <input
+                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 text-xs font-body text-text-primary focus:outline-none focus:border-amber-sun/60"
+                      value={handleInput}
+                      onChange={(e) => setHandleInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveHandle(); if (e.key === "Escape") setEditingHandle(false); }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveHandle}
+                      disabled={savingHandle}
+                      className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80"
+                    >
+                      {savingHandle ? "…" : "Save"}
+                    </button>
+                    <button onClick={() => setEditingHandle(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
+                  </div>
+                ) : (
+                  profile?.handle && (
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
+                        @{profile.handle}
+                      </p>
+                      <button
+                        onClick={() => { setHandleInput(profile.handle); setEditingHandle(true); setSaveError(null); }}
+                        className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors"
+                        title="Edit username"
+                      >
+                        <IconPencil />
+                      </button>
+                    </div>
+                  )
                 )}
 
-                <h1
-                  className="font-heading text-4xl text-text-primary leading-tight text-center"
-                  style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
-                >
-                  {profile?.name || "Your Name"}
-                </h1>
+                {/* Display name */}
+                {editingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="bg-forest-card border border-forest-border rounded-lg px-3 py-1.5 text-lg font-heading text-text-primary focus:outline-none focus:border-amber-sun/60 text-center"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveName}
+                      disabled={savingName}
+                      className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80"
+                    >
+                      {savingName ? "…" : "Save"}
+                    </button>
+                    <button onClick={() => setEditingName(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1
+                      className="font-heading text-4xl text-text-primary leading-tight text-center"
+                      style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
+                    >
+                      {profile?.name || "Your Name"}
+                    </h1>
+                    <button
+                      onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
+                      className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors mt-1"
+                      title="Edit display name"
+                    >
+                      <IconPencil />
+                    </button>
+                  </div>
+                )}
+
+                {saveError && (
+                  <p className="text-red-400 text-[10px] font-body">{saveError}</p>
+                )}
 
                 {profile && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2">
