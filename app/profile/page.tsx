@@ -14,8 +14,9 @@ interface RadarValues {
   earth: number;
   air: number;
   water: number;
-  definition: number;
-  harmony: number;
+  cardinal: number;
+  fixed: number;
+  mutable: number;
 }
 
 interface NatalAspect {
@@ -51,73 +52,58 @@ const FIRE_SIGNS = new Set(["Aries", "Leo", "Sagittarius"]);
 const EARTH_SIGNS = new Set(["Taurus", "Virgo", "Capricorn"]);
 const AIR_SIGNS = new Set(["Gemini", "Libra", "Aquarius"]);
 const WATER_SIGNS = new Set(["Cancer", "Scorpio", "Pisces"]);
+const CARDINAL_SIGNS = new Set(["Aries", "Cancer", "Libra", "Capricorn"]);
+const FIXED_SIGNS = new Set(["Taurus", "Leo", "Scorpio", "Aquarius"]);
+const MUTABLE_SIGNS = new Set(["Gemini", "Virgo", "Sagittarius", "Pisces"]);
 
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
 
+const POINTS_PER_PLANET = 14;
+const POINTS_PER_ANGLE = 20;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeRadar(blueprint: any): RadarValues {
   const natal = blueprint?.astrology?.natal ?? {};
   const planets = natal?.planets ?? {};
-  const hd = blueprint?.human_design ?? {};
 
-  // Element counting
-  const elementCounts = { fire: 0, earth: 0, air: 0, water: 0 };
+  // Element + modality counting (raw points)
+  const counts = { fire: 0, earth: 0, air: 0, water: 0, cardinal: 0, fixed: 0, mutable: 0 };
 
-  function addElement(sign: string, weight: number) {
-    if (FIRE_SIGNS.has(sign)) elementCounts.fire += weight;
-    else if (EARTH_SIGNS.has(sign)) elementCounts.earth += weight;
-    else if (AIR_SIGNS.has(sign)) elementCounts.air += weight;
-    else if (WATER_SIGNS.has(sign)) elementCounts.water += weight;
+  function addSign(sign: string, weight: number) {
+    if (FIRE_SIGNS.has(sign)) counts.fire += weight;
+    else if (EARTH_SIGNS.has(sign)) counts.earth += weight;
+    else if (AIR_SIGNS.has(sign)) counts.air += weight;
+    else if (WATER_SIGNS.has(sign)) counts.water += weight;
+    if (CARDINAL_SIGNS.has(sign)) counts.cardinal += weight;
+    else if (FIXED_SIGNS.has(sign)) counts.fixed += weight;
+    else if (MUTABLE_SIGNS.has(sign)) counts.mutable += weight;
   }
 
-  // Regular planets: weight 1
+  // Regular planets
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
-    addElement(p?.sign ?? "", 1);
+    addSign(p?.sign ?? "", POINTS_PER_PLANET);
   });
 
-  // ASC and MC: weight 2 (more significant)
+  // ASC and MC (higher weight)
   const ascSign = (natal?.ascendant as Record<string, string> | undefined)?.sign ?? "";
   const mcSign = (natal?.mc as Record<string, string> | undefined)?.sign ?? "";
-  if (ascSign) addElement(ascSign, 2);
-  if (mcSign) addElement(mcSign, 2);
+  if (ascSign) addSign(ascSign, POINTS_PER_ANGLE);
+  if (mcSign) addSign(mcSign, POINTS_PER_ANGLE);
 
-  // Normalize to 0–100
-  const maxElement = Math.max(elementCounts.fire, elementCounts.earth, elementCounts.air, elementCounts.water, 1);
-  const normEl = (v: number) => clamp(Math.round((v / maxElement) * 100));
-
-  // Definition: % of HD centres that are defined (defined / 9 * 100)
-  let definition = 50;
-  const centres = hd?.centres ?? hd?.centers ?? {};
-  if (typeof centres === "object" && Object.keys(centres).length > 0) {
-    const centreList = Object.values(centres as Record<string, { defined?: boolean } | boolean>);
-    const defined = centreList.filter((c) => {
-      if (typeof c === "boolean") return c;
-      return (c as { defined?: boolean })?.defined === true;
-    }).length;
-    definition = clamp(Math.round((defined / 9) * 100));
-  }
-
-  // Harmony: (trines + sextiles) / total aspects * 100
-  const allAspects = (natal?.aspects || []) as Array<{ aspect: string; orb: number }>;
-  const filtered = allAspects.filter((a) => a.orb <= 8);
-  let harmony = 50;
-  if (filtered.length > 0) {
-    const harmonious = filtered.filter((a) => {
-      const t = a.aspect?.toLowerCase() ?? "";
-      return t === "trine" || t === "sextile";
-    }).length;
-    harmony = clamp(Math.round((harmonious / filtered.length) * 100));
-  }
+  // Normalize to 0–100 (elements share same max, modalities share same max)
+  const maxElement = Math.max(counts.fire, counts.earth, counts.air, counts.water, 1);
+  const maxModality = Math.max(counts.cardinal, counts.fixed, counts.mutable, 1);
 
   return {
-    fire: normEl(elementCounts.fire),
-    earth: normEl(elementCounts.earth),
-    air: normEl(elementCounts.air),
-    water: normEl(elementCounts.water),
-    definition,
-    harmony,
+    fire: clamp(Math.round((counts.fire / maxElement) * 100)),
+    earth: clamp(Math.round((counts.earth / maxElement) * 100)),
+    air: clamp(Math.round((counts.air / maxElement) * 100)),
+    water: clamp(Math.round((counts.water / maxElement) * 100)),
+    cardinal: clamp(Math.round((counts.cardinal / maxModality) * 100)),
+    fixed: clamp(Math.round((counts.fixed / maxModality) * 100)),
+    mutable: clamp(Math.round((counts.mutable / maxModality) * 100)),
   };
 }
 
@@ -194,27 +180,28 @@ function IconSignOut({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-// Soul Map Radar — 6 axes, single amber polygon
+// Soul Map Radar — 7 axes, heptagonal polygon
 
-const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "definition", "harmony"];
-const SOUL_AXIS_LABELS = ["Fire", "Earth", "Air", "Water", "Definition", "Harmony"] as const;
+const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "cardinal", "fixed", "mutable"];
+const SOUL_AXIS_LABELS = ["Fire", "Earth", "Air", "Water", "Cardinal", "Fixed", "Mutable"] as const;
 
-function getPoint6(cx: number, cy: number, radius: number, index: number): [number, number] {
-  const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
+function getPoint7(cx: number, cy: number, radius: number, index: number): [number, number] {
+  const angle = (Math.PI * 2 * index) / 7 - Math.PI / 2;
   return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
 }
 
-function hexPolygonPoints(values: RadarValues, cx: number, cy: number, outerRadius: number, progress: number): string {
-  return SOUL_AXIS_KEYS.map((key, i) => {
-    const r = (values[key] / 100) * outerRadius * progress;
-    const [x, y] = getPoint6(cx, cy, r, i);
-    return `${x},${y}`;
+function heptPolygonPoints(values: number[], cx: number, cy: number, maxR: number): string {
+  const n = values.length;
+  return values.map((v, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const r = (v / 100) * maxR;
+    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
   }).join(" ");
 }
 
-function hexGridPolygon(cx: number, cy: number, radius: number): string {
-  return Array.from({ length: 6 }, (_, i) => {
-    const [x, y] = getPoint6(cx, cy, radius, i);
+function heptGridPolygon(cx: number, cy: number, radius: number): string {
+  return Array.from({ length: 7 }, (_, i) => {
+    const [x, y] = getPoint7(cx, cy, radius, i);
     return `${x},${y}`;
   }).join(" ");
 }
@@ -259,6 +246,9 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
   const cy = TOTAL / 2;
   const gridLevels = [25, 50, 75, 100];
 
+  const radarValues = SOUL_AXIS_KEYS.map((key) => radar[key]);
+  const animatedValues = radarValues.map((v) => v * progress);
+
   return (
     <svg
       width={TOTAL}
@@ -273,7 +263,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
         return (
           <polygon
             key={level}
-            points={hexGridPolygon(cx, cy, r)}
+            points={heptGridPolygon(cx, cy, r)}
             fill="none"
             stroke="#1a3020"
             strokeWidth={level === 50 ? 1.2 : 0.7}
@@ -283,8 +273,8 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
       })}
 
       {/* Grid spokes */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const [x2, y2] = getPoint6(cx, cy, OUTER, i);
+      {Array.from({ length: 7 }, (_, i) => {
+        const [x2, y2] = getPoint7(cx, cy, OUTER, i);
         return (
           <line
             key={i}
@@ -299,7 +289,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
 
       {/* Reference dashed polygon at 50 (balance point) */}
       <polygon
-        points={hexGridPolygon(cx, cy, (50 / 100) * OUTER)}
+        points={heptGridPolygon(cx, cy, (50 / 100) * OUTER)}
         fill="none"
         stroke="#8a9e8d"
         strokeWidth={1}
@@ -309,7 +299,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
 
       {/* Main amber polygon */}
       <polygon
-        points={hexPolygonPoints(radar, cx, cy, OUTER, progress)}
+        points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
         fill="#e8821a"
         fillOpacity={0.35 * progress}
         stroke="#e8821a"
@@ -321,7 +311,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
       {/* Vertex dots in amber */}
       {SOUL_AXIS_KEYS.map((key, i) => {
         const r = (radar[key] / 100) * OUTER * progress;
-        const [x, y] = getPoint6(cx, cy, r, i);
+        const [x, y] = getPoint7(cx, cy, r, i);
         return (
           <circle
             key={key}
@@ -339,7 +329,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
 
       {/* Axis labels — outside chart */}
       {SOUL_AXIS_LABELS.map((label, i) => {
-        const [lx, ly] = getPoint6(cx, cy, OUTER + 32, i);
+        const [lx, ly] = getPoint7(cx, cy, OUTER + 32, i);
         return (
           <text
             key={label}
