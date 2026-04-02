@@ -23,6 +23,13 @@ interface ModalRadar {
   totals?: { cardinal: number; fixed: number; mutable: number };
 }
 
+interface NatalAspect {
+  planet1: string;
+  planet2: string;
+  aspect: string;
+  orb: number;
+}
+
 interface ProfileData {
   name: string;
   handle: string;
@@ -40,6 +47,7 @@ interface ProfileData {
   evolutionGift: string;
   evolutionShadow: string;
   radar: ModalRadar;
+  aspects: NatalAspect[];
 }
 
 // Sign classification by modality + element
@@ -152,6 +160,16 @@ function parseProfile(blueprint: any): ProfileData {
   const name = user?.name ?? blueprint?.name ?? "Your Name";
   const handle = user?.handle ?? blueprint?.handle ?? user?.email?.split("@")[0] ?? "you";
 
+  // Parse natal aspects with orb filtering
+  const MAJOR_ASPECTS = new Set(["trine", "sextile", "conjunction", "opposition", "square"]);
+  const rawAspects: NatalAspect[] = blueprint?.astrology?.natal?.aspects ?? [];
+  const aspects = rawAspects.filter((a) => {
+    const type = a.aspect?.toLowerCase() ?? "";
+    if (MAJOR_ASPECTS.has(type)) return a.orb <= 8;
+    if (type === "quincunx") return a.orb <= 3;
+    return a.orb <= 2;
+  });
+
   return {
     name,
     handle,
@@ -169,6 +187,7 @@ function parseProfile(blueprint: any): ProfileData {
     evolutionGift: evolution.gift,
     evolutionShadow: evolution.shadow,
     radar: computeRadar(blueprint),
+    aspects,
   };
 }
 
@@ -416,6 +435,165 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
         );
       })}
     </svg>
+  );
+}
+
+// Natal Aspects
+
+const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
+  trine:         { symbol: "△",  label: "Trine",       color: "#2a9d8f", major: true },
+  sextile:       { symbol: "⚹",  label: "Sextile",     color: "#8a9e8d", major: true },
+  conjunction:   { symbol: "☌",  label: "Conjunction", color: "#e8821a", major: true },
+  opposition:    { symbol: "☍",  label: "Opposition",  color: "#e05c5c", major: true },
+  square:        { symbol: "□",  label: "Square",      color: "#d4813a", major: true },
+  quincunx:      { symbol: "⚻",  label: "Quincunx",   color: "#7c6fcd", major: true },
+  semi_sextile:  { symbol: "⚺",  label: "Semi-Sextile", color: "#7a9e80", major: false },
+  semi_square:   { symbol: "∠",  label: "Semi-Square", color: "#9e9e8a", major: false },
+  sesquiquadrate:{ symbol: "⊼",  label: "Sesquiquadrate", color: "#9e9e8a", major: false },
+  quintile:      { symbol: "Q",  label: "Quintile",    color: "#9e9e8a", major: false },
+  bi_quintile:   { symbol: "bQ", label: "Bi-Quintile", color: "#9e9e8a", major: false },
+};
+
+const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
+
+function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
+  const [openAspects, setOpenAspects] = useState<Record<string, boolean>>({});
+  const [minorOpen, setMinorOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(false);
+
+  if (!aspects || aspects.length === 0) return null;
+
+  // Group by aspect type
+  const grouped: Record<string, NatalAspect[]> = {};
+  for (const a of aspects) {
+    const key = a.aspect?.toLowerCase() ?? "unknown";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(a);
+  }
+
+  const majorGroups = MAJOR_ORDER.filter((k) => grouped[k]?.length > 0);
+  const minorGroups = Object.keys(grouped).filter((k) => !MAJOR_ORDER.includes(k) && grouped[k]?.length > 0);
+
+  const toggleAspect = (key: string) => {
+    setOpenAspects((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const renderPlanetPairs = (key: string, list: NatalAspect[]) => {
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", color: "#9e9e8a" };
+    return (
+      <div className="mt-1 pl-6 space-y-1">
+        {list.map((a, i) => (
+          <div key={i} className="flex items-center justify-between py-0.5">
+            <span className="font-body text-xs text-text-secondary">
+              {a.planet1}{" "}
+              <span style={{ color: cfg.color }}>{cfg.symbol}</span>{" "}
+              {a.planet2}
+            </span>
+            <span className="font-body text-[10px] text-text-secondary/50 ml-4">
+              {a.orb.toFixed(1)}°
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAspectRow = (key: string, list: NatalAspect[]) => {
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", label: key, color: "#9e9e8a", major: false };
+    const isOpen = openAspects[key] ?? false;
+    return (
+      <div key={key}>
+        <button
+          onClick={() => toggleAspect(key)}
+          className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
+        >
+          <span className="text-base w-6 text-center flex-shrink-0" style={{ color: cfg.color }}>
+            {cfg.symbol}
+          </span>
+          <span className="font-body text-sm text-text-primary flex-1 text-left">
+            {cfg.label}
+          </span>
+          <span className="font-body text-xs text-text-secondary/70 mr-2">
+            {list.length}
+          </span>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#8a9e8d"
+            strokeWidth="2"
+            className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        {isOpen && renderPlanetPairs(key, list)}
+      </div>
+    );
+  };
+
+  return (
+    <div className="border border-forest-border rounded-2xl overflow-hidden mb-4">
+      <button
+        onClick={() => setSectionOpen(!sectionOpen)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
+      >
+        <h2 className="font-heading text-xl text-text-primary">Natal Aspects</h2>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#8a9e8d"
+          strokeWidth="2"
+          className={`transition-transform duration-200 ${sectionOpen ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {sectionOpen && (
+        <div className="px-4 pb-4">
+          {/* Major aspects */}
+          <div className="space-y-0.5">
+            {majorGroups.map((key) => renderAspectRow(key, grouped[key]))}
+          </div>
+
+          {/* Minor aspects collapsed group */}
+          {minorGroups.length > 0 && (
+            <div className="mt-1">
+              <button
+                onClick={() => setMinorOpen(!minorOpen)}
+                className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
+              >
+                <span className="text-base w-6 text-center flex-shrink-0 text-text-secondary/50">·</span>
+                <span className="font-body text-sm text-text-secondary flex-1 text-left">Minor Aspects</span>
+                <span className="font-body text-xs text-text-secondary/70 mr-2">
+                  {minorGroups.reduce((s, k) => s + grouped[k].length, 0)}
+                </span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#8a9e8d"
+                  strokeWidth="2"
+                  className={`transition-transform duration-200 flex-shrink-0 ${minorOpen ? "rotate-180" : ""}`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {minorOpen && (
+                <div className="mt-1 space-y-0.5">
+                  {minorGroups.map((key) => renderAspectRow(key, grouped[key]))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -845,6 +1023,11 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Natal Aspects */}
+              {profile && profile.aspects.length > 0 && (
+                <NatalAspects aspects={profile.aspects} />
+              )}
 
               {/* Chart Summary */}
               {profile && (
