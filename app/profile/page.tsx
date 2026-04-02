@@ -9,19 +9,13 @@ import { apiFetch } from "@/lib/api";
 
 // Types
 
-interface ElementScores {
+interface RadarValues {
   fire: number;
   earth: number;
   air: number;
   water: number;
-}
-
-interface ModalRadar {
-  cardinal: ElementScores;
-  fixed: ElementScores;
-  mutable: ElementScores;
-  totals?: { cardinal: number; fixed: number; mutable: number };
-  aspects?: ElementScores;
+  definition: number;
+  harmony: number;
 }
 
 interface NatalAspect {
@@ -47,31 +41,12 @@ interface ProfileData {
   evolutionGate: number;
   evolutionGift: string;
   evolutionShadow: string;
-  radar: ModalRadar;
+  radar: RadarValues;
   aspects: NatalAspect[];
 }
 
-// Sign classification by modality + element
+// Sign sets
 
-// Cardinal signs
-const CARDINAL_FIRE = new Set(["Aries"]);
-const CARDINAL_EARTH = new Set(["Capricorn"]);
-const CARDINAL_AIR = new Set(["Libra"]);
-const CARDINAL_WATER = new Set(["Cancer"]);
-
-// Fixed signs
-const FIXED_FIRE = new Set(["Leo"]);
-const FIXED_EARTH = new Set(["Taurus"]);
-const FIXED_AIR = new Set(["Aquarius"]);
-const FIXED_WATER = new Set(["Scorpio"]);
-
-// Mutable signs
-const MUTABLE_FIRE = new Set(["Sagittarius"]);
-const MUTABLE_EARTH = new Set(["Virgo"]);
-const MUTABLE_AIR = new Set(["Gemini"]);
-const MUTABLE_WATER = new Set(["Pisces"]);
-
-// Element sets (for aspect activity)
 const FIRE_SIGNS = new Set(["Aries", "Leo", "Sagittarius"]);
 const EARTH_SIGNS = new Set(["Taurus", "Virgo", "Capricorn"]);
 const AIR_SIGNS = new Set(["Gemini", "Libra", "Aquarius"]);
@@ -82,86 +57,67 @@ function clamp(v: number, min = 0, max = 100) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeRadar(blueprint: any): ModalRadar {
+function computeRadar(blueprint: any): RadarValues {
   const natal = blueprint?.astrology?.natal ?? {};
   const planets = natal?.planets ?? {};
+  const hd = blueprint?.human_design ?? {};
 
-  const POINTS_PER_PLANET = 14;
-  const ASC_POINTS = 20;
+  // Element counting
+  const elementCounts = { fire: 0, earth: 0, air: 0, water: 0 };
 
-  const cardinal = { fire: 0, earth: 0, air: 0, water: 0 };
-  const fixed = { fire: 0, earth: 0, air: 0, water: 0 };
-  const mutable = { fire: 0, earth: 0, air: 0, water: 0 };
-  const counts = { cardinal: 0, fixed: 0, mutable: 0 };
-
-  function scoreSign(sign: string, points: number) {
-    if (CARDINAL_FIRE.has(sign)) { cardinal.fire += points; counts.cardinal++; }
-    else if (CARDINAL_EARTH.has(sign)) { cardinal.earth += points; counts.cardinal++; }
-    else if (CARDINAL_AIR.has(sign)) { cardinal.air += points; counts.cardinal++; }
-    else if (CARDINAL_WATER.has(sign)) { cardinal.water += points; counts.cardinal++; }
-    else if (FIXED_FIRE.has(sign)) { fixed.fire += points; counts.fixed++; }
-    else if (FIXED_EARTH.has(sign)) { fixed.earth += points; counts.fixed++; }
-    else if (FIXED_AIR.has(sign)) { fixed.air += points; counts.fixed++; }
-    else if (FIXED_WATER.has(sign)) { fixed.water += points; counts.fixed++; }
-    else if (MUTABLE_FIRE.has(sign)) { mutable.fire += points; counts.mutable++; }
-    else if (MUTABLE_EARTH.has(sign)) { mutable.earth += points; counts.mutable++; }
-    else if (MUTABLE_AIR.has(sign)) { mutable.air += points; counts.mutable++; }
-    else if (MUTABLE_WATER.has(sign)) { mutable.water += points; counts.mutable++; }
+  function addElement(sign: string, weight: number) {
+    if (FIRE_SIGNS.has(sign)) elementCounts.fire += weight;
+    else if (EARTH_SIGNS.has(sign)) elementCounts.earth += weight;
+    else if (AIR_SIGNS.has(sign)) elementCounts.air += weight;
+    else if (WATER_SIGNS.has(sign)) elementCounts.water += weight;
   }
 
+  // Regular planets: weight 1
   Object.values(planets as Record<string, { sign?: string }>).forEach((p) => {
-    scoreSign(p?.sign ?? "", POINTS_PER_PLANET);
+    addElement(p?.sign ?? "", 1);
   });
 
+  // ASC and MC: weight 2 (more significant)
   const ascSign = (natal?.ascendant as Record<string, string> | undefined)?.sign ?? "";
   const mcSign = (natal?.mc as Record<string, string> | undefined)?.sign ?? "";
-  [ascSign, mcSign].forEach((s) => s && scoreSign(s, ASC_POINTS));
+  if (ascSign) addElement(ascSign, 2);
+  if (mcSign) addElement(mcSign, 2);
 
-  // Normalize each ring separately so each element axis is 0-100
-  function normalizeRing(ring: ElementScores): ElementScores {
-    const max = Math.max(ring.fire, ring.earth, ring.air, ring.water, 1);
-    const scale = 100 / max;
-    return {
-      fire: clamp(ring.fire * scale),
-      earth: clamp(ring.earth * scale),
-      air: clamp(ring.air * scale),
-      water: clamp(ring.water * scale),
-    };
+  // Normalize to 0–100
+  const maxElement = Math.max(elementCounts.fire, elementCounts.earth, elementCounts.air, elementCounts.water, 1);
+  const normEl = (v: number) => clamp(Math.round((v / maxElement) * 100));
+
+  // Definition: % of HD centres that are defined (defined / 9 * 100)
+  let definition = 50;
+  const centres = hd?.centres ?? hd?.centers ?? {};
+  if (typeof centres === "object" && Object.keys(centres).length > 0) {
+    const centreList = Object.values(centres as Record<string, { defined?: boolean } | boolean>);
+    const defined = centreList.filter((c) => {
+      if (typeof c === "boolean") return c;
+      return (c as { defined?: boolean })?.defined === true;
+    }).length;
+    definition = clamp(Math.round((defined / 9) * 100));
   }
 
-  // Aspect activity per element
-  const aspectActivity = { fire: 0, earth: 0, air: 0, water: 0 };
-  const aspects = (natal?.aspects || []) as Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-
-  const planetSigns: Record<string, string> = {};
-  Object.entries(planets as Record<string, { sign?: string }>).forEach(([name, p]) => {
-    if (p?.sign) planetSigns[name] = p.sign;
-  });
-
-  aspects.forEach(({ planet1, planet2, orb }) => {
-    if (orb > 8) return;
-    const sign1 = planetSigns[planet1] || "";
-    const sign2 = planetSigns[planet2] || "";
-    if (FIRE_SIGNS.has(sign1) || FIRE_SIGNS.has(sign2)) aspectActivity.fire++;
-    if (EARTH_SIGNS.has(sign1) || EARTH_SIGNS.has(sign2)) aspectActivity.earth++;
-    if (AIR_SIGNS.has(sign1) || AIR_SIGNS.has(sign2)) aspectActivity.air++;
-    if (WATER_SIGNS.has(sign1) || WATER_SIGNS.has(sign2)) aspectActivity.water++;
-  });
-
-  const maxActivity = Math.max(...Object.values(aspectActivity), 1);
-  const aspectScores: ElementScores = {
-    fire: Math.min(100, Math.round((aspectActivity.fire / maxActivity) * 100)),
-    earth: Math.min(100, Math.round((aspectActivity.earth / maxActivity) * 100)),
-    air: Math.min(100, Math.round((aspectActivity.air / maxActivity) * 100)),
-    water: Math.min(100, Math.round((aspectActivity.water / maxActivity) * 100)),
-  };
+  // Harmony: (trines + sextiles) / total aspects * 100
+  const allAspects = (natal?.aspects || []) as Array<{ aspect: string; orb: number }>;
+  const filtered = allAspects.filter((a) => a.orb <= 8);
+  let harmony = 50;
+  if (filtered.length > 0) {
+    const harmonious = filtered.filter((a) => {
+      const t = a.aspect?.toLowerCase() ?? "";
+      return t === "trine" || t === "sextile";
+    }).length;
+    harmony = clamp(Math.round((harmonious / filtered.length) * 100));
+  }
 
   return {
-    cardinal: normalizeRing(cardinal),
-    fixed: normalizeRing(fixed),
-    mutable: normalizeRing(mutable),
-    totals: counts,
-    aspects: aspectScores,
+    fire: normEl(elementCounts.fire),
+    earth: normEl(elementCounts.earth),
+    air: normEl(elementCounts.air),
+    water: normEl(elementCounts.water),
+    definition,
+    harmony,
   };
 }
 
@@ -228,41 +184,6 @@ function parseProfile(blueprint: any): ProfileData {
 
 // SVG Icons
 
-function IconFire({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2c0 3.5-4 6.5-4 10a4 4 0 0 0 8 0c0-3.5-4-6.5-4-10z" />
-      <path d="M12 21.5c-1.1 0-2-1-2-2.5 0-1.2.8-2.2 2-3.5 1.2 1.3 2 2.3 2 3.5 0 1.5-.9 2.5-2 2.5z" />
-    </svg>
-  );
-}
-
-function IconEarth({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 3 22 20 2 20" />
-    </svg>
-  );
-}
-
-function IconAir({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 8h10c2 0 3-1 3-2s-1-2-3-2-2 1-2 2" />
-      <path d="M3 12h15" />
-      <path d="M3 16h8c2 0 3 1 3 2s-1 2-3 2-2-1-2-2" />
-    </svg>
-  );
-}
-
-function IconWater({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L6 13a6 6 0 0 0 12 0z" />
-    </svg>
-  );
-}
-
 function IconSignOut({ color = "currentColor" }: { color?: string }) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -273,61 +194,29 @@ function IconSignOut({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-// Radar Chart — 4 axes, 3 modal polygons
+// Soul Map Radar — 6 axes, single amber polygon
 
-const RADAR_AXES = ["Fire", "Earth", "Air", "Water"] as const;
-type RadarAxis = (typeof RADAR_AXES)[number];
+const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "definition", "harmony"];
+const SOUL_AXIS_LABELS = ["Fire", "Earth", "Air", "Water", "Definition", "Harmony"] as const;
 
-const AXIS_ICONS_MAP: Record<RadarAxis, (color: string) => React.ReactNode> = {
-  Fire: (c) => <IconFire color={c} />,
-  Earth: (c) => <IconEarth color={c} />,
-  Air: (c) => <IconAir color={c} />,
-  Water: (c) => <IconWater color={c} />,
-};
-
-const MODAL_CONFIG = [
-  { key: "cardinal" as const, label: "Cardinal", color: "#e8821a", fillOpacity: 0.38, strokeOpacity: 0.95, delay: 0 },
-  { key: "fixed"    as const, label: "Fixed",    color: "#2a9d8f", fillOpacity: 0.35, strokeOpacity: 0.90, delay: 150 },
-  { key: "mutable"  as const, label: "Mutable",  color: "#7c6fcd", fillOpacity: 0.30, strokeOpacity: 0.85, delay: 300 },
-];
-
-function getPoint(
-  cx: number,
-  cy: number,
-  radius: number,
-  index: number,
-  total: number
-): [number, number] {
-  const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
+function getPoint6(cx: number, cy: number, radius: number, index: number): [number, number] {
+  const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
   return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
 }
 
-function polygonPoints(
-  scores: ElementScores,
-  cx: number,
-  cy: number,
-  outerRadius: number,
-  progress: number
-): string {
-  const vals = [scores.fire, scores.earth, scores.air, scores.water];
-  return vals
-    .map((v, i) => {
-      const r = (v / 100) * outerRadius * progress;
-      const [x, y] = getPoint(cx, cy, r, i, 4);
-      return `${x},${y}`;
-    })
-    .join(" ");
-}
-
-function gridPolygon(cx: number, cy: number, radius: number): string {
-  return Array.from({ length: 4 }, (_, i) => {
-    const [x, y] = getPoint(cx, cy, radius, i, 4);
+function hexPolygonPoints(values: RadarValues, cx: number, cy: number, outerRadius: number, progress: number): string {
+  return SOUL_AXIS_KEYS.map((key, i) => {
+    const r = (values[key] / 100) * outerRadius * progress;
+    const [x, y] = getPoint6(cx, cy, r, i);
     return `${x},${y}`;
   }).join(" ");
 }
 
-interface ModalRadarChartProps {
-  radar: ModalRadar;
+function hexGridPolygon(cx: number, cy: number, radius: number): string {
+  return Array.from({ length: 6 }, (_, i) => {
+    const [x, y] = getPoint6(cx, cy, radius, i);
+    return `${x},${y}`;
+  }).join(" ");
 }
 
 function useAnimatedProgress(delay: number): number {
@@ -356,20 +245,18 @@ function useAnimatedProgress(delay: number): number {
   return progress;
 }
 
-function ModalRadarChart({ radar }: ModalRadarChartProps) {
-  const progressCardinal = useAnimatedProgress(0);
-  const progressFixed = useAnimatedProgress(150);
-  const progressMutable = useAnimatedProgress(300);
-  const progressAspects = useAnimatedProgress(450);
+interface SoulMapRadarChartProps {
+  radar: RadarValues;
+}
 
-  const progressMap = { cardinal: progressCardinal, fixed: progressFixed, mutable: progressMutable };
+function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
+  const progress = useAnimatedProgress(0);
 
-  const SIZE = 320;
-  const LABEL_PAD = 36;
-  const TOTAL = SIZE + LABEL_PAD * 2;
+  const OUTER = 112;
+  const LABEL_PAD = 54;
+  const TOTAL = OUTER * 2 + LABEL_PAD * 2;
   const cx = TOTAL / 2;
   const cy = TOTAL / 2;
-  const OUTER = 128;
   const gridLevels = [25, 50, 75, 100];
 
   return (
@@ -378,7 +265,7 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
       height={TOTAL}
       viewBox={`0 0 ${TOTAL} ${TOTAL}`}
       className="w-full max-w-[360px] mx-auto"
-      aria-label="Soul modal radar chart"
+      aria-label="Soul Map radar chart"
     >
       {/* Grid rings */}
       {gridLevels.map((level) => {
@@ -386,101 +273,87 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
         return (
           <polygon
             key={level}
-            points={gridPolygon(cx, cy, r)}
+            points={hexGridPolygon(cx, cy, r)}
             fill="none"
             stroke="#1a3020"
-            strokeWidth={level === 50 ? 1.5 : 0.8}
-            strokeDasharray={level === 50 ? "3,3" : undefined}
-            opacity={0.6}
+            strokeWidth={level === 50 ? 1.2 : 0.7}
+            opacity={0.55}
           />
         );
       })}
 
       {/* Grid spokes */}
-      {RADAR_AXES.map((_, i) => {
-        const [x2, y2] = getPoint(cx, cy, OUTER, i, 4);
+      {Array.from({ length: 6 }, (_, i) => {
+        const [x2, y2] = getPoint6(cx, cy, OUTER, i);
         return (
           <line
             key={i}
             x1={cx} y1={cy}
             x2={x2} y2={y2}
             stroke="#1a3020"
-            strokeWidth={0.8}
-            opacity={0.5}
+            strokeWidth={0.7}
+            opacity={0.4}
           />
         );
       })}
 
-      {/* Three modal polygons — mutable first (back), cardinal last (front) */}
-      {[...MODAL_CONFIG].reverse().map(({ key, color, fillOpacity, strokeOpacity }) => {
-        const p = progressMap[key];
+      {/* Reference dashed polygon at 50 (balance point) */}
+      <polygon
+        points={hexGridPolygon(cx, cy, (50 / 100) * OUTER)}
+        fill="none"
+        stroke="#8a9e8d"
+        strokeWidth={1}
+        strokeDasharray="4 3"
+        opacity={0.30}
+      />
+
+      {/* Main amber polygon */}
+      <polygon
+        points={hexPolygonPoints(radar, cx, cy, OUTER, progress)}
+        fill="#e8821a"
+        fillOpacity={0.35 * progress}
+        stroke="#e8821a"
+        strokeWidth={2}
+        strokeLinejoin="round"
+        strokeOpacity={progress}
+      />
+
+      {/* Vertex dots in amber */}
+      {SOUL_AXIS_KEYS.map((key, i) => {
+        const r = (radar[key] / 100) * OUTER * progress;
+        const [x, y] = getPoint6(cx, cy, r, i);
         return (
-          <polygon
+          <circle
             key={key}
-            points={polygonPoints(radar[key], cx, cy, OUTER, p)}
-            fill={color}
-            fillOpacity={fillOpacity * p}
-            stroke={color}
-            strokeWidth={2}
-            strokeLinejoin="round"
-            strokeOpacity={strokeOpacity * p}
+            cx={x}
+            cy={y}
+            r={3}
+            fill="#e8821a"
+            opacity={progress * 0.9}
           />
         );
-      })}
-
-      {/* Fourth layer: Aspect Activity polygon (innermost, dashed cream) */}
-      {radar.aspects && (
-        <polygon
-          points={polygonPoints(radar.aspects, cx, cy, OUTER, progressAspects)}
-          fill="#f5f0e8"
-          fillOpacity={0.25 * progressAspects}
-          stroke="#f5f0e8"
-          strokeWidth={1.5}
-          strokeLinejoin="round"
-          strokeOpacity={0.5 * progressAspects}
-          strokeDasharray="3 3"
-        />
-      )}
-
-      {/* Vertex dots — one per modality per axis */}
-      {MODAL_CONFIG.map(({ key, color }) => {
-        const p = progressMap[key];
-        const vals = [radar[key].fire, radar[key].earth, radar[key].air, radar[key].water];
-        return vals.map((v, i) => {
-          const r = (v / 100) * OUTER * p;
-          const [x, y] = getPoint(cx, cy, r, i, 4);
-          return (
-            <circle
-              key={`${key}-${i}`}
-              cx={x} cy={y}
-              r={2.5}
-              fill={color}
-              opacity={p * 0.9}
-            />
-          );
-        });
       })}
 
       {/* Center dot */}
-      <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.4} />
+      <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.3} />
 
-      {/* Axis labels — placed outside the chart with extra spacing */}
-      {RADAR_AXES.map((axis, i) => {
-        const [lx, ly] = getPoint(cx, cy, OUTER + 30, i, 4);
+      {/* Axis labels — outside chart */}
+      {SOUL_AXIS_LABELS.map((label, i) => {
+        const [lx, ly] = getPoint6(cx, cy, OUTER + 32, i);
         return (
           <text
-            key={axis}
+            key={label}
             x={lx}
             y={ly}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="#8a9e8d"
-            fontSize="9.5"
+            fontSize="9"
             fontFamily="Inter, system-ui, sans-serif"
-            letterSpacing="0.14em"
+            letterSpacing="0.12em"
             style={{ textTransform: "uppercase" }}
           >
-            {axis}
+            {label}
           </text>
         );
       })}
@@ -491,17 +364,17 @@ function ModalRadarChart({ radar }: ModalRadarChartProps) {
 // Natal Aspects
 
 const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
-  trine:         { symbol: "△",  label: "Trine",       color: "#2a9d8f", major: true },
-  sextile:       { symbol: "⚹",  label: "Sextile",     color: "#8a9e8d", major: true },
-  conjunction:   { symbol: "☌",  label: "Conjunction", color: "#e8821a", major: true },
-  opposition:    { symbol: "☍",  label: "Opposition",  color: "#e05c5c", major: true },
-  square:        { symbol: "□",  label: "Square",      color: "#d4813a", major: true },
-  quincunx:      { symbol: "⚻",  label: "Quincunx",   color: "#7c6fcd", major: true },
-  semi_sextile:  { symbol: "⚺",  label: "Semi-Sextile", color: "#7a9e80", major: false },
-  semi_square:   { symbol: "∠",  label: "Semi-Square", color: "#9e9e8a", major: false },
-  sesquiquadrate:{ symbol: "⊼",  label: "Sesquiquadrate", color: "#9e9e8a", major: false },
-  quintile:      { symbol: "Q",  label: "Quintile",    color: "#9e9e8a", major: false },
-  bi_quintile:   { symbol: "bQ", label: "Bi-Quintile", color: "#9e9e8a", major: false },
+  trine:          { symbol: "△",  label: "Trine",          color: "#2a9d8f", major: true },
+  sextile:        { symbol: "⚹",  label: "Sextile",        color: "#8a9e8d", major: true },
+  conjunction:    { symbol: "☌",  label: "Conjunction",    color: "#e8821a", major: true },
+  opposition:     { symbol: "☍",  label: "Opposition",     color: "#e05c5c", major: true },
+  square:         { symbol: "□",  label: "Square",         color: "#d4813a", major: true },
+  quincunx:       { symbol: "⚻",  label: "Quincunx",      color: "#7c6fcd", major: true },
+  semi_sextile:   { symbol: "⚺",  label: "Semi-Sextile",  color: "#7a9e80", major: false },
+  semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "#9e9e8a", major: false },
+  sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "#9e9e8a", major: false },
+  quintile:       { symbol: "Q",  label: "Quintile",       color: "#9e9e8a", major: false },
+  bi_quintile:    { symbol: "bQ", label: "Bi-Quintile",    color: "#9e9e8a", major: false },
 };
 
 const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
@@ -513,7 +386,6 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 
   if (!aspects || aspects.length === 0) return null;
 
-  // Group by aspect type
   const grouped: Record<string, NatalAspect[]> = {};
   for (const a of aspects) {
     const key = a.aspect?.toLowerCase() ?? "unknown";
@@ -605,12 +477,9 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 
       {sectionOpen && (
         <div className="px-4 pb-4">
-          {/* Major aspects */}
           <div className="space-y-0.5">
             {majorGroups.map((key) => renderAspectRow(key, grouped[key]))}
           </div>
-
-          {/* Minor aspects collapsed group */}
           {minorGroups.length > 0 && (
             <div className="mt-1">
               <button
@@ -723,8 +592,8 @@ function ProfileSkeleton() {
 function IconPencil() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   );
 }
@@ -733,8 +602,8 @@ function IconPencil() {
 function IconCamera() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-      <circle cx="12" cy="13" r="4"/>
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
     </svg>
   );
 }
@@ -1019,7 +888,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Radar / Soul Map */}
+              {/* Soul Map */}
               <div className="mb-6">
                 <p className="text-text-secondary/40 text-[9px] font-body tracking-[0.25em] uppercase mb-4 text-center">
                   Soul Map
@@ -1027,55 +896,40 @@ export default function ProfilePage() {
 
                 {profile ? (
                   <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4">
-                    <ModalRadarChart radar={profile.radar} />
+                    <SoulMapRadarChart radar={profile.radar} />
 
-                    {/* Axis icons row */}
-                    <div className="mt-2 flex justify-center gap-5">
-                      {RADAR_AXES.map((axis) => (
-                        <div key={axis} className="flex flex-col items-center gap-1">
-                          {AXIS_ICONS_MAP[axis]("#8a9e8d")}
-                          <span className="text-text-secondary/60 text-[8px] font-body tracking-wider uppercase">
-                            {axis}
-                          </span>
-                        </div>
-                      ))}
+                    {/* Legend */}
+                    <div className="mt-2 flex justify-center gap-5 text-[9px] font-body tracking-wider">
+                      <span style={{ color: "#e8821a" }}>● Amber = your profile</span>
+                      <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
                     </div>
 
-                    {/* Modal legend with planet counts */}
-                    <div className="mt-4 flex justify-center gap-5 flex-wrap">
-                      {MODAL_CONFIG.map(({ label, color, key }) => {
-                        const count = profile.radar.totals?.[key] ?? 0;
+                    {/* Mini bar legend — all 6 dimensions with values */}
+                    <div className="mt-4 space-y-1.5 px-1">
+                      {SOUL_AXIS_KEYS.map((key, i) => {
+                        const val = profile.radar[key];
+                        const label = SOUL_AXIS_LABELS[i];
                         return (
-                          <div key={label} className="flex items-center gap-1.5">
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ background: color }}
-                            />
-                            <span
-                              className="text-[9px] font-body tracking-wider uppercase"
-                              style={{ color }}
-                            >
+                          <div key={key} className="flex items-center gap-2">
+                            <span className="text-[9px] font-body tracking-wider uppercase text-text-secondary/60 w-20 shrink-0">
                               {label}
-                              {count > 0 && (
-                                <span className="ml-1 opacity-70">({count})</span>
-                              )}
+                            </span>
+                            <div className="flex-1 h-1 rounded-full bg-forest-border/40 overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${val}%`,
+                                  background: "#e8821a",
+                                  opacity: 0.7,
+                                }}
+                              />
+                            </div>
+                            <span className="text-[9px] font-body text-text-secondary/50 w-7 text-right shrink-0">
+                              {val}
                             </span>
                           </div>
                         );
                       })}
-                      {/* Aspects layer legend */}
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="inline-block w-2.5 h-2.5 rounded-full border flex-shrink-0"
-                          style={{ borderColor: "#f5f0e8", background: "transparent" }}
-                        />
-                        <span
-                          className="text-[9px] font-body tracking-wider uppercase"
-                          style={{ color: "#f5f0e8" }}
-                        >
-                          Aspects
-                        </span>
-                      </div>
                     </div>
                   </div>
                 ) : (
