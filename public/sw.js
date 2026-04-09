@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solray-v1';
+const CACHE_NAME = 'solray-v4';
 const urlsToCache = ['/', '/login', '/today', '/chat', '/chart', '/souls'];
 
 self.addEventListener('install', (event) => {
