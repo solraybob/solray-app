@@ -475,76 +475,93 @@ function FullscreenMap({
 }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [lastOffset, setLastOffset] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const lastTouchDist = useRef<number | null>(null);
+  const scaleRef = useRef(1);
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = -e.deltaY * 0.002;
-    setScale(s => Math.min(8, Math.max(1, s + delta * s)));
-  };
+  const resetView = () => { setScale(1); setOffset({ x: 0, y: 0 }); scaleRef.current = 1; offsetRef.current = { x: 0, y: 0 }; };
+
+  // Use native event listeners with { passive: false } so preventDefault works
+  // without polluting React's global synthetic event system
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = -e.deltaY * 0.002;
+      const newScale = Math.min(8, Math.max(1, scaleRef.current + delta * scaleRef.current));
+      scaleRef.current = newScale;
+      setScale(newScale);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        draggingRef.current = true;
+        dragStartRef.current = { x: e.touches[0].clientX - offsetRef.current.x, y: e.touches[0].clientY - offsetRef.current.y };
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastTouchDist.current = Math.sqrt(dx * dx + dy * dy);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && draggingRef.current) {
+        const newOffset = { x: e.touches[0].clientX - dragStartRef.current.x, y: e.touches[0].clientY - dragStartRef.current.y };
+        offsetRef.current = newOffset;
+        setOffset({ ...newOffset });
+      } else if (e.touches.length === 2 && lastTouchDist.current) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const newScale = Math.min(8, Math.max(1, scaleRef.current * (dist / lastTouchDist.current)));
+        scaleRef.current = newScale;
+        setScale(newScale);
+        lastTouchDist.current = dist;
+      }
+    };
+
+    const onTouchEnd = () => { draggingRef.current = false; lastTouchDist.current = null; };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    setDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-    setLastOffset(offset);
+    draggingRef.current = true;
+    dragStartRef.current = { x: e.clientX - offsetRef.current.x, y: e.clientY - offsetRef.current.y };
   };
-
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragging) return;
-    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+    if (!draggingRef.current) return;
+    const newOffset = { x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y };
+    offsetRef.current = newOffset;
+    setOffset({ ...newOffset });
   };
-
-  const handleMouseUp = () => setDragging(false);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      setDragging(true);
-      setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y });
-    } else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      lastTouchDist.current = Math.sqrt(dx * dx + dy * dy);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (e.touches.length === 1 && dragging) {
-      setOffset({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
-    } else if (e.touches.length === 2 && lastTouchDist.current) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const ratio = dist / lastTouchDist.current;
-      setScale(s => Math.min(8, Math.max(1, s * ratio)));
-      lastTouchDist.current = dist;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setDragging(false);
-    lastTouchDist.current = null;
-  };
-
-  const resetView = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+  const handleMouseUp = () => { draggingRef.current = false; };
 
   return (
     <div
       className="fixed inset-0 z-50 bg-forest-deep"
-      style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+      style={{ cursor: 'grab' }}
       ref={containerRef}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       {/* Controls */}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -597,7 +614,7 @@ function FullscreenMap({
             display: 'block',
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: 'center center',
-            transition: dragging ? 'none' : 'transform 0.1s ease',
+            transition: 'transform 0.1s ease',
           }}
         >
           <rect width={MAP_W} height={MAP_H} fill="#0a1810" />
