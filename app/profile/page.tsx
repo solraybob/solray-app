@@ -646,18 +646,10 @@ export default function ProfilePage() {
       }
     }
 
-    try {
-      const cached = localStorage.getItem(BP_CACHE_KEY);
-      if (cached) {
-        loadFromBlueprint(JSON.parse(cached));
-        return;
-      }
-    } catch (_) {}
-
+    // Always fetch fresh user data for name/username
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
-          // Store name and username with the blueprint so they survive cache
           const bpWithUser = {
             ...data.blueprint,
             _name: data.profile?.name || data.name || "",
@@ -669,11 +661,27 @@ export default function ProfilePage() {
           } catch (_) {}
           loadFromBlueprint(bpWithUser);
         } else {
+          // No blueprint yet — try cache
+          try {
+            const cached = localStorage.getItem(BP_CACHE_KEY);
+            if (cached) {
+              loadFromBlueprint(JSON.parse(cached));
+              return;
+            }
+          } catch (_) {}
           setLoading(false);
           setTimeout(() => setVisible(true), 50);
         }
       })
       .catch(() => {
+        // API failed — fall back to cache
+        try {
+          const cached = localStorage.getItem(BP_CACHE_KEY);
+          if (cached) {
+            loadFromBlueprint(JSON.parse(cached));
+            return;
+          }
+        } catch (_) {}
         setLoading(false);
         setTimeout(() => setVisible(true), 50);
       });
@@ -694,6 +702,15 @@ export default function ProfilePage() {
     try {
       const data = await apiFetch("/users/profile", { method: "PATCH", body: JSON.stringify({ name: nameInput.trim() }) }, token);
       setProfile((p) => p ? { ...p, name: data.name } : p);
+      // Update localStorage cache so name persists
+      try {
+        const cached = localStorage.getItem("solray_blueprint");
+        if (cached) {
+          const bp = JSON.parse(cached);
+          bp._name = data.name;
+          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+        }
+      } catch (_) {}
       setEditingName(false);
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : "Failed to save");
@@ -710,6 +727,15 @@ export default function ProfilePage() {
     try {
       const data = await apiFetch("/users/profile", { method: "PATCH", body: JSON.stringify({ username: handleInput.trim() }) }, token);
       setProfile((p) => p ? { ...p, handle: data.username } : p);
+      // Update localStorage cache so username persists
+      try {
+        const cached = localStorage.getItem("solray_blueprint");
+        if (cached) {
+          const bp = JSON.parse(cached);
+          bp._username = data.username;
+          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+        }
+      } catch (_) {}
       setEditingHandle(false);
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : "Failed to save");
