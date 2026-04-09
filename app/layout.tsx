@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Solray AI",
@@ -32,7 +33,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-forest-deep min-h-screen text-text-primary">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <Footer />
+        </AuthProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>
