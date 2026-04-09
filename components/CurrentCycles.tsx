@@ -314,10 +314,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
     <div className="mb-8">
       {/* Section header with pagination */}
       <div className="flex items-center justify-between mb-4">
-        <p
-          className="font-heading text-text-secondary/60"
-          style={{ fontSize: "0.85rem", letterSpacing: "0.08em" }}
-        >
+        <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
           Current Cycles
         </p>
         {!loading && total > 1 && (
@@ -380,10 +377,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
             <div className={total > 0 ? "mt-6" : ""}>
               {/* Section label */}
               <div className="flex items-center gap-3 mb-3">
-                <p
-                  className="font-heading text-text-secondary/40"
-                  style={{ fontSize: "0.75rem", letterSpacing: "0.1em" }}
-                >
+                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
                   Coming Up
                 </p>
                 <div className="flex-1 h-px bg-forest-border/30" />

@@ -89,7 +89,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
         className="w-full flex items-center justify-between mb-3"
         style={{ background: "none", border: "none", cursor: "pointer" }}
       >
-        <p style={{ fontSize: "0.65rem", letterSpacing: "0.15em", color: "rgba(138,158,141,0.5)", textTransform: "uppercase", fontFamily: "Inter, sans-serif" }}>
+        <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
           Today&apos;s Dimensions
         </p>
         <span style={{ color: "#8a9e8d", fontSize: "0.9rem" }}>

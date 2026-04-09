@@ -494,7 +494,7 @@ export default function TodayPage() {
               }}
             >
               <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-              <p className="font-body text-text-secondary/80 uppercase tracking-widest text-xs">
+              <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
                 Today&apos;s Weather
               </p>
               <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
@@ -552,7 +552,7 @@ export default function TodayPage() {
               }}
             >
 
-              <p className="text-text-secondary/80 text-xs font-body tracking-[0.2em] uppercase mb-3">
+              <p className="text-text-secondary text-xs font-body tracking-[0.2em] uppercase mb-3">
                 Sky Now
               </p>
               {/* Scrollable ticker */}
