@@ -436,16 +436,45 @@ export default function AstroGeography({ token }: { token: string | null }) {
         {/* Power Spots section */}
         {powerSpots.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary">Power Spots</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary">Power Spots</h3>
+              <button
+                onClick={() => {
+                  const spotNames = powerSpots.map(s => s.city).join(", ");
+                  sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+                    topic: "Astro Geography Power Spots",
+                    question: `My astrocartography shows my top power spots are: ${spotNames}. Can you explain what these locations mean for me and why they are energetically significant?`
+                  }));
+                  window.location.href = "/chat";
+                }}
+                className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+              >
+                Ask →
+              </button>
+            </div>
             <div className="grid grid-cols-1 gap-2">
               {powerSpots.map((spot, idx) => (
                 <div
                   key={idx}
-                  className="px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5"
+                  className="px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 flex items-start justify-between gap-2"
                 >
-                  <p className="text-sm font-body text-amber-400/90 mb-0.5">{spot.city}</p>
-                  <p className="text-xs text-text-secondary">{spot.lines.join(" + ")}</p>
-                  <p className="text-xs text-text-secondary/70 mt-1">{spot.description}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-body text-amber-400/90 mb-0.5">{spot.city}</p>
+                    <p className="text-xs text-text-secondary">{spot.lines.join(" + ")}</p>
+                    <p className="text-xs text-text-secondary/70 mt-1">{spot.description}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+                        topic: `Power Spot: ${spot.city}`,
+                        question: `My astrocartography shows ${spot.city} as a power spot where ${spot.lines.join(" and ")} cross. What would living or visiting ${spot.city} activate in my chart?`
+                      }));
+                      window.location.href = "/chat";
+                    }}
+                    className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+                  >
+                    Ask →
+                  </button>
                 </div>
               ))}
             </div>
