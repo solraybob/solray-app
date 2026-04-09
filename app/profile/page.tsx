@@ -1160,6 +1160,7 @@ function parseBlueprintForChart(blueprint: any) {
 
 function BlueprintSections({ token }: { token: string | null }) {
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -1177,7 +1178,6 @@ function BlueprintSections({ token }: { token: string | null }) {
   const corePlanets = ["Sun", "Moon", "ASC"];
   const core = chart.natal.filter((p) => corePlanets.includes(p.planet));
   const rest = chart.natal.filter((p) => !corePlanets.includes(p.planet));
-  const [showAll, setShowAll] = useState(false);
 
   return (
     <>
