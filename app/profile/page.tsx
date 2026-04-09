@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
+import AstroGeography from "@/components/AstroGeography";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -1158,6 +1159,7 @@ function parseBlueprintForChart(blueprint: any) {
 }
 
 function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
+  // token is passed through to AstroGeography
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -1238,6 +1240,16 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               <NatalAspects aspects={aspects} />
             </div>
           )}
+        </div>
+      </CollapsibleSection>
+
+      {/* Astro Geography */}
+      <CollapsibleSection title="Astro Geography" defaultOpen={false}>
+        <div className="mt-2">
+          <p className="text-text-secondary text-xs font-body leading-relaxed mb-4">
+            Where in the world your planetary energies are strongest. Each line marks where a planet was rising, setting, or at its peak at your birth moment.
+          </p>
+          <AstroGeography token={token} />
         </div>
       </CollapsibleSection>
 
