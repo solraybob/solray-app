@@ -662,16 +662,16 @@ function ChatPageInner() {
           </div>
         </div>
 
-        {/* Scroll to bottom button — shows when user scrolls up */}
-        {!autoScroll && (
+        {/* Scroll to bottom button — shows when user scrolls up and there are enough messages */}
+        {!autoScroll && messages.length > 3 && (
           <button
             onClick={() => {
               const el = scrollContainerRef.current;
               if (el) { el.scrollTop = el.scrollHeight; }
               setAutoScroll(true);
             }}
-            className="fixed z-50 w-10 h-10 rounded-full bg-amber-sun text-forest-deep flex items-center justify-center shadow-lg active:scale-95 transition-all"
-            style={{ bottom: "90px", right: "20px" }}
+            className="fixed z-30 w-10 h-10 rounded-full bg-amber-sun text-forest-deep flex items-center justify-center shadow-lg active:scale-95 transition-all"
+            style={{ bottom: "110px", right: "20px" }}
             aria-label="Scroll to bottom"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
