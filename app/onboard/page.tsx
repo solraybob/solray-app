@@ -408,7 +408,7 @@ export default function OnboardPage() {
           padding: 12px 0;
           color: #f5f0e8;
           font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
+          font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
         }

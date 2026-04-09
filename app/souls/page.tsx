@@ -355,7 +355,7 @@ export default function SoulsPage() {
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="Search by @username or email"
-                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors pr-10"
+                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors pr-10"
               />
               {searching && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">

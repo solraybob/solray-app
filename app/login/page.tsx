@@ -83,7 +83,7 @@ export default function LoginPage() {
               placeholder="Email"
               autoComplete="email"
               required
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
             />
           </div>
           <div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
               placeholder="Password"
               autoComplete="current-password"
               required
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
             />
           </div>
 
