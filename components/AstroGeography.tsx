@@ -86,6 +86,12 @@ const MAJOR_CITIES: Record<string, { lat: number; lon: number }> = {
   "Prague": { lat: 50.0755, lon: 14.4378 },
 };
 
+// Force text rendering (not emoji) with \uFE0E variation selector
+const PLANET_SYMBOL_OVERRIDE: Record<string, string> = {
+  Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀\uFE0E", Mars: "♂\uFE0E",
+  Jupiter: "♃", Saturn: "♄", Uranus: "♅", Neptune: "♆", Pluto: "♇",
+};
+
 const ALL_PLANETS = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"];
 const ALL_LINE_TYPES = ["MC", "IC", "ASC", "DSC"];
 
@@ -306,7 +312,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
         <div className="flex flex-wrap gap-1.5">
           {ALL_PLANETS.map(planet => {
             const color = data.planet_colors[planet] || "#888";
-            const symbol = data.planet_symbols[planet] || planet[0];
+            const symbol = PLANET_SYMBOL_OVERRIDE[planet] || data.planet_symbols[planet] || planet[0];
             const active = activePlanets.has(planet);
             return (
               <button
@@ -397,7 +403,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
             style={{ borderColor: `${hoveredLine.color}40`, background: `${hoveredLine.color}08` }}
           >
             <p className="text-[10px] font-body tracking-wider uppercase mb-1" style={{ color: hoveredLine.color }}>
-              {hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
+              {PLANET_SYMBOL_OVERRIDE[hoveredLine.planet] || hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
             </p>
             <p className="text-text-secondary text-xs font-body leading-relaxed">{hoveredLine.meaning}</p>
           </div>
@@ -619,7 +625,7 @@ function FullscreenMap({
             return (
               <text key={`fslabel-${i}`} x={x + 3} y={16} fill={line.color}
                 fontSize={8} fontFamily="Inter, sans-serif" opacity={0.9}>
-                {line.symbol} {line.planet}
+                {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol} {line.planet}
               </text>
             );
           })}
@@ -750,7 +756,7 @@ function MapSVG({
               fontFamily="Inter, sans-serif"
               opacity={0.8}
             >
-              {line.symbol}
+              {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol}
             </text>
           );
         })}
@@ -822,7 +828,7 @@ function MapSVG({
             fontFamily="Inter, sans-serif"
             fontWeight="600"
           >
-            {hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
+            {PLANET_SYMBOL_OVERRIDE[hoveredLine.planet] || hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
           </text>
           <text
             x={Math.min(tooltipPos.x + 16, MAP_W - 152)}
