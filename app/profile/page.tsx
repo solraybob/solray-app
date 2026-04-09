@@ -646,7 +646,32 @@ export default function ProfilePage() {
       }
     }
 
-    // Always fetch fresh user data for name/username
+    // Try cache first — cheap path
+    try {
+      const cached = localStorage.getItem(BP_CACHE_KEY);
+      if (cached) {
+        const bp = JSON.parse(cached);
+        // If name is missing from cache, fetch from a lightweight endpoint
+        if (!bp._name) {
+          apiFetch("/users/me", {}, token)
+            .then((data) => {
+              const bpWithUser = {
+                ...bp,
+                _name: data.profile?.name || data.name || "",
+                _username: data.profile?.username || data.username || "",
+              };
+              try { localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser)); } catch (_) {}
+              loadFromBlueprint(bpWithUser);
+            })
+            .catch(() => loadFromBlueprint(bp));
+        } else {
+          loadFromBlueprint(bp);
+        }
+        return;
+      }
+    } catch (_) {}
+
+    // No cache — fetch full blueprint (first load only)
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
@@ -656,32 +681,14 @@ export default function ProfilePage() {
             _username: data.profile?.username || data.username || "",
             _cachedAt: Date.now()
           };
-          try {
-            localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser));
-          } catch (_) {}
+          try { localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser)); } catch (_) {}
           loadFromBlueprint(bpWithUser);
         } else {
-          // No blueprint yet — try cache
-          try {
-            const cached = localStorage.getItem(BP_CACHE_KEY);
-            if (cached) {
-              loadFromBlueprint(JSON.parse(cached));
-              return;
-            }
-          } catch (_) {}
           setLoading(false);
           setTimeout(() => setVisible(true), 50);
         }
       })
       .catch(() => {
-        // API failed — fall back to cache
-        try {
-          const cached = localStorage.getItem(BP_CACHE_KEY);
-          if (cached) {
-            loadFromBlueprint(JSON.parse(cached));
-            return;
-          }
-        } catch (_) {}
         setLoading(false);
         setTimeout(() => setVisible(true), 50);
       });
