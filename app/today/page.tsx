@@ -156,13 +156,13 @@ function PlanetCard({ planet }: { planet: Planet }) {
           <span className="text-amber-sun/80 text-[10px] font-body leading-none mt-0.5">℞</span>
         )}
       </div>
-      <span className="text-text-secondary/60 text-[9px] font-body tracking-widest uppercase mt-0.5">
+      <span className="text-text-secondary/80 text-[10px] font-body tracking-widest uppercase mt-0.5">
         {planet.name}
       </span>
-      <span className="text-text-primary/90 text-xs font-body font-medium">
+      <span className="text-text-primary text-xs font-body font-medium">
         {planet.sign}
       </span>
-      <span className="text-text-secondary/50 text-[10px] font-body">{planet.degree}</span>
+      <span className="text-text-secondary/70 text-[10px] font-body">{planet.degree}</span>
     </div>
   );
 }
@@ -430,18 +430,20 @@ export default function TodayPage() {
               </div>
             )}
 
-            {/* LUNAR PHASE ALERT — shown when within 3-day window */}
-            {forecast.lunar_event && (
-              <div
-                className="pt-6 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 1 ? 1 : 0,
-                  transform: visibleSections >= 1 ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
+            {/* MOON CYCLE — always shown */}
+            <div
+              className="pt-6 transition-all duration-700"
+              style={{
+                opacity: visibleSections >= 1 ? 1 : 0,
+                transform: visibleSections >= 1 ? "translateY(0)" : "translateY(12px)",
+              }}
+            >
+              {forecast.lunar_event ? (
                 <LunarPhaseCard event={forecast.lunar_event} />
-              </div>
-            )}
+              ) : (
+                <MoonCycleBar planets={forecast.planets} />
+              )}
+            </div>
 
             {/* HERO: Day Title */}
             <div
@@ -492,7 +494,7 @@ export default function TodayPage() {
               }}
             >
               <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-              <p className="font-body text-text-secondary/50 uppercase tracking-widest" style={{ fontSize: "0.65rem" }}>
+              <p className="font-body text-text-secondary/80 uppercase tracking-widest text-xs">
                 Today&apos;s Weather
               </p>
               <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
@@ -550,7 +552,7 @@ export default function TodayPage() {
               }}
             >
 
-              <p className="text-text-secondary/40 text-[9px] font-body tracking-[0.25em] uppercase mb-3">
+              <p className="text-text-secondary/80 text-xs font-body tracking-[0.2em] uppercase mb-3">
                 Sky Now
               </p>
               {/* Scrollable ticker */}
@@ -585,5 +587,105 @@ function Tag({ children }: { children: React.ReactNode }) {
     <span className="px-3 py-1.5 rounded-full border border-forest-border/60 text-text-secondary/70 text-xs font-body tracking-wide">
       {children}
     </span>
+  );
+}
+
+// Persistent moon cycle component — always visible
+function MoonCycleBar({ planets }: { planets: Planet[] }) {
+  // Calculate current moon phase from approximate lunar cycle
+  // New Moon = 0, Full Moon = 0.5, back to New = 1.0
+  const getMoonPhase = () => {
+    // Known reference: New Moon on Jan 1, 2000 at JD 2451549.5
+    const now = new Date();
+    const jd = (now.getTime() / 86400000) + 2440587.5;
+    const lunarCycle = 29.53058867;
+    const knownNewMoon = 2451549.5;
+    const phase = ((jd - knownNewMoon) % lunarCycle) / lunarCycle;
+    return phase < 0 ? phase + 1 : phase;
+  };
+
+  const phase = getMoonPhase();
+  const moonSign = planets.find(p => p.name === "Moon")?.sign || "";
+
+  const getPhaseLabel = (p: number): string => {
+    if (p < 0.03 || p > 0.97) return "New Moon";
+    if (p < 0.25) return "Waxing Crescent";
+    if (p < 0.27) return "First Quarter";
+    if (p < 0.48) return "Waxing Gibbous";
+    if (p < 0.52) return "Full Moon";
+    if (p < 0.73) return "Waning Gibbous";
+    if (p < 0.77) return "Third Quarter";
+    return "Waning Crescent";
+  };
+
+  const getMoonEmoji = (p: number): string => {
+    if (p < 0.03 || p > 0.97) return "🌑";
+    if (p < 0.25) return "🌒";
+    if (p < 0.27) return "🌓";
+    if (p < 0.48) return "🌔";
+    if (p < 0.52) return "🌕";
+    if (p < 0.73) return "🌖";
+    if (p < 0.77) return "🌗";
+    return "🌘";
+  };
+
+  const phaseLabel = getPhaseLabel(phase);
+  const phaseEmoji = getMoonEmoji(phase);
+  const illumination = Math.round(Math.sin(phase * Math.PI) * 100);
+
+  // 8-phase cycle markers
+  const phases = [
+    { label: "New", pos: 0 },
+    { label: "↑", pos: 0.125 },
+    { label: "1st Q", pos: 0.25 },
+    { label: "↑", pos: 0.375 },
+    { label: "Full", label2: "🌕", pos: 0.5 },
+    { label: "↓", pos: 0.625 },
+    { label: "3rd Q", pos: 0.75 },
+    { label: "↓", pos: 0.875 },
+  ];
+
+  return (
+    <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{phaseEmoji}</span>
+          <div>
+            <p className="text-text-primary text-sm font-body font-medium">{phaseLabel}</p>
+            {moonSign && (
+              <p className="text-text-secondary text-xs font-body">Moon in {moonSign}</p>
+            )}
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-amber-sun text-sm font-heading">{illumination}%</p>
+          <p className="text-text-secondary text-[10px] font-body">illuminated</p>
+        </div>
+      </div>
+
+      {/* Cycle bar */}
+      <div className="relative">
+        <div className="w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-amber-sun/60 rounded-full"
+            style={{ width: `${Math.min(phase * 100, 99)}%` }}
+          />
+        </div>
+        {/* Current position dot */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-amber-sun border-2 border-forest-deep"
+          style={{ left: `${Math.min(phase * 100, 97)}%`, transform: "translate(-50%, -50%)" }}
+        />
+
+        {/* Phase labels */}
+        <div className="flex justify-between mt-2">
+          <span className="text-text-secondary/60 text-[9px] font-body">New</span>
+          <span className="text-text-secondary/60 text-[9px] font-body">1st Q</span>
+          <span className="text-text-secondary/60 text-[9px] font-body">Full</span>
+          <span className="text-text-secondary/60 text-[9px] font-body">3rd Q</span>
+          <span className="text-text-secondary/60 text-[9px] font-body">New</span>
+        </div>
+      </div>
+    </div>
   );
 }

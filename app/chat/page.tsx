@@ -612,6 +612,23 @@ function ChatPageInner() {
           </div>
         </div>
 
+        {/* Scroll to bottom button */}
+        {!autoScroll && (
+          <button
+            onClick={() => {
+              const el = scrollContainerRef.current;
+              if (el) el.scrollTop = el.scrollHeight;
+              setAutoScroll(true);
+            }}
+            className="fixed bottom-24 right-5 z-20 w-10 h-10 rounded-full bg-forest-card border border-amber-sun/40 text-amber-sun flex items-center justify-center shadow-lg hover:bg-forest-card/90 transition-all"
+            aria-label="Scroll to bottom"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        )}
+
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" onScroll={handleScroll}>
           <div className="max-w-lg mx-auto space-y-4">

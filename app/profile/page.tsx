@@ -894,7 +894,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="text-text-secondary/40 text-[9px] font-body tracking-[0.25em] uppercase mb-4 text-center">
+                <p className="text-text-secondary/80 text-xs font-body tracking-[0.2em] uppercase mb-4 text-center">
                   Soul Map
                 </p>
 
@@ -903,22 +903,22 @@ export default function ProfilePage() {
                     <SoulMapRadarChart radar={profile.radar} />
 
                     {/* Legend */}
-                    <div className="mt-2 flex justify-center gap-5 text-[9px] font-body tracking-wider">
+                    <div className="mt-2 flex justify-center gap-5 text-xs font-body tracking-wider">
                       <span style={{ color: "#e8821a" }}>● Amber = your profile</span>
                       <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
                     </div>
 
                     {/* Mini bar legend — all 6 dimensions with values */}
-                    <div className="mt-4 space-y-1.5 px-1">
+                    <div className="mt-4 space-y-2 px-1">
                       {SOUL_AXIS_KEYS.map((key, i) => {
                         const val = profile.radar[key];
                         const label = SOUL_AXIS_LABELS[i];
                         return (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="text-[9px] font-body tracking-wider uppercase text-text-secondary/60 w-20 shrink-0">
+                            <span className="text-xs font-body tracking-wider uppercase text-text-secondary/80 w-20 shrink-0">
                               {label}
                             </span>
-                            <div className="flex-1 h-1 rounded-full bg-forest-border/40 overflow-hidden">
+                            <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
                               <div
                                 className="h-full rounded-full"
                                 style={{
@@ -928,7 +928,7 @@ export default function ProfilePage() {
                                 }}
                               />
                             </div>
-                            <span className="text-[9px] font-body text-text-secondary/50 w-7 text-right shrink-0">
+                            <span className="text-xs font-body text-text-secondary/70 w-7 text-right shrink-0">
                               {val}
                             </span>
                           </div>

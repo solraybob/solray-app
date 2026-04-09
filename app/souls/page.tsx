@@ -204,7 +204,15 @@ export default function SoulsPage() {
         setMyUsername(me?.profile?.username || null);
         setMyName(me?.profile?.name || null);
         setPendingInvites(pending?.pending || []);
-        setConnectedSouls(souls?.souls || []);
+        // Deduplicate by soul user ID (both sides of a connection may appear)
+        const rawSouls: ConnectedSoul[] = souls?.souls || [];
+        const seen = new Set<string>();
+        const deduped = rawSouls.filter(s => {
+          if (seen.has(s.soul.id)) return false;
+          seen.add(s.soul.id);
+          return true;
+        });
+        setConnectedSouls(deduped);
       } catch (e) {
         // ignore
       } finally {
@@ -259,7 +267,9 @@ export default function SoulsPage() {
       if (accept) {
         // Reload connected souls
         const souls = await apiFetch("/souls", {}, token);
-        setConnectedSouls(souls?.souls || []);
+        const raw: ConnectedSoul[] = souls?.souls || [];
+        const seen2 = new Set<string>();
+        setConnectedSouls(raw.filter(s => { if (seen2.has(s.soul.id)) return false; seen2.add(s.soul.id); return true; }));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed";
