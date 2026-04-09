@@ -293,39 +293,12 @@ export default function AstroGeography({ token }: { token: string | null }) {
     <>
       {/* Fullscreen modal */}
       {fullscreen && (
-        <div className="fixed inset-0 z-50 bg-forest-deep flex items-center justify-center p-4">
-          <button
-            onClick={() => setFullscreen(false)}
-            className="absolute top-4 right-4 z-51 w-10 h-10 flex items-center justify-center rounded-full bg-forest-border/30 hover:bg-forest-border/50 transition-colors"
-            aria-label="Close fullscreen"
-          >
-            <svg
-              className="w-6 h-6 stroke-text-secondary"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <div className="w-full h-full max-w-6xl max-h-[90vh]">
-            <MapSVG
-              data={data}
-              visibleLines={data.lines.filter(
-                l => activePlanets.has(l.planet) && activeTypes.has(l.type)
-              )}
-              powerSpots={powerSpots}
-              hoveredLine={hoveredLine}
-              setHoveredLine={setHoveredLine}
-              tooltipPos={tooltipPos}
-              setTooltipPos={setTooltipPos}
-              svgRef={svgRef}
-              handleMouseMove={handleMouseMove}
-              fullscreen
-            />
-          </div>
-        </div>
+        <FullscreenMap
+          data={data}
+          visibleLines={data.lines.filter(l => activePlanets.has(l.planet) && activeTypes.has(l.type))}
+          powerSpots={powerSpots}
+          onClose={() => setFullscreen(false)}
+        />
       )}
 
       <div className="space-y-4">
@@ -479,6 +452,198 @@ export default function AstroGeography({ token }: { token: string | null }) {
         )}
       </div>
     </>
+  );
+}
+
+// Fullscreen map with pinch-to-zoom and pan
+function FullscreenMap({
+  data,
+  visibleLines,
+  powerSpots,
+  onClose,
+}: {
+  data: AstroData;
+  visibleLines: AstroLine[];
+  powerSpots: PowerSpot[];
+  onClose: () => void;
+}) {
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [lastOffset, setLastOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastTouchDist = useRef<number | null>(null);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.002;
+    setScale(s => Math.min(8, Math.max(1, s + delta * s)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+    setLastOffset(offset);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return;
+    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+
+  const handleMouseUp = () => setDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setDragging(true);
+      setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y });
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDist.current = Math.sqrt(dx * dx + dy * dy);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && dragging) {
+      setOffset({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+    } else if (e.touches.length === 2 && lastTouchDist.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const ratio = dist / lastTouchDist.current;
+      setScale(s => Math.min(8, Math.max(1, s * ratio)));
+      lastTouchDist.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setDragging(false);
+    lastTouchDist.current = null;
+  };
+
+  const resetView = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-forest-deep"
+      style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+      ref={containerRef}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Controls */}
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <button
+          onClick={resetView}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-text-primary transition-colors text-xs font-body"
+          title="Reset view"
+        >
+          ↺
+        </button>
+        <button
+          onClick={() => setScale(s => Math.min(8, s * 1.5))}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-text-primary transition-colors text-lg"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setScale(s => Math.max(1, s / 1.5))}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-text-primary transition-colors text-lg"
+        >
+          −
+        </button>
+        <button
+          onClick={onClose}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-amber-sun transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="absolute bottom-4 left-4 text-text-secondary/40 text-[10px] font-body">
+        Pinch or scroll to zoom · Drag to pan
+      </div>
+
+      {/* Map container with transform */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <svg
+          viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+          style={{
+            width: '100vw',
+            height: '100vh',
+            display: 'block',
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transformOrigin: 'center center',
+            transition: dragging ? 'none' : 'transform 0.1s ease',
+          }}
+        >
+          <rect width={MAP_W} height={MAP_H} fill="#0a1810" />
+          <WorldMap />
+          {/* Grid lines */}
+          {[-60, -30, 0, 30, 60].map(lat => (
+            <line key={`lat${lat}`} x1={0} y1={latToY(lat)} x2={MAP_W} y2={latToY(lat)}
+              stroke={lat === 0 ? "#1a3020" : "#111d14"} strokeWidth={lat === 0 ? 0.8 : 0.4} />
+          ))}
+          {[-120, -60, 0, 60, 120].map(lon => (
+            <line key={`lon${lon}`} x1={lonToX(lon)} y1={0} x2={lonToX(lon)} y2={MAP_H}
+              stroke="#111d14" strokeWidth={0.4} />
+          ))}
+          {visibleLines.map((line, i) => {
+            const path = buildPath(line.points);
+            if (!path) return null;
+            return (
+              <path key={`fs-${i}`} d={path} stroke={line.color} strokeWidth={1.5}
+                strokeOpacity={0.8} fill="none"
+                strokeDasharray={line.type === "IC" || line.type === "DSC" ? "4,3" : undefined} />
+            );
+          })}
+          {visibleLines.filter(l => l.type === "MC" && l.lon !== undefined).map((line, i) => {
+            const x = lonToX(line.lon!);
+            return (
+              <text key={`fslabel-${i}`} x={x + 3} y={16} fill={line.color}
+                fontSize={8} fontFamily="Inter, sans-serif" opacity={0.9}>
+                {line.symbol} {line.planet}
+              </text>
+            );
+          })}
+          {powerSpots.map((spot, idx) => {
+            const x = lonToX(spot.lon);
+            const y = latToY(spot.lat);
+            return (
+              <g key={`fs-power-${idx}`}>
+                <circle cx={x} cy={y} r={6} fill="#e8821a" opacity={0.9} />
+                <circle cx={x} cy={y} r={12} fill="none" stroke="#e8821a" strokeWidth={1} opacity={0.4} />
+                <text x={x} y={y - 14} textAnchor="middle" fill="#e8821a"
+                  fontSize={9} fontFamily="Inter, sans-serif" fontWeight="600">
+                  ★ {spot.city}
+                </text>
+              </g>
+            );
+          })}
+          <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
+            r={5} fill="#e8821a" opacity={0.9} />
+          <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
+            r={9} fill="none" stroke="#e8821a" strokeWidth={1} opacity={0.4} />
+        </svg>
+      </div>
+    </div>
   );
 }
 
