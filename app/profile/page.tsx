@@ -1158,6 +1158,23 @@ function parseBlueprintForChart(blueprint: any) {
   return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
 }
 
+// Helper: open chat with a pre-set question about a profile element
+function askAbout(topic: string, question: string) {
+  sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic, question }));
+  window.location.href = "/chat";
+}
+
+function AskButton({ topic, question }: { topic: string; question: string }) {
+  return (
+    <button
+      onClick={() => askAbout(topic, question)}
+      className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+    >
+      Ask →
+    </button>
+  );
+}
+
 function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
   // token is passed through to AstroGeography
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
@@ -1194,6 +1211,11 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 Moon: "Your emotional nature — how you feel",
                 Rising: "Your outer mask — how the world sees you",
               };
+              const questions: Record<string, string> = {
+                Sun: `What does my ${p.sign} Sun mean for my identity and life path?`,
+                Moon: `What does my ${p.sign} Moon reveal about my emotional nature and inner world?`,
+                Rising: `What does my ${p.sign} Rising sign mean for how I show up in the world?`,
+              };
               return (
                 <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
                   <span className="text-3xl w-10 text-center leading-none">{p.symbol}</span>
@@ -1201,9 +1223,10 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
                     <p className="text-text-secondary/50 text-[10px] font-body">{subtitles[label]}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-1">
                     <p className="text-amber-sun font-heading text-2xl leading-tight">{p.sign}</p>
                     <p className="text-text-secondary/60 font-body text-[10px]">{p.degree}</p>
+                    {questions[label] && <AskButton topic={`${label} in ${p.sign}`} question={questions[label]} />}
                   </div>
                 </div>
               );
@@ -1258,17 +1281,34 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         <div className="space-y-4 mt-2">
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
-              <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">Type</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">Type</p>
+                <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
+              </div>
               <p className="text-amber-sun font-heading text-3xl leading-tight">{chart.human_design.type}</p>
               {HD_TYPE_MEANINGS[chart.human_design.type] && (
                 <p className="text-text-secondary/50 text-xs font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
               )}
             </div>
           )}
-          <HDRow label="Strategy" value={chart.human_design.strategy} />
-          <HDRow label="Authority" value={chart.human_design.authority} meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]} />
-          <HDRow label="Profile" value={chart.human_design.profile} meaning={(() => { const n = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return n ? HD_PROFILE_MEANINGS[n] : undefined; })()} />
-          {chart.human_design.incarnation_cross && <HDRow label="Cross" value={chart.human_design.incarnation_cross} />}
+          <div className="flex items-center justify-between">
+            <div className="flex-1"><HDRow label="Strategy" value={chart.human_design.strategy} /></div>
+            <AskButton topic="Strategy" question={`My Human Design strategy is: ${chart.human_design.strategy}. How do I live this in practice?`} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1"><HDRow label="Authority" value={chart.human_design.authority} meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]} /></div>
+            <AskButton topic="Authority" question={`My inner authority is ${chart.human_design.authority}. How do I use this to make better decisions?`} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1"><HDRow label="Profile" value={chart.human_design.profile} meaning={(() => { const n = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return n ? HD_PROFILE_MEANINGS[n] : undefined; })()} /></div>
+            <AskButton topic="Profile" question={`My Human Design profile is ${chart.human_design.profile}. What does this reveal about my life's purpose and way of being?`} />
+          </div>
+          {chart.human_design.incarnation_cross && (
+            <div className="flex items-center justify-between">
+              <div className="flex-1"><HDRow label="Cross" value={chart.human_design.incarnation_cross} /></div>
+              <AskButton topic="Incarnation Cross" question={`My Incarnation Cross is ${chart.human_design.incarnation_cross}. What is my life purpose according to this?`} />
+            </div>
+          )}
           <div>
             <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Defined Centres</p>
             <div className="flex flex-wrap gap-2">
@@ -1305,17 +1345,18 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         <CollapsibleSection title="Numerology" defaultOpen={false}>
           <div className="space-y-3 mt-2">
             {[
-              { label: "Life Path", value: chart.numerology.life_path },
-              { label: "Expression", value: chart.numerology.expression },
-              { label: "Soul Urge", value: chart.numerology.soul_urge },
-              { label: `Personal Year ${chart.numerology.current_year}`, value: chart.numerology.personal_year },
-            ].map(({ label, value }) => (
+              { label: "Life Path", value: chart.numerology.life_path, q: `My Life Path number is ${chart.numerology.life_path}. What does this reveal about my destiny and core purpose?` },
+              { label: "Expression", value: chart.numerology.expression, q: `My Expression number is ${chart.numerology.expression}. What does this say about my natural talents?` },
+              { label: "Soul Urge", value: chart.numerology.soul_urge, q: `My Soul Urge number is ${chart.numerology.soul_urge}. What does my heart truly desire?` },
+              { label: `Personal Year ${chart.numerology.current_year}`, value: chart.numerology.personal_year, q: `I'm in a Personal Year ${chart.numerology.personal_year} in ${chart.numerology.current_year}. What themes and opportunities should I focus on?` },
+            ].map(({ label, value, q }) => (
               <div key={label} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
                 <span className="text-amber-sun font-heading text-3xl w-10 text-center leading-none">{value}</span>
                 <div className="flex-1">
                   <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
                   <p className="text-text-secondary/60 text-xs font-body mt-0.5">{chart.numerology!.short_meanings[String(value)] || ""}</p>
                 </div>
+                <AskButton topic={`${label} ${value}`} question={q} />
               </div>
             ))}
           </div>
@@ -1327,9 +1368,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         <div className="space-y-5 mt-2">
           {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
             <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
+                  <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
+                </div>
+                <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />

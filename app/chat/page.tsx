@@ -289,6 +289,56 @@ function ChatPageInner() {
 
     async function init() {
       // Check for compatibility context injected from Souls page
+      // Check for profile-element prompt (from Ask buttons on profile page)
+      const profilePromptRaw = sessionStorage.getItem("solray_chat_prompt");
+      if (profilePromptRaw) {
+        try {
+          const ctx = JSON.parse(profilePromptRaw) as { topic: string; question: string };
+          sessionStorage.removeItem("solray_chat_prompt");
+          const sid = generateSessionId();
+          setSessionId(sid);
+          const greeting = await buildGreeting(token);
+          const userMsg: Message = {
+            id: `${Date.now()}`,
+            role: "user",
+            content: ctx.question,
+            timestamp: new Date().toISOString(),
+          };
+          const newSession: StoredSession = {
+            sessionId: sid,
+            date: todayLabel(),
+            customName: ctx.topic,
+            messages: [greeting, userMsg],
+          };
+          saveSession(newSession);
+          setMessages([greeting, userMsg]);
+          setSending(true);
+          try {
+            const data = await apiFetch("/chat", {
+              method: "POST",
+              body: JSON.stringify({ message: ctx.question, conversation_history: [] }),
+            }, token);
+            const reply: Message = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: data.response || data.message || "I hear you.",
+              timestamp: new Date().toISOString(),
+            };
+            setMessages([greeting, userMsg, reply]);
+            setStreamedLength(0);
+            setStreamingId(reply.id);
+            saveSession({ ...newSession, messages: [greeting, userMsg, reply] });
+          } catch {
+            // fail silently, user can re-ask
+          } finally {
+            setSending(false);
+          }
+          return;
+        } catch {
+          // fall through
+        }
+      }
+
       const isCompat = searchParams?.get("compat") === "1";
       if (isCompat) {
         try {
