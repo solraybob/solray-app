@@ -9,8 +9,7 @@ export const metadata: Metadata = {
   description: "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
   manifest: "/manifest.json",
   appleWebApp: {
-    capable: true,
-    statusBarStyle: "black",
+    capable: false,
     title: "Solray AI",
   },
   icons: {

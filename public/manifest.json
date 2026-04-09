@@ -3,7 +3,7 @@
   "short_name": "Solray",
   "description": "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
   "start_url": "/",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#050f08",
   "theme_color": "#050f08",
   "orientation": "portrait",
