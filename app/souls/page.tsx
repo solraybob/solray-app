@@ -9,10 +9,11 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
 // Sign symbols
+// Use clean text abbreviations instead of emoji symbols
 const SIGN_SYMBOLS: Record<string, string> = {
-  Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋",
-  Leo: "♌", Virgo: "♍", Libra: "♎", Scorpio: "♏",
-  Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
+  Aries: "Ari", Taurus: "Tau", Gemini: "Gem", Cancer: "Can",
+  Leo: "Leo", Virgo: "Vir", Libra: "Lib", Scorpio: "Sco",
+  Sagittarius: "Sag", Capricorn: "Cap", Aquarius: "Aqu", Pisces: "Pis",
 };
 
 // Types
@@ -79,7 +80,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
             <h3 className="font-heading text-2xl text-text-primary">{soul.soul.name}</h3>
             <p className="text-text-secondary text-sm font-body">
               {soul.soul.sun_sign && (
-                <>{SIGN_SYMBOLS[soul.soul.sun_sign] || ""} {soul.soul.sun_sign}</>
+                <>☉ {soul.soul.sun_sign}</>
               )}
               {soul.soul.sun_sign && soul.soul.hd_type && " · "}
               {soul.soul.hd_type}
@@ -375,7 +376,7 @@ export default function SoulsPage() {
                       <p className="font-body text-text-primary text-sm font-semibold truncate">{user.name}</p>
                       <p className="text-text-secondary text-xs font-body">
                         @{user.username}
-                        {user.sun_sign && ` · ${SIGN_SYMBOLS[user.sun_sign] || ""}${user.sun_sign}`}
+                        {user.sun_sign && ` · ☉ ${user.sun_sign}`}
                         {user.hd_type && ` · ${user.hd_type}`}
                       </p>
                     </div>
@@ -422,7 +423,7 @@ export default function SoulsPage() {
                           <p className="font-body text-text-primary text-sm font-semibold truncate">{invite.requester.name}</p>
                           <p className="text-text-secondary text-xs font-body">
                             @{invite.requester.username}
-                            {invite.requester.sun_sign && ` · ${SIGN_SYMBOLS[invite.requester.sun_sign] || ""}${invite.requester.sun_sign}`}
+                            {invite.requester.sun_sign && ` · ☉ ${invite.requester.sun_sign}`}
                           </p>
                         </div>
                         <div className="flex gap-2 shrink-0">
@@ -526,7 +527,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {soul.sun_sign && (
               <span className="text-text-secondary text-sm">
-                {sunSymbol} {soul.sun_sign}
+                ☉ {soul.sun_sign}
               </span>
             )}
             {soul.sun_sign && soul.hd_type && (

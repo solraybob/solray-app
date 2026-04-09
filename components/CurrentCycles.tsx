@@ -101,7 +101,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
   return (
     <div
-      className="bg-forest-card border border-forest-border/60 rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:border-forest-border active:scale-[0.99]"
+      className="bg-forest-card border border-forest-border/60 rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:border-amber-sun/30 active:scale-[0.99]"
       onClick={() => setExpanded((v) => !v)}
     >
       {/* Title row */}

@@ -1053,14 +1053,14 @@ function parseBlueprintForChart(blueprint: any) {
   const gk = blueprint?.gene_keys;
   const numRaw = blueprint?.numerology;
 
-  const planetsRaw: { planet: string; symbol: string; sign: string; degree: string; house: number }[] = [];
+  const planetsRaw: { planet: string; symbol: string; sign: string; degree: string; house: number; retrograde?: boolean }[] = [];
   if (natal?.planets) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [name, data] of Object.entries(natal.planets as Record<string, any>)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const d = data as any;
       if (!d.sign || d.sign === 'Unknown' || d.longitude === null) continue;
-      planetsRaw.push({ planet: name, symbol: PLANET_SYMBOLS[name] ?? "●", sign: d.sign, degree: formatDegree(d.degree), house: d.house });
+      planetsRaw.push({ planet: name, symbol: PLANET_SYMBOLS[name] ?? "●", sign: d.sign, degree: formatDegree(d.degree), house: d.house, retrograde: d.retrograde });
     }
   }
   if (natal?.ascendant) {
@@ -1225,6 +1225,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   <span className="text-text-primary font-body text-sm flex-1">{p.planet}</span>
                   <span className="text-text-secondary font-body text-sm">{p.sign}</span>
                   <span className="text-text-secondary font-body text-xs">{p.degree}</span>
+                  {p.retrograde && <span className="text-amber-sun/70 font-body text-[10px] font-semibold">Rx</span>}
                   <span className="text-text-secondary font-body text-xs">H{p.house}</span>
                 </div>
               ))}
