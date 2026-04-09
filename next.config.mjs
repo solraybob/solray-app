@@ -20,3 +20,4 @@ export default withSentryConfig(nextConfig, {
   // Disable Sentry telemetry
   telemetry: false,
 });
+// Force rebuild
