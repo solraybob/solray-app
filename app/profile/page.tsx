@@ -778,7 +778,7 @@ export default function ProfilePage() {
               title="Edit profile"
               aria-label="Edit profile"
               style={{ minWidth: "44px", minHeight: "44px" }}
-              onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
+              onClick={() => { setNameInput(profile?.name || ""); setHandleInput(profile?.handle || ""); setEditingName(true); setEditingHandle(true); setSaveError(null); }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -843,30 +843,16 @@ export default function ProfilePage() {
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveHandle(); if (e.key === "Escape") setEditingHandle(false); }}
                       autoFocus
                     />
-                    <button
-                      onClick={handleSaveHandle}
-                      disabled={savingHandle}
-                      className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80"
-                    >
+                    <button onClick={handleSaveHandle} disabled={savingHandle} className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingHandle ? "…" : "Save"}
                     </button>
                     <button onClick={() => setEditingHandle(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
                   </div>
                 ) : (
                   profile?.handle && (
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
-                        @{profile.handle}
-                      </p>
-                      <button
-                        onClick={() => { setHandleInput(profile.handle); setEditingHandle(true); setSaveError(null); }}
-                        className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors flex items-center justify-center"
-                        title="Edit username"
-                        style={{ minWidth: "44px", minHeight: "44px" }}
-                      >
-                        <IconPencil />
-                      </button>
-                    </div>
+                    <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
+                      @{profile.handle}
+                    </p>
                   )
                 )}
 
@@ -880,32 +866,18 @@ export default function ProfilePage() {
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
                       autoFocus
                     />
-                    <button
-                      onClick={handleSaveName}
-                      disabled={savingName}
-                      className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80"
-                    >
+                    <button onClick={handleSaveName} disabled={savingName} className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingName ? "…" : "Save"}
                     </button>
                     <button onClick={() => setEditingName(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <h1
-                      className="font-heading text-4xl text-text-primary leading-tight text-center"
-                      style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
-                    >
-                      {profile?.name || "Your Name"}
-                    </h1>
-                    <button
-                      onClick={() => { setNameInput(profile?.name || ""); setEditingName(true); setSaveError(null); }}
-                      className="text-text-secondary/50 hover:text-amber-sun/70 transition-colors flex items-center justify-center"
-                      title="Edit display name"
-                      style={{ minWidth: "44px", minHeight: "44px" }}
-                    >
-                      <IconPencil />
-                    </button>
-                  </div>
+                  <h1
+                    className="font-heading text-4xl text-text-primary leading-tight text-center"
+                    style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
+                  >
+                    {profile?.name || "Your Name"}
+                  </h1>
                 )}
 
                 {saveError && (
