@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
   manifest: "/manifest.json",
   appleWebApp: {
-    capable: false,
+    capable: true,
+    statusBarStyle: "black-translucent",
     title: "Solray AI",
   },
   icons: {
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
   themeColor: "#050f08",
 };
 
