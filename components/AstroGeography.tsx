@@ -152,56 +152,54 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
     l => ["Jupiter", "Venus", "Sun"].includes(l.planet) && ["MC", "ASC"].includes(l.type)
   );
 
-  const candidates: { lat: number; lon: number; line1: AstroLine; line2: AstroLine; dist: number }[] = [];
+  // Score each city by how close it is to each positive line
+  // City score = sum of (1/distance) for each nearby positive line, capped at 20° radius
+  const RADIUS = 20;
+  const cityScores: Map<string, { score: number; nearLines: AstroLine[]; city: string; lat: number; lon: number }> = new Map();
 
-  for (let i = 0; i < positiveLines.length; i++) {
-    for (let j = i + 1; j < positiveLines.length; j++) {
-      const line1 = positiveLines[i];
-      const line2 = positiveLines[j];
+  for (const [cityName, coord] of Object.entries(MAJOR_CITIES)) {
+    let totalScore = 0;
+    const nearLines: AstroLine[] = [];
+
+    for (const line of positiveLines) {
+      // Find closest point on this line to the city
       let minDist = Infinity;
-      let bestLat = 0, bestLon = 0;
-
-      for (const p1 of line1.points) {
-        for (const p2 of line2.points) {
-          if (Math.abs(p1.lat - p2.lat) > 12) continue;
-          const dlat = p1.lat - p2.lat;
-          const dlon = Math.abs(p1.lon - p2.lon) > 180
-            ? 360 - Math.abs(p1.lon - p2.lon)
-            : Math.abs(p1.lon - p2.lon);
-          const dist = Math.sqrt(dlat * dlat + dlon * dlon);
-          if (dist < minDist) {
-            minDist = dist;
-            bestLat = (p1.lat + p2.lat) / 2;
-            bestLon = (p1.lon + p2.lon) / 2;
-          }
-        }
+      for (const pt of line.points) {
+        const dlat = pt.lat - coord.lat;
+        const dlon = Math.abs(pt.lon - coord.lon) > 180
+          ? 360 - Math.abs(pt.lon - coord.lon)
+          : Math.abs(pt.lon - coord.lon);
+        const dist = Math.sqrt(dlat * dlat + dlon * dlon);
+        if (dist < minDist) minDist = dist;
       }
-
-      if (minDist < 12) {
-        candidates.push({ lat: bestLat, lon: bestLon, line1, line2, dist: minDist });
+      if (minDist < RADIUS) {
+        totalScore += (RADIUS - minDist) / RADIUS; // 0-1, higher = closer
+        nearLines.push(line);
       }
+    }
+
+    if (nearLines.length >= 2) {
+      cityScores.set(cityName, {
+        score: totalScore,
+        nearLines,
+        city: cityName,
+        lat: coord.lat,
+        lon: coord.lon,
+      });
     }
   }
 
-  candidates.sort((a, b) => a.dist - b.dist);
+  // Sort by score (most lines + closest)
+  const sorted = Array.from(cityScores.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
 
-  // Deduplicate: skip spots within 25 degrees of an already selected one
-  const merged: typeof candidates = [];
-  for (const c of candidates) {
-    const tooClose = merged.some(m => {
-      const d = Math.sqrt(Math.pow(c.lat - m.lat, 2) + Math.pow(c.lon - m.lon, 2));
-      return d < 25;
-    });
-    if (!tooClose) merged.push(c);
-    if (merged.length >= 3) break;
-  }
-
-  return merged.map(c => ({
-    lat: c.lat,
-    lon: c.lon,
-    city: findNearestCity(c.lat, c.lon),
-    lines: [`${c.line1.planet} ${c.line1.type}`, `${c.line2.planet} ${c.line2.type}`],
-    description: `${c.line1.symbol}${c.line2.symbol} — ${c.line1.planet} & ${c.line2.planet} energies converge here`,
+  return sorted.map(s => ({
+    lat: s.lat,
+    lon: s.lon,
+    city: s.city,
+    lines: s.nearLines.map(l => `${l.planet} ${l.type}`),
+    description: `${s.nearLines.map(l => l.symbol).join("")} — ${s.nearLines.map(l => l.planet).join(" & ")} energies are strong here`,
   }));
 }
 
