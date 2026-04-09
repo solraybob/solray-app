@@ -946,8 +946,96 @@ export default function ProfilePage() {
                 <NatalAspects aspects={profile.aspects} />
               )}
 
-              {/* Full Blueprint — merged from chart page */}
-              {profile && <BlueprintSections token={token} />}
+              {/* Chart Summary */}
+              {profile && (
+                <CollapsibleSection title="Chart Summary" defaultOpen={false}>
+                  <div className="space-y-4 mt-2">
+                    {(profile.sunSign || profile.moonSign || profile.risingSign) && (
+                      <div className="pb-4 border-b border-forest-border/40">
+                        <p className="font-body text-text-primary text-sm leading-relaxed">
+                          {[
+                            profile.sunSign && `${profile.sunSign} Sun`,
+                            profile.moonSign && `${profile.moonSign} Moon`,
+                            profile.risingSign && `${profile.risingSign} Rising`,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      </div>
+                    )}
+
+                    {profile.hdType && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-text-secondary text-[10px] font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">
+                          Human Design
+                        </span>
+                        <span className="font-body text-sm text-text-primary">
+                          {[profile.hdType, profile.hdProfile, profile.authority]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {profile.incarnationCross && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-text-secondary text-[10px] font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">
+                          Cross
+                        </span>
+                        <span className="font-body text-sm text-text-primary">
+                          {profile.incarnationCross}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* Gene Keys Highlights */}
+              {profile && (profile.lifesWorkGift || profile.evolutionGift) && (
+                <div className="mb-4 border border-forest-border rounded-2xl overflow-hidden">
+                  <div className="px-5 pt-4 pb-2">
+                    <h2 className="font-heading text-xl text-text-primary">Gene Keys</h2>
+                  </div>
+                  <div className="px-5 pb-5 space-y-4">
+                    {profile.lifesWorkGift && (
+                      <div className="bg-forest-card/50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-amber-sun text-[10px] font-body tracking-wider uppercase">
+                            Life&apos;s Work
+                          </span>
+                          <span className="text-text-secondary text-[10px] font-body">
+                            Gate {profile.lifesWorkGate}
+                          </span>
+                        </div>
+                        <p className="font-heading text-lg text-text-primary leading-tight">
+                          {profile.lifesWorkShadow}
+                          <span className="text-text-secondary/50 mx-2">&#8594;</span>
+                          {profile.lifesWorkGift}
+                        </p>
+                      </div>
+                    )}
+
+                    {profile.evolutionGift && (
+                      <div className="bg-forest-card/50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-amber-sun text-[10px] font-body tracking-wider uppercase">
+                            Evolution
+                          </span>
+                          <span className="text-text-secondary text-[10px] font-body">
+                            Gate {profile.evolutionGate}
+                          </span>
+                        </div>
+                        <p className="font-heading text-lg text-text-primary leading-tight">
+                          {profile.evolutionShadow}
+                          <span className="text-text-secondary/50 mx-2">&#8594;</span>
+                          {profile.evolutionGift}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Sign Out */}
               <div className="mt-4 mb-6">
@@ -966,361 +1054,5 @@ export default function ProfilePage() {
         <BottomNav />
       </div>
     </ProtectedRoute>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Blueprint Sections (merged from chart page)
-// ---------------------------------------------------------------------------
-
-const PLANET_SYMBOLS: Record<string, string> = {
-  Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀", Mars: "♂",
-  Jupiter: "♃", Saturn: "♄", Uranus: "♅", Neptune: "♆", Pluto: "♇",
-  NorthNode: "☊", Chiron: "⚷", Ceres: "⚳", ASC: "↑",
-};
-
-function formatDegree(d: number): string {
-  const deg = Math.floor(d);
-  const min = Math.round((d - deg) * 60);
-  return `${deg}°${String(min).padStart(2, "0")}'`;
-}
-
-const HD_TYPE_MEANINGS: Record<string, string> = {
-  "Generator": "You're built to respond. Your energy is sustainable when you love what you do.",
-  "Manifesting Generator": "You're built to respond and move fast. Multiple things at once is your nature.",
-  "Projector": "You're built to guide. Wait for the invitation before sharing your wisdom.",
-  "Manifestor": "You're built to initiate. Inform the people around you before you act.",
-  "Reflector": "You're a mirror for your community. You need a full lunar cycle before major decisions.",
-};
-
-const HD_AUTHORITY_MEANINGS: Record<string, string> = {
-  "Sacral": "Your gut knows before your mind does. The yes or no in your body is your truth.",
-  "Emotional": "You need time. Never decide in the heat or the low. Clarity comes in waves.",
-  "Solar Plexus": "You need time. Never decide in the heat or the low. Clarity comes in waves.",
-  "Splenic": "A quiet whisper in the moment. It only speaks once. Trust the first feeling.",
-  "Self-Projected": "Talk it through out loud. Your truth emerges in your own voice.",
-  "Mental / Sounding Board": "Discuss it with people you trust. The answer comes through conversation.",
-  "Ego": "You know what you want when you commit from the heart. Only commit when it's real.",
-  "Lunar": "You reflect your environment. One full moon cycle before any major decision.",
-};
-
-const HD_PROFILE_MEANINGS: Record<string, string> = {
-  "1/3": "Investigator / Martyr. You learn by researching and by trial and error.",
-  "1/4": "Investigator / Opportunist. You build through deep foundations and trusted networks.",
-  "2/4": "Hermit / Opportunist. You need solitude to develop mastery, then your network calls you out.",
-  "2/5": "Hermit / Heretic. You need alone time but people project practical solutions onto you.",
-  "3/5": "Martyr / Heretic. You learn through experience and are seen as a practical problem-solver.",
-  "3/6": "Martyr / Role Model. First half of life: trial and error. Second half: becoming the example.",
-  "4/6": "Opportunist / Role Model. Your network is everything. You become a trusted authority.",
-  "5/1": "Heretic / Investigator. People project savior qualities onto you.",
-  "5/2": "Heretic / Hermit. Called out of solitude to solve others' problems.",
-  "6/2": "Role Model / Hermit. Three life phases: trial, retreat, role model.",
-  "6/3": "Role Model / Martyr. Experience-driven. You live it before you teach it.",
-};
-
-function normaliseCentreName(key: string): string {
-  const MAP: Record<string, string> = {
-    G: "G Centre", SolarPlexus: "Solar Plexus", Head: "Head", Ajna: "Ajna",
-    Throat: "Throat", Heart: "Heart / Ego", Sacral: "Sacral", Spleen: "Spleen", Root: "Root",
-  };
-  return MAP[key] ?? key;
-}
-
-function HDRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="text-text-secondary text-xs font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">{label}</span>
-      <div className="flex-1">
-        <span className="font-body text-sm text-text-primary">{value}</span>
-        {meaning && <p className="text-text-secondary/50 text-xs font-body leading-snug mt-0.5">{meaning}</p>}
-      </div>
-    </div>
-  );
-}
-
-function GKPill({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">{label}</p>
-      <p className={`font-heading text-lg ${color}`}>{value}</p>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseBlueprintForChart(blueprint: any) {
-  const natal = blueprint?.astrology?.natal;
-  const hd = blueprint?.human_design;
-  const gk = blueprint?.gene_keys;
-  const numRaw = blueprint?.numerology;
-
-  const planetsRaw: { planet: string; symbol: string; sign: string; degree: string; house: number }[] = [];
-  if (natal?.planets) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const [name, data] of Object.entries(natal.planets as Record<string, any>)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const d = data as any;
-      if (!d.sign || d.sign === 'Unknown' || d.longitude === null) continue;
-      planetsRaw.push({ planet: name, symbol: PLANET_SYMBOLS[name] ?? "●", sign: d.sign, degree: formatDegree(d.degree), house: d.house });
-    }
-  }
-  if (natal?.ascendant) {
-    planetsRaw.push({ planet: "ASC", symbol: "↑", sign: natal.ascendant.sign, degree: formatDegree(natal.ascendant.degree), house: 1 });
-  }
-
-  const keyChannels: string[] = hd?.defined_channels
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? (hd.defined_channels as Array<any>).map((ch: any) => {
-        if (Array.isArray(ch)) return `Channel ${ch[0]}-${ch[1]}: ${ch[2]}`;
-        if (ch && typeof ch === 'object') return `Channel ${ch.gate_a}-${ch.gate_b}: ${ch.name}`;
-        return String(ch);
-      })
-    : [];
-
-  let definedCentres: string[] = [];
-  let undefinedCentres: string[] = [];
-  if (hd?.defined_centres) {
-    if (Array.isArray(hd.defined_centres)) {
-      definedCentres = hd.defined_centres.map(normaliseCentreName);
-    } else if (typeof hd.defined_centres === 'object') {
-      definedCentres = Object.entries(hd.defined_centres).filter(([,v]) => v).map(([k]) => normaliseCentreName(k));
-      undefinedCentres = Object.entries(hd.defined_centres).filter(([,v]) => !v).map(([k]) => normaliseCentreName(k));
-    }
-  }
-
-  const PROFILE_NAMES: Record<string, string> = {
-    "1/3": "Investigator / Martyr", "1/4": "Investigator / Opportunist",
-    "2/4": "Hermit / Opportunist", "2/5": "Hermit / Heretic",
-    "3/5": "Martyr / Heretic", "3/6": "Martyr / Role Model",
-    "4/1": "Opportunist / Investigator", "4/6": "Opportunist / Role Model",
-    "5/1": "Heretic / Investigator", "5/2": "Heretic / Hermit",
-    "6/2": "Role Model / Hermit", "6/3": "Role Model / Martyr",
-  };
-  const rawProfile = hd?.profile ?? "";
-  const profileDisplay = rawProfile && PROFILE_NAMES[rawProfile] ? `${rawProfile} — ${PROFILE_NAMES[rawProfile]}` : rawProfile;
-  const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
-
-  const humanDesign = {
-    type: hd?.type ?? "",
-    strategy: hd?.strategy ?? "",
-    authority: hd?.authority ?? "",
-    profile: profileDisplay,
-    incarnation_cross: typeof crossLabel === "string" ? crossLabel : String(crossLabel),
-    defined_centres: definedCentres,
-    undefined_centres: undefinedCentres,
-    key_channels: keyChannels,
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gkBuild = (name: string, data: any) => data ? { name, gate: data.gate ?? 0, shadow: data.shadow ?? "", gift: data.gift ?? "", siddhi: data.siddhi ?? "" } : undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let geneKeys: Record<string, any> = {};
-  if (gk?.lifes_work || gk?.evolution) {
-    geneKeys = {
-      lifes_work: gkBuild("Life's Work", gk.lifes_work),
-      evolution: gkBuild("Evolution", gk.evolution),
-      radiance: gkBuild("Radiance", gk.radiance),
-      vocation: gkBuild("Vocation", gk.vocation),
-      culture: gkBuild("Culture", gk.culture),
-      pearl: gkBuild("Pearl", gk.pearl),
-    };
-  } else if (gk?.natal_gene_keys) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const natalGK = gk.natal_gene_keys as Record<string, any>;
-    const cc = hd?.conscious_chart || {};
-    const uc = hd?.unconscious_chart || {};
-    const profileMap = [
-      { name: "Life's Work", gateKey: String(cc.Sun?.gate || 64) },
-      { name: "Evolution", gateKey: String(cc.Earth?.gate || 63) },
-      { name: "Radiance", gateKey: String(uc.Sun?.gate || 35) },
-      { name: "Vocation", gateKey: String(uc.Earth?.gate || 5) },
-      { name: "Culture", gateKey: String(uc.Jupiter?.gate || 45) },
-      { name: "Pearl", gateKey: String(uc.Moon?.gate || 52) },
-    ];
-    profileMap.forEach(({ name, gateKey }) => {
-      const entry = natalGK[gateKey];
-      if (entry) {
-        const key = name.toLowerCase().replace(/[' ]/g, '_');
-        geneKeys[key] = { name, gate: entry.gate, shadow: entry.shadow ?? "", gift: entry.gift ?? "", siddhi: entry.siddhi ?? "" };
-      }
-    });
-  }
-
-  const numerology = numRaw ? {
-    life_path: numRaw.life_path ?? 0,
-    expression: numRaw.expression ?? 0,
-    soul_urge: numRaw.soul_urge ?? 0,
-    personal_year: numRaw.personal_year ?? 0,
-    current_year: numRaw.current_year ?? new Date().getFullYear(),
-    short_meanings: numRaw.short_meanings ?? {},
-  } : null;
-
-  return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
-}
-
-function BlueprintSections({ token }: { token: string | null }) {
-  const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
-
-  useEffect(() => {
-    if (!token) return;
-    try {
-      const cached = localStorage.getItem("solray_blueprint");
-      if (cached) {
-        const bp = JSON.parse(cached);
-        setChart(parseBlueprintForChart(bp));
-      }
-    } catch (_) {}
-  }, [token]);
-
-  if (!chart) return null;
-
-  const corePlanets = ["Sun", "Moon", "ASC"];
-  const core = chart.natal.filter((p) => corePlanets.includes(p.planet));
-  const rest = chart.natal.filter((p) => !corePlanets.includes(p.planet));
-  const [showAll, setShowAll] = useState(false);
-
-  return (
-    <>
-      {/* Natal Chart */}
-      <CollapsibleSection title="Natal Chart" defaultOpen={false}>
-        <div className="mt-2">
-          {/* Core trio */}
-          <div className="space-y-4 mb-6">
-            {core.map((p) => {
-              const label = p.planet === "ASC" ? "Rising" : p.planet;
-              const subtitles: Record<string, string> = {
-                Sun: "Your core identity — how you shine",
-                Moon: "Your emotional nature — how you feel",
-                Rising: "Your outer mask — how the world sees you",
-              };
-              return (
-                <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
-                  <span className="text-3xl w-10 text-center leading-none">{p.symbol}</span>
-                  <div className="flex-1">
-                    <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
-                    <p className="text-text-secondary/50 text-[10px] font-body">{subtitles[label]}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-amber-sun font-heading text-2xl leading-tight">{p.sign}</p>
-                    <p className="text-text-secondary/60 font-body text-[10px]">{p.degree}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {/* All planets */}
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="flex items-center gap-2 text-text-secondary text-xs font-body tracking-wider uppercase mb-3 hover:text-text-primary transition-colors"
-          >
-            <span>{showAll ? "Hide planets" : "See all planets"}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}>
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          {showAll && (
-            <div className="space-y-1">
-              {rest.map((p) => (
-                <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
-                  <span className="text-xl w-7 text-center opacity-70">{p.symbol}</span>
-                  <span className="text-text-primary font-body text-sm flex-1">{p.planet}</span>
-                  <span className="text-text-secondary font-body text-sm">{p.sign}</span>
-                  <span className="text-text-secondary font-body text-xs">{p.degree}</span>
-                  <span className="text-text-secondary font-body text-xs">H{p.house}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* Human Design */}
-      <CollapsibleSection title="Human Design" defaultOpen={false}>
-        <div className="space-y-4 mt-2">
-          {chart.human_design.type && (
-            <div className="pb-4 mb-1 border-b border-forest-border/40">
-              <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">Type</p>
-              <p className="text-amber-sun font-heading text-3xl leading-tight">{chart.human_design.type}</p>
-              {HD_TYPE_MEANINGS[chart.human_design.type] && (
-                <p className="text-text-secondary/50 text-xs font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
-              )}
-            </div>
-          )}
-          <HDRow label="Strategy" value={chart.human_design.strategy} />
-          <HDRow label="Authority" value={chart.human_design.authority} meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]} />
-          <HDRow label="Profile" value={chart.human_design.profile} meaning={(() => { const n = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return n ? HD_PROFILE_MEANINGS[n] : undefined; })()} />
-          {chart.human_design.incarnation_cross && <HDRow label="Cross" value={chart.human_design.incarnation_cross} />}
-          <div>
-            <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Defined Centres</p>
-            <div className="flex flex-wrap gap-2">
-              {chart.human_design.defined_centres.map((c) => (
-                <span key={c} className="px-2.5 py-1 bg-forest-card border border-amber-sun/30 rounded-full text-amber-sun text-xs font-body">{c}</span>
-              ))}
-            </div>
-          </div>
-          {chart.human_design.undefined_centres.length > 0 && (
-            <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Undefined Centres</p>
-              <div className="flex flex-wrap gap-2">
-                {chart.human_design.undefined_centres.map((c) => (
-                  <span key={c} className="px-2.5 py-1 bg-forest-card border border-forest-border rounded-full text-text-secondary text-xs font-body">{c}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          {chart.human_design.key_channels.length > 0 && (
-            <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Key Channels</p>
-              <div className="space-y-1">
-                {chart.human_design.key_channels.map((ch) => (
-                  <p key={ch} className="text-text-primary text-sm font-body">· {ch}</p>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* Numerology */}
-      {chart.numerology && (
-        <CollapsibleSection title="Numerology" defaultOpen={false}>
-          <div className="space-y-3 mt-2">
-            {[
-              { label: "Life Path", value: chart.numerology.life_path },
-              { label: "Expression", value: chart.numerology.expression },
-              { label: "Soul Urge", value: chart.numerology.soul_urge },
-              { label: `Personal Year ${chart.numerology.current_year}`, value: chart.numerology.personal_year },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
-                <span className="text-amber-sun font-heading text-3xl w-10 text-center leading-none">{value}</span>
-                <div className="flex-1">
-                  <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
-                  <p className="text-text-secondary/60 text-xs font-body mt-0.5">{chart.numerology!.short_meanings[String(value)] || ""}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CollapsibleSection>
-      )}
-
-      {/* Gene Keys */}
-      <CollapsibleSection title="Gene Keys" defaultOpen={false}>
-        <div className="space-y-5 mt-2">
-          {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
-                <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="text-text-primary" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
-    </>
   );
 }
