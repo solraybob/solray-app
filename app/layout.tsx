@@ -31,6 +31,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Fix iOS PWA: force inputs to be focusable on tap */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.addEventListener('touchend', function(e) {
+            var el = e.target;
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+              e.preventDefault();
+              el.focus();
+            }
+          }, false);
+        `}} />
+      </head>
       <body className="bg-forest-deep min-h-screen text-text-primary">
         <AuthProvider>
           {children}
