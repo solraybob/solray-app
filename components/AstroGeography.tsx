@@ -189,9 +189,11 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
     }
   }
 
-  // Sort by score (most lines + closest)
+  // Sort by score, deduplicate by city name
+  const seen = new Set<string>();
   const sorted = Array.from(cityScores.values())
     .sort((a, b) => b.score - a.score)
+    .filter(s => { if (seen.has(s.city)) return false; seen.add(s.city); return true; })
     .slice(0, 3);
 
   return sorted.map(s => ({
