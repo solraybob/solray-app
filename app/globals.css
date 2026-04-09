@@ -24,6 +24,10 @@ html, body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Fix iOS PWA touch handling */
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
 }
 
 h1, h2, h3 {
@@ -49,6 +53,19 @@ h1, h2, h3 {
 input, textarea {
   outline: none;
   background: transparent;
+  /* Fix iOS PWA touch and keyboard issues */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+  /* Prevent iOS zoom on focus (requires 16px) */
+  font-size: 16px !important;
+}
+
+/* Fix iOS PWA: prevent touch-through on overlays */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Smooth scroll */
