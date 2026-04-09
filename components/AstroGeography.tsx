@@ -148,27 +148,27 @@ function findNearestCity(lat: number, lon: number): string {
 }
 
 function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
-  // Filter for positive planetary lines: Jupiter MC/ASC, Venus MC/ASC, Sun MC
   const positiveLines = lines.filter(
     l => ["Jupiter", "Venus", "Sun"].includes(l.planet) && ["MC", "ASC"].includes(l.type)
   );
 
-  const spots: Map<string, { lat: number; lon: number; lines: AstroLine[] }> = new Map();
+  const candidates: { lat: number; lon: number; line1: AstroLine; line2: AstroLine; dist: number }[] = [];
 
-  // Find intersections: where 2+ lines come within 15° of each other
   for (let i = 0; i < positiveLines.length; i++) {
     for (let j = i + 1; j < positiveLines.length; j++) {
       const line1 = positiveLines[i];
       const line2 = positiveLines[j];
-
-      // Find closest points between the two lines
       let minDist = Infinity;
-      let bestLat = 0,
-        bestLon = 0;
+      let bestLat = 0, bestLon = 0;
 
       for (const p1 of line1.points) {
         for (const p2 of line2.points) {
-          const dist = Math.hypot(p1.lat - p2.lat, p1.lon - p2.lon);
+          if (Math.abs(p1.lat - p2.lat) > 12) continue;
+          const dlat = p1.lat - p2.lat;
+          const dlon = Math.abs(p1.lon - p2.lon) > 180
+            ? 360 - Math.abs(p1.lon - p2.lon)
+            : Math.abs(p1.lon - p2.lon);
+          const dist = Math.sqrt(dlat * dlat + dlon * dlon);
           if (dist < minDist) {
             minDist = dist;
             bestLat = (p1.lat + p2.lat) / 2;
@@ -177,35 +177,32 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
         }
       }
 
-      // If within 15°, mark as intersection point
-      if (minDist < 15) {
-        const key = `${bestLat.toFixed(1)}-${bestLon.toFixed(1)}`;
-        if (!spots.has(key)) {
-          spots.set(key, { lat: bestLat, lon: bestLon, lines: [] });
-        }
-        const spot = spots.get(key)!;
-        if (!spot.lines.includes(line1)) spot.lines.push(line1);
-        if (!spot.lines.includes(line2)) spot.lines.push(line2);
+      if (minDist < 12) {
+        candidates.push({ lat: bestLat, lon: bestLon, line1, line2, dist: minDist });
       }
     }
   }
 
-  // Convert to array and sort by number of lines (most confluent first)
-  const spotList: PowerSpot[] = Array.from(spots.values())
-    .filter(s => s.lines.length >= 2)
-    .map(s => ({
-      lat: s.lat,
-      lon: s.lon,
-      city: findNearestCity(s.lat, s.lon),
-      lines: s.lines.map(l => `${l.planet} ${l.type}`),
-      description: `${s.lines.map(l => l.symbol).join("")} Cross — powerful junction of ${s.lines
-        .map(l => l.planet)
-        .join(" & ")} energies`,
-    }))
-    .sort((a, b) => b.lines.length - a.lines.length)
-    .slice(0, 3);
+  candidates.sort((a, b) => a.dist - b.dist);
 
-  return spotList;
+  // Deduplicate: skip spots within 25 degrees of an already selected one
+  const merged: typeof candidates = [];
+  for (const c of candidates) {
+    const tooClose = merged.some(m => {
+      const d = Math.sqrt(Math.pow(c.lat - m.lat, 2) + Math.pow(c.lon - m.lon, 2));
+      return d < 25;
+    });
+    if (!tooClose) merged.push(c);
+    if (merged.length >= 3) break;
+  }
+
+  return merged.map(c => ({
+    lat: c.lat,
+    lon: c.lon,
+    city: findNearestCity(c.lat, c.lon),
+    lines: [`${c.line1.planet} ${c.line1.type}`, `${c.line2.planet} ${c.line2.type}`],
+    description: `${c.line1.symbol}${c.line2.symbol} — ${c.line1.planet} & ${c.line2.planet} energies converge here`,
+  }));
 }
 
 export default function AstroGeography({ token }: { token: string | null }) {
@@ -684,78 +681,29 @@ function MapSVG({
   );
 }
 
-// Accurate world map with Natural Earth-inspired paths
+// Coordinate-accurate world map
 function WorldMap() {
   return (
-    <g fill="#1e3d25" stroke="#0d2418" strokeWidth={0.5}>
-      {/* North America */}
-      <path d="M 20 65 L 45 55 L 65 50 L 85 45 L 100 48 L 110 52 L 115 60 L 120 75 L 125 90 L 128 105 L 125 120 L 115 135 L 100 145 L 85 148 L 70 145 L 55 140 L 40 130 L 30 115 L 25 95 L 22 80 Z" />
-
-      {/* Central America & Caribbean */}
-      <path d="M 115 135 L 125 138 L 130 145 L 125 150 L 115 148 Z" />
-
-      {/* Greenland */}
-      <path d="M 290 20 L 320 18 L 335 35 L 330 55 L 310 60 L 295 50 L 288 35 Z" />
-
-      {/* South America */}
-      <path d="M 100 145 L 115 150 L 125 155 L 135 165 L 145 180 L 150 200 L 148 225 L 145 250 L 138 275 L 125 290 L 115 292 L 105 285 L 100 265 L 98 240 L 98 210 L 100 175 Z" />
-
-      {/* Iceland */}
-      <path d="M 305 50 L 320 48 L 322 58 L 310 60 Z" />
-
-      {/* British Isles */}
-      <path d="M 355 70 L 368 68 L 372 78 L 360 80 Z" />
-
-      {/* Scandinavia */}
-      <path d="M 370 45 L 395 40 L 410 50 L 405 70 L 385 72 L 375 60 Z" />
-
-      {/* Western Europe */}
-      <path d="M 355 70 L 375 68 L 385 75 L 390 90 L 380 100 L 360 98 L 350 85 Z" />
-
-      {/* Central Europe */}
-      <path d="M 375 68 L 410 65 L 435 70 L 440 85 L 430 95 L 405 98 L 385 90 Z" />
-
-      {/* Southern Europe */}
-      <path d="M 380 100 L 430 95 L 455 105 L 460 120 L 440 130 L 405 125 L 385 115 Z" />
-
-      {/* Africa */}
-      <path d="M 380 115 L 440 110 L 475 120 L 495 140 L 510 165 L 515 190 L 510 215 L 495 240 L 470 260 L 440 270 L 410 268 L 385 250 L 368 220 L 362 185 L 365 150 L 375 125 Z" />
-
-      {/* Middle East */}
-      <path d="M 440 110 L 475 105 L 510 115 L 525 135 L 510 150 L 475 145 L 460 125 Z" />
-
-      {/* Russia */}
-      <path d="M 410 60 L 520 50 L 600 55 L 620 70 L 600 85 L 520 90 L 430 85 L 420 70 Z" />
-
-      {/* Eastern Europe */}
-      <path d="M 410 70 L 440 68 L 460 80 L 450 100 L 420 95 L 405 85 Z" />
-
-      {/* Central Asia */}
-      <path d="M 480 75 L 540 70 L 570 85 L 560 105 L 510 110 L 485 95 Z" />
-
-      {/* India & South Asia */}
-      <path d="M 510 120 L 555 115 L 580 130 L 585 160 L 570 185 L 540 188 L 525 170 L 520 145 Z" />
-
-      {/* Southeast Asia */}
-      <path d="M 570 130 L 620 125 L 655 135 L 665 160 L 635 170 L 605 160 L 580 145 Z" />
-
-      {/* East Asia - China */}
-      <path d="M 570 85 L 630 80 L 665 90 L 670 120 L 630 125 L 600 110 Z" />
-
+    <g fill="#1e3d25" stroke="#0d2418" strokeWidth={0.4}>
+      <path d="M 88.9 44.4 L 133.3 40.0 L 188.9 44.4 L 211.1 37.8 L 233.3 48.9 L 255.6 60.0 L 255.6 66.7 L 266.7 77.8 L 277.8 88.9 L 282.2 95.6 L 282.2 102.2 L 288.9 106.7 L 255.6 106.7 L 244.4 111.1 L 233.3 122.2 L 222.2 133.3 L 222.2 144.4 L 200.0 144.4 L 200.0 151.1 L 206.7 155.6 L 211.1 164.4 L 215.6 177.8 L 228.9 182.2 L 228.9 182.2 L 224.4 180.0 L 233.3 177.8 L 242.2 173.3 L 262.2 173.3 L 266.7 166.7 L 253.3 160.0 L 251.1 160.0 L 244.4 155.6 L 222.2 151.1 L 222.2 144.4 L 222.2 133.3 L 233.3 122.2 L 233.3 115.6 L 237.8 111.1 L 244.4 106.7 L 262.2 100.0 L 280.0 95.6 L 277.8 88.9 L 266.7 77.8 L 244.4 77.8 L 226.7 71.1 L 231.1 66.7 L 228.9 57.8 L 233.3 48.9 L 211.1 44.4 L 188.9 40.0 L 133.3 37.8 L 111.1 44.4 L 88.9 55.6 L 82.2 66.7 L 111.1 77.8 L 117.8 88.9 L 124.4 100.0 L 124.4 111.1 L 133.3 122.2 L 140.0 133.3 L 155.6 144.4 L 166.7 151.1 L 166.7 155.6 L 177.8 155.6 L 182.2 151.1 L 184.4 144.4 L 184.4 137.8 L 188.9 133.3 L 200.0 133.3 L 200.0 144.4 L 200.0 151.1 L 206.7 155.6 L 182.2 155.6 L 166.7 151.1 L 155.6 144.4 L 140.0 133.3 L 133.3 122.2 L 124.4 111.1 L 124.4 100.0 L 117.8 88.9 L 111.1 77.8 L 82.2 66.7 L 88.9 55.6 L 88.9 44.4 Z" />
+      <path d="M 240.0 173.3 L 264.4 173.3 L 262.2 177.8 L 262.2 182.2 L 266.7 188.9 L 286.7 191.1 L 288.9 195.6 L 288.9 200.0 L 322.2 211.1 L 315.6 222.2 L 311.1 233.3 L 311.1 244.4 L 304.4 248.9 L 304.4 251.1 L 293.3 255.6 L 288.9 266.7 L 282.2 273.3 L 273.3 277.8 L 262.2 284.4 L 262.2 288.9 L 255.6 293.3 L 255.6 300.0 L 255.6 306.7 L 248.9 315.6 L 248.9 322.2 L 255.6 322.2 L 271.1 315.6 L 284.4 306.7 L 288.9 293.3 L 273.3 284.4 L 273.3 277.8 L 288.9 266.7 L 293.3 255.6 L 306.7 248.9 L 311.1 244.4 L 311.1 233.3 L 315.6 222.2 L 322.2 211.1 L 288.9 200.0 L 288.9 195.6 L 286.7 191.1 L 266.7 188.9 L 262.2 182.2 L 262.2 177.8 L 264.4 173.3 Z" />
+      <path d="M 462.2 42.2 L 444.4 44.4 L 431.1 48.9 L 431.1 55.6 L 417.8 60.0 L 411.1 66.7 L 417.8 73.3 L 426.7 77.8 L 422.2 80.0 L 431.1 77.8 L 440.0 80.0 L 442.2 88.9 L 435.6 93.3 L 420.0 95.6 L 415.6 97.8 L 406.7 102.2 L 406.7 104.4 L 404.4 108.9 L 391.1 111.1 L 386.7 120.0 L 380.0 120.0 L 380.0 115.6 L 380.0 106.7 L 382.2 102.2 L 395.6 97.8 L 395.6 93.3 L 404.4 88.9 L 404.4 86.7 L 408.9 86.7 L 411.1 84.4 L 415.6 82.2 L 422.2 80.0 L 426.7 77.8 L 422.2 73.3 L 426.7 71.1 L 435.6 71.1 L 440.0 66.7 L 435.6 62.2 L 431.1 60.0 L 431.1 55.6 L 440.0 48.9 L 455.6 44.4 L 462.2 42.2 Z" />
+      <path d="M 422.2 117.8 L 477.8 117.8 L 471.1 133.3 L 482.2 151.1 L 495.6 173.3 L 493.3 200.0 L 488.9 211.1 L 488.9 222.2 L 477.8 233.3 L 477.8 244.4 L 473.3 255.6 L 457.8 275.6 L 444.4 277.8 L 437.8 266.7 L 433.3 255.6 L 426.7 244.4 L 426.7 233.3 L 431.1 222.2 L 422.2 211.1 L 417.8 200.0 L 406.7 188.9 L 395.6 188.9 L 388.9 182.2 L 366.7 177.8 L 364.4 173.3 L 362.2 166.7 L 362.2 155.6 L 366.7 151.1 L 366.7 144.4 L 377.8 133.3 L 422.2 117.8 Z" />
+      <path d="M 457.8 44.4 L 511.1 44.4 L 622.2 44.4 L 711.1 55.6 L 766.7 66.7 L 766.7 77.8 L 733.3 88.9 L 711.1 100.0 L 688.9 111.1 L 671.1 122.2 L 671.1 133.3 L 668.9 144.4 L 655.6 151.1 L 644.4 160.0 L 631.1 177.8 L 628.9 188.9 L 631.1 197.8 L 644.4 197.8 L 628.9 188.9 L 631.1 177.8 L 640.0 166.7 L 644.4 155.6 L 666.7 144.4 L 666.7 133.3 L 666.7 122.2 L 688.9 111.1 L 711.1 100.0 L 733.3 88.9 L 755.6 77.8 L 777.8 66.7 L 777.8 55.6 L 755.6 44.4 L 711.1 40.0 L 622.2 40.0 L 555.6 44.4 L 511.1 44.4 L 466.7 44.4 L 466.7 55.6 L 466.7 66.7 L 488.9 77.8 L 488.9 88.9 L 477.8 93.3 L 477.8 100.0 L 477.8 106.7 L 480.0 111.1 L 480.0 115.6 L 480.0 122.2 L 475.6 133.3 L 475.6 137.8 L 477.8 144.4 L 493.3 155.6 L 497.8 166.7 L 497.8 173.3 L 497.8 177.8 L 497.8 166.7 L 493.3 155.6 L 477.8 144.4 L 475.6 133.3 L 480.0 122.2 L 480.0 111.1 L 477.8 100.0 L 477.8 93.3 L 488.9 88.9 L 488.9 77.8 L 466.7 66.7 L 466.7 55.6 L 457.8 44.4 Z" />
+      <path d="M 688.9 233.3 L 702.2 226.7 L 717.8 226.7 L 724.4 237.8 L 731.1 244.4 L 740.0 255.6 L 740.0 266.7 L 733.3 277.8 L 726.7 284.4 L 722.2 284.4 L 706.7 277.8 L 704.4 277.8 L 697.8 273.3 L 695.6 271.1 L 680.0 271.1 L 653.3 255.6 L 653.3 248.9 L 662.2 244.4 L 671.1 237.8 L 684.4 233.3 L 688.9 233.3 Z" />
+      <path d="M 300.0 15.6 L 344.4 15.6 L 360.0 26.7 L 351.1 40.0 L 340.0 48.9 L 311.1 55.6 L 284.4 55.6 L 284.4 44.4 L 271.1 40.0 L 255.6 31.1 L 271.1 22.2 L 300.0 15.6 Z" />
+      {/* India */}
+      <path d="M 562.2 151.1 L 555.6 144.4 L 551.1 151.1 L 562.2 155.6 L 564.4 166.7 L 573.3 177.8 L 571.1 182.2 L 577.8 182.2 L 577.8 177.8 L 577.8 173.3 L 577.8 166.7 L 591.1 155.6 L 600.0 151.1 L 595.6 144.4 L 588.9 137.8 L 577.8 137.8 L 573.3 144.4 L 562.2 151.1 Z" />
       {/* Japan */}
-      <path d="M 665 95 L 680 93 L 685 110 L 675 115 L 670 105 Z" />
-
-      {/* Philippines */}
-      <path d="M 655 140 L 670 138 L 675 155 L 665 158 Z" />
-
-      {/* Australia */}
-      <path d="M 600 210 L 670 205 L 705 225 L 710 265 L 680 280 L 635 275 L 610 250 Z" />
-
+      <path d="M 682 83 L 690 82 L 692 95 L 685 97 Z" />
+      {/* UK/Ireland */}
+      <path d="M 355 69 L 366 67 L 370 75 L 362 78 Z" />
       {/* New Zealand */}
-      <path d="M 710 270 L 735 268 L 740 310 L 720 315 Z" />
-
+      <path d="M 782.2 277.8 L 788.9 284.4 L 782.2 295.6 L 773.3 300.0 L 773.3 293.3 L 788.9 282.2 L 782.2 277.8 Z" />
+      {/* Madagascar */}
+      <path d="M 508.9 226.7 L 511.1 231.1 L 506.7 240.0 L 497.8 248.9 L 500.0 255.6 L 497.8 248.9 L 506.7 240.0 L 511.1 231.1 L 508.9 226.7 Z" />
       {/* Antarctica */}
-      <path d="M 0 370 L 800 370 L 800 400 L 0 400 Z" />
+      <path d="M 0 375 L 800 375 L 800 400 L 0 400 Z" />
     </g>
   );
 }
