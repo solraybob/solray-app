@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 export default function Footer() {
   const pathname = usePathname();
   
-  // Don't show footer on app routes (authenticated pages)
-  const isAppRoute = ["/today", "/chart", "/chat", "/souls", "/profile"].includes(pathname);
+  // Only show footer on legal page — nowhere else in the app
+  const showFooter = pathname === "/legal";
   
-  if (isAppRoute) return null;
+  if (!showFooter) return null;
 
   return (
     <footer className="bg-forest-deep border-t border-forest-border mt-16">
