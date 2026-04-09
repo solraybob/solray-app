@@ -946,13 +946,8 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Natal Aspects */}
-              {profile && profile.aspects.length > 0 && (
-                <NatalAspects aspects={profile.aspects} />
-              )}
-
               {/* Full Blueprint — merged from chart page */}
-              {profile && <BlueprintSections token={token} />}
+              {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
 
               {/* Sign Out */}
               <div className="mt-4 mb-6">
@@ -1163,7 +1158,7 @@ function parseBlueprintForChart(blueprint: any) {
   return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
 }
 
-function BlueprintSections({ token }: { token: string | null }) {
+function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -1234,6 +1229,13 @@ function BlueprintSections({ token }: { token: string | null }) {
                   <span className="text-text-secondary font-body text-xs">H{p.house}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Natal Aspects — inside Natal Chart */}
+          {aspects.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-forest-border/40">
+              <NatalAspects aspects={aspects} />
             </div>
           )}
         </div>
