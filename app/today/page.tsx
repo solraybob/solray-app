@@ -9,6 +9,8 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
+import TodayAlertCard from "@/components/TodayAlertCard";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -559,6 +561,17 @@ export default function TodayPage() {
             {/* MOON CYCLE BAR — below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
+            </div>
+
+            {/* TODAY'S ALERT + PUSH PROMPT */}
+            <div className="max-w-lg mx-auto px-5 mt-4 space-y-3">
+              {forecast.aspects && forecast.aspects.length > 0 && forecast.aspects[0].orb < 5 && (
+                <TodayAlertCard
+                  aspect={forecast.aspects[0]}
+                  tagDetails={forecast.tag_details}
+                />
+              )}
+              <PushNotificationPrompt />
             </div>
 
             {/* Below fold content */}
