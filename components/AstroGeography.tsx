@@ -877,6 +877,15 @@ function WorldMap() {
       {WORLD_PATHS.map((d, i) => (
         <path key={i} d={d} />
       ))}
+      {/* Iceland — not in 110m dataset, added manually */}
+      <path d="M 351.1 52.2 L 368.9 54.4 L 368.9 57.8 L 360.0 59.1 L 351.1 58.9 L 346.7 56.7 L 346.7 54.4 Z" />
+      {/* UK & Ireland */}
+      <path d="M 355 68 L 366 66 L 370 72 L 364 76 L 356 74 Z" />
+      <path d="M 349 70 L 354 69 L 355 74 L 350 75 Z" />
+      {/* New Zealand North */}
+      <path d="M 778 272 L 788 268 L 790 278 L 782 282 Z" />
+      {/* New Zealand South */}
+      <path d="M 774 282 L 784 280 L 783 296 L 773 298 Z" />
     </g>
   );
 }
