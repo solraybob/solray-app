@@ -545,15 +545,7 @@ export default function TodayPage() {
               <HeroImageCard
                 dayTitle={forecast.day_title}
                 imageSrc={getHeroImageUrl(forecast.tags.astrology)}
-                moonPhase={(() => {
-                  const now = new Date();
-                  const jd = (now.getTime() / 86400000) + 2440587.5;
-                  const lunarCycle = 29.53058867;
-                  const knownNewMoon = 2451549.5;
-                  let phase = ((jd - knownNewMoon) % lunarCycle) / lunarCycle;
-                  if (phase < 0) phase += 1;
-                  return { phase, label: getMoonPhaseLabel(phase), emoji: getMoonEmoji(phase) };
-                })()}
+                moonPhase={{ phase: 0.5, label: getMoonPhaseLabel(0.5), emoji: getMoonEmoji(0.5) }}
               />
             </div>
 
