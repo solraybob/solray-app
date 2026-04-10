@@ -134,17 +134,38 @@ function DimensionCard({
 }
 
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div>
-      {SLIDES.map(({ key, label, icon }) => (
-        <DimensionCard
-          key={key}
-          label={label}
-          icon={icon}
-          headline={tags[key] || ""}
-          detail={tagDetails?.[key] || ""}
-        />
-      ))}
+      {/* Section header — taps to show/hide all cards */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="w-full flex items-center justify-between mb-3"
+        style={{ background: "none", border: "none", cursor: "pointer" }}
+      >
+        <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
+          Today&apos;s Dimensions
+        </p>
+        <span style={{ color: "#4a5e4d", fontSize: "0.85rem" }}>
+          {collapsed ? "∧" : "∨"}
+        </span>
+      </button>
+
+      {/* Cards — visible by default, each taps to expand body */}
+      {!collapsed && (
+        <div>
+          {SLIDES.map(({ key, label, icon }) => (
+            <DimensionCard
+              key={key}
+              label={label}
+              icon={icon}
+              headline={tags[key] || ""}
+              detail={tagDetails?.[key] || ""}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
