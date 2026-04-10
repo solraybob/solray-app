@@ -652,6 +652,51 @@ export default function TodayPage() {
   );
 }
 
+// Extract first sentence from reading
+function getFirstSentence(text: string): string {
+  const match = text.match(/^[^.!?]*[.!?]/);
+  return match ? match[0].trim() : text.slice(0, 100) + "...";
+}
+
+// Reading summary card — copyable to clipboard
+function ReadingSummaryCard({ reading }: { reading: string }) {
+  const [copied, setCopied] = useState(false);
+  const firstSentence = getFirstSentence(reading);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(firstSentence);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback for older browsers
+    }
+  };
+
+  return (
+    <div
+      className="px-4 py-3 rounded-xl border-2 bg-forest-card/50 transition-all cursor-pointer hover:bg-forest-card/70"
+      style={{
+        borderColor: copied ? "#c4a062" : "#8b6f47",
+      }}
+      onClick={handleCopy}
+    >
+      <p
+        className="text-text-secondary text-sm leading-relaxed font-body"
+        style={{ fontStyle: "italic" }}
+      >
+        {firstSentence}
+      </p>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-text-secondary/50 text-[10px] font-body">Today&apos;s Key Insight</span>
+        <span className="text-amber-sun/70 text-[11px] font-body transition-all">
+          {copied ? "✓ Copied" : "Tap to copy"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span className="px-3 py-1.5 rounded-full border border-forest-border/60 text-text-secondary/70 text-xs font-body tracking-wide">
