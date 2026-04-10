@@ -53,108 +53,129 @@ const SLIDES = [
   },
 ];
 
-function DimensionCard({
-  label,
-  icon,
-  headline,
-  detail,
-  color,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  headline: string;
-  detail: string;
-  color: string;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div
-      onClick={() => setOpen(v => !v)}
-      className="cursor-pointer transition-all duration-300"
-      style={{
-        background: "#0a1f12",
-        border: `1px solid ${open ? color : `${color}35`}`,
-        borderRadius: "14px",
-        padding: "16px",
-        marginBottom: "8px",
-      }}
-    >
-      {/* Header row */}
-      <div className="flex items-center gap-2 mb-3">
-        <span style={{ color }}>{icon}</span>
-        <span
-          className="font-body uppercase font-semibold"
-          style={{ fontSize: "0.6rem", letterSpacing: "0.15em", color }}
-        >
-          {label}
-        </span>
-        <span
-          className="ml-auto"
-          style={{
-            color: open ? color : `${color}80`,
-            fontSize: "0.75rem",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.3s ease, color 0.2s ease",
-            display: "inline-block",
-          }}
-        >
-          ▼
-        </span>
-      </div>
-
-      {/* Headline — always visible */}
-      <p
-        className="font-body font-medium"
-        style={{ fontSize: "0.9rem", color: "#e8e0cc", lineHeight: 1.5 }}
-      >
-        {headline}
-      </p>
-
-      {/* Body — only when expanded */}
-      {open && (
-        <div
-          style={{
-            marginTop: "12px",
-            paddingTop: "12px",
-            borderTop: `1px solid ${color}25`,
-          }}
-        >
-          <p
-            className="font-body"
-            style={{
-              fontSize: "0.82rem",
-              color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
-              lineHeight: 1.8,
-              fontStyle: detail ? "normal" : "italic",
-            }}
-          >
-            {detail || "Deeper interpretation coming soon."}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
+  const [openKeys, setOpenKeys] = useState<Set<string>>(new Set());
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const toggleOpen = (key: string) => {
+    setOpenKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.clientWidth;
+    const index = Math.round(scrollLeft / cardWidth);
+    setActiveIndex(index);
+  };
+
   return (
     <div>
-      {/* Static label — no collapse */}
-      <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-3">
-        Today&apos;s Dimensions
-      </p>
+      {/* Swipeable strip */}
+      <div
+        className="-mx-5"
+        style={{ position: "relative" }}
+      >
+        <div
+          className="flex overflow-x-auto px-5"
+          style={{
+            scrollSnapType: "x mandatory",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+            gap: "12px",
+          }}
+          onScroll={handleScroll}
+        >
+          {SLIDES.map(({ key, label, icon, color }) => {
+            const headline = tags[key] || "";
+            const detail = tagDetails?.[key] || "";
+            const isOpen = openKeys.has(key);
 
-      {/* Cards always visible, each taps to expand body */}
-      <div>
-        {SLIDES.map(({ key, label, icon, color }) => (
-          <DimensionCard
-            key={key}
-            label={label}
-            icon={icon}
-            color={color}
-            headline={tags[key] || ""}
-            detail={tagDetails?.[key] || ""}
+            return (
+              <div
+                key={key}
+                onClick={() => toggleOpen(key)}
+                className="cursor-pointer flex-shrink-0 transition-all duration-300"
+                style={{
+                  width: "calc(100vw - 40px)",
+                  scrollSnapAlign: "start",
+                  background: "#0a1f12",
+                  border: `1px solid ${isOpen ? color : `${color}35`}`,
+                  borderRadius: "14px",
+                  padding: "16px",
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span style={{ color }}>{icon}</span>
+                  <span
+                    className="font-body uppercase font-semibold"
+                    style={{ fontSize: "0.6rem", letterSpacing: "0.15em", color }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    className="ml-auto"
+                    style={{
+                      color: isOpen ? color : `${color}70`,
+                      fontSize: "0.7rem",
+                      transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.3s ease",
+                      display: "inline-block",
+                    }}
+                  >
+                    ▼
+                  </span>
+                </div>
+
+                {/* Headline */}
+                <p
+                  className="font-body font-medium"
+                  style={{ fontSize: "0.9rem", color: "#e8e0cc", lineHeight: 1.5 }}
+                >
+                  {headline}
+                </p>
+
+                {/* Body — expands on tap */}
+                {isOpen && (
+                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${color}25` }}>
+                    <p
+                      className="font-body"
+                      style={{
+                        fontSize: "0.82rem",
+                        color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
+                        lineHeight: 1.8,
+                        fontStyle: detail ? "normal" : "italic",
+                      }}
+                    >
+                      {detail || "Deeper interpretation coming soon."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dot indicators */}
+      <div className="flex justify-center gap-1.5 mt-3">
+        {SLIDES.map((s, i) => (
+          <div
+            key={s.key}
+            style={{
+              width: i === activeIndex ? 16 : 6,
+              height: 6,
+              borderRadius: 9999,
+              background: i === activeIndex ? s.color : "rgba(26,48,32,0.8)",
+              transition: "all 0.3s ease",
+            }}
           />
         ))}
       </div>
