@@ -119,8 +119,9 @@ function buildPath(points: LinePoint[]): string {
     const prev = points[i - 1];
     const curr = points[i];
     const dlon = Math.abs(curr.lon - prev.lon);
-    // Break if crossing the antimeridian (lon jump > 180)
-    if (dlon > 180) {
+    const dx = Math.abs(lonToX(curr.lon) - lonToX(prev.lon));
+    // Break if crossing the antimeridian OR if x jumps more than 200px (polar artifacts)
+    if (dlon > 180 || dx > 200) {
       segments.push(current);
       current = [];
     }
