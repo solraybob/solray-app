@@ -292,14 +292,20 @@ function HeroImageCard({
           </h1>
         </div>
 
-        {/* Tap hint bottom */}
-        <div className="absolute bottom-3 w-full flex justify-center">
-          <span
-            className="text-white/50 text-[10px] font-body tracking-widest uppercase transition-all duration-300"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block" }}
+        {/* Today's Weather label + arrow */}
+        <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
+          <p className="font-body text-white/70 text-[10px] tracking-[0.2em] uppercase">
+            Today&apos;s Weather
+          </p>
+          <svg
+            width="16" height="10" viewBox="0 0 16 10" fill="none"
+            style={{
+              transform: open ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.3s ease",
+            }}
           >
-            {open ? "▲" : "▼"}
-          </span>
+            <path d="M1 1L8 8L15 1" stroke="#e8821a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
       </div>
 
