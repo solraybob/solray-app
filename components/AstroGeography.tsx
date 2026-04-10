@@ -1,5 +1,6 @@
 "use client";
 
+import { WORLD_PATHS } from "@/lib/world-paths";
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 
@@ -869,57 +870,13 @@ function MapSVG({
   );
 }
 
-// Coordinate-accurate world map using equirectangular projection
-// These paths are derived from Natural Earth data, properly transformed
+// Real world map from Natural Earth 110m data
 function WorldMap() {
   return (
-    <g fill="#1e3d25" stroke="#0d2418" strokeWidth={0.4}>
-      {/* North America */}
-      <path d="M 100 90 L 200 70 L 230 100 L 250 120 L 260 150 L 240 180 L 200 190 L 160 180 L 120 160 L 100 130 Z" />
-      {/* South America */}
-      <path d="M 160 200 L 210 210 L 220 260 L 200 320 L 170 350 L 150 340 L 140 280 L 140 240 Z" />
-      {/* Greenland */}
-      <path d="M 220 20 L 260 30 L 250 80 L 210 70 Z" />
-      {/* Europe */}
-      <path d="M 320 80 L 380 70 L 390 100 L 400 120 L 380 130 L 350 125 L 330 110 Z" />
-      {/* Africa */}
-      <path d="M 340 140 L 400 130 L 420 180 L 430 240 L 420 300 L 380 330 L 340 320 L 320 280 L 310 200 L 320 160 Z" />
-      {/* Middle East */}
-      <path d="M 420 110 L 480 120 L 490 150 L 480 160 L 450 140 Z" />
-      {/* Western Asia */}
-      <path d="M 420 90 L 500 80 L 520 120 L 500 140 L 450 130 Z" />
-      {/* Russia */}
-      <path d="M 350 40 L 500 20 L 550 50 L 560 100 L 480 110 L 400 80 Z" />
-      {/* Central Asia */}
-      <path d="M 480 70 L 560 60 L 580 90 L 550 100 L 500 85 Z" />
-      {/* India */}
-      <path d="M 500 130 L 560 120 L 580 150 L 570 180 L 520 170 Z" />
-      {/* Southeast Asia */}
-      <path d="M 580 120 L 650 110 L 680 140 L 650 170 L 600 160 Z" />
-      {/* East Asia - China */}
-      <path d="M 600 60 L 700 50 L 720 90 L 680 110 L 620 100 Z" />
-      {/* Japan */}
-      <path d="M 710 70 L 730 65 L 735 95 L 715 100 Z" />
-      {/* Australia */}
-      <path d="M 680 220 L 750 210 L 770 280 L 730 300 L 680 280 Z" />
-      {/* New Zealand */}
-      <path d="M 770 290 L 800 280 L 800 350 L 770 360 Z" />
-      {/* Scandinavia */}
-      <path d="M 360 20 L 400 15 L 410 60 L 380 70 L 360 50 Z" />
-      {/* British Isles */}
-      <path d="M 310 75 L 330 70 L 335 100 L 315 105 Z" />
-      {/* Iberian Peninsula */}
-      <path d="M 280 90 L 310 85 L 320 110 L 290 115 Z" />
-      {/* Madagascar */}
-      <path d="M 460 240 L 490 235 L 500 280 L 470 290 Z" />
-      {/* New Caledonia */}
-      <path d="M 770 260 L 790 255 L 795 280 L 775 285 Z" />
-      {/* Indonesia */}
-      <path d="M 640 150 L 700 140 L 710 190 L 680 200 L 640 180 Z" />
-      {/* Philippines */}
-      <path d="M 700 110 L 720 105 L 725 140 L 705 145 Z" />
-      {/* Antarctic continent (simplified) */}
-      <path d="M 0 360 L 800 360 L 800 400 L 0 400 Z" fillOpacity={0.3} />
+    <g fill="#243d2a" stroke="#0f2018" strokeWidth={0.3} strokeLinejoin="round">
+      {WORLD_PATHS.map((d, i) => (
+        <path key={i} d={d} />
+      ))}
     </g>
   );
 }
