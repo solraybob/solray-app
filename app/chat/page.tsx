@@ -70,9 +70,10 @@ function saveSession(session: StoredSession) {
 
 // ─── Text renderer ──────────────────────────────────────────────────────────
 
-function MessageContent({ content, showCursor }: { content: string; showCursor?: boolean }) {
+function MessageContent({ content, showCursor, isUser }: { content: string; showCursor?: boolean; isUser?: boolean }) {
+  const textColor = isUser ? "#050f08" : undefined;
   return (
-    <div className="font-body text-sm leading-relaxed">
+    <div className="font-body text-sm leading-relaxed" style={textColor ? { color: textColor } : undefined}>
       <ReactMarkdown
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
@@ -707,7 +708,7 @@ function ChatPageInner() {
                           : { background: "rgba(184,125,212,0.05)", border: "2px solid rgba(184,125,212,0.3)" }
                       }
                     >
-                      <MessageContent content={displayContent} showCursor={isStreaming} />
+                      <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
                     </div>
                     <span className="font-body text-text-secondary text-[10px] mt-1 px-1">
                       {formatTime(msg.timestamp)}
