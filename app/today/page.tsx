@@ -556,7 +556,7 @@ export default function TodayPage() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary">
+              <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
                 Solray
               </span>
             </div>

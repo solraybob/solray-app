@@ -225,7 +225,7 @@ export default function OnboardPage() {
           <div className="w-8 h-8 rounded-full overflow-hidden">
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
-          <span className="font-heading text-sm tracking-[0.25em] uppercase text-text-secondary">Solray</span>
+          <span className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>Solray</span>
         </div>
         {/* Progress dots */}
         <div className="flex gap-2">

@@ -229,7 +229,7 @@ export default function PreviewPage() {
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="font-heading text-sm tracking-widest uppercase text-text-secondary">
+          <span className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
             Solray
           </span>
         </div>
