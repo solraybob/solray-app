@@ -172,7 +172,7 @@ function EnergyBar({
       <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-1000"
-          style={{ width: animate ? `${value * 10}%` : "0%", background: color }}
+          style={{ width: animate ? `${value * 10}%` : "0%", background: `linear-gradient(to right, ${color}, ${color}88)` }}
         />
       </div>
       <span className="text-xs font-body w-4 text-right" style={{ color }}>{value}</span>
