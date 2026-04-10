@@ -371,6 +371,7 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [weekSummary, setWeekSummary] = useState<string | null>(null);
 
   // Load birth date from localStorage for Solar Return card
   useEffect(() => {
@@ -479,6 +480,24 @@ export default function TodayPage() {
     fetchAndUpdate(false);
   }, [token]);
 
+  // Fetch week summary in background
+  useEffect(() => {
+    if (!token) return;
+    const weekCacheKey = `solray_week_${new Date().toISOString().split('T')[0]}`;
+    try {
+      const cached = localStorage.getItem(weekCacheKey);
+      if (cached) { setWeekSummary(JSON.parse(cached).week_summary); return; }
+    } catch (_) {}
+    apiFetch("/forecast/week", {}, token)
+      .then(d => {
+        if (d?.week_summary) {
+          setWeekSummary(d.week_summary);
+          try { localStorage.setItem(weekCacheKey, JSON.stringify(d)); } catch (_) {}
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
 
 
   // Staggered section reveal
@@ -561,13 +580,19 @@ export default function TodayPage() {
               <MoonCycleBar planets={forecast.planets} />
             </div>
 
-            {/* TODAY'S ALERT + PUSH PROMPT */}
+            {/* TODAY'S ALERT + PUSH PROMPT + WEEK AHEAD */}
             <div className="max-w-lg mx-auto px-5 mt-4 space-y-3">
               {forecast.aspects && forecast.aspects.length > 0 && forecast.aspects[0].orb < 5 && (
                 <TodayAlertCard
                   aspect={forecast.aspects[0]}
                   tagDetails={forecast.tag_details}
                 />
+              )}
+              {weekSummary && (
+                <div className="px-4 py-3 rounded-xl border border-forest-border/50 bg-forest-card/30">
+                  <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-1.5">Days Ahead</p>
+                  <p className="text-text-secondary text-sm font-body leading-relaxed">{weekSummary}</p>
+                </div>
               )}
               <PushNotificationPrompt />
             </div>

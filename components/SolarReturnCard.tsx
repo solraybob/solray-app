@@ -127,17 +127,24 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
         }
       }
 
-      // Navigate to chat with pre-loaded message
-      const preloadedMessage = `I want to understand my Solar Return reading for ${upcomingYear}. What is the dominant theme of my coming year?`;
-      sessionStorage.setItem("solray_chat_preload", preloadedMessage);
+      // Navigate to chat with pre-loaded prompt (uses existing solray_chat_prompt pattern)
+      const question = solarReturnData?.reading
+        ? `My Solar Return reading says: "${solarReturnData.reading.slice(0, 300)}..." — Can you help me understand the dominant theme for my ${upcomingYear}?`
+        : `I want to understand my Solar Return for ${upcomingYear}. What is the dominant theme of my coming year based on my chart?`;
 
-      // Navigate to chat
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: `Solar Return ${upcomingYear}`,
+        question,
+      }));
+
       router.push("/chat");
     } catch (error) {
       console.error("Error fetching solar return data:", error);
       // Still navigate to chat even if fetch fails
-      const preloadedMessage = `I want to understand my Solar Return reading for ${upcomingYear}. What is the dominant theme of my coming year?`;
-      sessionStorage.setItem("solray_chat_preload", preloadedMessage);
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: `Solar Return ${upcomingYear}`,
+        question: `I want to understand my Solar Return for ${upcomingYear}. What is the dominant theme of my coming year based on my chart?`,
+      }));
       router.push("/chat");
     } finally {
       setLoading(false);
