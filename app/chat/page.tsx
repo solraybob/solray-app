@@ -704,7 +704,7 @@ function ChatPageInner() {
                       }`}
                       style={
                         msg.role === "user"
-                          ? { background: "linear-gradient(135deg, #e8821a, #c86010)" }
+                          ? { background: "linear-gradient(135deg, #b87dd4, #8a55b0)" }
                           : { background: "rgba(184,125,212,0.05)", border: "2px solid rgba(184,125,212,0.3)" }
                       }
                     >
@@ -766,7 +766,7 @@ function ChatPageInner() {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || sending}
-              className="w-11 h-11 rounded-xl bg-amber-sun text-forest-deep flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0"
+              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #b87dd4, #8a55b0)" }}
             >
               {sending ? (
                 <LoadingSpinner size="sm" />
