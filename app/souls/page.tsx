@@ -77,8 +77,8 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
             <span className="font-heading text-xl text-text-primary">{soul.soul.name[0]}</span>
           </div>
           <div>
-            <h3 className="font-heading text-2xl text-text-primary">{soul.soul.name}</h3>
-            <p className="text-text-secondary text-sm font-body">
+            <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{soul.soul.name}</h3>
+            <p className="font-body text-text-secondary text-[13px]">
               {soul.soul.sun_sign && (
                 <>☉ {soul.soul.sun_sign}</>
               )}
@@ -94,10 +94,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-sm">Your Reading</p>
-                <p className="text-text-secondary text-xs font-body mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
+                <p className="font-body text-text-primary font-semibold text-[13px]">Your Reading</p>
+                <p className="font-body text-text-secondary text-[10px] mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
               </div>
-              <span className="text-amber-sun text-xs font-body">Open</span>
+              <span className="font-body text-amber-sun text-[10px]">Open</span>
             </div>
           </button>
           <button
@@ -106,10 +106,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-sm">Group Reading</p>
-                <p className="text-text-secondary text-xs font-body mt-0.5">Invite {soul.soul.name} into a shared session together</p>
+                <p className="font-body text-text-primary font-semibold text-[13px]">Group Reading</p>
+                <p className="font-body text-text-secondary text-[10px] mt-0.5">Invite {soul.soul.name} into a shared session together</p>
               </div>
-              <span className="text-amber-sun text-xs font-body">Share</span>
+              <span className="font-body text-amber-sun text-[10px]">Share</span>
             </div>
           </button>
         </div>
@@ -145,8 +145,8 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
-        <h2 className="font-heading text-3xl text-text-primary mb-1">Group Reading</h2>
-        <p className="text-text-secondary text-sm font-body mb-6">
+        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Group Reading</h2>
+        <p className="font-body text-text-secondary text-[13px] mb-6 leading-relaxed">
           Share this link with {soul.soul.name} to join your shared session. Both of you can ask questions and the guide speaks to you together.
         </p>
 
@@ -157,13 +157,13 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
         <div className="space-y-3">
           <button
             onClick={handleCopy}
-            className="w-full py-3.5 bg-amber-sun/10 border border-amber-sun/30 rounded-xl text-amber-sun text-sm font-body tracking-wider transition-all hover:bg-amber-sun/20"
+            className="w-full py-3.5 bg-amber-sun/10 border border-amber-sun/30 rounded-xl font-body text-amber-sun text-[13px] tracking-widest transition-all hover:bg-amber-sun/20"
           >
             {copied ? "Copied!" : `Copy link for ${soul.soul.name}`}
           </button>
           <button
             onClick={onEnterSession}
-            className="w-full py-3.5 bg-amber-sun text-forest-deep font-body font-semibold rounded-xl text-sm tracking-wider transition-all hover:opacity-90"
+            className="w-full py-3.5 bg-amber-sun text-forest-deep font-body font-semibold rounded-xl text-[13px] tracking-widest transition-all hover:opacity-90"
           >
             Enter Session
           </button>

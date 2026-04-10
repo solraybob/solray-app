@@ -115,8 +115,8 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 <div className="flex items-center gap-2 mb-3">
                   <span style={{ color }}>{icon}</span>
                   <span
-                    className="font-body uppercase font-semibold"
-                    style={{ fontSize: "0.6rem", letterSpacing: "0.15em", color }}
+                    className="font-body text-xs uppercase font-semibold tracking-widest"
+                    style={{ color }}
                   >
                     {label}
                   </span>
@@ -136,8 +136,8 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
 
                 {/* Headline */}
                 <p
-                  className="font-body font-medium"
-                  style={{ fontSize: "0.9rem", color: "#e8e0cc", lineHeight: 1.5 }}
+                  className="font-body text-[13px] font-medium leading-relaxed"
+                  style={{ color: "#e8e0cc" }}
                 >
                   {headline}
                 </p>
@@ -146,11 +146,9 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 {isOpen && (
                   <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${color}25` }}>
                     <p
-                      className="font-body"
+                      className="font-body text-[13px] leading-relaxed"
                       style={{
-                        fontSize: "0.82rem",
                         color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
-                        lineHeight: 1.8,
                         fontStyle: detail ? "normal" : "italic",
                       }}
                     >

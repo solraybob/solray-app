@@ -632,11 +632,11 @@ function ChatPageInner() {
         {/* Header */}
         <div className="bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50 px-5 pt-12 pb-4">
           <div className="max-w-lg mx-auto">
-            <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-1">
+            <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-1">
               Your Higher Self
             </p>
             <div className="flex items-center justify-between">
-              <h1 className="font-heading text-2xl text-text-primary">Solray</h1>
+              <h1 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Solray</h1>
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}
@@ -650,11 +650,11 @@ function ChatPageInner() {
                 <button
                   onClick={startNewChat}
                   title="New chat"
-                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border text-text-secondary text-[10px] font-body tracking-wide hover:border-amber-sun hover:text-amber-sun transition-colors"
+                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[10px] tracking-widest hover:border-amber-sun hover:text-amber-sun transition-colors"
                 >
                   + New
                 </button>
-                <span className="px-3 py-1 rounded-full border border-forest-border text-text-secondary text-[10px] font-body tracking-wide">
+                <span className="px-3 py-1 rounded-full border border-forest-border font-body text-text-secondary text-[10px] tracking-widest">
                   {energyTag}
                 </span>
               </div>
@@ -704,7 +704,7 @@ function ChatPageInner() {
                     >
                       <MessageContent content={displayContent} showCursor={isStreaming} />
                     </div>
-                    <span className="text-text-secondary text-[10px] font-body mt-1 px-1">
+                    <span className="font-body text-text-secondary text-[10px] mt-1 px-1">
                       {formatTime(msg.timestamp)}
                     </span>
                   </div>
@@ -769,7 +769,7 @@ function ChatPageInner() {
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
-                <h2 className="font-heading text-lg text-text-primary">Previous Chats</h2>
+                <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Previous Chats</h2>
                 <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -779,7 +779,7 @@ function ChatPageInner() {
               {/* Scrollable list */}
               <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
-                  <p className="text-text-secondary font-body text-sm text-center py-6">No previous chats yet.</p>
+                  <p className="font-body text-text-secondary text-[13px] text-center py-6">No previous chats yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {pastSessions.map((s) => (
@@ -798,11 +798,11 @@ function ChatPageInner() {
                               }}
                               onBlur={() => commitRename(s.sessionId)}
                               placeholder={s.date}
-                              className="flex-1 bg-transparent text-text-primary font-body text-sm outline-none placeholder-text-secondary"
+                              className="flex-1 bg-transparent text-text-primary font-body text-[13px] outline-none placeholder-text-secondary"
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="text-amber-sun text-xs font-body"
+                              className="font-body text-amber-sun text-[10px]"
                             >
                               Save
                             </button>
@@ -817,10 +817,10 @@ function ChatPageInner() {
                                   : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
                               }`}
                             >
-                              <p className="font-body text-xs tracking-wide mb-1 text-text-secondary">
+                              <p className="font-body text-text-secondary text-[10px] tracking-widest mb-1">
                                 {s.customName || s.date}
                               </p>
-                              <p className="font-body text-sm truncate">
+                              <p className="font-body text-text-primary text-[13px] truncate">
                                 {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
                               </p>
                             </button>

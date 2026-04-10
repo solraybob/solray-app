@@ -426,10 +426,10 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
           <span className="text-base w-6 text-center flex-shrink-0" style={{ color: cfg.color }}>
             {cfg.symbol}
           </span>
-          <span className="font-body text-sm text-text-primary flex-1 text-left">
+          <span className="font-body text-[13px] text-text-primary flex-1 text-left">
             {cfg.label}
           </span>
-          <span className="font-body text-xs text-text-secondary/70 mr-2">
+          <span className="font-body text-[10px] text-text-secondary/70 mr-2">
             {list.length}
           </span>
           <svg
@@ -455,7 +455,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
         onClick={() => setSectionOpen(!sectionOpen)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
       >
-        <h2 className="font-heading text-xl text-text-primary">Natal Aspects</h2>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Natal Aspects</h2>
         <svg
           width="16"
           height="16"
@@ -481,8 +481,8 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                 className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
               >
                 <span className="text-base w-6 text-center flex-shrink-0 text-text-secondary/50">·</span>
-                <span className="font-body text-sm text-text-secondary flex-1 text-left">Minor Aspects</span>
-                <span className="font-body text-xs text-text-secondary/70 mr-2">
+                <span className="font-body text-[13px] text-text-secondary flex-1 text-left">Minor Aspects</span>
+                <span className="font-body text-[10px] text-text-secondary/70 mr-2">
                   {minorGroups.reduce((s, k) => s + grouped[k].length, 0)}
                 </span>
                 <svg
@@ -529,7 +529,7 @@ function CollapsibleSection({
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
       >
-        <h2 className="font-heading text-xl text-text-primary">{title}</h2>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{title}</h2>
         <svg
           width="16"
           height="16"
@@ -551,7 +551,7 @@ function CollapsibleSection({
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[10px] font-body tracking-[0.12em] uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[10px] tracking-widest uppercase">
       {children}
     </span>
   );
@@ -771,7 +771,7 @@ export default function ProfilePage() {
         {/* Header bar */}
         <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-            <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">
+            <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary">
               Profile
             </span>
             <button
@@ -835,22 +835,22 @@ export default function ProfilePage() {
                 {/* Handle (username) */}
                 {editingHandle ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">@</span>
+                    <span className="font-body text-text-secondary text-[10px] tracking-widest uppercase">@</span>
                     <input
-                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 text-xs font-body text-text-primary focus:outline-none focus:border-amber-sun/60"
+                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 font-body text-[13px] text-text-primary focus:outline-none focus:border-amber-sun/60"
                       value={handleInput}
                       onChange={(e) => setHandleInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveHandle(); if (e.key === "Escape") setEditingHandle(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveHandle} disabled={savingHandle} className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[10px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingHandle ? "…" : "Save"}
                     </button>
-                    <button onClick={() => setEditingHandle(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingHandle(false)} className="font-body text-[10px] text-text-secondary">Cancel</button>
                   </div>
                 ) : (
                   profile?.handle && (
-                    <p className="text-text-secondary text-[10px] font-body tracking-[0.15em] uppercase">
+                    <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">
                       @{profile.handle}
                     </p>
                   )
@@ -860,28 +860,29 @@ export default function ProfilePage() {
                 {editingName ? (
                   <div className="flex items-center gap-2">
                     <input
-                      className="bg-forest-card border border-forest-border rounded-lg px-3 py-1.5 text-lg font-heading text-text-primary focus:outline-none focus:border-amber-sun/60 text-center"
+                      className="bg-forest-card border border-forest-border rounded-lg px-3 py-1.5 font-heading text-text-primary focus:outline-none focus:border-amber-sun/60 text-center"
+                      style={{ fontSize: "1.05rem", fontWeight: 400 }}
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} disabled={savingName} className="text-[10px] font-body px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveName} disabled={savingName} className="font-body text-[10px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingName ? "…" : "Save"}
                     </button>
-                    <button onClick={() => setEditingName(false)} className="text-[10px] font-body text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingName(false)} className="font-body text-[10px] text-text-secondary">Cancel</button>
                   </div>
                 ) : (
                   <h1
-                    className="font-heading text-4xl text-text-primary leading-tight text-center"
-                    style={{ fontWeight: 300, letterSpacing: "-0.01em" }}
+                    className="font-heading text-text-primary leading-tight text-center"
+                    style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "-0.01em" }}
                   >
                     {profile?.name || "Your Name"}
                   </h1>
                 )}
 
                 {saveError && (
-                  <p className="text-red-400 text-[10px] font-body">{saveError}</p>
+                  <p className="font-body text-red-400 text-[10px]">{saveError}</p>
                 )}
 
                 {profile && (
@@ -895,7 +896,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="text-text-secondary/80 text-xs font-body tracking-[0.2em] uppercase mb-4 text-center">
+                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-4 text-center">
                   Soul Map
                 </p>
 
@@ -904,7 +905,7 @@ export default function ProfilePage() {
                     <SoulMapRadarChart radar={profile.radar} />
 
                     {/* Legend */}
-                    <div className="mt-2 flex justify-center gap-5 text-xs font-body tracking-wider">
+                    <div className="mt-2 flex justify-center gap-5 font-body text-[10px] tracking-widest">
                       <span style={{ color: "#e8821a" }}>● Amber = your profile</span>
                       <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
                     </div>
@@ -916,7 +917,7 @@ export default function ProfilePage() {
                         const label = SOUL_AXIS_LABELS[i];
                         return (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="text-xs font-body tracking-wider uppercase text-text-secondary/80 w-20 shrink-0">
+                            <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase w-20 shrink-0">
                               {label}
                             </span>
                             <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
@@ -929,8 +930,8 @@ export default function ProfilePage() {
                                 }}
                               />
                             </div>
-                            <span className="text-xs font-body text-text-secondary/70 w-7 text-right shrink-0">
-                              {val}
+                            <span className="font-body text-text-secondary/70 text-[10px] w-7 text-right shrink-0">
+                              {val}%
                             </span>
                           </div>
                         );
@@ -939,7 +940,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-8 text-center">
-                    <p className="text-text-secondary font-body text-sm">
+                    <p className="font-body text-text-secondary text-[13px] leading-relaxed">
                       Complete your birth data to unlock your Soul Map
                     </p>
                   </div>
@@ -953,7 +954,7 @@ export default function ProfilePage() {
               <div className="mt-4 mb-6">
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-3 rounded-2xl border border-forest-border/60 text-text-secondary text-xs font-body tracking-wider uppercase hover:border-amber-sun/40 hover:text-amber-sun transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl border border-forest-border/60 font-body text-text-secondary text-xs tracking-widest uppercase hover:border-amber-sun/40 hover:text-amber-sun transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   <IconSignOut />
                   Sign Out
@@ -1029,10 +1030,10 @@ function normaliseCentreName(key: string): string {
 function HDRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-text-secondary text-xs font-body tracking-wider uppercase w-24 shrink-0 pt-0.5">{label}</span>
+      <span className="font-body text-text-secondary text-[10px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
       <div className="flex-1">
-        <span className="font-body text-sm text-text-primary">{value}</span>
-        {meaning && <p className="text-text-secondary/50 text-xs font-body leading-snug mt-0.5">{meaning}</p>}
+        <span className="font-body text-text-primary text-[13px]">{value}</span>
+        {meaning && <p className="font-body text-text-secondary/50 text-[10px] leading-snug mt-0.5">{meaning}</p>}
       </div>
     </div>
   );
@@ -1041,8 +1042,8 @@ function HDRow({ label, value, meaning }: { label: string; value: string; meanin
 function GKPill({ label, value, color, style }: { label: string; value: string; color: string; style?: React.CSSProperties }) {
   return (
     <div className="text-center">
-      <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">{label}</p>
-      <p className={`font-heading text-lg ${color}`} style={style}>{value}</p>
+      <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase mb-1">{label}</p>
+      <p className={`font-heading ${color}`} style={{ fontSize: "1.05rem", fontWeight: 400, ...style }}>{value}</p>
     </div>
   );
 }
@@ -1168,7 +1169,7 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
   return (
     <button
       onClick={() => askAbout(topic, question)}
-      className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+      className="font-body text-[10px] tracking-widest uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
     >
       Ask →
     </button>
@@ -1220,12 +1221,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
                   <span className="text-3xl w-10 text-center leading-none">{p.symbol}</span>
                   <div className="flex-1">
-                    <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
-                    <p className="text-text-secondary/50 text-[10px] font-body">{subtitles[label]}</p>
+                    <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">{label}</p>
+                    <p className="font-body text-text-secondary/50 text-[10px]">{subtitles[label]}</p>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
-                    <p className="text-amber-sun font-heading text-2xl leading-tight">{p.sign}</p>
-                    <p className="text-text-secondary/60 font-body text-[10px]">{p.degree}</p>
+                    <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{p.sign}</p>
+                    <p className="font-body text-text-secondary/60 text-[10px]">{p.degree}</p>
                     {questions[label] && <AskButton topic={`${label} in ${p.sign}`} question={questions[label]} />}
                   </div>
                 </div>
@@ -1235,7 +1236,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {/* All planets */}
           <button
             onClick={() => setShowAll(!showAll)}
-            className="flex items-center gap-2 text-text-secondary text-xs font-body tracking-wider uppercase mb-3 hover:text-text-primary transition-colors"
+            className="flex items-center gap-2 font-body text-text-secondary text-[10px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors"
           >
             <span>{showAll ? "Hide planets" : "See all planets"}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}>
@@ -1247,11 +1248,11 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               {rest.map((p) => (
                 <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
                   <span className="text-xl w-7 text-center opacity-70">{p.symbol}</span>
-                  <span className="text-text-primary font-body text-sm flex-1">{p.planet}</span>
-                  <span className="text-text-secondary font-body text-sm">{p.sign}</span>
-                  <span className="text-text-secondary font-body text-xs">{p.degree}</span>
-                  {p.retrograde && <span className="text-amber-sun/70 font-body text-[10px] font-semibold">Rx</span>}
-                  <span className="text-text-secondary font-body text-xs">H{p.house}</span>
+                  <span className="font-body text-text-primary text-[13px] flex-1">{p.planet}</span>
+                  <span className="font-body text-text-secondary text-[13px]">{p.sign}</span>
+                  <span className="font-body text-text-secondary text-[10px]">{p.degree}</span>
+                  {p.retrograde && <span className="font-body text-amber-sun/70 text-[10px] font-semibold">Rx</span>}
+                  <span className="font-body text-text-secondary text-[10px]">H{p.house}</span>
                 </div>
               ))}
             </div>

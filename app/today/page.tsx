@@ -166,7 +166,7 @@ function EnergyBar({
   const color = ENERGY_COLORS[label] || "#e8821a";
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs font-body font-semibold tracking-wider uppercase w-20 shrink-0" style={{ color }}>
+      <span className="font-body text-xs font-semibold tracking-widest uppercase w-20 shrink-0" style={{ color }}>
         {label}
       </span>
       <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(26,48,32,0.6)" }}>
@@ -175,7 +175,7 @@ function EnergyBar({
           style={{ width: animate ? `${value * 10}%` : "0%", background: `linear-gradient(to right, ${color}, transparent)` }}
         />
       </div>
-      <span className="text-xs font-body font-medium w-8 text-right" style={{ color }}>{value * 10}%</span>
+      <span className="font-body text-xs font-medium w-8 text-right" style={{ color }}>{value * 10}%</span>
     </div>
   );
 }
@@ -209,13 +209,13 @@ function PlanetCard({ planet }: { planet: Planet }) {
           <span className="text-[10px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
         )}
       </div>
-      <span className="text-text-secondary/80 text-[10px] font-body tracking-widest uppercase mt-0.5">
+      <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase mt-0.5">
         {planet.name}
       </span>
-      <span className="text-text-primary text-xs font-body font-medium">
+      <span className="font-body text-text-primary text-[13px] font-medium">
         {planet.sign}
       </span>
-      <span className="text-text-secondary/70 text-[10px] font-body">{planet.degree}</span>
+      <span className="font-body text-text-secondary/70 text-[10px]">{planet.degree}</span>
     </div>
   );
 }
@@ -319,7 +319,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-text-primary/70 text-[10px] tracking-[0.2em] uppercase">
+          <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
             Today&apos;s Weather
           </p>
           <svg
@@ -341,13 +341,13 @@ function HeroImageCard({
           style={{ background: "#0a1f12" }}
           onClick={e => e.stopPropagation()}
         >
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.2em] uppercase mb-4">
+          <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-4">
             Today&apos;s Weather
           </p>
           {reading.split(/\n\n+/).map((para, i) => (
             <p
               key={i}
-              className={`font-body text-text-secondary text-sm leading-[1.9] ${i > 0 ? "mt-5" : ""}`}
+              className={`font-body text-text-secondary text-[13px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
             >
               {para.trim()}
             </p>
@@ -540,12 +540,12 @@ export default function TodayPage() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">
+              <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary">
                 Solray AI
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-text-secondary text-xs font-body">{today}</span>
+              <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
         </div>
@@ -635,7 +635,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="text-text-secondary text-xs font-body tracking-[0.2em] uppercase mb-3">
+                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-3">
                   Sky Now
                 </p>
                 {/* Scrollable ticker */}
@@ -767,15 +767,15 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
         <div className="flex items-center gap-2">
           <span className="text-xl">{phaseEmoji}</span>
           <div>
-            <p className="text-text-primary text-sm font-body font-medium">{phaseLabel}</p>
+            <p className="font-body text-text-primary text-[13px] font-medium">{phaseLabel}</p>
             {moonSign && (
-              <p className="text-text-secondary text-xs font-body">Moon in {moonSign}</p>
+              <p className="font-body text-text-secondary text-[10px]">Moon in {moonSign}</p>
             )}
           </div>
         </div>
         <div className="text-right">
-          <p className="text-amber-sun text-sm font-heading">{illumination}%</p>
-          <p className="text-text-secondary text-[10px] font-body">illuminated</p>
+          <p className="font-heading text-amber-sun text-[13px]">{illumination}%</p>
+          <p className="font-body text-text-secondary text-[10px]">illuminated</p>
         </div>
       </div>
 
@@ -795,11 +795,11 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
 
         {/* Phase labels */}
         <div className="flex justify-between mt-2">
-          <span className="text-text-secondary/60 text-[9px] font-body">New</span>
-          <span className="text-text-secondary/60 text-[9px] font-body">1st Q</span>
-          <span className="text-text-secondary/60 text-[9px] font-body">Full</span>
-          <span className="text-text-secondary/60 text-[9px] font-body">3rd Q</span>
-          <span className="text-text-secondary/60 text-[9px] font-body">New</span>
+          <span className="font-body text-text-secondary/60 text-[9px]">New</span>
+          <span className="font-body text-text-secondary/60 text-[9px]">1st Q</span>
+          <span className="font-body text-text-secondary/60 text-[9px]">Full</span>
+          <span className="font-body text-text-secondary/60 text-[9px]">3rd Q</span>
+          <span className="font-body text-text-secondary/60 text-[9px]">New</span>
         </div>
       </div>
     </div>
