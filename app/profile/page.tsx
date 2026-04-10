@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import AstroGeography from "@/components/AstroGeography";
+import ShareableChartCard from "@/components/ShareableChartCard";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -889,6 +890,19 @@ export default function ProfilePage() {
                     {profile.sunSign && <Tag>{profile.sunSign} Sun</Tag>}
                     {profile.hdType && <Tag>{profile.hdType}</Tag>}
                     {profile.hdProfile && <Tag>{profile.hdProfile}</Tag>}
+                  </div>
+                )}
+
+                {/* Share Chart Button */}
+                {profile && profile.sunSign && profile.moonSign && profile.risingSign && (
+                  <div className="w-full mt-6 px-0">
+                    <ShareableChartCard
+                      sunSign={profile.sunSign}
+                      moonSign={profile.moonSign}
+                      risingSign={profile.risingSign}
+                      hdType={profile.hdType}
+                      hdProfile={profile.hdProfile}
+                    />
                   </div>
                 )}
               </div>

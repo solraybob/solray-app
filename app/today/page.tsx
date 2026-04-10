@@ -512,6 +512,11 @@ export default function TodayPage() {
               />
             </div>
 
+            {/* TODAY'S READING SUMMARY — shareable card */}
+            <div className="max-w-lg mx-auto px-5 mt-4">
+              <ReadingSummaryCard reading={forecast.reading} />
+            </div>
+
             {/* MOON CYCLE BAR — below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
