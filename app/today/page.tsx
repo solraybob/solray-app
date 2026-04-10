@@ -255,34 +255,74 @@ function HeroImageCard({
   dayTitle,
   imageSrc,
   moonPhase,
+  reading,
 }: {
   dayTitle: string;
   imageSrc: string;
   moonPhase: { phase: number; label: string; emoji: string };
+  reading?: string;
 }) {
-  return (
-    <div className="relative w-full h-[300px] overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(26,48,32,0.6)" }}>
-      {/* Background image with dark overlay */}
-      <Image
-        src={imageSrc}
-        alt={dayTitle}
-        fill
-        className="object-cover"
-        priority
-        unoptimized
-      />
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
+  const [open, setOpen] = useState(false);
 
-      {/* Content centered */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
-        <h1
-          className="font-heading text-3xl leading-[1.3] text-white text-center"
-          style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
-        >
-          {dayTitle}
-        </h1>
+  return (
+    <div
+      className="rounded-2xl overflow-hidden cursor-pointer"
+      style={{ border: "1px solid rgba(26,48,32,0.6)" }}
+      onClick={() => setOpen(v => !v)}
+    >
+      {/* Image section */}
+      <div className="relative w-full h-[260px]">
+        <Image
+          src={imageSrc}
+          alt={dayTitle}
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/65" />
+
+        {/* Day title centered */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+          <h1
+            className="font-heading text-3xl leading-[1.3] text-white text-center"
+            style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+          >
+            {dayTitle}
+          </h1>
+        </div>
+
+        {/* Tap hint bottom */}
+        <div className="absolute bottom-3 w-full flex justify-center">
+          <span
+            className="text-white/50 text-[10px] font-body tracking-widest uppercase transition-all duration-300"
+            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block" }}
+          >
+            {open ? "▲" : "▼"}
+          </span>
+        </div>
       </div>
+
+      {/* Expandable reading */}
+      {open && reading && (
+        <div
+          className="px-5 pt-5 pb-6"
+          style={{ background: "#0a1f12" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <p className="font-body text-text-secondary text-[10px] tracking-[0.2em] uppercase mb-4">
+            Today&apos;s Weather
+          </p>
+          {reading.split(/\n\n+/).map((para, i) => (
+            <p
+              key={i}
+              className={`font-body text-text-secondary text-sm leading-[1.9] ${i > 0 ? "mt-5" : ""}`}
+            >
+              {para.trim()}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -494,11 +534,8 @@ export default function TodayPage() {
               <HeroImageCard
                 dayTitle={forecast.day_title}
                 imageSrc={getHeroImageUrl(forecast.tags.astrology)}
-                moonPhase={{
-                  phase: 0.5,
-                  label: getMoonPhaseLabel(0.5),
-                  emoji: getMoonEmoji(0.5),
-                }}
+                moonPhase={{ phase: 0.5, label: getMoonPhaseLabel(0.5), emoji: getMoonEmoji(0.5) }}
+                reading={forecast.reading}
               />
             </div>
 
@@ -532,46 +569,7 @@ export default function TodayPage() {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div
-                className="transition-all duration-500"
-                style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
-              >
-                <div className="border-t border-forest-border/40 mb-8" />
-              </div>
 
-              {/* TODAY'S WEATHER LABEL */}
-              <div
-                className="flex items-center gap-3 mb-8 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 3 ? 1 : 0,
-                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
-                <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
-                  Today&apos;s Weather
-                </p>
-                <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-              </div>
-
-              {/* READING — more breathing room */}
-              <div
-                className="pb-12 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 3 ? 1 : 0,
-                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
-                {forecast.reading.split(/\n\n+/).map((para, i) => (
-                  <p
-                    key={i}
-                    className={`font-body text-text-secondary text-base leading-[2] ${i > 0 ? "mt-8" : ""}`}
-                  >
-                    {para.trim()}
-                  </p>
-                ))}
-              </div>
 
               {/* TODAY'S DIMENSIONS (DEPTH SLIDES) */}
               <div
