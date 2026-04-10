@@ -164,18 +164,26 @@ function EnergyBar({
   animate: boolean;
 }) {
   const color = ENERGY_COLORS[label] || "#e8821a";
+  const pct = value * 10;
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase">
-        {label}
-      </span>
-      <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
+    <div>
+      {/* Label row */}
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[11px] font-body font-semibold tracking-widest uppercase" style={{ color }}>
+          {label}
+        </span>
+        <span className="text-[11px] font-body font-medium" style={{ color }}>{pct}%</span>
+      </div>
+      {/* Bar — full width, taller, fades to transparent */}
+      <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: "rgba(26,48,32,0.4)" }}>
         <div
           className="h-full rounded-full transition-all duration-1000"
-          style={{ width: animate ? `${value * 10}%` : "0%", background: `linear-gradient(to right, ${color}, ${color}88)` }}
+          style={{
+            width: animate ? `100%` : "0%",
+            background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, transparent ${pct}%)`,
+          }}
         />
       </div>
-      <span className="text-xs font-body w-4 text-right" style={{ color }}>{value}</span>
     </div>
   );
 }
