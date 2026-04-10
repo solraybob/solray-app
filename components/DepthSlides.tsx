@@ -105,7 +105,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 style={{
                   width: "calc(100vw - 40px)",
                   scrollSnapAlign: "start",
-                  background: "#0a1f12",
+                  background: `linear-gradient(135deg, ${color}18 0%, #0a1f12 60%)`,
                   border: `1px solid ${isOpen ? color : `${color}35`}`,
                   borderRadius: "14px",
                   padding: "16px",
