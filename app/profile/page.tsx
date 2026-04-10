@@ -844,9 +844,9 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-28">
         {/* Header bar */}
-        <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50">
+        <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50" style={{ background: "linear-gradient(180deg, rgba(74,158,106,0.08) 0%, transparent 100%)" }}>
           <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-            <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary">
+            <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary" style={{ color: "#4a9e6a" }}>
               Profile
             </span>
             <button

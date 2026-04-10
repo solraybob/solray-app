@@ -557,7 +557,7 @@ export default function TodayPage() {
                 />
               </div>
               <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary">
-                Solray AI
+                Solray
               </span>
             </div>
             <div className="flex items-center gap-3">

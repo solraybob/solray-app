@@ -66,11 +66,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo */}
         <div className="flex flex-col items-center mb-12">
-          <div className="w-16 h-16 rounded-full overflow-hidden mb-4">
-            <Image src="/logo.jpg" alt="Solray" width={64} height={64} className="w-full h-full object-cover" />
+          <div className="w-8 h-8 rounded-full overflow-hidden mb-4">
+            <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
-          <h1 className="font-heading text-2xl tracking-widest text-text-primary uppercase">Solray</h1>
-          <p className="text-text-secondary text-xs mt-1 tracking-widest">Your cosmic intelligence</p>
+          <h1 className="font-heading text-sm tracking-[0.25em] text-text-secondary uppercase">Solray</h1>
+          <p className="text-text-secondary text-xs mt-2 tracking-widest">Your cosmic intelligence</p>
         </div>
 
         {/* Form */}

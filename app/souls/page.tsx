@@ -342,7 +342,7 @@ export default function SoulsPage() {
             background: "linear-gradient(180deg, rgba(91,111,245,0.08) 0%, transparent 60%)",
           }}
         >
-          <p className="text-[#5b6ff5] text-[10px] font-body tracking-[0.2em] uppercase mb-1">Your Field</p>
+          <p className="font-body text-xs tracking-[0.2em] uppercase mb-1 text-text-secondary" style={{ color: "#5b6ff5" }}>Your Field</p>
           <h1 className="font-heading text-4xl text-text-primary">Souls</h1>
           {myUsername && (
             <p className="text-text-secondary text-sm font-body mt-3">

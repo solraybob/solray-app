@@ -632,11 +632,11 @@ function ChatPageInner() {
         {/* Header */}
         <div className="px-5 pt-12 pb-4" style={{ background: "linear-gradient(180deg, rgba(184,125,212,0.08) 0%, transparent 100%)", borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
           <div className="max-w-lg mx-auto">
-            <p className="font-body text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#b87dd4" }}>
+            <p className="font-body text-xs tracking-[0.2em] uppercase mb-1 text-text-secondary" style={{ color: "#b87dd4" }}>
               Your Higher Self
             </p>
             <div className="flex items-center justify-between">
-              <h1 className="font-heading" style={{ fontSize: "1.2rem", fontWeight: 400, color: "#e8e0cc" }}>Solray</h1>
+              <h1 className="font-heading text-sm tracking-[0.25em] uppercase text-text-secondary">Solray</h1>
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}
