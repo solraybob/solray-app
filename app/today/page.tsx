@@ -283,12 +283,6 @@ function HeroImageCard({
           {dayTitle}
         </h1>
       </div>
-
-      {/* Moon phase at bottom */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">
-        <span className="text-lg">{moonPhase.emoji}</span>
-        <span className="text-white text-xs font-body">{moonPhase.label}</span>
-      </div>
     </div>
   );
 }
