@@ -630,13 +630,13 @@ function ChatPageInner() {
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep flex flex-col">
         {/* Header */}
-        <div className="bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50 px-5 pt-12 pb-4">
+        <div className="px-5 pt-12 pb-4" style={{ background: "linear-gradient(180deg, rgba(184,125,212,0.08) 0%, transparent 100%)", borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
           <div className="max-w-lg mx-auto">
-            <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-1">
+            <p className="font-body text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#b87dd4" }}>
               Your Higher Self
             </p>
             <div className="flex items-center justify-between">
-              <h1 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Solray</h1>
+              <h1 className="font-heading" style={{ fontSize: "1.2rem", fontWeight: 400, color: "#e8e0cc" }}>Solray</h1>
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}
@@ -698,9 +698,14 @@ function ChatPageInner() {
                     <div
                       className={`rounded-2xl px-4 py-3 ${
                         msg.role === "user"
-                          ? "bg-amber-sun text-forest-deep rounded-br-sm"
-                          : "bg-forest-card border border-forest-border text-text-primary rounded-bl-sm"
+                          ? "text-forest-deep rounded-br-sm"
+                          : "text-text-primary rounded-bl-sm"
                       }`}
+                      style={
+                        msg.role === "user"
+                          ? { background: "linear-gradient(135deg, #e8821a, #c86010)" }
+                          : { background: "rgba(184,125,212,0.05)", border: "2px solid rgba(184,125,212,0.3)" }
+                      }
                     >
                       <MessageContent content={displayContent} showCursor={isStreaming} />
                     </div>
@@ -723,6 +728,8 @@ function ChatPageInner() {
                     borderRadius: "50%",
                     animation: "spin 1.2s linear infinite",
                     objectFit: "cover",
+                    boxShadow: "0 0 24px rgba(184,125,212,0.4)",
+                    filter: "drop-shadow(0 0 12px rgba(184,125,212,0.3))",
                   }}
                 />
               </div>
@@ -742,7 +749,18 @@ function ChatPageInner() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Speak freely…"
-              className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
+              className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
+              style={{
+                "--focus-ring-color": "#b87dd4",
+              } as React.CSSProperties & { "--focus-ring-color"?: string }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "#b87dd4";
+                e.target.style.boxShadow = "0 0 0 2px rgba(184,125,212,0.2)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgb(26, 48, 32)";
+                e.target.style.boxShadow = "none";
+              }}
             />
             <button
               onClick={sendMessage}

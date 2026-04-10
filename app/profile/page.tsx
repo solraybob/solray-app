@@ -240,6 +240,17 @@ interface SoulMapRadarChartProps {
   radar: RadarValues;
 }
 
+// Element color mapping for Soul Map
+const ELEMENT_COLORS: Record<string, string> = {
+  Fire: "#e85030",
+  Earth: "#4a9e6a",
+  Air: "#5b6ff5",
+  Water: "#b87dd4",
+  Cardinal: "#e8821a",
+  Fixed: "#e8821a",
+  Mutable: "#e8821a",
+};
+
 function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
   const progress = useAnimatedProgress(0);
 
@@ -253,6 +264,8 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
   const radarValues = SOUL_AXIS_KEYS.map((key) => radar[key]);
   const animatedValues = radarValues.map((v) => v * progress);
 
+
+
   return (
     <svg
       width={TOTAL}
@@ -261,6 +274,20 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
       className="w-full max-w-[360px] mx-auto"
       aria-label="Soul Map radar chart"
     >
+      <defs>
+        <radialGradient id="soulMapGlow" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="rgba(91,111,245,0.08)" />
+          <stop offset="100%" stopColor="rgba(91,111,245,0)" />
+        </radialGradient>
+        <linearGradient id="radarPolygon" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#5b6ff5" />
+          <stop offset="100%" stopColor="#b87dd4" />
+        </linearGradient>
+      </defs>
+
+      {/* Radial gradient background glow */}
+      <rect width={TOTAL} height={TOTAL} fill="url(#soulMapGlow)" />
+      
       {/* Grid rings */}
       {gridLevels.map((level) => {
         const r = (level / 100) * OUTER;
@@ -301,39 +328,52 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
         opacity={0.30}
       />
 
-      {/* Main amber polygon */}
+      {/* Main blue-to-purple gradient polygon */}
       <polygon
         points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
-        fill="#e8821a"
+        fill="url(#radarPolygon)"
         fillOpacity={0.35 * progress}
-        stroke="#e8821a"
+        stroke="url(#radarPolygon)"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeOpacity={progress}
       />
 
-      {/* Vertex dots in amber */}
+      {/* Vertex dots with gradient border glow */}
       {SOUL_AXIS_KEYS.map((key, i) => {
         const r = (radar[key] / 100) * OUTER * progress;
         const [x, y] = getPoint7(cx, cy, r, i);
         return (
-          <circle
-            key={key}
-            cx={x}
-            cy={y}
-            r={3}
-            fill="#e8821a"
-            opacity={progress * 0.9}
-          />
+          <g key={key}>
+            {/* Glow */}
+            <circle
+              cx={x}
+              cy={y}
+              r={5.5}
+              fill="none"
+              stroke="url(#radarPolygon)"
+              strokeWidth={0.5}
+              opacity={progress * 0.4}
+            />
+            {/* Main dot */}
+            <circle
+              cx={x}
+              cy={y}
+              r={3}
+              fill="url(#radarPolygon)"
+              opacity={progress * 0.9}
+            />
+          </g>
         );
       })}
 
       {/* Center dot */}
       <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.3} />
 
-      {/* Axis labels — outside chart */}
+      {/* Axis labels — colored by element/modality */}
       {SOUL_AXIS_LABELS.map((label, i) => {
         const [lx, ly] = getPoint7(cx, cy, OUTER + 32, i);
+        const color = ELEMENT_COLORS[label] || "#8a9e8d";
         return (
           <text
             key={label}
@@ -341,7 +381,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
             y={ly}
             textAnchor="middle"
             dominantBaseline="middle"
-            fill="#8a9e8d"
+            fill={color}
             fontSize="9"
             fontFamily="Inter, system-ui, sans-serif"
             letterSpacing="0.12em"
@@ -510,7 +550,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   );
 }
 
-// Collapsible Section
+// Collapsible Section with color accents
 
 function CollapsibleSection({
   title,
@@ -523,8 +563,19 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
+  // Color mapping for section headers
+  const sectionColors: Record<string, string> = {
+    "Natal Chart": "#e8821a",
+    "Astro Geography": "#5b6ff5",
+    "Human Design": "#5b6ff5",
+    "Numerology": "#b87dd4",
+    "Gene Keys": "#b87dd4",
+  };
+  
+  const borderColor = sectionColors[title] || "#8a9e8d";
+
   return (
-    <div className="border border-forest-border rounded-2xl overflow-hidden mb-4">
+    <div className="border border-forest-border rounded-2xl overflow-hidden mb-4" style={{ borderLeft: `4px solid ${borderColor}` }}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
@@ -547,11 +598,35 @@ function CollapsibleSection({
   );
 }
 
-// Tag
+// Tags with colors
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[10px] tracking-widest uppercase">
+      {children}
+    </span>
+  );
+}
+
+function SunTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-body px-3 py-1 rounded-full border-2 border-amber-sun text-amber-sun text-[10px] tracking-widest uppercase">
+      {children}
+    </span>
+  );
+}
+
+function HDTypeTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#5b6ff5", borderColor: "#5b6ff5" }}>
+      {children}
+    </span>
+  );
+}
+
+function ProfileTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#b87dd4", borderColor: "#b87dd4" }}>
       {children}
     </span>
   );
@@ -801,12 +876,19 @@ export default function ProfilePage() {
           >
             <div className="max-w-lg mx-auto px-5">
               {/* Avatar + Identity */}
-              <div className="pt-10 pb-8 flex flex-col items-center gap-2">
+              <div className="pt-10 pb-8 flex flex-col items-center gap-2 relative">
+                {/* Hero gradient background */}
+                <div className="absolute inset-x-0 -top-10 h-48 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(232,130,26,0.06) 0%, transparent 60%)" }} />
+                
                 {/* Avatar with camera overlay */}
-                <div className="relative mb-1">
+                <div className="relative mb-1 z-10">
+                  {/* Gradient border ring */}
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg overflow-hidden"
-                    style={{ background: "#e8821a" }}
+                    className="absolute inset-0 rounded-full p-0.5 opacity-70"
+                    style={{ background: "linear-gradient(135deg, #e8821a, #b87dd4)", zIndex: -1 }}
+                  />
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg overflow-hidden relative bg-forest-deep"
                   >
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -832,7 +914,8 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* Handle (username) */}
+                {/* Handle (username) — with relative z positioning for gradient overlay */}
+                <div className="relative z-10">
                 {editingHandle ? (
                   <div className="flex items-center gap-2">
                     <span className="font-body text-text-secondary text-[10px] tracking-widest uppercase">@</span>
@@ -855,8 +938,10 @@ export default function ProfilePage() {
                     </p>
                   )
                 )}
+                </div>
 
                 {/* Display name */}
+                <div className="relative z-10">
                 {editingName ? (
                   <div className="flex items-center gap-2">
                     <input
@@ -873,23 +958,24 @@ export default function ProfilePage() {
                     <button onClick={() => setEditingName(false)} className="font-body text-[10px] text-text-secondary">Cancel</button>
                   </div>
                 ) : (
-                  <h1
-                    className="font-heading text-text-primary leading-tight text-center"
-                    style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "-0.01em" }}
-                  >
-                    {profile?.name || "Your Name"}
-                  </h1>
-                )}
+                    <h1
+                      className="font-heading text-text-primary leading-tight text-center"
+                      style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "-0.01em" }}
+                    >
+                      {profile?.name || "Your Name"}
+                    </h1>
+                  )}
 
-                {saveError && (
-                  <p className="font-body text-red-400 text-[10px]">{saveError}</p>
-                )}
+                  {saveError && (
+                    <p className="font-body text-red-400 text-[10px]">{saveError}</p>
+                  )}
+                </div>
 
                 {profile && (
-                  <div className="flex flex-wrap justify-center gap-2 mt-2">
-                    {profile.sunSign && <Tag>{profile.sunSign} Sun</Tag>}
-                    {profile.hdType && <Tag>{profile.hdType}</Tag>}
-                    {profile.hdProfile && <Tag>{profile.hdProfile}</Tag>}
+                  <div className="flex flex-wrap justify-center gap-2 mt-2 relative z-10">
+                    {profile.sunSign && <SunTag>{profile.sunSign} Sun</SunTag>}
+                    {profile.hdType && <HDTypeTag>{profile.hdType}</HDTypeTag>}
+                    {profile.hdProfile && <ProfileTag>{profile.hdProfile}</ProfileTag>}
                   </div>
                 )}
               </div>
@@ -901,41 +987,47 @@ export default function ProfilePage() {
                 </p>
 
                 {profile ? (
-                  <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4">
+                  <div className="relative rounded-2xl overflow-hidden mb-4">
+                    {/* Glow background layer */}
+                    <div className="absolute inset-0 bg-forest-card/40" style={{ background: "radial-gradient(ellipse at center, rgba(91,111,245,0.12) 0%, rgba(184,125,212,0.06) 40%, transparent 70%)" }} />
+                    {/* Content */}
+                    <div className="relative border border-forest-border/50 rounded-2xl p-4 bg-forest-card/40 backdrop-blur-sm">
                     <SoulMapRadarChart radar={profile.radar} />
 
-                    {/* Legend */}
-                    <div className="mt-2 flex justify-center gap-5 font-body text-[10px] tracking-widest">
-                      <span style={{ color: "#e8821a" }}>● Amber = your profile</span>
-                      <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
-                    </div>
+                      {/* Legend */}
+                      <div className="mt-2 flex justify-center gap-5 font-body text-[10px] tracking-widest">
+                        <span style={{ color: "#5b6ff5" }}>● Blue-Purple = your profile</span>
+                        <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
+                      </div>
 
-                    {/* Mini bar legend — all 6 dimensions with values */}
-                    <div className="mt-4 space-y-2 px-1">
-                      {SOUL_AXIS_KEYS.map((key, i) => {
-                        const val = profile.radar[key];
-                        const label = SOUL_AXIS_LABELS[i];
-                        return (
-                          <div key={key} className="flex items-center gap-2">
-                            <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase w-20 shrink-0">
-                              {label}
-                            </span>
-                            <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${val}%`,
-                                  background: "#e8821a",
-                                  opacity: 0.7,
-                                }}
-                              />
+                      {/* Mini bar legend — all 7 dimensions with values and colored bars */}
+                      <div className="mt-4 space-y-2 px-1">
+                        {SOUL_AXIS_KEYS.map((key, i) => {
+                          const val = profile.radar[key];
+                          const label = SOUL_AXIS_LABELS[i];
+                          const barColor = ELEMENT_COLORS[label] || "#8a9e8d";
+                          return (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
+                                {label}
+                              </span>
+                              <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${val}%`,
+                                    background: barColor,
+                                    opacity: 0.7,
+                                  }}
+                                />
+                              </div>
+                              <span className="font-body text-text-secondary/70 text-[10px] w-7 text-right shrink-0">
+                                {val}%
+                              </span>
                             </div>
-                            <span className="font-body text-text-secondary/70 text-[10px] w-7 text-right shrink-0">
-                              {val}%
-                            </span>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 ) : (
