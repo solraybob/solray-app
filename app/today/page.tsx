@@ -7,14 +7,8 @@ import BottomNav from "@/components/BottomNav";
 import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
-import dynamic from "next/dynamic";
-
-// Dynamic imports — client-only, no SSR, can never crash the page
-const TodayAlertCard = dynamic(() => import("@/components/TodayAlertCard"), { ssr: false });
-const PushNotificationPrompt = dynamic(() => import("@/components/PushNotificationPrompt"), { ssr: false });
-const SolarReturnCard = dynamic(() => import("@/components/SolarReturnCard"), { ssr: false });
-const WeekSummaryCard = dynamic(() => import("@/components/WeekSummaryCard"), { ssr: false });
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -59,14 +53,6 @@ interface TagDetails {
   gene_keys: string;
 }
 
-interface Aspect {
-  planet: string;
-  planet_symbol: string;
-  natal_planet: string;
-  aspect_type: string;
-  orb: number;
-}
-
 interface ForecastData {
   day_title: string;
   reading: string;
@@ -78,7 +64,6 @@ interface ForecastData {
   tag_details?: TagDetails;
   energy: EnergyLevels;
   planets: Planet[];
-  aspects?: Aspect[];
   morning_greeting?: string;
   lunar_event?: LunarEvent;
 }
@@ -335,7 +320,6 @@ function parseForecastData(data: any): ForecastData {
     return {
       ...data,
       planets,
-      aspects: data.aspects ?? undefined,
       tag_details: data.tag_details ?? undefined,
       lunar_event: data.lunar_event ?? undefined,
     };
@@ -364,7 +348,6 @@ function parseForecastData(data: any): ForecastData {
     return {
       ...MOCK_FORECAST,
       planets: planets.length > 0 ? planets : MOCK_FORECAST.planets,
-      aspects: data.aspects ?? undefined,
     };
   }
 }
@@ -375,7 +358,6 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
-  const [birthDate, setBirthDate] = useState<string | null>(null);
   const { token } = useAuth();
   const backgroundFetchDone = useRef(false);
 
@@ -467,33 +449,6 @@ export default function TodayPage() {
     fetchAndUpdate(false);
   }, [token]);
 
-  // Load birth date from localStorage
-  useEffect(() => {
-    try {
-      // Try from solray_user first
-      const userStr = localStorage.getItem("solray_user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user.birth_date) {
-          setBirthDate(user.birth_date);
-          return;
-        }
-      }
-
-      // Then try from solray_blueprint
-      const blueprintStr = localStorage.getItem("solray_blueprint");
-      if (blueprintStr) {
-        const blueprint = JSON.parse(blueprintStr);
-        if (blueprint.meta?.birth_date) {
-          setBirthDate(blueprint.meta.birth_date);
-          return;
-        }
-      }
-    } catch (_) {
-      // Ignore parse errors
-    }
-  }, []);
-
   // Staggered section reveal
   useEffect(() => {
     if (!forecast) return;
@@ -521,7 +476,7 @@ export default function TodayPage() {
                 />
               </div>
               <span className="font-heading text-xs tracking-[0.2em] uppercase text-text-secondary">
-                Solray
+                Solray AI
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -545,37 +500,17 @@ export default function TodayPage() {
               <HeroImageCard
                 dayTitle={forecast.day_title}
                 imageSrc={getHeroImageUrl(forecast.tags.astrology)}
-                moonPhase={{ phase: 0.5, label: getMoonPhaseLabel(0.5), emoji: getMoonEmoji(0.5) }}
+                moonPhase={{
+                  phase: 0.5,
+                  label: getMoonPhaseLabel(0.5),
+                  emoji: getMoonEmoji(0.5),
+                }}
               />
-            </div>
-
-            {/* TODAY'S READING SUMMARY — shareable card */}
-            <div className="max-w-lg mx-auto px-5 mt-4">
-              <ReadingSummaryCard reading={forecast.reading} />
             </div>
 
             {/* MOON CYCLE BAR — below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
-            </div>
-
-            {/* SOLAR RETURN — dynamic, client-only, safe */}
-            {birthDate && (
-              <div className="max-w-lg mx-auto px-5 mt-4">
-                <SolarReturnCard birthDate={birthDate} />
-              </div>
-            )}
-
-            {/* TODAY'S ALERT + PUSH PROMPT + WEEK AHEAD — all dynamic, client-only */}
-            <div className="max-w-lg mx-auto px-5 mt-4 space-y-3">
-              {forecast.aspects && forecast.aspects.length > 0 && forecast.aspects[0].orb < 5 && (
-                <TodayAlertCard
-                  aspect={forecast.aspects[0]}
-                  tagDetails={forecast.tag_details}
-                />
-              )}
-              <WeekSummaryCard />
-              <PushNotificationPrompt />
             </div>
 
             {/* Below fold content */}
@@ -705,51 +640,6 @@ export default function TodayPage() {
         <BottomNav />
       </div>
     </ProtectedRoute>
-  );
-}
-
-// Extract first sentence from reading
-function getFirstSentence(text: string): string {
-  const match = text.match(/^[^.!?]*[.!?]/);
-  return match ? match[0].trim() : text.slice(0, 100) + "...";
-}
-
-// Reading summary card — copyable to clipboard
-function ReadingSummaryCard({ reading }: { reading: string }) {
-  const [copied, setCopied] = useState(false);
-  const firstSentence = getFirstSentence(reading);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(firstSentence);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback for older browsers
-    }
-  };
-
-  return (
-    <div
-      className="px-4 py-3 rounded-xl border-2 bg-forest-card/50 transition-all cursor-pointer hover:bg-forest-card/70"
-      style={{
-        borderColor: copied ? "#c4a062" : "#8b6f47",
-      }}
-      onClick={handleCopy}
-    >
-      <p
-        className="text-text-secondary text-sm leading-relaxed font-body"
-        style={{ fontStyle: "italic" }}
-      >
-        {firstSentence}
-      </p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-text-secondary/50 text-[10px] font-body">Today&apos;s Key Insight</span>
-        <span className="text-amber-sun/70 text-[11px] font-body transition-all">
-          {copied ? "✓ Copied" : "Tap to copy"}
-        </span>
-      </div>
-    </div>
   );
 }
 
