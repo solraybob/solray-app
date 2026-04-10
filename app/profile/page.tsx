@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import AstroGeography from "@/components/AstroGeography";
-import ShareableChartCard from "@/components/ShareableChartCard";
+import dynamic from "next/dynamic";
+const ShareableChartCard = dynamic(() => import("@/components/ShareableChartCard"), { ssr: false });
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
