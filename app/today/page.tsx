@@ -10,6 +10,16 @@ import { apiFetch } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 
+// Planet to hero image mapping
+const PLANET_HERO_IMAGES: Record<string, string> = {
+  sun: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=800&q=80",
+  moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=80",
+  mars: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&w=800&q=80",
+  jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
+  saturn: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=800&q=80",
+  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
+};
+
 interface Planet {
   name: string;
   symbol: string;
@@ -87,6 +97,24 @@ const MOCK_FORECAST: ForecastData = {
   ],
   morning_greeting: "Good morning. The day opens gently. I am here.",
 };
+
+// Extract dominant planet from astrology tag string
+function getDominantPlanet(astrologyTag: string): string {
+  const planetNames = ["sun", "moon", "mars", "jupiter", "saturn", "mercury", "venus", "uranus", "neptune", "pluto"];
+  const lowercaseTag = astrologyTag.toLowerCase();
+  for (const planet of planetNames) {
+    if (lowercaseTag.includes(planet)) {
+      return planet;
+    }
+  }
+  return "sun"; // default
+}
+
+// Get hero image URL for dominant planet
+function getHeroImageUrl(astrologyTag: string): string {
+  const planet = getDominantPlanet(astrologyTag);
+  return PLANET_HERO_IMAGES[planet] || PLANET_HERO_IMAGES.default;
+}
 
 // Dynamic energy note based on value and dimension
 function getEnergyNote(label: string, value: number): string {
@@ -170,57 +198,96 @@ function PlanetCard({ planet }: { planet: Planet }) {
 // Skeleton components for instant perceived loading
 function SkeletonToday() {
   return (
-    <div className="max-w-lg mx-auto px-5">
-      {/* Hero title skeleton */}
-      <div className="pt-12 pb-10">
-        <div className="skeleton-shimmer h-14 w-4/5 rounded-lg mb-3" />
-        <div className="skeleton-shimmer h-14 w-2/3 rounded-lg" />
-      </div>
+    <div>
+      {/* Hero skeleton */}
+      <div className="w-full h-[300px] bg-forest-card skeleton-shimmer" />
 
-      {/* Energy bars skeleton */}
-      <div className="mb-8 space-y-4">
-        {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
-          <div key={label} className="flex items-center gap-3">
-            <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
-              {label}
-            </span>
-            <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
-              <div className="h-full w-0 bg-amber-sun rounded-full" />
+      <div className="max-w-lg mx-auto px-5">
+        {/* Energy bars skeleton */}
+        <div className="mb-8 mt-8 space-y-4">
+          {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
+                {label}
+              </span>
+              <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
+                <div className="h-full w-0 bg-amber-sun rounded-full" />
+              </div>
+              <span className="text-text-secondary text-xs font-body w-4 text-right opacity-0">0</span>
             </div>
-            <span className="text-text-secondary text-xs font-body w-4 text-right opacity-0">0</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Cycles skeleton */}
-      <div className="skeleton-shimmer h-32 w-full rounded-2xl mb-10" />
-
-      {/* Divider */}
-      <div className="border-t border-forest-border/40 mb-8" />
-
-      {/* Reading skeleton — 4 lines */}
-      <div className="pb-8 space-y-3">
-        <div className="skeleton-shimmer h-4 w-full rounded" />
-        <div className="skeleton-shimmer h-4 w-full rounded" />
-        <div className="skeleton-shimmer h-4 w-5/6 rounded" />
-        <div className="skeleton-shimmer h-4 w-3/4 rounded" />
-      </div>
-
-      {/* Tags skeleton */}
-      <div className="flex flex-wrap gap-2 mb-10">
-        <div className="skeleton-shimmer h-7 w-32 rounded-full" />
-        <div className="skeleton-shimmer h-7 w-28 rounded-full" />
-        <div className="skeleton-shimmer h-7 w-24 rounded-full" />
-      </div>
-
-      {/* Planet strip skeleton */}
-      <div className="mb-6">
-        <div className="skeleton-shimmer h-3 w-16 rounded mb-3" />
-        <div className="flex gap-2.5 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton-shimmer min-w-[76px] h-[90px] rounded-2xl" />
           ))}
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-forest-border/40 mb-8" />
+
+        {/* Reading skeleton — 4 lines */}
+        <div className="pb-8 space-y-3">
+          <div className="skeleton-shimmer h-4 w-full rounded" />
+          <div className="skeleton-shimmer h-4 w-full rounded" />
+          <div className="skeleton-shimmer h-4 w-5/6 rounded" />
+          <div className="skeleton-shimmer h-4 w-3/4 rounded" />
+        </div>
+
+        {/* Tags skeleton */}
+        <div className="flex flex-wrap gap-2 mb-10">
+          <div className="skeleton-shimmer h-7 w-32 rounded-full" />
+          <div className="skeleton-shimmer h-7 w-28 rounded-full" />
+          <div className="skeleton-shimmer h-7 w-24 rounded-full" />
+        </div>
+
+        {/* Planet strip skeleton */}
+        <div className="mb-6">
+          <div className="skeleton-shimmer h-3 w-16 rounded mb-3" />
+          <div className="flex gap-2.5 overflow-hidden">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="skeleton-shimmer min-w-[76px] h-[90px] rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Hero image card with day title and moon phase
+function HeroImageCard({
+  dayTitle,
+  imageSrc,
+  moonPhase,
+}: {
+  dayTitle: string;
+  imageSrc: string;
+  moonPhase: { phase: number; label: string; emoji: string };
+}) {
+  return (
+    <div className="relative w-full h-[300px] overflow-hidden group">
+      {/* Background image with dark overlay */}
+      <Image
+        src={imageSrc}
+        alt={dayTitle}
+        fill
+        className="object-cover"
+        priority
+        unoptimized
+      />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
+
+      {/* Content centered */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
+        <h1
+          className="font-heading text-5xl leading-[1.2] text-white text-center"
+          style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+        >
+          {dayTitle}
+        </h1>
+      </div>
+
+      {/* Moon phase at bottom */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">
+        <span className="text-lg">{moonPhase.emoji}</span>
+        <span className="text-white text-xs font-body">{moonPhase.label}</span>
       </div>
     </div>
   );
@@ -419,155 +486,144 @@ export default function TodayPage() {
         </div>
 
         {loading ? (
-          // Fix 1: Beautiful skeleton instead of spinner
+          // Beautiful skeleton instead of spinner
           <SkeletonToday />
         ) : forecast ? (
-          <div className="max-w-lg mx-auto px-5">
-            {/* Subtle offline/error notice */}
-            {error && (
-              <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
-                <p className="text-text-secondary/60 text-[10px] font-body text-center">{error}</p>
-              </div>
-            )}
-
-            {/* MOON CYCLE — always shown */}
+          <>
+            {/* HERO IMAGE CARD — full width, above fold */}
             <div
-              className="pt-6 transition-all duration-700"
+              className="transition-all duration-700"
               style={{
                 opacity: visibleSections >= 1 ? 1 : 0,
-                transform: visibleSections >= 1 ? "translateY(0)" : "translateY(12px)",
               }}
             >
-              {forecast.lunar_event ? (
-                <LunarPhaseCard event={forecast.lunar_event} />
-              ) : (
-                <MoonCycleBar planets={forecast.planets} />
-              )}
-            </div>
-
-            {/* HERO: Day Title */}
-            <div
-              className="pt-12 pb-10 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 1 ? 1 : 0,
-                transform: visibleSections >= 1 ? "translateY(0)" : "translateY(12px)",
-              }}
-            >
-              <h1
-                className="font-heading text-5xl leading-[1.15] text-text-primary"
-                style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
-              >
-                {forecast.day_title}
-              </h1>
-            </div>
-
-            {/* ENERGY BARS */}
-            <div
-              className="mb-8 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 2 ? 1 : 0,
-                transform: visibleSections >= 2 ? "translateY(0)" : "translateY(12px)",
-              }}
-            >
-              <div className="space-y-4">
-                <EnergyBar label="Mental" value={forecast.energy.mental} animate={barsAnimated} />
-                <EnergyBar label="Emotional" value={forecast.energy.emotional} animate={barsAnimated} />
-                <EnergyBar label="Physical" value={forecast.energy.physical} animate={barsAnimated} />
-                <EnergyBar label="Intuitive" value={forecast.energy.intuitive} animate={barsAnimated} />
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div
-              className="transition-all duration-500"
-              style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
-            >
-              <div className="border-t border-forest-border/40 mb-8" />
-            </div>
-
-            {/* DIVIDER + TODAY'S READING LABEL */}
-            <div
-              className="flex items-center gap-3 mb-6 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 3 ? 1 : 0,
-                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
-              }}
-            >
-              <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-              <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
-                Today&apos;s Weather
-              </p>
-              <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
-            </div>
-
-            {/* READING */}
-            <div
-              className="pb-8 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 3 ? 1 : 0,
-                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
-              }}
-            >
-              {forecast.reading.split(/\n\n+/).map((para, i) => (
-                <p
-                  key={i}
-                  className={`font-body text-text-secondary text-base leading-[1.85] ${i > 0 ? "mt-5" : ""}`}
-                >
-                  {para.trim()}
-                </p>
-              ))}
-            </div>
-
-            {/* DEPTH SLIDES */}
-            <div
-              className="mb-10 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 3 ? 1 : 0,
-                transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
-              }}
-            >
-              <DepthSlides
-                tags={forecast.tags}
-                tagDetails={forecast.tag_details}
+              <HeroImageCard
+                dayTitle={forecast.day_title}
+                imageSrc={getHeroImageUrl(forecast.tags.astrology)}
+                moonPhase={{
+                  phase: 0.5,
+                  label: getMoonPhaseLabel(0.5),
+                  emoji: getMoonEmoji(0.5),
+                }}
               />
             </div>
 
-            {/* CURRENT CYCLES */}
-            <div
-              className="mb-10 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 4 ? 1 : 0,
-                transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
-              }}
-            >
-              <CurrentCycles token={token} />
-            </div>
+            {/* Below fold content */}
+            <div className="max-w-lg mx-auto px-5">
+              {/* Subtle offline/error notice */}
+              {error && (
+                <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
+                  <p className="text-text-secondary/60 text-[10px] font-body text-center">{error}</p>
+                </div>
+              )}
 
-            {/* PLANET STRIP — live cosmic ticker */}
-            <div
-              className="mb-6 transition-all duration-700"
-              style={{
-                opacity: visibleSections >= 5 ? 1 : 0,
-                transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
-              }}
-            >
-
-              <p className="text-text-secondary text-xs font-body tracking-[0.2em] uppercase mb-3">
-                Sky Now
-              </p>
-              {/* Scrollable ticker */}
+              {/* ENERGY BARS — more padding */}
               <div
-                className="-mx-5 px-5 overflow-x-auto"
-                style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+                className="mt-12 mb-10 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 2 ? 1 : 0,
+                  transform: visibleSections >= 2 ? "translateY(0)" : "translateY(12px)",
+                }}
               >
-                <div className="flex gap-2.5 pb-3" style={{ width: "max-content" }}>
-                  {forecast.planets.map((planet) => (
-                    <PlanetCard key={planet.name} planet={planet} />
-                  ))}
+                <div className="space-y-5">
+                  <EnergyBar label="Mental" value={forecast.energy.mental} animate={barsAnimated} />
+                  <EnergyBar label="Emotional" value={forecast.energy.emotional} animate={barsAnimated} />
+                  <EnergyBar label="Physical" value={forecast.energy.physical} animate={barsAnimated} />
+                  <EnergyBar label="Intuitive" value={forecast.energy.intuitive} animate={barsAnimated} />
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div
+                className="transition-all duration-500"
+                style={{ opacity: visibleSections >= 3 ? 1 : 0 }}
+              >
+                <div className="border-t border-forest-border/40 mb-8" />
+              </div>
+
+              {/* TODAY'S WEATHER LABEL */}
+              <div
+                className="flex items-center gap-3 mb-8 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 3 ? 1 : 0,
+                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
+                }}
+              >
+                <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
+                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
+                  Today&apos;s Weather
+                </p>
+                <div className="flex-1 h-px" style={{ background: "rgba(26,48,32,1)" }} />
+              </div>
+
+              {/* READING — more breathing room */}
+              <div
+                className="pb-12 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 3 ? 1 : 0,
+                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(12px)",
+                }}
+              >
+                {forecast.reading.split(/\n\n+/).map((para, i) => (
+                  <p
+                    key={i}
+                    className={`font-body text-text-secondary text-base leading-[2] ${i > 0 ? "mt-8" : ""}`}
+                  >
+                    {para.trim()}
+                  </p>
+                ))}
+              </div>
+
+              {/* TODAY'S DIMENSIONS (DEPTH SLIDES) */}
+              <div
+                className="mb-12 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 3 ? 1 : 0,
+                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
+                }}
+              >
+                <DepthSlides
+                  tags={forecast.tags}
+                  tagDetails={forecast.tag_details}
+                />
+              </div>
+
+              {/* CURRENT CYCLES */}
+              <div
+                className="mb-12 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 4 ? 1 : 0,
+                  transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
+                }}
+              >
+                <CurrentCycles token={token} />
+              </div>
+
+              {/* PLANET STRIP — live cosmic ticker */}
+              <div
+                className="mb-6 transition-all duration-700"
+                style={{
+                  opacity: visibleSections >= 5 ? 1 : 0,
+                  transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
+                }}
+              >
+                <p className="text-text-secondary text-xs font-body tracking-[0.2em] uppercase mb-3">
+                  Sky Now
+                </p>
+                {/* Scrollable ticker */}
+                <div
+                  className="-mx-5 px-5 overflow-x-auto"
+                  style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+                >
+                  <div className="flex gap-2.5 pb-3" style={{ width: "max-content" }}>
+                    {forecast.planets.map((planet) => (
+                      <PlanetCard key={planet.name} planet={planet} />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="max-w-lg mx-auto px-5 pt-24 text-center">
             <p className="text-text-secondary font-body text-sm leading-relaxed">
@@ -588,6 +644,38 @@ function Tag({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
+}
+
+// Moon phase calculation helpers (for hero card)
+function getMoonPhaseValue(): number {
+  const now = new Date();
+  const jd = (now.getTime() / 86400000) + 2440587.5;
+  const lunarCycle = 29.53058867;
+  const knownNewMoon = 2451549.5;
+  const phase = ((jd - knownNewMoon) % lunarCycle) / lunarCycle;
+  return phase < 0 ? phase + 1 : phase;
+}
+
+function getMoonPhaseLabel(p: number): string {
+  if (p < 0.03 || p > 0.97) return "New Moon";
+  if (p < 0.25) return "Waxing Crescent";
+  if (p < 0.27) return "First Quarter";
+  if (p < 0.48) return "Waxing Gibbous";
+  if (p < 0.52) return "Full Moon";
+  if (p < 0.73) return "Waning Gibbous";
+  if (p < 0.77) return "Third Quarter";
+  return "Waning Crescent";
+}
+
+function getMoonEmoji(p: number): string {
+  if (p < 0.03 || p > 0.97) return "🌑";
+  if (p < 0.25) return "🌒";
+  if (p < 0.27) return "🌓";
+  if (p < 0.48) return "🌔";
+  if (p < 0.52) return "🌕";
+  if (p < 0.73) return "🌖";
+  if (p < 0.77) return "🌗";
+  return "🌘";
 }
 
 // Persistent moon cycle component — always visible
