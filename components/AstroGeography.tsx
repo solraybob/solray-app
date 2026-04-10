@@ -618,7 +618,7 @@ function FullscreenMap({
             transition: 'transform 0.1s ease',
           }}
         >
-          <rect width={MAP_W} height={MAP_H} fill="#0a1810" />
+          <rect width={MAP_W} height={MAP_H} fill="#071310" />
           <WorldMap />
           {/* Grid lines */}
           {[-60, -30, 0, 30, 60].map(lat => (
@@ -709,7 +709,7 @@ function MapSVG({
       onMouseLeave={() => setHoveredLine(null)}
     >
       {/* Ocean background */}
-      <rect width={MAP_W} height={MAP_H} fill="#0a1810" />
+      <rect width={MAP_W} height={MAP_H} fill="#071310" />
 
       {/* World map with improved paths */}
       <WorldMap />
@@ -873,7 +873,7 @@ function MapSVG({
 // Real world map from Natural Earth 110m data
 function WorldMap() {
   return (
-    <g fill="#243d2a" stroke="#0f2018" strokeWidth={0.3} strokeLinejoin="round">
+    <g fill="#2d5438" stroke="#0a1a10" strokeWidth={0.3} strokeLinejoin="round">
       {WORLD_PATHS.map((d, i) => (
         <path key={i} d={d} />
       ))}
