@@ -310,8 +310,8 @@ function HeroImageCard({
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
-            className="font-heading text-3xl leading-[1.3] text-center" style={{ color: "#e8e0cc" }}
-            style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+            className="font-heading text-3xl leading-[1.3] text-center"
+            style={{ color: "#e8e0cc", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
           >
             {dayTitle}
           </h1>
