@@ -7,7 +7,6 @@ import BottomNav from "@/components/BottomNav";
 import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
-import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 import TodayAlertCard from "@/components/TodayAlertCard";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
