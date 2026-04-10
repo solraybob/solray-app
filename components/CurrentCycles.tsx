@@ -215,28 +215,20 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
         </p>
       )}
 
-      {/* Phase badge + Go Deeper */}
-      <div className="flex items-center justify-between mt-3">
-        <div className="flex items-center gap-2">
-          <span
-            className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${
-              cycle.phase === "applying"
-                ? "border-amber-sun/40 text-amber-sun/70"
-                : "border-forest-border text-text-secondary/40"
-            }`}
-          >
-            {cycle.phase}
-          </span>
-          <span className="text-text-secondary/30 text-[9px] font-body">
-            orb {cycle.orb}°
-          </span>
-        </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); goDeeper(cycle.title, summary); }}
-          className="text-[10px] font-body tracking-wider text-amber-sun/60 hover:text-amber-sun transition-colors"
+      {/* Phase badge */}
+      <div className="flex items-center gap-2 mt-3">
+        <span
+          className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+            cycle.phase === "applying"
+              ? "border-amber-sun/40 text-amber-sun/70"
+              : "border-forest-border text-text-secondary/40"
+          }`}
         >
-          Go Deeper →
-        </button>
+          {cycle.phase}
+        </span>
+        <span className="text-text-secondary/30 text-[9px] font-body">
+          orb {cycle.orb}°
+        </span>
       </div>
       </div>{/* end content z-10 */}
     </div>
