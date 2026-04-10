@@ -1,7 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { apiFetch } from "@/lib/api";
+
+// Planet-specific atmospheric images for cycle cards
+const PLANET_CYCLE_IMAGES: Record<string, string> = {
+  Sun: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=800&q=60",
+  Moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
+  Mercury: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
+  Venus: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=800&q=60",
+  Mars: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&w=800&q=60",
+  Jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=60",
+  Saturn: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=800&q=60",
+  Uranus: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=60",
+  Neptune: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=800&q=60",
+  Pluto: "https://images.unsplash.com/photo-1608178398319-48f814d0750c?auto=format&fit=crop&w=800&q=60",
+  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=60",
+};
+
+function getCycleImage(planet: string): string {
+  return PLANET_CYCLE_IMAGES[planet] || PLANET_CYCLE_IMAGES.default;
+}
 
 interface Cycle {
   transit_planet: string;
@@ -101,9 +121,25 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
   return (
     <div
-      className="bg-forest-card border border-forest-border/60 rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:border-amber-sun/30 active:scale-[0.99]"
+      className="relative rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
+      style={{ minHeight: "160px" }}
       onClick={() => setExpanded((v) => !v)}
     >
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src={getCycleImage(cycle.transit_planet)}
+          alt={cycle.transit_planet}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 512px"
+          unoptimized
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.65) 0%, rgba(5,15,8,0.85) 100%)" }} />
+      </div>
+
+      {/* Content over image */}
+      <div className="relative z-10 p-5">
       {/* Title row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <h3
@@ -183,6 +219,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           orb {cycle.orb}°
         </span>
       </div>
+      </div>{/* end content z-10 */}
     </div>
   );
 }
