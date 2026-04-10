@@ -321,7 +321,7 @@ function HeroImageCard({
           priority
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/65" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/50" />
 
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
