@@ -9,9 +9,6 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
-import SolarReturnCard from "@/components/SolarReturnCard";
-import PushNotificationPrompt from "@/components/PushNotificationPrompt";
-import TodayAlertCard from "@/components/TodayAlertCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -554,13 +551,6 @@ export default function TodayPage() {
               />
             </div>
 
-            {/* SOLAR RETURN CARD — between hero and moon cycle */}
-            {birthDate && (
-              <div className="max-w-lg mx-auto px-5 mt-4">
-                <SolarReturnCard birthDate={birthDate} />
-              </div>
-            )}
-
             {/* TODAY'S READING SUMMARY — shareable card */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <ReadingSummaryCard reading={forecast.reading} />
@@ -569,24 +559,6 @@ export default function TodayPage() {
             {/* MOON CYCLE BAR — below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
-            </div>
-
-            {/* Below fold content */}
-            <div className="max-w-lg mx-auto px-5">
-              {/* PUSH NOTIFICATION PROMPT — after moon cycle */}
-              <div className="mt-4">
-                <PushNotificationPrompt />
-              </div>
-
-              {/* TODAY'S ALERT CARD — after moon cycle and before energy bars */}
-              {forecast.aspects && forecast.aspects.length > 0 && (
-                <div className="mt-4">
-                  <TodayAlertCard
-                    aspect={forecast.aspects[0]}
-                    tagDetails={forecast.tag_details}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Below fold content */}
