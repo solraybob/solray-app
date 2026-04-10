@@ -11,6 +11,7 @@ import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 import TodayAlertCard from "@/components/TodayAlertCard";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import SolarReturnCard from "@/components/SolarReturnCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -370,8 +371,24 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
-  const [visibleSections, setVisibleSections] = useState(0);
   const [birthDate, setBirthDate] = useState<string | null>(null);
+
+  // Load birth date from localStorage for Solar Return card
+  useEffect(() => {
+    try {
+      const user = localStorage.getItem("solray_user");
+      if (user) {
+        const parsed = JSON.parse(user);
+        if (parsed.birth_date) { setBirthDate(parsed.birth_date); return; }
+      }
+      const bp = localStorage.getItem("solray_blueprint");
+      if (bp) {
+        const parsed = JSON.parse(bp);
+        if (parsed.meta?.birth_date) setBirthDate(parsed.meta.birth_date);
+      }
+    } catch (_) {}
+  }, []);
+  const [visibleSections, setVisibleSections] = useState(0);
   const { token } = useAuth();
   const backgroundFetchDone = useRef(false);
 
@@ -463,32 +480,7 @@ export default function TodayPage() {
     fetchAndUpdate(false);
   }, [token]);
 
-  // Load birth date from localStorage
-  useEffect(() => {
-    try {
-      // Try from solray_user first
-      const userStr = localStorage.getItem("solray_user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user.birth_date) {
-          setBirthDate(user.birth_date);
-          return;
-        }
-      }
 
-      // Then try from solray_blueprint
-      const blueprintStr = localStorage.getItem("solray_blueprint");
-      if (blueprintStr) {
-        const blueprint = JSON.parse(blueprintStr);
-        if (blueprint.meta?.birth_date) {
-          setBirthDate(blueprint.meta.birth_date);
-          return;
-        }
-      }
-    } catch (_) {
-      // Ignore parse errors
-    }
-  }, []);
 
   // Staggered section reveal
   useEffect(() => {
@@ -552,6 +544,13 @@ export default function TodayPage() {
                 })()}
               />
             </div>
+
+            {/* SOLAR RETURN — birthday card, shows within 7 days */}
+            {birthDate && (
+              <div className="max-w-lg mx-auto px-5 mt-4">
+                <SolarReturnCard birthDate={birthDate} />
+              </div>
+            )}
 
             {/* TODAY'S READING SUMMARY — shareable card */}
             <div className="max-w-lg mx-auto px-5 mt-4">
