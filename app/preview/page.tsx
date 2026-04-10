@@ -230,7 +230,7 @@ export default function PreviewPage() {
             />
           </div>
           <span className="font-heading text-sm tracking-widest uppercase text-text-secondary">
-            Solray AI
+            Solray
           </span>
         </div>
 

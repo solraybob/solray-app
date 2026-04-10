@@ -18,7 +18,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <h3 className="font-heading text-sm tracking-widest uppercase text-text-secondary mb-4">
-              Solray AI
+              Solray
             </h3>
             <p className="text-text-secondary text-sm leading-relaxed">
               Spiritual companion app powered by Western Astrology, Human Design, and Gene Keys.

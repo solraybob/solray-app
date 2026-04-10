@@ -5,13 +5,13 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Solray AI",
+  title: "Solray",
   description: "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Solray AI",
+    title: "Solray",
   },
   icons: {
     apple: "/icons/icon-192.png",
