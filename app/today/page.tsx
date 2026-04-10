@@ -310,7 +310,7 @@ function HeroImageCard({
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
-            className="font-heading text-3xl leading-[1.3] text-white text-center"
+            className="font-heading text-3xl leading-[1.3] text-center" style={{ color: "#e8e0cc" }}
             style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
           >
             {dayTitle}
@@ -319,7 +319,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-white/70 text-[10px] tracking-[0.2em] uppercase">
+          <p className="font-body text-text-primary/70 text-[10px] tracking-[0.2em] uppercase">
             Today&apos;s Weather
           </p>
           <svg
