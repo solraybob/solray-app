@@ -335,13 +335,26 @@ export default function SoulsPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-24">
-        {/* Header */}
-        <div className="px-5 pt-12 pb-4 max-w-lg mx-auto">
-          <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-1">Your Field</p>
+        {/* Header with blue gradient */}
+        <div
+          className="px-5 pt-12 pb-8 max-w-lg mx-auto relative"
+          style={{
+            background: "linear-gradient(180deg, rgba(91,111,245,0.08) 0%, transparent 60%)",
+          }}
+        >
+          <p className="text-[#5b6ff5] text-[10px] font-body tracking-[0.2em] uppercase mb-1">Your Field</p>
           <h1 className="font-heading text-4xl text-text-primary">Souls</h1>
           {myUsername && (
-            <p className="text-text-secondary text-sm font-body mt-1">
-              Your username: <span className="text-amber-sun font-mono">@{myUsername}</span>
+            <p className="text-text-secondary text-sm font-body mt-3">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs"
+                style={{
+                  background: "rgba(91,111,245,0.12)",
+                  color: "#5b6ff5",
+                }}
+              >
+                @{myUsername}
+              </span>
             </p>
           )}
         </div>
@@ -355,7 +368,15 @@ export default function SoulsPage() {
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="Search by @username or email"
-                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors pr-10"
+                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "#5b6ff5";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(91,111,245,0.15)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "";
+                  e.currentTarget.style.boxShadow = "";
+                }}
               />
               {searching && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -415,7 +436,14 @@ export default function SoulsPage() {
                   <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-3">Pending Requests</p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
-                      <div key={invite.invite_id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-amber-sun/20 rounded-2xl">
+                      <div
+                        key={invite.invite_id}
+                        className="flex items-center gap-3 px-4 py-3 border rounded-2xl"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(232,130,26,0.08) 0%, #0a1f12 60%)",
+                          borderColor: "rgba(232,130,26,0.25)",
+                        }}
+                      >
                         <div className="w-10 h-10 rounded-full bg-forest-border flex items-center justify-center shrink-0">
                           <span className="font-heading text-lg text-text-primary">{invite.requester.name[0]}</span>
                         </div>
@@ -437,7 +465,10 @@ export default function SoulsPage() {
                           <button
                             onClick={() => handleInviteResponse(invite.invite_id, true)}
                             disabled={respondingInvite === invite.invite_id}
-                            className="px-3 py-1.5 bg-amber-sun text-forest-deep rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
+                            className="px-3 py-1.5 text-forest-deep rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
+                            style={{
+                              background: "linear-gradient(135deg, #e8821a, #c86010)",
+                            }}
                           >
                             {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : "Accept"}
                           </button>
@@ -465,7 +496,22 @@ export default function SoulsPage() {
                   </>
                 ) : (
                   <div className="text-center pt-8">
-                    <div className="text-4xl mb-4">✦</div>
+                    <div className="relative inline-block mb-6">
+                      <div
+                        className="absolute inset-0 rounded-full blur-2xl"
+                        style={{
+                          background: "rgba(91,111,245,0.15)",
+                          width: "120px",
+                          height: "120px",
+                          left: "50%",
+                          top: "50%",
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      />
+                      <div className="relative text-7xl" style={{ color: "#5b6ff5" }}>
+                        ✦
+                      </div>
+                    </div>
                     <p className="font-heading text-2xl text-text-primary mb-2">Your constellation is empty</p>
                     <p className="text-text-secondary text-sm font-body max-w-xs mx-auto">
                       Search for someone by their @username or email to send a connection request.
@@ -516,11 +562,24 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
   return (
     <button
       onClick={onOpen}
-      className="w-full text-left bg-forest-card border border-forest-border rounded-2xl p-5 transition-all hover:border-amber-sun/30 active:scale-[0.99]"
+      className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99]"
+      style={{
+        background: "linear-gradient(135deg, rgba(91,111,245,0.06) 0%, #0a1f12 60%)",
+        border: "1px solid rgba(91,111,245,0.25)",
+      }}
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-          <span className="font-heading text-xl text-text-primary">{soul.name[0]}</span>
+        {/* Avatar with gradient border */}
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 relative"
+          style={{
+            background: "linear-gradient(135deg, #e8821a, #5b6ff5)",
+            padding: "2px",
+          }}
+        >
+          <div className="w-full h-full rounded-full bg-forest-card flex items-center justify-center">
+            <span className="font-heading text-xl text-text-primary">{soul.name[0]}</span>
+          </div>
         </div>
         <div className="flex-1">
           <h3 className="font-heading text-xl text-text-primary">{soul.name}</h3>
@@ -546,7 +605,9 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             )}
           </div>
         </div>
-        <span className="text-amber-sun text-xs font-body tracking-wider opacity-70 shrink-0">Open →</span>
+        <span className="text-xs font-body tracking-wider opacity-70 shrink-0" style={{ color: "#5b6ff5" }}>
+          Open →
+        </span>
       </div>
     </button>
   );
