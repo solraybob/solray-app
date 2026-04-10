@@ -249,57 +249,58 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
 
   return (
     <div
-      className="border border-forest-border/30 rounded-xl px-4 py-3 cursor-pointer transition-all duration-200 hover:border-forest-border/50 active:scale-[0.99]"
-      style={{ background: "rgba(15, 28, 18, 0.5)" }}
+      className="border border-forest-border/40 rounded-xl px-4 py-4 cursor-pointer transition-all duration-200 hover:border-amber-sun/20 active:scale-[0.99]"
+      style={{ background: "rgba(15, 28, 18, 0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <h4
-              className="font-heading text-text-secondary/80 leading-tight"
-              style={{ fontSize: "0.95rem", fontWeight: 400 }}
+              className="font-heading text-text-primary leading-tight"
+              style={{ fontSize: "1rem", fontWeight: 400 }}
             >
               {humanizeCycleTitle(cycle.title)}
             </h4>
-            {/* "In X days" badge */}
             <span
-              className="text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-forest-border/50 text-text-secondary/40 shrink-0"
+              className="text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun/50 shrink-0"
             >
               {cycle.days_until_orb >= 60
-                  ? `arriving in ${Math.round(cycle.days_until_orb / 30)} months`
-                  : `arriving in ${cycle.days_until_orb} days`}
+                  ? `in ${Math.round(cycle.days_until_orb / 30)} months`
+                  : `in ${cycle.days_until_orb} days`}
             </span>
           </div>
-          <p className="text-text-secondary/40 text-[11px] font-body leading-snug">
+          <p className="text-text-secondary/60 text-[11px] font-body leading-snug">
             Enters orb {fmtDateLong(cycle.enters_orb)}
           </p>
         </div>
         <span
-          className="text-text-secondary/30 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+          className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
           style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           ▾
         </span>
       </div>
 
-      {/* Collapsed: one-line description */}
-      {summary && !expanded && (
-        <p className="text-text-secondary/40 text-[12px] font-body leading-snug mt-2 italic">
-          "{summary.split(/(?<=[.!?])\s+/)[0] || summary}"
+      {/* Always show first sentence */}
+      {summary && (
+        <p className="text-text-secondary/70 text-[13px] font-body leading-snug mt-3">
+          {summary.split(/(?<=[.!?])\s+/)[0] || summary}
         </p>
       )}
 
-      {/* Expanded: full summary + Go Deeper */}
-      {expanded && summary && (
+      {/* Expanded: rest of summary + Go Deeper */}
+      {expanded && (
         <>
-          <p className="text-text-secondary/50 text-[12px] font-body leading-snug mt-2 italic">
-            "{summary}"
-          </p>
+          {summary.split(/(?<=[.!?])\s+/).slice(1).join(" ") && (
+            <p className="text-text-secondary/60 text-[13px] font-body leading-snug mt-2">
+              {summary.split(/(?<=[.!?])\s+/).slice(1).join(" ")}
+            </p>
+          )}
           <div className="mt-3 flex justify-end">
             <button
               onClick={(e) => { e.stopPropagation(); goDeeper(cycle.title, summary); }}
-              className="text-[10px] font-body tracking-wider text-amber-sun/60 hover:text-amber-sun transition-colors"
+              className="text-[11px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
             >
               Go Deeper →
             </button>
