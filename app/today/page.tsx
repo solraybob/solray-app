@@ -10,7 +10,6 @@ import { apiFetch } from "@/lib/api";
 import DepthSlides from "@/components/DepthSlides";
 import TodayAlertCard from "@/components/TodayAlertCard";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
-import SolarReturnCard from "@/components/SolarReturnCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -370,25 +369,8 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
-  const [birthDate, setBirthDate] = useState<string | null>(null);
-  const [weekSummary, setWeekSummary] = useState<string | null>(null);
-
-  // Load birth date from localStorage for Solar Return card
-  useEffect(() => {
-    try {
-      const user = localStorage.getItem("solray_user");
-      if (user) {
-        const parsed = JSON.parse(user);
-        if (parsed.birth_date) { setBirthDate(parsed.birth_date); return; }
-      }
-      const bp = localStorage.getItem("solray_blueprint");
-      if (bp) {
-        const parsed = JSON.parse(bp);
-        if (parsed.meta?.birth_date) setBirthDate(parsed.meta.birth_date);
-      }
-    } catch (_) {}
-  }, []);
   const [visibleSections, setVisibleSections] = useState(0);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
   const { token } = useAuth();
   const backgroundFetchDone = useRef(false);
 
@@ -480,25 +462,32 @@ export default function TodayPage() {
     fetchAndUpdate(false);
   }, [token]);
 
-  // Fetch week summary in background
+  // Load birth date from localStorage
   useEffect(() => {
-    if (!token) return;
-    const weekCacheKey = `solray_week_${new Date().toISOString().split('T')[0]}`;
     try {
-      const cached = localStorage.getItem(weekCacheKey);
-      if (cached) { setWeekSummary(JSON.parse(cached).week_summary); return; }
-    } catch (_) {}
-    apiFetch("/forecast/week", {}, token)
-      .then(d => {
-        if (d?.week_summary) {
-          setWeekSummary(d.week_summary);
-          try { localStorage.setItem(weekCacheKey, JSON.stringify(d)); } catch (_) {}
+      // Try from solray_user first
+      const userStr = localStorage.getItem("solray_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.birth_date) {
+          setBirthDate(user.birth_date);
+          return;
         }
-      })
-      .catch(() => {});
-  }, [token]);
+      }
 
-
+      // Then try from solray_blueprint
+      const blueprintStr = localStorage.getItem("solray_blueprint");
+      if (blueprintStr) {
+        const blueprint = JSON.parse(blueprintStr);
+        if (blueprint.meta?.birth_date) {
+          setBirthDate(blueprint.meta.birth_date);
+          return;
+        }
+      }
+    } catch (_) {
+      // Ignore parse errors
+    }
+  }, []);
 
   // Staggered section reveal
   useEffect(() => {
@@ -563,13 +552,6 @@ export default function TodayPage() {
               />
             </div>
 
-            {/* SOLAR RETURN — birthday card, shows within 7 days */}
-            {birthDate && (
-              <div className="max-w-lg mx-auto px-5 mt-4">
-                <SolarReturnCard birthDate={birthDate} />
-              </div>
-            )}
-
             {/* TODAY'S READING SUMMARY — shareable card */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <ReadingSummaryCard reading={forecast.reading} />
@@ -580,19 +562,13 @@ export default function TodayPage() {
               <MoonCycleBar planets={forecast.planets} />
             </div>
 
-            {/* TODAY'S ALERT + PUSH PROMPT + WEEK AHEAD */}
+            {/* TODAY'S ALERT + PUSH PROMPT */}
             <div className="max-w-lg mx-auto px-5 mt-4 space-y-3">
               {forecast.aspects && forecast.aspects.length > 0 && forecast.aspects[0].orb < 5 && (
                 <TodayAlertCard
                   aspect={forecast.aspects[0]}
                   tagDetails={forecast.tag_details}
                 />
-              )}
-              {weekSummary && (
-                <div className="px-4 py-3 rounded-xl border border-forest-border/50 bg-forest-card/30">
-                  <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-1.5">Days Ahead</p>
-                  <p className="text-text-secondary text-sm font-body leading-relaxed">{weekSummary}</p>
-                </div>
               )}
               <PushNotificationPrompt />
             </div>
