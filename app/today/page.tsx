@@ -12,27 +12,27 @@ import DepthSlides from "@/components/DepthSlides";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
-  // Sun — golden hour flooding through trees, warm and alive
-  sun: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80",
-  // Moon — moonlight on dark misty water
-  moon: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=80",
-  // Mercury — blurred city lights at night, motion, speed
-  mercury: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=80",
-  // Venus — soft pink dawn light, intimate warmth
-  venus: "https://images.unsplash.com/photo-1490750967868-88df5691cc96?auto=format&fit=crop&w=800&q=80",
-  // Mars — volcanic red dramatic landscape
-  mars: "https://images.unsplash.com/photo-1528459105426-b9548367069b?auto=format&fit=crop&w=800&q=80",
-  // Jupiter — towering storm clouds, vast epic sky
+  // Sun — golden sunrise flooding the sky
+  sun: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
+  // Moon — full moon rising over dark horizon
+  moon: "https://images.unsplash.com/photo-1518066000714-58c45f1a2c0a?auto=format&fit=crop&w=800&q=80",
+  // Mercury — lightning storm in dark sky
+  mercury: "https://images.unsplash.com/photo-1537420327992-d6e192287183?auto=format&fit=crop&w=800&q=80",
+  // Venus — pink and gold dawn sky
+  venus: "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?auto=format&fit=crop&w=800&q=80",
+  // Mars — dramatic red sunset sky
+  mars: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=800&q=80",
+  // Jupiter — epic towering storm clouds
   jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
-  // Saturn — ancient stone, weight, time, structure
-  saturn: "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=800&q=80",
-  // Uranus — electric storm, lightning over dark landscape
-  uranus: "https://images.unsplash.com/photo-1537420327992-d6e192287183?auto=format&fit=crop&w=800&q=80",
-  // Neptune — deep ocean, underwater, ethereal blue
-  neptune: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?auto=format&fit=crop&w=800&q=80",
-  // Pluto — dark cave, underworld, transformation
-  pluto: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
-  // Default — Milky Way, star field
+  // Saturn — cold grey ringed sky, winter atmosphere
+  saturn: "https://images.unsplash.com/photo-1422464804701-7d8567a1b945?auto=format&fit=crop&w=800&q=80",
+  // Uranus — electric blue sky, unusual atmosphere
+  uranus: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
+  // Neptune — deep blue ocean meeting dark sky
+  neptune: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80",
+  // Pluto — dark starfield, edge of cosmos
+  pluto: "https://images.unsplash.com/photo-1543722530-d2c3201371e7?auto=format&fit=crop&w=800&q=80",
+  // Default — Milky Way
   default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
 };
 
