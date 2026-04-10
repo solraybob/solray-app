@@ -277,7 +277,7 @@ function HeroImageCard({
       {/* Content centered */}
       <div className="absolute inset-0 flex flex-col items-center justify-center px-5">
         <h1
-          className="font-heading text-5xl leading-[1.2] text-white text-center"
+          className="font-heading text-3xl leading-[1.3] text-white text-center"
           style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
         >
           {dayTitle}
@@ -506,6 +506,11 @@ export default function TodayPage() {
                   emoji: getMoonEmoji(0.5),
                 }}
               />
+            </div>
+
+            {/* MOON CYCLE BAR — below hero */}
+            <div className="max-w-lg mx-auto px-5 mt-4">
+              <MoonCycleBar planets={forecast.planets} />
             </div>
 
             {/* Below fold content */}

@@ -58,7 +58,7 @@ const KEYS = ["astrology", "human_design", "gene_keys"] as const;
 
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
   const [expandedKey, setExpandedKey] = useState<string>("astrology");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   // Set first card expanded on mount
   useEffect(() => {
