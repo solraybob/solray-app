@@ -12,11 +12,27 @@ import DepthSlides from "@/components/DepthSlides";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
-  sun: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=800&q=80",
-  moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=80",
-  mars: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&w=800&q=80",
+  // Sun — golden hour flooding through trees, warm and alive
+  sun: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80",
+  // Moon — moonlight on dark misty water
+  moon: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=80",
+  // Mercury — blurred city lights at night, motion, speed
+  mercury: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=80",
+  // Venus — soft pink dawn light, intimate warmth
+  venus: "https://images.unsplash.com/photo-1490750967868-88df5691cc96?auto=format&fit=crop&w=800&q=80",
+  // Mars — volcanic red dramatic landscape
+  mars: "https://images.unsplash.com/photo-1528459105426-b9548367069b?auto=format&fit=crop&w=800&q=80",
+  // Jupiter — towering storm clouds, vast epic sky
   jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
-  saturn: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=800&q=80",
+  // Saturn — ancient stone, weight, time, structure
+  saturn: "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=800&q=80",
+  // Uranus — electric storm, lightning over dark landscape
+  uranus: "https://images.unsplash.com/photo-1537420327992-d6e192287183?auto=format&fit=crop&w=800&q=80",
+  // Neptune — deep ocean, underwater, ethereal blue
+  neptune: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?auto=format&fit=crop&w=800&q=80",
+  // Pluto — dark cave, underworld, transformation
+  pluto: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
+  // Default — Milky Way, star field
   default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
 };
 
