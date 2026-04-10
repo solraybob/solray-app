@@ -261,7 +261,7 @@ function HeroImageCard({
   moonPhase: { phase: number; label: string; emoji: string };
 }) {
   return (
-    <div className="relative w-full h-[300px] overflow-hidden group">
+    <div className="relative w-full h-[300px] overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(26,48,32,0.6)" }}>
       {/* Background image with dark overlay */}
       <Image
         src={imageSrc}
@@ -490,9 +490,9 @@ export default function TodayPage() {
           <SkeletonToday />
         ) : forecast ? (
           <>
-            {/* HERO IMAGE CARD — full width, above fold */}
+            {/* HERO IMAGE CARD — card style, with padding like CurrentCycles */}
             <div
-              className="transition-all duration-700"
+              className="max-w-lg mx-auto px-5 pt-4 transition-all duration-700"
               style={{
                 opacity: visibleSections >= 1 ? 1 : 0,
               }}
