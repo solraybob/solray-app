@@ -7,6 +7,7 @@ const navItems = [
   {
     href: "/today",
     label: "Today",
+    color: "#e8821a",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="5"/>
@@ -24,6 +25,7 @@ const navItems = [
   {
     href: "/chat",
     label: "Chat",
+    color: "#b87dd4",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -33,6 +35,7 @@ const navItems = [
   {
     href: "/souls",
     label: "Souls",
+    color: "#5b6ff5",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -45,6 +48,7 @@ const navItems = [
   {
     href: "/profile",
     label: "Profile",
+    color: "#4a9e6a",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -66,14 +70,14 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200 ${
-                isActive
-                  ? "text-amber-sun"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
+              className="flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200"
+              style={{ color: isActive ? item.color : "#4a5e4d" }}
             >
               {item.icon}
-              <span className="text-[9px] font-body tracking-wider uppercase">
+              <span
+                className="text-[9px] font-body tracking-wider uppercase"
+                style={{ color: isActive ? item.color : "#4a5e4d" }}
+              >
                 {item.label}
               </span>
             </Link>
