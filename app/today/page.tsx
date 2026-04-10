@@ -217,8 +217,8 @@ function PlanetCard({ planet }: { planet: Planet }) {
       className="flex flex-col items-center rounded-2xl px-3 py-3 min-w-[76px] shrink-0 gap-0.5"
       style={{ background: "#0a1f12", border: `1px solid ${color}30` }}
     >
-      <div className="flex items-center gap-1">
-        <span className="text-2xl leading-none" style={{ color, opacity: 0.9 }}>
+      <div className="flex items-center gap-1 h-8 items-center justify-center">
+        <span style={{ color, opacity: 0.9, fontSize: "1.4rem", lineHeight: 1, display: "flex", alignItems: "center", height: "2rem" }}>
           {planet.symbol}
         </span>
         {planet.retrograde && (
