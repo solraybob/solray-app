@@ -122,10 +122,10 @@ export default function PreviewPage() {
 
       const data = await res.json();
       setResult({
-        sun_sign: data.sun_sign || data.sun || "Unknown",
-        moon_sign: data.moon_sign || data.moon || "Unknown",
-        rising_sign: data.rising_sign || data.rising || "Unknown",
-        hd_type: data.hd_type || data.human_design_type || "Unknown",
+        sun_sign: data.blueprint?.summary?.sun_sign || data.profile?.sun_sign || data.sun_sign || "Unknown",
+        moon_sign: data.blueprint?.summary?.moon_sign || data.profile?.moon_sign || data.moon_sign || "Unknown",
+        rising_sign: data.blueprint?.summary?.ascendant || data.profile?.rising_sign || data.rising_sign || "Unknown",
+        hd_type: data.blueprint?.human_design?.type || data.profile?.hd_type || data.hd_type || "Unknown",
       });
 
       // Show loading for a brief moment for effect
