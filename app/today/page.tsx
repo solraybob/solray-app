@@ -557,7 +557,7 @@ export default function TodayPage() {
                 />
               </div>
               <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
-                Solray
+                SOLRAY
               </span>
             </div>
             <div className="flex items-center gap-3">

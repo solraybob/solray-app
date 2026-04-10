@@ -230,7 +230,7 @@ export default function PreviewPage() {
             />
           </div>
           <span className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
-            Solray
+            SOLRAY
           </span>
         </div>
 
