@@ -19,7 +19,7 @@ const config: Config = {
           sun: "#e8821a",
         },
         text: {
-          primary: "#f5f0e8",
+          primary: "#e8e0cc",
           secondary: "#8a9e8d",
         },
       },

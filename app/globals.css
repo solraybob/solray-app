@@ -10,7 +10,7 @@
   --card: #0a1f12;
   --border: #1a3020;
   --amber: #e8821a;
-  --text-primary: #f5f0e8;
+  --text-primary: #e8e0cc;
   --text-secondary: #8a9e8d;
 }
 
@@ -20,7 +20,7 @@
 
 html, body {
   background-color: #050f08;
-  color: #f5f0e8;
+  color: #e8e0cc;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
