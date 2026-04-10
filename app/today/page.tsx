@@ -321,13 +321,13 @@ function HeroImageCard({
           priority
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/50" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.65) 100%)" }} />
 
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
             className="font-heading text-3xl leading-[1.3] text-center"
-            style={{ color: "#e8e0cc", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+            style={{ color: "#e8e0cc", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)" }}
           >
             {dayTitle}
           </h1>
