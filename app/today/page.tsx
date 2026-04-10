@@ -9,6 +9,9 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
+import SolarReturnCard from "@/components/SolarReturnCard";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import TodayAlertCard from "@/components/TodayAlertCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -53,6 +56,14 @@ interface TagDetails {
   gene_keys: string;
 }
 
+interface Aspect {
+  planet: string;
+  planet_symbol: string;
+  natal_planet: string;
+  aspect_type: string;
+  orb: number;
+}
+
 interface ForecastData {
   day_title: string;
   reading: string;
@@ -64,6 +75,7 @@ interface ForecastData {
   tag_details?: TagDetails;
   energy: EnergyLevels;
   planets: Planet[];
+  aspects?: Aspect[];
   morning_greeting?: string;
   lunar_event?: LunarEvent;
 }
@@ -320,6 +332,7 @@ function parseForecastData(data: any): ForecastData {
     return {
       ...data,
       planets,
+      aspects: data.aspects ?? undefined,
       tag_details: data.tag_details ?? undefined,
       lunar_event: data.lunar_event ?? undefined,
     };
@@ -348,6 +361,7 @@ function parseForecastData(data: any): ForecastData {
     return {
       ...MOCK_FORECAST,
       planets: planets.length > 0 ? planets : MOCK_FORECAST.planets,
+      aspects: data.aspects ?? undefined,
     };
   }
 }
@@ -358,6 +372,7 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
   const { token } = useAuth();
   const backgroundFetchDone = useRef(false);
 
@@ -449,6 +464,33 @@ export default function TodayPage() {
     fetchAndUpdate(false);
   }, [token]);
 
+  // Load birth date from localStorage
+  useEffect(() => {
+    try {
+      // Try from solray_user first
+      const userStr = localStorage.getItem("solray_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.birth_date) {
+          setBirthDate(user.birth_date);
+          return;
+        }
+      }
+
+      // Then try from solray_blueprint
+      const blueprintStr = localStorage.getItem("solray_blueprint");
+      if (blueprintStr) {
+        const blueprint = JSON.parse(blueprintStr);
+        if (blueprint.meta?.birth_date) {
+          setBirthDate(blueprint.meta.birth_date);
+          return;
+        }
+      }
+    } catch (_) {
+      // Ignore parse errors
+    }
+  }, []);
+
   // Staggered section reveal
   useEffect(() => {
     if (!forecast) return;
@@ -512,6 +554,13 @@ export default function TodayPage() {
               />
             </div>
 
+            {/* SOLAR RETURN CARD — between hero and moon cycle */}
+            {birthDate && (
+              <div className="max-w-lg mx-auto px-5 mt-4">
+                <SolarReturnCard birthDate={birthDate} />
+              </div>
+            )}
+
             {/* TODAY'S READING SUMMARY — shareable card */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <ReadingSummaryCard reading={forecast.reading} />
@@ -520,6 +569,24 @@ export default function TodayPage() {
             {/* MOON CYCLE BAR — below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
+            </div>
+
+            {/* Below fold content */}
+            <div className="max-w-lg mx-auto px-5">
+              {/* PUSH NOTIFICATION PROMPT — after moon cycle */}
+              <div className="mt-4">
+                <PushNotificationPrompt />
+              </div>
+
+              {/* TODAY'S ALERT CARD — after moon cycle and before energy bars */}
+              {forecast.aspects && forecast.aspects.length > 0 && (
+                <div className="mt-4">
+                  <TodayAlertCard
+                    aspect={forecast.aspects[0]}
+                    tagDetails={forecast.tag_details}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Below fold content */}
