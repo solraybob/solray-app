@@ -768,7 +768,7 @@ function MapSVG({
             <text
               key={`label-${line.planet}-${i}`}
               x={x + 3}
-              y={20}
+              y={30}
               fill={line.color}
               fontSize={9}
               fontFamily="Inter, sans-serif"
