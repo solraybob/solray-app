@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+function goDeeper(title: string, summary: string) {
+  try {
+    sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+      topic: title,
+      question: `I want to go deeper on this cycle: "${title}". ${summary ? `Here's what I know: ${summary.slice(0, 200)}. ` : ""}What does this mean for me specifically and how should I work with this energy?`
+    }));
+  } catch (_) {}
+  window.location.href = "/chat";
+}
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 
@@ -204,20 +215,28 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
         </p>
       )}
 
-      {/* Phase badge */}
-      <div className="flex items-center gap-2 mt-3">
-        <span
-          className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${
-            cycle.phase === "applying"
-              ? "border-amber-sun/40 text-amber-sun/70"
-              : "border-forest-border text-text-secondary/40"
-          }`}
+      {/* Phase badge + Go Deeper */}
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+              cycle.phase === "applying"
+                ? "border-amber-sun/40 text-amber-sun/70"
+                : "border-forest-border text-text-secondary/40"
+            }`}
+          >
+            {cycle.phase}
+          </span>
+          <span className="text-text-secondary/30 text-[9px] font-body">
+            orb {cycle.orb}°
+          </span>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); goDeeper(cycle.title, summary); }}
+          className="text-[10px] font-body tracking-wider text-amber-sun/60 hover:text-amber-sun transition-colors"
         >
-          {cycle.phase}
-        </span>
-        <span className="text-text-secondary/30 text-[9px] font-body">
-          orb {cycle.orb}°
-        </span>
+          Go Deeper →
+        </button>
       </div>
       </div>{/* end content z-10 */}
     </div>
@@ -271,11 +290,21 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
         </p>
       )}
 
-      {/* Expanded: full summary */}
+      {/* Expanded: full summary + Go Deeper */}
       {expanded && summary && (
-        <p className="text-text-secondary/50 text-[12px] font-body leading-snug mt-2 italic">
-          "{summary}"
-        </p>
+        <>
+          <p className="text-text-secondary/50 text-[12px] font-body leading-snug mt-2 italic">
+            "{summary}"
+          </p>
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={(e) => { e.stopPropagation(); goDeeper(cycle.title, summary); }}
+              className="text-[10px] font-body tracking-wider text-amber-sun/60 hover:text-amber-sun transition-colors"
+            >
+              Go Deeper →
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
