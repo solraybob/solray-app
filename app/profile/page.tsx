@@ -1016,8 +1016,7 @@ export default function ProfilePage() {
                                   className="h-full rounded-full"
                                   style={{
                                     width: `${val}%`,
-                                    background: barColor,
-                                    opacity: 0.7,
+                                    background: `linear-gradient(to right, ${barColor}, transparent)`,
                                   }}
                                 />
                               </div>
