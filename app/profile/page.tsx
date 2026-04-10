@@ -1038,11 +1038,11 @@ function HDRow({ label, value, meaning }: { label: string; value: string; meanin
   );
 }
 
-function GKPill({ label, value, color }: { label: string; value: string; color: string }) {
+function GKPill({ label, value, color, style }: { label: string; value: string; color: string; style?: React.CSSProperties }) {
   return (
     <div className="text-center">
       <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase mb-1">{label}</p>
-      <p className={`font-heading text-lg ${color}`}>{value}</p>
+      <p className={`font-heading text-lg ${color}`} style={style}>{value}</p>
     </div>
   );
 }
@@ -1376,9 +1376,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <GKPill label="Shadow" value={gk!.shadow} color="text-red-400/70" />
+                <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
                 <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="text-text-primary" />
+                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #b87dd4, #5b6ff5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

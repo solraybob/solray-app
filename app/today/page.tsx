@@ -147,6 +147,13 @@ function getEnergyNote(label: string, value: number): string {
   return bucket[2];
 }
 
+const ENERGY_COLORS: Record<string, string> = {
+  Mental: "#5b6ff5",
+  Emotional: "#e8821a",
+  Physical: "#4a7a5a",
+  Intuitive: "#b87dd4",
+};
+
 function EnergyBar({
   label,
   value,
@@ -156,6 +163,7 @@ function EnergyBar({
   value: number;
   animate: boolean;
 }) {
+  const color = ENERGY_COLORS[label] || "#e8821a";
   return (
     <div className="flex items-center gap-3">
       <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase">
@@ -163,25 +171,42 @@ function EnergyBar({
       </span>
       <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
         <div
-          className="h-full bg-amber-sun rounded-full transition-all duration-1000"
-          style={{ width: animate ? `${value * 10}%` : "0%" }}
+          className="h-full rounded-full transition-all duration-1000"
+          style={{ width: animate ? `${value * 10}%` : "0%", background: color }}
         />
       </div>
-      <span className="text-text-secondary text-xs font-body w-4 text-right">{value}</span>
+      <span className="text-xs font-body w-4 text-right" style={{ color }}>{value}</span>
     </div>
   );
 }
 
 // Planet card for the cosmic ticker strip
+const PLANET_COLORS: Record<string, string> = {
+  Sun: "#e8821a",
+  Moon: "#b87dd4",
+  Mercury: "#5b6ff5",
+  Venus: "#e8a0b4",
+  Mars: "#e85030",
+  Jupiter: "#e8c080",
+  Saturn: "#a09080",
+  Uranus: "#5b6ff5",
+  Neptune: "#b87dd4",
+  Pluto: "#9060c0",
+};
+
 function PlanetCard({ planet }: { planet: Planet }) {
+  const color = PLANET_COLORS[planet.name] || "#8a9e8d";
   return (
-    <div className="flex flex-col items-center bg-forest-card/60 border border-forest-border/60 rounded-2xl px-3 py-3 min-w-[76px] shrink-0 gap-0.5">
+    <div
+      className="flex flex-col items-center rounded-2xl px-3 py-3 min-w-[76px] shrink-0 gap-0.5"
+      style={{ background: "#0a1f12", border: `1px solid ${color}30` }}
+    >
       <div className="flex items-center gap-1">
-        <span className="text-2xl leading-none" style={{ opacity: 0.85 }}>
+        <span className="text-2xl leading-none" style={{ color, opacity: 0.9 }}>
           {planet.symbol}
         </span>
         {planet.retrograde && (
-          <span className="text-amber-sun/80 text-[10px] font-body leading-none mt-0.5">℞</span>
+          <span className="text-[10px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
         )}
       </div>
       <span className="text-text-secondary/80 text-[10px] font-body tracking-widest uppercase mt-0.5">
