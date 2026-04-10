@@ -8,8 +8,13 @@ import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import DepthSlides from "@/components/DepthSlides";
-import TodayAlertCard from "@/components/TodayAlertCard";
-import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import dynamic from "next/dynamic";
+
+// Dynamic imports — client-only, no SSR, can never crash the page
+const TodayAlertCard = dynamic(() => import("@/components/TodayAlertCard"), { ssr: false });
+const PushNotificationPrompt = dynamic(() => import("@/components/PushNotificationPrompt"), { ssr: false });
+const SolarReturnCard = dynamic(() => import("@/components/SolarReturnCard"), { ssr: false });
+const WeekSummaryCard = dynamic(() => import("@/components/WeekSummaryCard"), { ssr: false });
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -562,7 +567,14 @@ export default function TodayPage() {
               <MoonCycleBar planets={forecast.planets} />
             </div>
 
-            {/* TODAY'S ALERT + PUSH PROMPT */}
+            {/* SOLAR RETURN — dynamic, client-only, safe */}
+            {birthDate && (
+              <div className="max-w-lg mx-auto px-5 mt-4">
+                <SolarReturnCard birthDate={birthDate} />
+              </div>
+            )}
+
+            {/* TODAY'S ALERT + PUSH PROMPT + WEEK AHEAD — all dynamic, client-only */}
             <div className="max-w-lg mx-auto px-5 mt-4 space-y-3">
               {forecast.aspects && forecast.aspects.length > 0 && forecast.aspects[0].orb < 5 && (
                 <TodayAlertCard
@@ -570,6 +582,7 @@ export default function TodayPage() {
                   tagDetails={forecast.tag_details}
                 />
               )}
+              <WeekSummaryCard />
               <PushNotificationPrompt />
             </div>
 
