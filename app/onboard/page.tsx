@@ -6,15 +6,16 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 // Atmospheric image per step — fades in behind the question
 const STEP_IMAGES = [
   "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=60", // 1 name: warm candlelight
-  "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // 2 birth date: stars
-  "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // 3 birth time: moon
-  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60", // 4 birth place: earth
-  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=60", // 5 account: forest dawn
+  "https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=60", // 2 sex: soft silhouette
+  "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // 3 birth date: stars
+  "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // 4 birth time: moon
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60", // 5 birth place: earth
+  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=60", // 6 account: forest dawn
 ];
 
 // Magical blueprint calculation loading screen
@@ -93,6 +94,7 @@ function BlueprintLoader() {
 export default function OnboardPage() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
+  const [sex, setSex] = useState<"male" | "female" | "">("");
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
@@ -175,10 +177,11 @@ export default function OnboardPage() {
   const canProceed = () => {
     switch (step) {
       case 1: return name.trim().length > 0;
-      case 2: return birthDate.length === 10;
-      case 3: return timeUnknown || birthTime.length === 5;
-      case 4: return birthPlace.trim().length > 0;
-      case 5: return email.trim().length > 0 && password.length >= 6;
+      case 2: return sex === "male" || sex === "female";
+      case 3: return birthDate.length === 10;
+      case 4: return timeUnknown || birthTime.length === 5;
+      case 5: return birthPlace.trim().length > 0;
+      case 6: return email.trim().length > 0 && password.length >= 6;
       default: return false;
     }
   };
@@ -197,6 +200,7 @@ export default function OnboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          sex: sex || null,
           birth_date: birthDate,
           birth_time: timeUnknown ? "12:00" : birthTime,
           birth_city: birthPlace,
@@ -306,6 +310,33 @@ export default function OnboardPage() {
           )}
 
           {step === 2 && (
+            <StepWrapper label="How do you identify?" subtitle="Used to tune your reading — nothing more.">
+              <div className="grid grid-cols-2 gap-3">
+                {(["female", "male"] as const).map((opt) => {
+                  const active = sex === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSex(opt)}
+                      className="sex-card"
+                      style={{
+                        borderColor: active ? "#e8821a" : "#1a3020",
+                        background: active ? "rgba(232,130,26,0.08)" : "transparent",
+                        color: active ? "#f5f0e8" : "#8a9e8d",
+                      }}
+                    >
+                      <span className="font-heading text-2xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
+                        {opt === "female" ? "Female" : "Male"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </StepWrapper>
+          )}
+
+          {step === 3 && (
             <StepWrapper label="When were you born?">
               <input
                 autoFocus
@@ -318,7 +349,7 @@ export default function OnboardPage() {
             </StepWrapper>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <StepWrapper label="What time were you born?">
               {!timeUnknown && (
                 <input
@@ -341,7 +372,7 @@ export default function OnboardPage() {
             </StepWrapper>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <StepWrapper label="Where were you born?">
               <div className="relative">
                 <input
@@ -394,7 +425,7 @@ export default function OnboardPage() {
             </StepWrapper>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <StepWrapper label={`Welcome, ${name}.`} subtitle="Create your account to begin.">
               <input
                 autoFocus
@@ -461,6 +492,24 @@ export default function OnboardPage() {
         }
         .onboard-input::placeholder {
           color: #8a9e8d;
+        }
+        .sex-card {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 28px 12px;
+          border: 1px solid #1a3020;
+          border-radius: 14px;
+          background: transparent;
+          transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+          cursor: pointer;
+        }
+        .sex-card:hover {
+          border-color: rgba(232,130,26,0.55);
+          color: #f5f0e8;
+        }
+        .sex-card:active {
+          transform: scale(0.98);
         }
         .city-dropdown {
           position: absolute;

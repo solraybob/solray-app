@@ -45,6 +45,64 @@ interface ConnectedSoul {
   connected_since: string;
 }
 
+// Person saved locally without an account — birth data + cached profile
+interface SavedPerson {
+  id: string;                // local uuid
+  name: string;
+  sex: "female" | "male" | null;
+  birth_date: string;        // YYYY-MM-DD
+  birth_time: string;        // HH:MM
+  birth_city: string;
+  profile: {
+    sun_sign: string | null;
+    hd_type: string | null;
+    hd_profile: string | null;
+  };
+  created_at: number;
+}
+
+type BondLens = "romantic" | "friendship" | "working";
+type BondPartner =
+  | { kind: "saved"; person: SavedPerson }
+  | { kind: "connection"; connection: ConnectedSoul };
+
+const SAVED_PEOPLE_KEY = "solray_saved_people";
+
+function loadSavedPeople(): SavedPerson[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SAVED_PEOPLE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedPeople(people: SavedPerson[]) {
+  try {
+    localStorage.setItem(SAVED_PEOPLE_KEY, JSON.stringify(people));
+  } catch {
+    // quota etc — fail quiet
+  }
+}
+
+function partnerName(p: BondPartner): string {
+  return p.kind === "saved" ? p.person.name : p.connection.soul.name;
+}
+
+function partnerInitial(p: BondPartner): string {
+  const n = partnerName(p);
+  return n?.[0]?.toUpperCase() || "·";
+}
+
+function partnerChart(p: BondPartner): { sun_sign: string | null; hd_type: string | null; hd_profile: string | null } {
+  if (p.kind === "saved") return p.person.profile;
+  const s = p.connection.soul;
+  return { sun_sign: s.sun_sign, hd_type: s.hd_type, hd_profile: s.hd_profile };
+}
+
 // Generate a short session code
 function generateSessionCode(): string {
   return Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -195,6 +253,19 @@ export default function SoulsPage() {
   const [groupSession, setGroupSession] = useState<{ soul: ConnectedSoul; code: string } | null>(null);
   // Inline error surface — softer than alert(), matches Japanese-way quiet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Quick Bond state — hybrid local-chart flow
+  const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
+  const [bondPartner, setBondPartner] = useState<BondPartner | null>(null);
+  const [bondLens, setBondLens] = useState<BondLens>("romantic");
+  const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
+  const [addPersonOpen, setAddPersonOpen] = useState(false);
+  const [readingBond, setReadingBond] = useState(false);
+
+  // Hydrate saved people from localStorage once on mount
+  useEffect(() => {
+    setSavedPeople(loadSavedPeople());
+  }, []);
 
   // Clear the inline error after a few seconds
   useEffect(() => {
@@ -348,6 +419,69 @@ export default function SoulsPage() {
     router.push(`/group/${code}`);
   };
 
+  // Persist a newly-added person and auto-select them as the bond partner
+  const handlePersonAdded = (person: SavedPerson) => {
+    const next = [person, ...savedPeople].slice(0, 50);
+    setSavedPeople(next);
+    writeSavedPeople(next);
+    setBondPartner({ kind: "saved", person });
+    setAddPersonOpen(false);
+  };
+
+  const handlePersonRemove = (id: string) => {
+    const next = savedPeople.filter((p) => p.id !== id);
+    setSavedPeople(next);
+    writeSavedPeople(next);
+    if (bondPartner?.kind === "saved" && bondPartner.person.id === id) {
+      setBondPartner(null);
+    }
+  };
+
+  // Fire the Bond reading — route to /chat?compat=1 with context
+  const readTheBond = async () => {
+    if (!bondPartner) return;
+    setReadingBond(true);
+    setErrorMessage(null);
+
+    const chart = partnerChart(bondPartner);
+    const pName = partnerName(bondPartner);
+    const lensLabel =
+      bondLens === "romantic" ? "romantic dynamic"
+      : bondLens === "friendship" ? "friendship dynamic"
+      : "working dynamic";
+
+    const chartSummary = [
+      chart.sun_sign && `Sun in ${chart.sun_sign}`,
+      chart.hd_type && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
+    ].filter(Boolean).join(", ");
+
+    // For saved-person partners we already have a computed blueprint-shape
+    // from /souls/calculate-blueprint; for connection partners we fetch it.
+    let soulBlueprint: unknown = null;
+    if (bondPartner.kind === "connection") {
+      try {
+        const data = await apiFetch(`/souls/${bondPartner.connection.connection_id}/blueprint`, {}, token);
+        soulBlueprint = data?.blueprint || null;
+      } catch {
+        setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+      }
+    }
+
+    const introMessage = chartSummary
+      ? `Read the ${lensLabel} between me and ${pName}. Their chart: ${chartSummary}. Where does our energy meet, and where does it friction?`
+      : `Read the ${lensLabel} between me and ${pName}. Where does our energy meet, and where does it friction?`;
+
+    sessionStorage.setItem("solray_compat_context", JSON.stringify({
+      soulName: pName,
+      introMessage,
+      soulBlueprint,
+      lens: bondLens,
+    }));
+
+    setReadingBond(false);
+    router.push("/chat?compat=1");
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep pb-24">
@@ -387,15 +521,34 @@ export default function SoulsPage() {
           </div>{/* end z-10 */}
         </div>{/* end header */}
 
-        <div className="max-w-lg mx-auto px-5 space-y-6 animate-fade-in">
-          {/* Search */}
+        <div className="max-w-lg mx-auto px-5 space-y-8 animate-fade-in">
+          {/* Hero: Read the Bond */}
+          <BondCard
+            myName={myUsername || null}
+            partner={bondPartner}
+            lens={bondLens}
+            onPickPartner={() => {
+              // If nothing saved and no connections, jump straight to Add
+              if (savedPeople.length === 0 && connectedSouls.length === 0) {
+                setAddPersonOpen(true);
+              } else {
+                setPartnerPickerOpen(true);
+              }
+            }}
+            onChangeLens={setBondLens}
+            onRead={readTheBond}
+            reading={readingBond}
+          />
+
+          {/* Search — for deeper two-way connections with Solray users */}
           <div>
+            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2">Find a Soul</p>
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
-                placeholder="Search by @username or email"
+                placeholder="@username or email"
                 className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = "#4a6670";
@@ -527,7 +680,7 @@ export default function SoulsPage() {
               <div>
                 {connectedSouls.length > 0 ? (
                   <>
-                    <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Your Constellation</p>
+                    <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Connections</p>
                     <div className="space-y-3">
                       {connectedSouls.map(connection => (
                         <SoulCard
@@ -539,26 +692,9 @@ export default function SoulsPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center pt-8">
-                    <div className="relative inline-block mb-6">
-                      <div
-                        className="absolute inset-0 rounded-full blur-2xl"
-                        style={{
-                          background: "rgba(74, 102, 112,0.15)",
-                          width: "120px",
-                          height: "120px",
-                          left: "50%",
-                          top: "50%",
-                          transform: "translate(-50%, -50%)",
-                        }}
-                      />
-                      <div className="relative text-7xl" style={{ color: "#4a6670" }}>
-                        ✦
-                      </div>
-                    </div>
-                    <p className="font-heading text-2xl text-text-primary mb-2">Your constellation is empty</p>
-                    <p className="text-text-secondary text-sm font-body max-w-xs mx-auto">
-                      Search for someone by their @username or email to send a connection request.
+                  <div className="text-center pt-4 pb-2">
+                    <p className="font-body text-text-secondary text-[12px] max-w-xs mx-auto">
+                      No two-way connections yet. Invite someone above to share readings together.
                     </p>
                   </div>
                 )}
@@ -587,9 +723,467 @@ export default function SoulsPage() {
           />
         )}
 
+        {/* Partner picker sheet */}
+        {partnerPickerOpen && (
+          <PartnerPicker
+            savedPeople={savedPeople}
+            connections={connectedSouls}
+            onPick={(p) => {
+              setBondPartner(p);
+              setPartnerPickerOpen(false);
+            }}
+            onAddNew={() => {
+              setPartnerPickerOpen(false);
+              setAddPersonOpen(true);
+            }}
+            onRemoveSaved={handlePersonRemove}
+            onClose={() => setPartnerPickerOpen(false)}
+          />
+        )}
+
+        {/* Add-person sheet */}
+        {addPersonOpen && (
+          <AddPersonSheet
+            onClose={() => setAddPersonOpen(false)}
+            onAdded={handlePersonAdded}
+          />
+        )}
+
         <BottomNav />
       </div>
     </ProtectedRoute>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bond entry card — hero on the Souls page
+// ---------------------------------------------------------------------------
+
+interface BondCardProps {
+  myName: string | null;
+  partner: BondPartner | null;
+  lens: BondLens;
+  onPickPartner: () => void;
+  onChangeLens: (l: BondLens) => void;
+  onRead: () => void;
+  reading: boolean;
+}
+
+function BondCard({ myName, partner, lens, onPickPartner, onChangeLens, onRead, reading }: BondCardProps) {
+  const lenses: { key: BondLens; label: string; hint: string }[] = [
+    { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
+    { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
+    { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
+  ];
+  const chart = partner ? partnerChart(partner) : null;
+
+  return (
+    <div
+      className="rounded-3xl p-6 relative overflow-hidden"
+      style={{
+        background: "linear-gradient(155deg, rgba(232,130,26,0.10) 0%, rgba(10,31,18,0.95) 55%, #0a1f12 100%)",
+        border: "1px solid rgba(232,130,26,0.25)",
+        boxShadow: "0 20px 60px -30px rgba(232,130,26,0.35)",
+      }}
+    >
+      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-amber-sun/70 mb-1">Read the Bond</p>
+      <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
+        Where two charts meet.
+      </h2>
+
+      {/* You & Partner pills */}
+      <div className="flex items-center gap-3 mb-5">
+        {/* You — fixed */}
+        <div
+          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full"
+          style={{
+            background: "rgba(245,240,232,0.04)",
+            border: "1px solid rgba(245,240,232,0.12)",
+          }}
+        >
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-forest-deep font-heading text-sm"
+               style={{ background: "linear-gradient(135deg, #e8821a, #c86010)" }}>
+            {myName?.[0]?.toUpperCase() || "·"}
+          </div>
+          <span className="font-body text-[12px] text-text-primary">You</span>
+        </div>
+
+        <span className="text-amber-sun/60 text-sm" aria-hidden="true">✦</span>
+
+        {/* Partner — picker */}
+        <button
+          type="button"
+          onClick={onPickPartner}
+          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full flex-1 min-w-0 transition-all hover:border-amber-sun/60"
+          style={{
+            background: partner ? "rgba(232,130,26,0.08)" : "transparent",
+            border: partner ? "1px solid rgba(232,130,26,0.45)" : "1px dashed rgba(245,240,232,0.25)",
+          }}
+        >
+          {partner ? (
+            <>
+              <div className="w-7 h-7 rounded-full bg-forest-border flex items-center justify-center font-heading text-sm text-text-primary shrink-0">
+                {partnerInitial(partner)}
+              </div>
+              <span className="font-body text-[12px] text-text-primary truncate">{partnerName(partner)}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center font-body text-[13px] text-text-secondary shrink-0"
+                   style={{ border: "1px dashed rgba(245,240,232,0.25)" }}>+</div>
+              <span className="font-body text-[12px] text-text-secondary">Choose someone</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Chart whisper for the selected partner */}
+      {partner && chart && (chart.sun_sign || chart.hd_type) && (
+        <p className="font-body text-[11px] text-text-secondary mb-5 -mt-2 pl-1">
+          {chart.sun_sign && <>☉ {chart.sun_sign}</>}
+          {chart.sun_sign && chart.hd_type && " · "}
+          {chart.hd_type && (
+            <>{chart.hd_type}{chart.hd_profile ? ` ${chart.hd_profile}` : ""}</>
+          )}
+        </p>
+      )}
+
+      {/* Lens pills */}
+      <div className="mb-6">
+        <p className="font-body text-[9px] tracking-[0.22em] uppercase text-text-secondary mb-2">Lens</p>
+        <div className="flex gap-2">
+          {lenses.map((l) => {
+            const active = lens === l.key;
+            return (
+              <button
+                key={l.key}
+                type="button"
+                onClick={() => onChangeLens(l.key)}
+                className="flex-1 py-2 rounded-xl transition-all"
+                style={{
+                  background: active ? "rgba(232,130,26,0.15)" : "rgba(245,240,232,0.03)",
+                  border: active ? "1px solid rgba(232,130,26,0.55)" : "1px solid rgba(245,240,232,0.08)",
+                  color: active ? "#f5f0e8" : "#8a9e8d",
+                }}
+                title={l.hint}
+              >
+                <span className="font-body text-[11px]">{l.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRead}
+        disabled={!partner || reading}
+        className="w-full py-3.5 rounded-xl font-body font-semibold text-[13px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        style={{
+          background: "linear-gradient(135deg, #e8821a, #c86010)",
+          color: "#060f08",
+        }}
+      >
+        {reading ? <LoadingSpinner size="sm" /> : "Read the Bond →"}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Partner picker — choose from saved people, connections, or add new
+// ---------------------------------------------------------------------------
+
+interface PartnerPickerProps {
+  savedPeople: SavedPerson[];
+  connections: ConnectedSoul[];
+  onPick: (partner: BondPartner) => void;
+  onAddNew: () => void;
+  onRemoveSaved: (id: string) => void;
+  onClose: () => void;
+}
+
+function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSaved, onClose }: PartnerPickerProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-5 pt-5 pb-10 max-h-[82dvh] overflow-y-auto">
+        <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
+        <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 400 }}>Choose someone</h3>
+
+        <button
+          type="button"
+          onClick={onAddNew}
+          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-4 transition-all"
+          style={{
+            background: "rgba(232,130,26,0.08)",
+            border: "1px solid rgba(232,130,26,0.35)",
+          }}
+        >
+          <div className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-lg text-forest-deep shrink-0"
+               style={{ background: "linear-gradient(135deg, #e8821a, #c86010)" }}>+</div>
+          <div className="flex-1 text-left">
+            <p className="font-body text-text-primary text-sm font-semibold">Add someone new</p>
+            <p className="font-body text-text-secondary text-[11px]">Their birth data stays on your device</p>
+          </div>
+        </button>
+
+        {savedPeople.length > 0 && (
+          <div className="mb-4">
+            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2 px-1">Your People</p>
+            <div className="space-y-2">
+              {savedPeople.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => onPick({ kind: "saved", person: p })}
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                      <span className="font-heading text-base text-text-primary">{p.name?.[0]?.toUpperCase() || "·"}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
+                      <p className="text-text-secondary text-[11px] font-body truncate">
+                        {p.profile.sun_sign && <>☉ {p.profile.sun_sign}</>}
+                        {p.profile.sun_sign && p.profile.hd_type && " · "}
+                        {p.profile.hd_type}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${p.name}`}
+                    onClick={() => onRemoveSaved(p.id)}
+                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-text-secondary hover:text-ember transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {connections.length > 0 && (
+          <div>
+            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2 px-1">Connections</p>
+            <div className="space-y-2">
+              {connections.map((c) => (
+                <button
+                  key={c.connection_id}
+                  type="button"
+                  onClick={() => onPick({ kind: "connection", connection: c })}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl text-left"
+                >
+                  <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                    <span className="font-heading text-base text-text-primary">{c.soul.name?.[0]?.toUpperCase() || "·"}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-text-primary text-sm font-semibold truncate">{c.soul.name}</p>
+                    <p className="text-text-secondary text-[11px] font-body truncate">
+                      {c.soul.sun_sign && <>☉ {c.soul.sun_sign}</>}
+                      {c.soul.sun_sign && c.soul.hd_type && " · "}
+                      {c.soul.hd_type}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {savedPeople.length === 0 && connections.length === 0 && (
+          <p className="text-text-secondary text-xs font-body text-center py-6">
+            No one here yet. Add your first person above.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add-person sheet — collects birth data, calls /souls/calculate-blueprint
+// ---------------------------------------------------------------------------
+
+interface AddPersonSheetProps {
+  onClose: () => void;
+  onAdded: (person: SavedPerson) => void;
+}
+
+function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
+  const [name, setName] = useState("");
+  const [sex, setSex] = useState<"female" | "male" | "">("");
+  const [birthDate, setBirthDate] = useState("");
+  const [birthTime, setBirthTime] = useState("");
+  const [timeUnknown, setTimeUnknown] = useState(false);
+  const [birthCity, setBirthCity] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSubmit =
+    name.trim().length > 0 &&
+    (sex === "female" || sex === "male") &&
+    birthDate.length === 10 &&
+    (timeUnknown || birthTime.length === 5) &&
+    birthCity.trim().length > 0 &&
+    !submitting;
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError(null);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    try {
+      const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          sex: sex || null,
+          birth_date: birthDate,
+          birth_time: timeUnknown ? "12:00" : birthTime,
+          birth_city: birthCity,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Couldn't read their chart. Check the city name.");
+      }
+      const data = await res.json();
+      const person: SavedPerson = {
+        id: typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        name: name.trim(),
+        sex: sex || null,
+        birth_date: birthDate,
+        birth_time: timeUnknown ? "12:00" : birthTime,
+        birth_city: birthCity.trim(),
+        profile: {
+          sun_sign: data?.profile?.sun_sign ?? null,
+          hd_type: data?.profile?.hd_type ?? null,
+          hd_profile: data?.profile?.hd_profile ?? null,
+        },
+        created_at: Date.now(),
+      };
+      onAdded(person);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Something drifted. Try again.";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-10 max-h-[92dvh] overflow-y-auto">
+        <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
+        <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>Add someone</h3>
+        <p className="font-body text-text-secondary text-[12px] mb-5">Their birth data stays on your device. Nothing is shared without their consent.</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Their first name"
+              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-amber-sun transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Sex</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["female", "male"] as const).map((opt) => {
+                const active = sex === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSex(opt)}
+                    className="py-2.5 rounded-xl transition-all font-body text-[12px]"
+                    style={{
+                      background: active ? "rgba(232,130,26,0.10)" : "transparent",
+                      border: active ? "1px solid rgba(232,130,26,0.55)" : "1px solid rgba(245,240,232,0.12)",
+                      color: active ? "#f5f0e8" : "#8a9e8d",
+                    }}
+                  >
+                    {opt === "female" ? "Female" : "Male"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth date</label>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-amber-sun transition-colors"
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+            <div>
+              <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth time</label>
+              <input
+                type="time"
+                value={birthTime}
+                onChange={(e) => setBirthTime(e.target.value)}
+                disabled={timeUnknown}
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-amber-sun transition-colors disabled:opacity-40"
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTimeUnknown(!timeUnknown)}
+            className={`font-body text-[11px] tracking-wider transition-colors -mt-2 ${
+              timeUnknown ? "text-amber-sun" : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {timeUnknown ? "✓ Using noon" : "Unknown birth time"}
+          </button>
+
+          <div>
+            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth city</label>
+            <input
+              type="text"
+              value={birthCity}
+              onChange={(e) => setBirthCity(e.target.value)}
+              placeholder="City, Country"
+              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-amber-sun transition-colors"
+            />
+          </div>
+
+          {error && (
+            <p className="text-ember text-[12px] font-body">{error}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSubmit}
+            className="w-full py-3.5 rounded-xl font-body font-semibold text-[13px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
+            style={{
+              background: "linear-gradient(135deg, #e8821a, #c86010)",
+              color: "#060f08",
+            }}
+          >
+            {submitting ? <LoadingSpinner size="sm" /> : "Read their chart"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
