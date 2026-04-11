@@ -675,6 +675,7 @@ const [showHistory, setShowHistory] = useState(false);
                   + New
                 </button>
               </div>
+            </div>
           </div>
         </div>
 
@@ -900,8 +901,7 @@ const [showHistory, setShowHistory] = useState(false);
                                   ? "bg-forest-card text-text-primary"
                                   : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
                               }`}
-                              style={s.sessionId === sessionId ? { border: "1px solid #7d6680" } : undefined
-                              }`}
+                              style={s.sessionId === sessionId ? { border: "1px solid #7d6680" } : undefined}
                             >
                               <p className="font-body text-text-secondary text-[10px] tracking-widest mb-1">
                                 {s.customName || s.date}
