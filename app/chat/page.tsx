@@ -734,15 +734,7 @@ const [showHistory, setShowHistory] = useState(false);
               //    when they open chat: a full-width poetic moment, not UI.
               if (msg.id === "greeting") {
                 return (
-                  <div key={msg.id} className="flex flex-col items-center text-center pt-8 pb-4 animate-fade-in">
-                    {/* Ambient glow */}
-                    <div
-                      className="w-12 h-12 rounded-full overflow-hidden mb-5"
-                      style={{ boxShadow: "0 0 32px rgba(125,102,128,0.25), 0 0 64px rgba(125,102,128,0.10)" }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo.jpg" alt="" aria-hidden="true" className="w-full h-full object-cover" />
-                    </div>
+                  <div key={msg.id} className="flex flex-col items-center text-center pt-4 pb-4 animate-fade-in">
                     {/* The greeting text — Cormorant Garamond, italic, large */}
                     <p
                       className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
