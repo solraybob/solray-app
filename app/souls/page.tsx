@@ -505,19 +505,12 @@ export default function SoulsPage() {
           <div className="relative z-10">
           <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary" style={{ color: "#4a6670" }}>Your Field</p>
           <h1 className="font-heading text-3xl text-text-primary leading-tight" style={{ fontWeight: 300, letterSpacing: "-0.01em" }}>Souls</h1>
-          {myUsername && (
-            <p className="text-text-secondary text-sm font-body mt-3">
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs"
-                style={{
-                  background: "rgba(74, 102, 112,0.12)",
-                  color: "#4a6670",
-                }}
-              >
-                @{myUsername}
-              </span>
-            </p>
-          )}
+          <p
+            className="font-body text-sm mt-3 leading-relaxed"
+            style={{ color: "#4a6670", fontStyle: "italic" }}
+          >
+            Bring a chart. See where the energies meet.
+          </p>
           </div>{/* end z-10 */}
         </div>{/* end header */}
 
