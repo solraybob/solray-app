@@ -842,7 +842,7 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep pb-28">
+      <div className="min-h-[100dvh] bg-forest-deep pb-28">
         {/* Header bar */}
         <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50" style={{ background: "linear-gradient(180deg, rgba(74,158,106,0.08) 0%, transparent 100%)" }}>
           <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
@@ -1280,17 +1280,21 @@ function parseBlueprintForChart(blueprint: any) {
   return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
 }
 
-// Helper: open chat with a pre-set question about a profile element
-function askAbout(topic: string, question: string) {
-  sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic, question }));
-  window.location.href = "/chat";
-}
-
+// Ask button — opens chat with a pre-set question about a profile element.
+// Uses router.push so React state and auth context are preserved (avoids the
+// full page reload that window.location.href would cause).
 function AskButton({ topic, question }: { topic: string; question: string }) {
+  const router = useRouter();
+  const handleClick = () => {
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic, question }));
+    } catch (_) {}
+    router.push("/chat");
+  };
   return (
     <button
-      onClick={() => askAbout(topic, question)}
-      className="font-body text-[10px] tracking-widest uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+      onClick={handleClick}
+      className="font-body text-[10px] tracking-[0.22em] uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
     >
       Ask →
     </button>
@@ -1300,20 +1304,59 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
 function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
   // token is passed through to AstroGeography
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
+  const [chartReady, setChartReady] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!token) return;
-    try {
-      const cached = localStorage.getItem("solray_blueprint");
-      if (cached) {
-        const bp = JSON.parse(cached);
-        setChart(parseBlueprintForChart(bp));
-      }
-    } catch (_) {}
+    // The parent ProfilePage already writes solray_blueprint to localStorage
+    // before we mount. We re-read it here to parse the chart shape for these
+    // sections. If the cache isn't there yet (race on first load), we retry
+    // once on the next tick rather than silently rendering nothing.
+    let cancelled = false;
+    const tryLoad = () => {
+      try {
+        const cached = localStorage.getItem("solray_blueprint");
+        if (cached) {
+          const bp = JSON.parse(cached);
+          if (!cancelled) {
+            setChart(parseBlueprintForChart(bp));
+            setChartReady(true);
+          }
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    };
+    if (!tryLoad()) {
+      const t = setTimeout(() => {
+        if (!tryLoad() && !cancelled) setChartReady(true);
+      }, 200);
+      return () => { cancelled = true; clearTimeout(t); };
+    }
+    return () => { cancelled = true; };
   }, [token]);
 
-  if (!chart) return null;
+  if (!chartReady) {
+    // Quiet placeholder — better than blank
+    return (
+      <div className="space-y-3 mb-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-14 rounded-2xl border border-forest-border/40 bg-forest-card/20 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!chart) {
+    return (
+      <div className="mb-4 rounded-2xl border border-forest-border/50 bg-forest-card/30 px-5 py-6 text-center">
+        <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+          Your blueprint is still being woven. Refresh in a moment.
+        </p>
+      </div>
+    );
+  }
 
   const corePlanets = ["Sun", "Moon", "ASC"];
   const core = chart.natal.filter((p) => corePlanets.includes(p.planet));

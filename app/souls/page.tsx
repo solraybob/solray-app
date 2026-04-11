@@ -1,20 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
-
-// Sign symbols
-// Use clean text abbreviations instead of emoji symbols
-const SIGN_SYMBOLS: Record<string, string> = {
-  Aries: "Ari", Taurus: "Tau", Gemini: "Gem", Cancer: "Can",
-  Leo: "Leo", Virgo: "Vir", Libra: "Lib", Scorpio: "Sco",
-  Sagittarius: "Sag", Capricorn: "Cap", Aquarius: "Aqu", Pisces: "Pis",
-};
 
 // Types
 interface SearchResult {
@@ -58,6 +50,17 @@ function generateSessionCode(): string {
   return Math.random().toString(36).slice(2, 9).toUpperCase();
 }
 
+// Deduplicate connected souls by the underlying user id
+// (both sides of a connection may appear in the list)
+function dedupeSouls(souls: ConnectedSoul[]): ConnectedSoul[] {
+  const seen = new Set<string>();
+  return souls.filter((s) => {
+    if (seen.has(s.soul.id)) return false;
+    seen.add(s.soul.id);
+    return true;
+  });
+}
+
 // Soul action sheet shown when tapping a connected soul
 interface SoulActionsProps {
   soul: ConnectedSoul;
@@ -74,7 +77,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
         <div className="flex items-center gap-4 mb-6">
           <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-            <span className="font-heading text-xl text-text-primary">{soul.soul.name[0]}</span>
+            <span className="font-heading text-xl text-text-primary">{soul.soul.name?.[0]?.toUpperCase() || "·"}</span>
           </div>
           <div>
             <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{soul.soul.name}</h3>
@@ -128,7 +131,7 @@ interface GroupShareProps {
 
 function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupShareProps) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://solray-app.vercel.app"}/group/${sessionCode}`;
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://app.solray.ai"}/group/${sessionCode}`;
 
   const handleCopy = async () => {
     try {
@@ -179,7 +182,6 @@ export default function SoulsPage() {
   const router = useRouter();
 
   const [myUsername, setMyUsername] = useState<string | null>(null);
-  const [myName, setMyName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -191,6 +193,15 @@ export default function SoulsPage() {
   const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
   const [activeSoul, setActiveSoul] = useState<ConnectedSoul | null>(null);
   const [groupSession, setGroupSession] = useState<{ soul: ConnectedSoul; code: string } | null>(null);
+  // Inline error surface — softer than alert(), matches Japanese-way quiet
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Clear the inline error after a few seconds
+  useEffect(() => {
+    if (!errorMessage) return;
+    const t = setTimeout(() => setErrorMessage(null), 4000);
+    return () => clearTimeout(t);
+  }, [errorMessage]);
 
   // Load profile + connections on mount
   useEffect(() => {
@@ -203,19 +214,10 @@ export default function SoulsPage() {
           apiFetch("/souls", {}, token),
         ]);
         setMyUsername(me?.profile?.username || null);
-        setMyName(me?.profile?.name || null);
         setPendingInvites(pending?.pending || []);
-        // Deduplicate by soul user ID (both sides of a connection may appear)
-        const rawSouls: ConnectedSoul[] = souls?.souls || [];
-        const seen = new Set<string>();
-        const deduped = rawSouls.filter(s => {
-          if (seen.has(s.soul.id)) return false;
-          seen.add(s.soul.id);
-          return true;
-        });
-        setConnectedSouls(deduped);
-      } catch (e) {
-        // ignore
+        setConnectedSouls(dedupeSouls(souls?.souls || []));
+      } catch {
+        setErrorMessage("Couldn't reach the field. Try again in a moment.");
       } finally {
         setLoading(false);
       }
@@ -223,27 +225,40 @@ export default function SoulsPage() {
     load();
   }, [token]);
 
-  // Search users
-  const handleSearch = useCallback(async (q: string) => {
+  // Debounced search — avoid firing /users/search on every keystroke
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     if (!q || q.length < 2) {
       setSearchResults([]);
+      setSearching(false);
       return;
     }
     setSearching(true);
-    try {
-      const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token);
-      setSearchResults(data?.results || []);
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token);
+        setSearchResults(data?.results || []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 280);
   }, [token]);
+
+  // Cleanup pending debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, []);
 
   // Send connection invite
   const handleSendInvite = async (identifier: string) => {
     setSendingInvite(identifier);
+    setErrorMessage(null);
     try {
       await apiFetch("/souls/invite", {
         method: "POST",
@@ -252,7 +267,7 @@ export default function SoulsPage() {
       setInviteSent(prev => new Set(prev).add(identifier));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "The signal didn't reach. Try once more.";
-      alert(msg);
+      setErrorMessage(msg);
     } finally {
       setSendingInvite(null);
     }
@@ -261,20 +276,18 @@ export default function SoulsPage() {
   // Accept or decline invite
   const handleInviteResponse = async (inviteId: string, accept: boolean) => {
     setRespondingInvite(inviteId);
+    setErrorMessage(null);
     try {
       const endpoint = accept ? `/souls/accept/${inviteId}` : `/souls/decline/${inviteId}`;
       await apiFetch(endpoint, { method: "POST" }, token);
       setPendingInvites(prev => prev.filter(i => i.invite_id !== inviteId));
       if (accept) {
-        // Reload connected souls
         const souls = await apiFetch("/souls", {}, token);
-        const raw: ConnectedSoul[] = souls?.souls || [];
-        const seen2 = new Set<string>();
-        setConnectedSouls(raw.filter(s => { if (seen2.has(s.soul.id)) return false; seen2.add(s.soul.id); return true; }));
+        setConnectedSouls(dedupeSouls(souls?.souls || []));
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed";
-      alert(msg);
+      const msg = e instanceof Error ? e.message : "Something drifted off course. Try again.";
+      setErrorMessage(msg);
     } finally {
       setRespondingInvite(null);
     }
@@ -283,13 +296,16 @@ export default function SoulsPage() {
   // Open solo compatibility chat
   const openSoloReading = async (soul: ConnectedSoul) => {
     setActiveSoul(null);
-    // Fetch their full blueprint for the chat
+    setErrorMessage(null);
+    // Fetch their full blueprint for the chat — proceed even if it fails,
+    // the chat still works from the summary chart data
     let soulBlueprint = null;
     try {
       const data = await apiFetch(`/souls/${soul.connection_id}/blueprint`, {}, token);
       soulBlueprint = data?.blueprint || null;
     } catch {
-      // proceed without blueprint
+      // Non-blocking: surface a quiet note but continue
+      setErrorMessage("Couldn't pull their full chart — reading from the basics.");
     }
 
     const chartSummary = [
@@ -334,7 +350,7 @@ export default function SoulsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep pb-24">
+      <div className="min-h-[100dvh] bg-forest-deep pb-24">
         {/* Header with blue gradient */}
         <div
           className="px-5 pt-12 pb-8 max-w-lg mx-auto relative overflow-hidden"
@@ -403,7 +419,7 @@ export default function SoulsPage() {
                 {searchResults.map(user => (
                   <div key={user.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
                     <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                      <span className="font-heading text-base text-text-primary">{user.name[0]}</span>
+                      <span className="font-heading text-base text-text-primary">{user.name?.[0]?.toUpperCase() || "·"}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-text-primary text-sm font-semibold truncate">{user.name}</p>
@@ -436,6 +452,22 @@ export default function SoulsPage() {
             )}
           </div>
 
+          {/* Quiet inline error surface — replaces alert() popups */}
+          {errorMessage && (
+            <div
+              className="rounded-xl px-4 py-3 font-body text-[12px] transition-opacity"
+              style={{
+                background: "rgba(196, 98, 58, 0.08)",
+                border: "1px solid rgba(196, 98, 58, 0.25)",
+                color: "#c4623a",
+              }}
+              role="status"
+              aria-live="polite"
+            >
+              {errorMessage}
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center pt-8">
               <LoadingSpinner size="md" />
@@ -457,7 +489,7 @@ export default function SoulsPage() {
                         }}
                       >
                         <div className="w-10 h-10 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                          <span className="font-heading text-lg text-text-primary">{invite.requester.name[0]}</span>
+                          <span className="font-heading text-lg text-text-primary">{invite.requester.name?.[0]?.toUpperCase() || "·"}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-body text-text-primary text-sm font-semibold truncate">{invite.requester.name}</p>
@@ -569,7 +601,7 @@ interface SoulCardProps {
 
 function SoulCard({ connection, onOpen }: SoulCardProps) {
   const { soul } = connection;
-  const sunSymbol = soul.sun_sign ? (SIGN_SYMBOLS[soul.sun_sign] || "") : "";
+  const avatarInitial = soul.name?.[0]?.toUpperCase() || "·";
 
   return (
     <button
@@ -590,7 +622,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
           }}
         >
           <div className="w-full h-full rounded-full bg-forest-card flex items-center justify-center">
-            <span className="font-heading text-xl text-text-primary">{soul.name[0]}</span>
+            <span className="font-heading text-xl text-text-primary">{avatarInitial}</span>
           </div>
         </div>
         <div className="flex-1">
