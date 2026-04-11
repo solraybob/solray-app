@@ -907,7 +907,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-5 pt-5 pb-10 max-h-[82dvh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-5 pt-5 pb-10 max-h-[92dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
         <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 400 }}>Choose someone</h3>
 
@@ -1080,7 +1080,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-10 max-h-[92dvh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
         <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>Add someone</h3>
         <p className="font-body text-text-secondary text-[12px] mb-5">Their birth data stays on your device. Nothing is shared without their consent.</p>
