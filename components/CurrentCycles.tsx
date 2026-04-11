@@ -139,12 +139,12 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
   return (
     <div
-      className="relative rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
-      style={{ minHeight: "160px" }}
+      className="rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
+      style={{ border: "1px solid rgba(26,48,32,0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
-      {/* Background image */}
-      <div className="absolute inset-0">
+      {/* Photo header — locked height, never grows */}
+      <div className="relative" style={{ minHeight: "160px" }}>
         <Image
           src={getCycleImage(cycle.transit_planet)}
           alt={cycle.transit_planet}
@@ -154,90 +154,55 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           unoptimized
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.65) 0%, rgba(5,15,8,0.85) 100%)" }} />
-      </div>
 
-      {/* Content over image */}
-      <div className="relative z-10 p-5">
-      {/* Title row */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <h3
-          className="font-heading text-text-primary leading-tight"
-          style={{ fontSize: "1.05rem", fontWeight: 400 }}
-        >
-          {humanizeCycleTitle(cycle.title)}
-        </h3>
-        <span
-          className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
-          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
-        >
-          ▾
-        </span>
-      </div>
+        {/* Content over image */}
+        <div className="relative z-10 p-5">
+          {/* Title row */}
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <h3 className="font-heading text-text-primary leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>
+              {humanizeCycleTitle(cycle.title)}
+            </h3>
+            <span
+              className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+              style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            >
+              ▾
+            </span>
+          </div>
 
-      {/* Progress bar */}
-      <div className="mb-3">
-        <div className="relative h-1.5 bg-forest-border rounded-full overflow-visible">
-          {/* Track fill */}
-          <div
-            className="absolute left-0 top-0 h-full bg-amber-sun/60 rounded-full transition-all duration-700"
-            style={{ width: `${progress}%` }}
-          />
-          {/* Peak marker */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3 bg-amber-sun rounded-full shadow-sm"
-            style={{ left: `${peakPos}%`, transform: "translateX(-50%) translateY(-50%)" }}
-            title="Peak"
-          />
-          {/* Current position dot */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep"
-            style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }}
-          />
-        </div>
-        {/* Labels: start — peak — end */}
-        <div className="flex justify-between mt-1.5">
-          <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">
-            {fmtDate(cycle.started)}
-          </span>
-          <span className="text-amber-sun/60 text-[9px] font-body tracking-wide">
-            Peak {fmtDate(cycle.peak)}
-          </span>
-          <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">
-            {fmtDate(cycle.ends)}
-          </span>
+          {/* Progress bar */}
+          <div className="mb-3">
+            <div className="relative h-1.5 bg-forest-border rounded-full overflow-visible">
+              <div className="absolute left-0 top-0 h-full bg-amber-sun/60 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+              <div className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3 bg-amber-sun rounded-full shadow-sm" style={{ left: `${peakPos}%`, transform: "translateX(-50%) translateY(-50%)" }} title="Peak" />
+              <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep" style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }} />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">{fmtDate(cycle.started)}</span>
+              <span className="text-amber-sun/60 text-[9px] font-body tracking-wide">Peak {fmtDate(cycle.peak)}</span>
+              <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">{fmtDate(cycle.ends)}</span>
+            </div>
+          </div>
+
+          {/* First sentence + phase badge always visible */}
+          {firstSentence && (
+            <p className="text-text-secondary text-[13px] font-body leading-snug">{firstSentence}</p>
+          )}
+          <div className="flex items-center gap-2 mt-3">
+            <span className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
+              {cycle.phase}
+            </span>
+            <span className="text-text-secondary/30 text-[9px] font-body">orb {cycle.orb}°</span>
+          </div>
         </div>
       </div>
 
-      {/* Summary line */}
-      {firstSentence && (
-        <p className="text-text-secondary text-[13px] font-body leading-snug">
-          {firstSentence}
-        </p>
-      )}
-
-      {/* Expanded: rest of summary */}
+      {/* Expanded reading — forest green panel below photo */}
       {expanded && rest && (
-        <p className="text-text-secondary/80 text-[13px] font-body leading-snug mt-2">
-          {rest}
-        </p>
+        <div style={{ background: "#0a1f12", padding: "16px 20px", borderTop: "1px solid rgba(26,48,32,0.8)" }}>
+          <p className="text-text-secondary/80 text-[13px] font-body leading-relaxed">{rest}</p>
+        </div>
       )}
-
-      {/* Phase badge */}
-      <div className="flex items-center gap-2 mt-3">
-        <span
-          className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${
-            cycle.phase === "applying"
-              ? "border-amber-sun/40 text-amber-sun/70"
-              : "border-forest-border text-text-secondary/40"
-          }`}
-        >
-          {cycle.phase}
-        </span>
-        <span className="text-text-secondary/30 text-[9px] font-body">
-          orb {cycle.orb}°
-        </span>
-      </div>
-      </div>{/* end content z-10 */}
     </div>
   );
 }

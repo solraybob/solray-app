@@ -114,19 +114,17 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   border: `1px solid ${isOpen ? color : `${color}35`}`,
                   borderRadius: "14px",
                   overflow: "hidden",
-                  // CSS multi-background: gradient on top, image behind — single property, no extra elements
-                  background: `linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%), url("${image}") center/cover`,
                 }}
               >
-                {/* Content */}
-                <div style={{ padding: "16px" }}>
-                  {/* Header */}
+                {/* Photo header — fixed, never grows */}
+                <div style={{
+                  padding: "16px",
+                  background: `linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%), url("${image}") center/cover`,
+                }}>
+                  {/* Label row */}
                   <div className="flex items-center gap-2 mb-3">
                     <span style={{ color }}>{icon}</span>
-                    <span
-                      className="font-body text-xs uppercase font-semibold tracking-widest"
-                      style={{ color }}
-                    >
+                    <span className="font-body text-xs uppercase font-semibold tracking-widest" style={{ color }}>
                       {label}
                     </span>
                     <span
@@ -142,30 +140,26 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                       ▼
                     </span>
                   </div>
-
                   {/* Headline */}
-                  <p
-                    className="font-body text-[13px] font-medium leading-relaxed"
-                    style={{ color: "#e8e0cc" }}
-                  >
+                  <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#e8e0cc" }}>
                     {headline}
                   </p>
-
-                  {/* Body — expands on tap */}
-                  {isOpen && (
-                    <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${color}25` }}>
-                      <p
-                        className="font-body text-[13px] leading-relaxed"
-                        style={{
-                          color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
-                          fontStyle: detail ? "normal" : "italic",
-                        }}
-                      >
-                        {detail || "Deeper interpretation coming soon."}
-                      </p>
-                    </div>
-                  )}
                 </div>
+
+                {/* Expanded reading — forest green panel below photo */}
+                {isOpen && (
+                  <div style={{ background: "#0a1f12", padding: "16px", borderTop: `1px solid ${color}25` }}>
+                    <p
+                      className="font-body text-[13px] leading-relaxed"
+                      style={{
+                        color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
+                        fontStyle: detail ? "normal" : "italic",
+                      }}
+                    >
+                      {detail || "Deeper interpretation coming soon."}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
