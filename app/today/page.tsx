@@ -628,32 +628,26 @@ export default function TodayPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-24">
-        {/* Header — SOLRAY left, sun centered, date right */}
+        {/* Header — matches chat page: tag above, title + controls row below */}
         <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 py-3 relative flex items-center">
-            {/* Left: wordmark */}
-            <div className="flex flex-col">
-              <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>
-                SOLRAY
-              </span>
-              <span className="font-heading text-[10px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>
-                living by design
-              </span>
-            </div>
-            {/* Center: sun logo — absolutely centered in header */}
-            <div className="absolute left-1/2 -translate-x-1/2">
-              <div className="w-10 h-10 rounded-full overflow-hidden">
-                <Image
-                  src="/logo.jpg"
-                  alt="Solray"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                />
+          <div className="max-w-lg mx-auto px-5 py-3 relative">
+            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary">
+              Living By Design
+            </p>
+            <div className="flex items-center justify-between">
+              <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
+              {/* Sun logo — centered absolutely in the title row */}
+              <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "50%", marginTop: "4px", transform: "translate(-50%, -50%)" }}>
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <Image
+                    src="/logo.jpg"
+                    alt="Solray"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
-            </div>
-            {/* Right: date */}
-            <div className="ml-auto">
               <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
