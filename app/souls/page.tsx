@@ -509,7 +509,7 @@ export default function SoulsPage() {
             className="font-body text-sm mt-3 leading-relaxed"
             style={{ color: "#4a6670", fontStyle: "italic" }}
           >
-            Bring a chart. See where the energies meet.
+            Someone is on your mind. Read what the charts say.
           </p>
           </div>{/* end z-10 */}
         </div>{/* end header */}
