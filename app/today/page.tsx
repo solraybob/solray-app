@@ -628,22 +628,22 @@ export default function TodayPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-24">
-        {/* Header — matches chat page: tag above, title + controls row below */}
-        <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50">
+        {/* Header — matches chat page: tag above, title + controls row below. Not sticky. */}
+        <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 py-3 relative">
-            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary">
+            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1" style={{ color: "#e8821a" }}>
               Living By Design
             </p>
             <div className="flex items-center justify-between">
               <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-              {/* Sun logo — centered absolutely in the title row */}
-              <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "50%", marginTop: "4px", transform: "translate(-50%, -50%)" }}>
-                <div className="w-10 h-10 rounded-full overflow-hidden">
+              {/* Sun logo — 48px to match the "thinking" sun on the chat page */}
+              <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "50%", transform: "translate(-50%, -30%)" }}>
+                <div className="w-12 h-12 rounded-full overflow-hidden">
                   <Image
                     src="/logo.jpg"
                     alt="Solray"
-                    width={40}
-                    height={40}
+                    width={48}
+                    height={48}
                     className="w-full h-full object-cover"
                   />
                 </div>
