@@ -405,13 +405,13 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-text-secondary/40 text-[9px] tracking-[0.2em] uppercase">
+          <p className="font-body text-[9px] tracking-[0.2em] uppercase" style={{ color: "rgba(232,224,204,0.65)" }}>
             Today&apos;s Weather
           </p>
           <svg
             width="12" height="8" viewBox="0 0 16 10" fill="none"
             style={{
-              opacity: 0.3,
+              opacity: 0.6,
               transform: open ? "rotate(180deg)" : "rotate(0deg)",
               transition: "transform 0.3s ease",
             }}
