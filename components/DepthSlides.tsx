@@ -124,7 +124,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   {/* Label row */}
                   <div className="flex items-center gap-2 mb-3">
                     <span style={{ color }}>{icon}</span>
-                    <span className="font-body text-xs uppercase font-semibold tracking-widest" style={{ color }}>
+                    <span className="font-body text-[10px] uppercase tracking-[0.22em]" style={{ color }}>
                       {label}
                     </span>
                     <span
