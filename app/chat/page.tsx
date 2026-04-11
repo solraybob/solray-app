@@ -543,6 +543,22 @@ const [showHistory, setShowHistory] = useState(false);
     [renameValue]
   );
 
+  // ── Delete session ────────────────────────────────────────────────────────
+  const deleteSession = useCallback(
+    (e: React.MouseEvent, sid: string) => {
+      e.stopPropagation();
+      localStorage.removeItem(`solray_chat_${sid}`);
+      const ids = getSessionIds().filter((id) => id !== sid);
+      saveSessionIds(ids);
+      setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
+      // If we just deleted the active session, start fresh
+      if (sid === sessionId) {
+        startNewChat();
+      }
+    },
+    [sessionId, startNewChat]
+  );
+
   // ── Send message ──────────────────────────────────────────────────────────
   const sendMessage = async () => {
     if (!input.trim() || sending) return;
@@ -679,16 +695,16 @@ const [showHistory, setShowHistory] = useState(false);
           </div>
         </div>
 
-        {/* Scroll to bottom button — shows when user scrolls up and there are enough messages */}
-        {!autoScroll && messages.length > 3 && (
+        {/* Scroll to bottom button — shows when user has scrolled up */}
+        {!autoScroll && (
           <button
             onClick={() => {
               const el = scrollContainerRef.current;
               if (el) { el.scrollTop = el.scrollHeight; }
               setAutoScroll(true);
             }}
-            className="fixed z-30 active:scale-95 transition-all"
-            style={{ bottom: "100px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.90)", backdropFilter: "blur(12px)", padding: "8px 20px", borderRadius: "999px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
+            className="fixed z-50 active:scale-95 transition-transform"
+            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.92)", backdropFilter: "blur(16px)", padding: "9px 22px", borderRadius: "999px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
             aria-label="Scroll to bottom"
           >
             <span className="font-body text-[9px] tracking-widest uppercase" style={{ color: "#e8e0cc" }}>scroll down</span>
@@ -906,13 +922,28 @@ const [showHistory, setShowHistory] = useState(false);
                             <button
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title="Rename chat"
-                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0" style={{ ["--hover-c" as any]: "#7d6680" }}
+                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#7d6680"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            {/* Delete trash */}
+                            <button
+                              onClick={(e) => deleteSession(e, s.sessionId)}
+                              title="Delete chat"
+                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#c4623a"}
+                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                <path d="M10 11v6M14 11v6"/>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                               </svg>
                             </button>
                           </div>
