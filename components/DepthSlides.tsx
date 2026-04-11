@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface DepthSlidesProps {
   tags: {
@@ -116,34 +117,42 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   overflow: "hidden",
                 }}
               >
-                {/* Photo header — fixed, never grows */}
-                <div style={{
-                  padding: "16px",
-                  background: `linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%), url("${image}") center/cover`,
-                }}>
-                  {/* Label row */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span style={{ color }}>{icon}</span>
-                    <span className="font-body text-[10px] uppercase tracking-[0.22em]" style={{ color }}>
-                      {label}
-                    </span>
-                    <span
-                      className="ml-auto"
-                      style={{
-                        color: isOpen ? color : `${color}70`,
-                        fontSize: "0.7rem",
-                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                        transition: "transform 0.3s ease",
-                        display: "inline-block",
-                      }}
-                    >
-                      ▼
-                    </span>
+                {/* Photo header — absolute Image fill, guaranteed full coverage */}
+                <div style={{ position: "relative", minHeight: "110px" }}>
+                  <Image
+                    src={image}
+                    alt={label}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%)" }} />
+                  {/* Content over image */}
+                  <div style={{ position: "relative", zIndex: 10, padding: "16px" }}>
+                    {/* Label row */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span style={{ color }}>{icon}</span>
+                      <span className="font-body text-[10px] uppercase tracking-[0.22em]" style={{ color }}>
+                        {label}
+                      </span>
+                      <span
+                        className="ml-auto"
+                        style={{
+                          color: isOpen ? color : `${color}70`,
+                          fontSize: "0.7rem",
+                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.3s ease",
+                          display: "inline-block",
+                        }}
+                      >
+                        ▼
+                      </span>
+                    </div>
+                    {/* Headline */}
+                    <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#e8e0cc" }}>
+                      {headline}
+                    </p>
                   </div>
-                  {/* Headline */}
-                  <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#e8e0cc" }}>
-                    {headline}
-                  </p>
                 </div>
 
                 {/* Expanded reading — forest green panel below photo */}
