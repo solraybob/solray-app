@@ -12,28 +12,18 @@ import DepthSlides from "@/components/DepthSlides";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
-  // Sun — golden sunrise flooding the sky
-  sun: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
-  // Moon — full moon rising over dark horizon
-  moon: "https://images.unsplash.com/photo-1518066000714-58c45f1a2c0a?auto=format&fit=crop&w=800&q=80",
-  // Mercury — lightning storm in dark sky
-  mercury: "https://images.unsplash.com/photo-1537420327992-d6e192287183?auto=format&fit=crop&w=800&q=80",
-  // Venus — soft pink and gold sunrise sky, warm light
-  venus: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80",
-  // Mars — deep red sky at dusk, atmospheric and intense
-  mars: "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?auto=format&fit=crop&w=800&q=80",
-  // Jupiter — towering cumulonimbus storm clouds, vast sky
-  jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
-  // Saturn — cold pale grey sky with ice clouds, stark
-  saturn: "https://images.unsplash.com/photo-1534794048419-b5e3b1a07c42?auto=format&fit=crop&w=800&q=80",
-  // Uranus — electric blue fractured ice sky, otherworldly
-  uranus: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
-  // Neptune — deep navy twilight ocean horizon meets sky
-  neptune: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80",
-  // Pluto — dark starfield, Milky Way, edge of cosmos
-  pluto: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=800&q=80",
-  // Default — Milky Way
-  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
+  // All verified sky/space/atmosphere images
+  sun: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80",   // dramatic storm clouds, warm light
+  moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=80",  // full moon night sky
+  mercury: "https://images.unsplash.com/photo-1537420327992-d6e192287183?w=800&q=80", // lightning storm sky
+  venus: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80&sat=-20&con=20", // same storm clouds, cooler
+  mars: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80",   // epic thunderhead clouds
+  jupiter: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80", // towering storm clouds
+  saturn: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80",  // milky way, cold
+  uranus: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",  // deep space blue
+  neptune: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80", // dark star field
+  pluto: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80",   // milky way cosmos
+  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80", // star field
 };
 
 interface Planet {
