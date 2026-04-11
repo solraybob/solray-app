@@ -645,7 +645,7 @@ const [showHistory, setShowHistory] = useState(false);
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
+      <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
         {/* Subtle space background — fixed so it doesn't scroll with messages */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -718,7 +718,7 @@ const [showHistory, setShowHistory] = useState(false);
         )}
 
         {/* Messages */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
           <div className="max-w-lg mx-auto space-y-4">
 
             {/* Empty / loading state — visible for the brief moment before
