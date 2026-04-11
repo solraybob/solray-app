@@ -1098,7 +1098,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </div>
 
           <div>
-            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Sex</label>
+            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Gender</label>
             <div className="grid grid-cols-2 gap-2">
               {(["female", "male"] as const).map((opt) => {
                 const active = sex === opt;
