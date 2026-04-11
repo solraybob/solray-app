@@ -456,22 +456,23 @@ const [showHistory, setShowHistory] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  // Use IntersectionObserver on the bottom sentinel — reliable on iOS Safari
+  // Native imperative scroll listener — works reliably on iOS Safari
   useEffect(() => {
-    const sentinel = messagesEndRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setAutoScroll(entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setAutoScroll(dist < 80);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []); // attach once after mount
 
-  // Auto-scroll when new content arrives, but only if user is near the bottom
+  // Auto-scroll when new content arrives, only when near the bottom
   useEffect(() => {
     if (autoScroll) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      const el = scrollContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
     }
   }, [messages, streamedLength, autoScroll]);
 
@@ -702,16 +703,16 @@ const [showHistory, setShowHistory] = useState(false);
         {!autoScroll && (
           <button
             onClick={() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              const el = scrollContainerRef.current;
+              if (el) el.scrollTop = el.scrollHeight;
               setAutoScroll(true);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
-            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.92)", backdropFilter: "blur(16px)", padding: "9px 22px", borderRadius: "999px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
             aria-label="Scroll to bottom"
           >
-            <span className="font-body text-[9px] tracking-widest uppercase" style={{ color: "#e8e0cc" }}>scroll down</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e8e0cc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#050f08" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
         )}
