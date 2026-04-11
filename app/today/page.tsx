@@ -382,7 +382,7 @@ function HeroImageCard({
       onClick={() => setOpen(v => !v)}
     >
       {/* Image section */}
-      <div className="relative w-full h-[260px]">
+      <div className="relative w-full h-[160px]">
         <Image
           src={imageSrc}
           alt={dayTitle}
@@ -396,7 +396,7 @@ function HeroImageCard({
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
-            className="font-heading text-3xl leading-[1.3] text-center"
+            className="font-heading text-2xl leading-[1.25] text-center"
             style={{ color: "#e8e0cc", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)" }}
           >
             {dayTitle}
