@@ -119,7 +119,7 @@ function ChatPageInner() {
   const [sessionId, setSessionId] = useState<string>("");
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
 
   // Streaming state
@@ -130,7 +130,6 @@ const [showHistory, setShowHistory] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuth();
   const searchParams = useSearchParams();
@@ -813,7 +812,6 @@ const [showHistory, setShowHistory] = useState(false);
               </div>
             )}
 
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
@@ -860,7 +858,7 @@ const [showHistory, setShowHistory] = useState(false);
         {showHistory && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowHistory(false)}>
             <div
-              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg flex flex-col max-h-[70vh] mb-16"
+              className="bg-forest-dark border border-forest-border rounded-t-2xl w-full max-w-lg flex flex-col max-h-[70dvh] mb-16"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Fixed header */}

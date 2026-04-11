@@ -310,8 +310,10 @@ function PlanetCard({ planet }: { planet: Planet }) {
 function SkeletonToday() {
   return (
     <div>
-      {/* Hero skeleton */}
-      <div className="w-full h-[300px] bg-forest-card skeleton-shimmer" />
+      {/* Hero skeleton — matches real hero: padded, rounded-2xl, 160px */}
+      <div className="max-w-lg mx-auto px-5 pt-3">
+        <div className="w-full h-[160px] bg-forest-card skeleton-shimmer rounded-2xl" />
+      </div>
 
       <div className="max-w-lg mx-auto px-5">
         {/* Energy bars skeleton */}
@@ -361,16 +363,14 @@ function SkeletonToday() {
   );
 }
 
-// Hero image card with day title and moon phase
+// Hero image card with day title
 function HeroImageCard({
   dayTitle,
   imageSrc,
-  moonPhase,
   reading,
 }: {
   dayTitle: string;
   imageSrc: string;
-  moonPhase: { phase: number; label: string; emoji: string };
   reading?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -428,7 +428,7 @@ function HeroImageCard({
           style={{ background: "#0a1f12" }}
           onClick={e => e.stopPropagation()}
         >
-          <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-4">
+          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4">
             Today&apos;s Weather
           </p>
           {reading.split(/\n\n+/).map((para, i) => (
@@ -517,11 +517,14 @@ export default function TodayPage() {
   // Uses the same sessionStorage pattern as AskButton on the profile page.
   const handleEnergyAsk = (label: string, pct: number) => {
     const promptBuilder = ENERGY_PROMPTS[label];
-    const prompt = promptBuilder
+    const question = promptBuilder
       ? promptBuilder(pct)
       : `What does my ${label.toLowerCase()} energy at ${pct}% mean for today?`;
     try {
-      sessionStorage.setItem("solray_chat_prompt", prompt);
+      sessionStorage.setItem(
+        "solray_chat_prompt",
+        JSON.stringify({ topic: `${label} energy`, question })
+      );
     } catch (_) {
       // ignore — navigation still works, just without the seeded prompt
     }
@@ -537,7 +540,8 @@ export default function TodayPage() {
   useEffect(() => {
     if (!token) return;
 
-    const dateKey = new Date().toISOString().split("T")[0];
+    const _d = new Date();
+    const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
     const cacheKey = `solray_forecast_${dateKey}`;
 
     async function fetchAndUpdate(isBackground: boolean) {
@@ -627,7 +631,7 @@ export default function TodayPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep pb-24">
+      <div className="min-h-[100dvh] bg-forest-deep pb-24">
         {/* Header — matches chat page: tag above, title + controls row below. Not sticky. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 py-3 relative">
@@ -668,7 +672,6 @@ export default function TodayPage() {
               <HeroImageCard
                 dayTitle={forecast.day_title}
                 imageSrc={getHeroImageUrl(forecast.tags.astrology)}
-                moonPhase={{ phase: 0.5, label: getMoonPhaseLabel(0.5), emoji: getMoonEmoji(0.5) }}
                 reading={forecast.reading}
               />
             </div>
@@ -763,7 +766,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-3">
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-3">
                   Sky Now
                 </p>
                 {/* Scrollable ticker */}
@@ -794,15 +797,7 @@ export default function TodayPage() {
   );
 }
 
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="px-3 py-1.5 rounded-full border border-forest-border/60 text-text-secondary/70 text-xs font-body tracking-wide">
-      {children}
-    </span>
-  );
-}
-
-// Moon phase calculation helpers (for hero card)
+// Moon phase calculation helpers
 function getMoonPhaseValue(): number {
   const now = new Date();
   const jd = (now.getTime() / 86400000) + 2440587.5;
@@ -836,58 +831,11 @@ function getMoonEmoji(p: number): string {
 
 // Persistent moon cycle component — always visible
 function MoonCycleBar({ planets }: { planets: Planet[] }) {
-  // Calculate current moon phase from approximate lunar cycle
-  // New Moon = 0, Full Moon = 0.5, back to New = 1.0
-  const getMoonPhase = () => {
-    // Known reference: New Moon on Jan 1, 2000 at JD 2451549.5
-    const now = new Date();
-    const jd = (now.getTime() / 86400000) + 2440587.5;
-    const lunarCycle = 29.53058867;
-    const knownNewMoon = 2451549.5;
-    const phase = ((jd - knownNewMoon) % lunarCycle) / lunarCycle;
-    return phase < 0 ? phase + 1 : phase;
-  };
-
-  const phase = getMoonPhase();
+  const phase = getMoonPhaseValue();
   const moonSign = planets.find(p => p.name === "Moon")?.sign || "";
-
-  const getPhaseLabel = (p: number): string => {
-    if (p < 0.03 || p > 0.97) return "New Moon";
-    if (p < 0.25) return "Waxing Crescent";
-    if (p < 0.27) return "First Quarter";
-    if (p < 0.48) return "Waxing Gibbous";
-    if (p < 0.52) return "Full Moon";
-    if (p < 0.73) return "Waning Gibbous";
-    if (p < 0.77) return "Third Quarter";
-    return "Waning Crescent";
-  };
-
-  const getMoonEmoji = (p: number): string => {
-    if (p < 0.03 || p > 0.97) return "🌑";
-    if (p < 0.25) return "🌒";
-    if (p < 0.27) return "🌓";
-    if (p < 0.48) return "🌔";
-    if (p < 0.52) return "🌕";
-    if (p < 0.73) return "🌖";
-    if (p < 0.77) return "🌗";
-    return "🌘";
-  };
-
-  const phaseLabel = getPhaseLabel(phase);
+  const phaseLabel = getMoonPhaseLabel(phase);
   const phaseEmoji = getMoonEmoji(phase);
   const illumination = Math.round(Math.sin(phase * Math.PI) * 100);
-
-  // 8-phase cycle markers
-  const phases = [
-    { label: "New", pos: 0 },
-    { label: "↑", pos: 0.125 },
-    { label: "1st Q", pos: 0.25 },
-    { label: "↑", pos: 0.375 },
-    { label: "Full", label2: "🌕", pos: 0.5 },
-    { label: "↓", pos: 0.625 },
-    { label: "3rd Q", pos: 0.75 },
-    { label: "↓", pos: 0.875 },
-  ];
 
   return (
     <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4 mb-4">

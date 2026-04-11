@@ -2,16 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-function goDeeper(title: string, summary: string) {
-  try {
-    sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-      topic: title,
-      question: `I want to go deeper on this cycle: "${title}". ${summary ? `Here's what I know: ${summary.slice(0, 200)}. ` : ""}What does this mean for me specifically and how should I work with this energy?`
-    }));
-  } catch (_) {}
-  window.location.href = "/chat";
-}
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 
@@ -209,8 +199,20 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
 function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
   const summary = cycle.summary || "";
   const [upFirstSentence, upRest] = splitFirstSentence(summary);
+
+  const handleGoDeeper = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: cycle.title,
+        question: `I want to go deeper on this cycle: "${cycle.title}". ${summary ? `Here's what I know: ${summary.slice(0, 200)}. ` : ""}What does this mean for me specifically and how should I work with this energy?`,
+      }));
+    } catch (_) {}
+    router.push("/chat");
+  };
 
   return (
     <div
@@ -264,7 +266,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
           )}
           <div className="mt-3 flex justify-end">
             <button
-              onClick={(e) => { e.stopPropagation(); goDeeper(cycle.title, summary); }}
+              onClick={handleGoDeeper}
               className="text-[11px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
             >
               Go Deeper →
