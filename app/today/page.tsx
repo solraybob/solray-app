@@ -428,9 +428,6 @@ function HeroImageCard({
           style={{ background: "#0a1f12" }}
           onClick={e => e.stopPropagation()}
         >
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4">
-            Today&apos;s Weather
-          </p>
           {reading.split(/\n\n+/).map((para, i) => (
             <p
               key={i}
