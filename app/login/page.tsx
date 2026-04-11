@@ -55,7 +55,7 @@ export default function LoginPage() {
       }
       router.push("/today");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "The signal didn't reach. Try again.");
     } finally {
       setLoading(false);
     }
@@ -69,8 +69,9 @@ export default function LoginPage() {
           <div className="w-8 h-8 rounded-full overflow-hidden mb-4">
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
-          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>SOLRAY</h1>
-          <p className="text-text-secondary text-xs mt-2 tracking-widest">Your cosmic intelligence</p>
+          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
+          <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em]" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</p>
+          <p className="font-body text-text-secondary text-[10px] mt-3 tracking-[0.22em] uppercase">Your cosmic intelligence</p>
         </div>
 
         {/* Form */}
@@ -99,7 +100,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-red-400 text-xs text-center font-body">{error}</p>
+            <p className="text-ember text-xs text-center font-body">{error}</p>
           )}
 
           <button

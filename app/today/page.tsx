@@ -172,21 +172,43 @@ const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
   Intuitive: (p) => `My intuitive energy is at ${p}% today. What is my gut trying to tell me I'm not listening to?`,
 };
 
+// Display-layer transform: remap raw 0-10 readings onto a 50-95 visual range.
+// The backend's scale is relative, not absolute — a "4 out of 10" is a quiet
+// day, not a broken one, so the visual floor sits at 50% not 0%. Relative
+// differences are preserved (a 9 is still visibly higher than a 4). When the
+// forecast engine gets recalibrated we just delete this function.
+function toDisplayPct(value: number): number {
+  const clamped = Math.max(0, Math.min(10, value));
+  return Math.round(50 + (clamped / 10) * 45);
+}
+
 function EnergyBar({
   label,
   value,
-  animate,
   delayMs,
   onAsk,
 }: {
   label: string;
   value: number;
-  animate: boolean;
   delayMs: number;
   onAsk: (label: string, pct: number) => void;
 }) {
   const color = ENERGY_COLORS[label] || "#e8821a";
-  const pct = value * 10;
+  const pct = toDisplayPct(value);
+
+  // Animation is driven by pure CSS @keyframes (see globals.css), not React
+  // state. The fill div gets `--pct` as a CSS variable; the keyframe
+  // animates width from 0 → var(--pct). Width-based (not transform-based)
+  // draw, because transform scaleX was too subtle / getting coalesced away
+  // somewhere in the iOS Safari paint pipeline on cached loads. Width is
+  // less performant but unambiguous.
+  //
+  // Two-phase arrival: label row fades in first (all rows together, no
+  // per-row stagger), then the line ink-draws from left with a soft-decel
+  // curve, staggered per row by delayMs.
+  const labelFadeMs = 400;
+  const drawMs      = 900;
+  const drawDelay   = 300 + delayMs;
 
   return (
     <button
@@ -194,15 +216,14 @@ function EnergyBar({
       onClick={() => onAsk(label, pct)}
       aria-label={`Ask your Higher Self about your ${label.toLowerCase()} energy at ${pct} percent`}
       className="group block w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-sun/40 rounded-sm"
-      style={{
-        opacity: animate ? 1 : 0,
-        transform: animate ? "translateY(0)" : "translateY(6px)",
-        transition: `opacity 600ms cubic-bezier(0.22, 0.8, 0.36, 1) ${delayMs}ms, transform 600ms cubic-bezier(0.22, 0.8, 0.36, 1) ${delayMs}ms`,
-      }}
     >
-      {/* Label row — label and percentage both sit in text.secondary.
-          The color does the categorizing job; the label does the naming job. */}
-      <div className="flex items-baseline justify-between mb-2">
+      {/* Label row — fades in as a unit, no per-row stagger here. */}
+      <div
+        className="flex items-baseline justify-between mb-2"
+        style={{
+          animation: `solrayLabelFade ${labelFadeMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) both`,
+        }}
+      >
         <span className="font-body text-[10px] font-normal tracking-[0.22em] uppercase text-text-secondary">
           {label}
         </span>
@@ -214,26 +235,20 @@ function EnergyBar({
         </span>
       </div>
 
-      {/* 2px hairline track. Fill is solid ink at 85% in the category pigment.
-          4px dot marks the head of the line — the point where it stops. */}
-      <div
-        className="relative h-[2px] w-full"
-        style={{ background: "rgba(26, 48, 32, 0.6)" }}
-      >
+      {/* Track — matches MoonCycleBar grammar (h-1.5, rounded-full). No dot;
+          the user asked for the line alone. The fill is width-sized via a
+          CSS variable so the keyframe can animate from 0 → --pct. */}
+      <div className="relative w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
         <div
-          className="absolute inset-y-0 left-0 transition-opacity duration-200 group-hover:opacity-100"
+          className="h-full rounded-full"
           style={{
+            // CSS custom property consumed by the @keyframes `to` block.
+            // Cast needed because React's CSSProperties type doesn't know
+            // about arbitrary custom properties.
+            ["--pct" as any]: `${pct}%`,
             width: `${pct}%`,
-            background: color,
-            opacity: 0.85,
-          }}
-        />
-        <div
-          className="absolute top-1/2 h-[4px] w-[4px] rounded-full transition-transform duration-200 group-hover:scale-110"
-          style={{
-            left: `${pct}%`,
-            background: color,
-            transform: "translate(-50%, -50%)",
+            background: `linear-gradient(to right, ${color}, transparent)`,
+            animation: `solrayInkDraw ${drawMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) ${drawDelay}ms both`,
           }}
         />
       </div>
@@ -241,18 +256,28 @@ function EnergyBar({
   );
 }
 
-// Planet card for the cosmic ticker strip
+// Planet card for the cosmic ticker strip.
+// Mapped onto the aged-pigment palette, grouped by modern rulership
+// pairs so the paired planets share a hue naturally:
+//   Sun          → amber-sun   (the hero stays the hero)
+//   Moon ~ Uranus → mist        (silvery cool, sudden awakening)
+//   Mercury       → pearl       (quick, luminous, mercurial)
+//   Venus ~ Neptune → wisteria  (love, dreams, mysticism)
+//   Mars  ~ Pluto   → ember     (warrior fire, transformation heat)
+//      wait — Pluto is paired with Saturn below, not Mars. See below.
+//   Jupiter       → moss        (expansion, growth, abundance)
+//   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
-  Sun: "#e8821a",
-  Moon: "#b87dd4",
-  Mercury: "#5b6ff5",
-  Venus: "#e8a0b4",
-  Mars: "#e85030",
-  Jupiter: "#e8c080",
-  Saturn: "#a09080",
-  Uranus: "#5b6ff5",
-  Neptune: "#b87dd4",
-  Pluto: "#9060c0",
+  Sun:     "#e8821a",  // amber-sun — hero
+  Moon:    "#7a8a9a",  // mist
+  Mercury: "#d8d0bc",  // pearl
+  Venus:   "#7d6680",  // wisteria
+  Mars:    "#c4623a",  // ember
+  Jupiter: "#6b7d4a",  // moss
+  Saturn:  "#4a6670",  // indigo
+  Uranus:  "#7a8a9a",  // mist (paired with Moon)
+  Neptune: "#7d6680",  // wisteria (paired with Venus)
+  Pluto:   "#4a6670",  // indigo (paired with Saturn)
 };
 
 function PlanetCard({ planet }: { planet: Planet }) {
@@ -380,12 +405,13 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase">
+          <p className="font-body text-text-secondary/40 text-[9px] tracking-[0.2em] uppercase">
             Today&apos;s Weather
           </p>
           <svg
-            width="16" height="10" viewBox="0 0 16 10" fill="none"
+            width="12" height="8" viewBox="0 0 16 10" fill="none"
             style={{
+              opacity: 0.3,
               transform: open ? "rotate(180deg)" : "rotate(0deg)",
               transition: "transform 0.3s ease",
             }}
@@ -482,7 +508,6 @@ export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
   const { token } = useAuth();
   const router = useRouter();
@@ -563,7 +588,7 @@ export default function TodayPage() {
       } catch {
         if (!isBackground) {
           setForecast(MOCK_FORECAST);
-          setError("Showing cached reading. Reconnect to see today's live forecast.");
+          setError("Reading from memory. Reconnect when ready to see the live sky.");
           setLoading(false);
         }
       }
@@ -598,30 +623,37 @@ export default function TodayPage() {
     timings.forEach((delay, index) => {
       setTimeout(() => setVisibleSections(index + 1), delay);
     });
-    setTimeout(() => setBarsAnimated(true), 300);
   }, [forecast]);
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-forest-deep pb-24">
-        {/* Header */}
+        {/* Header — SOLRAY left, sun centered, date right */}
         <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full overflow-hidden">
+          <div className="max-w-lg mx-auto px-5 py-3 relative flex items-center">
+            {/* Left: wordmark */}
+            <div className="flex flex-col">
+              <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>
+                SOLRAY
+              </span>
+              <span className="font-heading text-[10px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>
+                living by design
+              </span>
+            </div>
+            {/* Center: sun logo — absolutely centered in header */}
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <div className="w-10 h-10 rounded-full overflow-hidden">
                 <Image
                   src="/logo.jpg"
                   alt="Solray"
-                  width={28}
-                  height={28}
+                  width={40}
+                  height={40}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
-                SOLRAY
-              </span>
             </div>
-            <div className="flex items-center gap-3">
+            {/* Right: date */}
+            <div className="ml-auto">
               <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
@@ -634,7 +666,7 @@ export default function TodayPage() {
           <>
             {/* HERO IMAGE CARD — card style, with padding like CurrentCycles */}
             <div
-              className="max-w-lg mx-auto px-5 pt-4 transition-all duration-700"
+              className="max-w-lg mx-auto px-5 pt-3 transition-all duration-700"
               style={{
                 opacity: visibleSections >= 1 ? 1 : 0,
               }}
@@ -669,45 +701,34 @@ export default function TodayPage() {
                   className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-7 transition-opacity duration-700"
                   style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
                 >
-                  Today, In You
+                  Today&apos;s Vibe
                 </p>
                 <div className="space-y-[22px]">
                   <EnergyBar
                     label="Mental"
                     value={forecast.energy.mental}
-                    animate={barsAnimated}
                     delayMs={120}
                     onAsk={handleEnergyAsk}
                   />
                   <EnergyBar
                     label="Emotional"
                     value={forecast.energy.emotional}
-                    animate={barsAnimated}
                     delayMs={200}
                     onAsk={handleEnergyAsk}
                   />
                   <EnergyBar
                     label="Physical"
                     value={forecast.energy.physical}
-                    animate={barsAnimated}
                     delayMs={280}
                     onAsk={handleEnergyAsk}
                   />
                   <EnergyBar
                     label="Intuitive"
                     value={forecast.energy.intuitive}
-                    animate={barsAnimated}
                     delayMs={360}
                     onAsk={handleEnergyAsk}
                   />
                 </div>
-                {/* Faint hint — italic Cormorant, only on first paint */}
-                <p
-                  className="font-heading italic text-text-secondary/50 text-[13px] text-center mt-7 transition-opacity duration-700"
-                  style={{ opacity: visibleSections >= 2 ? 1 : 0 }}
-                >
-                  Tap any line to ask your Higher Self why.
-                </p>
               </div>
 
 
@@ -720,6 +741,9 @@ export default function TodayPage() {
                   transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4">
+                  Today&apos;s Dimensions
+                </p>
                 <DepthSlides
                   tags={forecast.tags}
                   tagDetails={forecast.tag_details}
@@ -891,7 +915,13 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
 
       {/* Cycle bar */}
       <div className="relative">
-        <div className="w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
+        <div
+          className="w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%)",
+            maskImage: "linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%)",
+          }}
+        >
           <div
             className="h-full bg-amber-sun/60 rounded-full"
             style={{ width: `${Math.min(phase * 100, 99)}%` }}

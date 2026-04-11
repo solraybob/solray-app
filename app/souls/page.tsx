@@ -251,7 +251,7 @@ export default function SoulsPage() {
       }, token);
       setInviteSent(prev => new Set(prev).add(identifier));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to send invite";
+      const msg = e instanceof Error ? e.message : "The signal didn't reach. Try once more.";
       alert(msg);
     } finally {
       setSendingInvite(null);
@@ -337,27 +337,39 @@ export default function SoulsPage() {
       <div className="min-h-screen bg-forest-deep pb-24">
         {/* Header with blue gradient */}
         <div
-          className="px-5 pt-12 pb-8 max-w-lg mx-auto relative"
-          style={{
-            background: "linear-gradient(180deg, rgba(91,111,245,0.08) 0%, transparent 60%)",
-          }}
+          className="px-5 pt-12 pb-8 max-w-lg mx-auto relative overflow-hidden"
+          style={{ minHeight: "140px" }}
         >
-          <p className="font-body text-xs tracking-[0.2em] uppercase mb-1 text-text-secondary" style={{ color: "#5b6ff5" }}>Your Field</p>
-          <h1 className="font-heading text-4xl text-text-primary">Souls</h1>
+          {/* Faded deep-space image — contextual image pattern matching CurrentCycles */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ opacity: 0.10 }}
+            />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.3) 0%, rgba(5,15,8,0.90) 100%)" }} />
+          </div>
+          <div className="relative z-10">
+          <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary" style={{ color: "#4a6670" }}>Your Field</p>
+          <h1 className="font-heading text-3xl text-text-primary leading-tight" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Souls</h1>
           {myUsername && (
             <p className="text-text-secondary text-sm font-body mt-3">
               <span
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs"
                 style={{
-                  background: "rgba(91,111,245,0.12)",
-                  color: "#5b6ff5",
+                  background: "rgba(74, 102, 112,0.12)",
+                  color: "#4a6670",
                 }}
               >
                 @{myUsername}
               </span>
             </p>
           )}
-        </div>
+          </div>{/* end z-10 */}
+        </div>{/* end header */}
 
         <div className="max-w-lg mx-auto px-5 space-y-6 animate-fade-in">
           {/* Search */}
@@ -370,8 +382,8 @@ export default function SoulsPage() {
                 placeholder="Search by @username or email"
                 className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#5b6ff5";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(91,111,245,0.15)";
+                  e.currentTarget.style.borderColor = "#4a6670";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74, 102, 112,0.15)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "";
@@ -433,7 +445,7 @@ export default function SoulsPage() {
               {/* Pending requests */}
               {pendingInvites.length > 0 && (
                 <div>
-                  <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-3">Pending Requests</p>
+                  <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Pending Requests</p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
                       <div
@@ -458,7 +470,7 @@ export default function SoulsPage() {
                           <button
                             onClick={() => handleInviteResponse(invite.invite_id, false)}
                             disabled={respondingInvite === invite.invite_id}
-                            className="px-3 py-1.5 border border-forest-border text-text-secondary rounded-lg text-xs font-body transition-all hover:border-red-400/40 hover:text-red-400"
+                            className="px-3 py-1.5 border border-forest-border text-text-secondary rounded-lg text-xs font-body transition-all hover:border-ember/40 hover:text-ember"
                           >
                             Decline
                           </button>
@@ -483,7 +495,7 @@ export default function SoulsPage() {
               <div>
                 {connectedSouls.length > 0 ? (
                   <>
-                    <p className="text-text-secondary text-[10px] font-body tracking-[0.2em] uppercase mb-3">Your Constellation</p>
+                    <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Your Constellation</p>
                     <div className="space-y-3">
                       {connectedSouls.map(connection => (
                         <SoulCard
@@ -500,7 +512,7 @@ export default function SoulsPage() {
                       <div
                         className="absolute inset-0 rounded-full blur-2xl"
                         style={{
-                          background: "rgba(91,111,245,0.15)",
+                          background: "rgba(74, 102, 112,0.15)",
                           width: "120px",
                           height: "120px",
                           left: "50%",
@@ -508,7 +520,7 @@ export default function SoulsPage() {
                           transform: "translate(-50%, -50%)",
                         }}
                       />
-                      <div className="relative text-7xl" style={{ color: "#5b6ff5" }}>
+                      <div className="relative text-7xl" style={{ color: "#4a6670" }}>
                         ✦
                       </div>
                     </div>
@@ -564,8 +576,8 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
       onClick={onOpen}
       className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99]"
       style={{
-        background: "linear-gradient(135deg, rgba(91,111,245,0.06) 0%, #0a1f12 60%)",
-        border: "1px solid rgba(91,111,245,0.25)",
+        background: "linear-gradient(135deg, rgba(74, 102, 112,0.06) 0%, #0a1f12 60%)",
+        border: "1px solid rgba(74, 102, 112,0.25)",
       }}
     >
       <div className="flex items-center gap-4">
@@ -573,7 +585,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
         <div
           className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 relative"
           style={{
-            background: "linear-gradient(135deg, #e8821a, #5b6ff5)",
+            background: "linear-gradient(135deg, #e8821a, #4a6670)",
             padding: "2px",
           }}
         >
@@ -605,7 +617,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             )}
           </div>
         </div>
-        <span className="text-xs font-body tracking-wider opacity-70 shrink-0" style={{ color: "#5b6ff5" }}>
+        <span className="text-xs font-body tracking-wider opacity-70 shrink-0" style={{ color: "#4a6670" }}>
           Open →
         </span>
       </div>

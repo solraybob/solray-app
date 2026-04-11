@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Active nav colors pull from the aged-pigment palette. Today keeps
+// amber-sun (the hero), Chat gets wisteria (Higher Self, dreamy),
+// Souls gets indigo (the field, depth), Profile gets moss (rooted self).
 const navItems = [
   {
     href: "/today",
     label: "Today",
-    color: "#e8821a",
+    color: "#e8821a", // amber-sun — hero
+
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="5"/>
@@ -25,7 +29,7 @@ const navItems = [
   {
     href: "/chat",
     label: "Chat",
-    color: "#b87dd4",
+    color: "#7d6680", // wisteria
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -35,7 +39,7 @@ const navItems = [
   {
     href: "/souls",
     label: "Souls",
-    color: "#5b6ff5",
+    color: "#4a6670", // indigo
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -48,7 +52,7 @@ const navItems = [
   {
     href: "/profile",
     label: "Profile",
-    color: "#4a9e6a",
+    color: "#6b7d4a", // moss
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>

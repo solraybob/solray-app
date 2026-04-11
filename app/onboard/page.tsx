@@ -8,6 +8,15 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 const TOTAL_STEPS = 5;
 
+// Atmospheric image per step — fades in behind the question
+const STEP_IMAGES = [
+  "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=60", // 1 name: warm candlelight
+  "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // 2 birth date: stars
+  "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // 3 birth time: moon
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60", // 4 birth place: earth
+  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=60", // 5 account: forest dawn
+];
+
 // Magical blueprint calculation loading screen
 const BLUEPRINT_STEPS = [
   "Mapping your astrology…",
@@ -215,17 +224,52 @@ export default function OnboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep flex flex-col">
+    <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
+      {/* Atmospheric step images — transition on step change */}
+      {STEP_IMAGES.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: i + 1 === step ? 0.08 : 0,
+            transition: "opacity 1s ease",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+      ))}
+      {/* Dark vignette over image */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "radial-gradient(ellipse at center, transparent 0%, #060f08 75%)",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Magical blueprint calculation screen */}
       {calculatingBlueprint && <BlueprintLoader />}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-12 pb-6">
+      <div className="flex items-center justify-between px-6 pt-12 pb-6" style={{ position: "relative", zIndex: 1 }}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full overflow-hidden">
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
-          <span className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>SOLRAY</span>
+          <div className="flex flex-col">
+            <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</span>
+            <span className="font-heading text-[10px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
+          </div>
         </div>
         {/* Progress dots */}
         <div className="flex gap-2">
@@ -245,7 +289,7 @@ export default function OnboardPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24 animate-slide-up" key={step}>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative", zIndex: 1 }}>
         <div className="w-full max-w-sm">
           {step === 1 && (
             <StepWrapper label="What is your name?">
@@ -371,13 +415,13 @@ export default function OnboardPage() {
           )}
 
           {error && (
-            <p className="text-red-400 text-xs text-center font-body mt-4">{error}</p>
+            <p className="text-ember text-xs text-center font-body mt-4">{error}</p>
           )}
         </div>
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-10 bg-gradient-to-t from-forest-deep via-forest-deep to-transparent pt-8">
+      <div className="fixed bottom-0 left-0 right-0 px-6 pb-10 bg-gradient-to-t from-forest-deep via-forest-deep to-transparent pt-8" style={{ zIndex: 2 }}>
         <div className="max-w-sm mx-auto">
           {step < TOTAL_STEPS ? (
             <button
@@ -468,7 +512,10 @@ function StepWrapper({
 }) {
   return (
     <div>
-      <h2 className="font-heading text-4xl text-text-primary mb-2 leading-tight">{label}</h2>
+      <h2
+        className="font-heading text-4xl text-text-primary mb-2 leading-tight"
+        style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+      >{label}</h2>
       {subtitle && <p className="text-text-secondary text-sm font-body mb-8">{subtitle}</p>}
       <div className={subtitle ? "" : "mt-8"}>{children}</div>
     </div>

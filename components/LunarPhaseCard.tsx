@@ -26,8 +26,8 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Full Moon"
       >
-        <circle cx="14" cy="14" r="11" fill="#F5C842" opacity="0.92" />
-        <circle cx="14" cy="14" r="11" stroke="#D4A017" strokeWidth="1.2" fill="none" />
+        <circle cx="14" cy="14" r="11" fill="#d8d0bc" opacity="0.92" />
+        <circle cx="14" cy="14" r="11" stroke="#7a8a9a" strokeWidth="1.2" fill="none" />
       </svg>
     );
   }
@@ -44,12 +44,12 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
     >
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        fill="#F5C842"
+        fill="#d8d0bc"
         opacity="0.92"
       />
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        stroke="#D4A017"
+        stroke="#7a8a9a"
         strokeWidth="1.2"
         fill="none"
       />
@@ -111,10 +111,13 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       tabIndex={0}
       aria-expanded={expanded}
       style={{
-        borderColor: "rgba(212, 160, 23, 0.45)",
+        // Card frame pulls mist (silvery moonlight) at 45% opacity and a
+        // very faint pearl inner highlight so the card reads as "lit by
+        // moonlight" without any warm/gold chroma.
+        borderColor: "rgba(122, 138, 154, 0.45)",
         background:
           "linear-gradient(135deg, rgba(20, 38, 24, 0.95) 0%, rgba(14, 28, 18, 0.98) 100%)",
-        boxShadow: "0 2px 16px rgba(212, 160, 23, 0.08), inset 0 1px 0 rgba(245, 200, 66, 0.06)",
+        boxShadow: "0 2px 16px rgba(122, 138, 154, 0.08), inset 0 1px 0 rgba(216, 208, 188, 0.06)",
         cursor: "pointer",
         position: "relative",
         zIndex: 1,
@@ -131,16 +134,16 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="font-heading text-base leading-tight"
-              style={{ color: "#F5C842", fontWeight: 400, letterSpacing: "0.01em" }}
+              style={{ color: "#d8d0bc", fontWeight: 400, letterSpacing: "0.01em" }}
             >
               {event.type} in {event.sign}
             </span>
             <span
               className="text-[10px] font-body tracking-wider px-2 py-0.5 rounded-full border"
               style={{
-                color: "rgba(245, 200, 66, 0.85)",
-                borderColor: "rgba(212, 160, 23, 0.35)",
-                background: "rgba(245, 200, 66, 0.08)",
+                color: "rgba(216, 208, 188, 0.85)",    // pearl
+                borderColor: "rgba(122, 138, 154, 0.35)", // mist
+                background: "rgba(216, 208, 188, 0.08)",   // pearl wash
               }}
             >
               {timing}
@@ -169,7 +172,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           className="font-body text-sm leading-relaxed mt-3 pt-3"
           style={{
             color: "rgba(200, 215, 200, 0.70)",
-            borderTop: "1px solid rgba(212, 160, 23, 0.18)",
+            borderTop: "1px solid rgba(122, 138, 154, 0.18)", // mist divider
           }}
         >
           {expandedText}
@@ -179,7 +182,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       {/* Read more / Close toggle */}
       <button
         className="mt-2.5 text-[11px] font-body tracking-wider"
-        style={{ color: "rgba(245, 200, 66, 0.6)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
+        style={{ color: "rgba(216, 208, 188, 0.6)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
         onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
       >
         {expanded ? "Close ∧" : "Read more ∨"}

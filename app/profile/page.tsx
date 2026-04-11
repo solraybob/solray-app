@@ -242,10 +242,10 @@ interface SoulMapRadarChartProps {
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire: "#e85030",
-  Earth: "#4a9e6a",
-  Air: "#5b6ff5",
-  Water: "#b87dd4",
+  Fire: "#c4623a",
+  Earth: "#6b7d4a",
+  Air: "#7a8a9a",
+  Water: "#4a6670",
   Cardinal: "#e8821a",
   Fixed: "#e8821a",
   Mutable: "#e8821a",
@@ -276,12 +276,12 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
     >
       <defs>
         <radialGradient id="soulMapGlow" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stopColor="rgba(91,111,245,0.08)" />
-          <stop offset="100%" stopColor="rgba(91,111,245,0)" />
+          <stop offset="0%" stopColor="rgba(122, 138, 154,0.08)" />
+          <stop offset="100%" stopColor="rgba(122, 138, 154,0)" />
         </radialGradient>
         <linearGradient id="radarPolygon" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#5b6ff5" />
-          <stop offset="100%" stopColor="#b87dd4" />
+          <stop offset="0%" stopColor="#7a8a9a" />
+          <stop offset="100%" stopColor="#7d6680" />
         </linearGradient>
       </defs>
 
@@ -566,10 +566,10 @@ function CollapsibleSection({
   // Color mapping for section headers
   const sectionColors: Record<string, string> = {
     "Natal Chart": "#e8821a",
-    "Astro Geography": "#5b6ff5",
-    "Human Design": "#5b6ff5",
-    "Numerology": "#b87dd4",
-    "Gene Keys": "#b87dd4",
+    "Astro Geography": "#7a8a9a",
+    "Human Design": "#7a8a9a",
+    "Numerology": "#7d6680",
+    "Gene Keys": "#7d6680",
   };
   
   const borderColor = sectionColors[title] || "#8a9e8d";
@@ -618,7 +618,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#5b6ff5", borderColor: "#5b6ff5" }}>
+    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#7a8a9a", borderColor: "#7a8a9a" }}>
       {children}
     </span>
   );
@@ -626,7 +626,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#b87dd4", borderColor: "#b87dd4" }}>
+    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#7d6680", borderColor: "#7d6680" }}>
       {children}
     </span>
   );
@@ -796,7 +796,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingName(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : "Failed to save");
+      setSaveError(e instanceof Error ? e.message : "Couldn't reach the stars just now. Try again.");
     } finally {
       setSavingName(false);
     }
@@ -821,7 +821,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingHandle(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : "Failed to save");
+      setSaveError(e instanceof Error ? e.message : "Couldn't reach the stars just now. Try again.");
     } finally {
       setSavingHandle(false);
     }
@@ -846,7 +846,7 @@ export default function ProfilePage() {
         {/* Header bar */}
         <div className="sticky top-0 z-10 bg-forest-deep/90 backdrop-blur-sm border-b border-forest-border/50" style={{ background: "linear-gradient(180deg, rgba(74,158,106,0.08) 0%, transparent 100%)" }}>
           <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-            <span className="font-body text-xs tracking-[0.2em] uppercase text-text-secondary" style={{ color: "#4a9e6a" }}>
+            <span className="font-body text-[10px] tracking-[0.22em] uppercase text-text-secondary" style={{ color: "#6b7d4a" }}>
               Profile
             </span>
             <button
@@ -876,16 +876,46 @@ export default function ProfilePage() {
           >
             <div className="max-w-lg mx-auto px-5">
               {/* Avatar + Identity */}
-              <div className="pt-10 pb-8 flex flex-col items-center gap-2 relative">
-                {/* Hero gradient background */}
-                <div className="absolute inset-x-0 -top-10 h-48 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(232,130,26,0.06) 0%, transparent 60%)" }} />
+              <div className="pt-10 pb-8 flex flex-col items-center gap-2 relative overflow-hidden">
+                {/* Contextual sun-sign planet image — same pattern as CurrentCycles cards.
+                    Maps the user's Sun sign to the matching planet's atmospheric image.
+                    Stays at 0.09 opacity so text remains fully readable. */}
+                {profile?.sunSign && (() => {
+                  const sunSignPlanetImages: Record<string, string> = {
+                    // Fire signs
+                    Aries:       "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=60", // Mars — thunderhead
+                    Leo:         "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=60", // Sun — warm light
+                    Sagittarius: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=60", // Jupiter — storm clouds
+                    // Earth signs
+                    Taurus:      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus — ocean
+                    Virgo:       "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury — silver haze
+                    Capricorn:   "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?w=800&q=60", // Saturn — cold stars
+                    // Air signs
+                    Gemini:      "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury
+                    Libra:       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus
+                    Aquarius:    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // Uranus — deep space
+                    // Water signs
+                    Cancer:      "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // Moon
+                    Scorpio:     "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=800&q=60", // Pluto — dark cosmos
+                    Pisces:      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=60", // Neptune — misty sea
+                  };
+                  const imgSrc = sunSignPlanetImages[profile.sunSign];
+                  if (!imgSrc) return null;
+                  return (
+                    <div className="absolute inset-x-0 -top-10 h-64 pointer-events-none">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={imgSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.09 }} />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.4) 0%, rgba(5,15,8,0.95) 100%)" }} />
+                    </div>
+                  );
+                })()}
                 
                 {/* Avatar with camera overlay */}
                 <div className="relative mb-1 z-10">
                   {/* Gradient border ring */}
                   <div
                     className="absolute inset-0 rounded-full p-0.5 opacity-70"
-                    style={{ background: "linear-gradient(135deg, #e8821a, #b87dd4)", zIndex: -1 }}
+                    style={{ background: "linear-gradient(135deg, #e8821a, #7d6680)", zIndex: -1 }}
                   />
                   <div
                     className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg overflow-hidden relative bg-forest-deep"
@@ -967,7 +997,7 @@ export default function ProfilePage() {
                   )}
 
                   {saveError && (
-                    <p className="font-body text-red-400 text-[10px]">{saveError}</p>
+                    <p className="font-body text-ember text-[10px]">{saveError}</p>
                   )}
                 </div>
 
@@ -982,21 +1012,21 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-xs tracking-[0.2em] uppercase mb-4 text-center">
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center">
                   Soul Map
                 </p>
 
                 {profile ? (
                   <div className="relative rounded-2xl overflow-hidden mb-4">
                     {/* Glow background layer */}
-                    <div className="absolute inset-0 bg-forest-card/40" style={{ background: "radial-gradient(ellipse at center, rgba(91,111,245,0.12) 0%, rgba(184,125,212,0.06) 40%, transparent 70%)" }} />
+                    <div className="absolute inset-0 bg-forest-card/40" style={{ background: "radial-gradient(ellipse at center, rgba(122, 138, 154,0.12) 0%, rgba(125, 102, 128,0.06) 40%, transparent 70%)" }} />
                     {/* Content */}
                     <div className="relative border border-forest-border/50 rounded-2xl p-4 bg-forest-card/40 backdrop-blur-sm">
                     <SoulMapRadarChart radar={profile.radar} />
 
                       {/* Legend */}
                       <div className="mt-2 flex justify-center gap-5 font-body text-[10px] tracking-widest">
-                        <span style={{ color: "#5b6ff5" }}>● Blue-Purple = your profile</span>
+                        <span style={{ color: "#7a8a9a" }}>● Blue-Purple = your profile</span>
                         <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
                       </div>
 
@@ -1470,7 +1500,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
                 <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #b87dd4, #5b6ff5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #7d6680, #7a8a9a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

@@ -119,8 +119,7 @@ function ChatPageInner() {
   const [sessionId, setSessionId] = useState<string>("");
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [energyTag, setEnergyTag] = useState("Gate 57. Intuition");
-  const [showHistory, setShowHistory] = useState(false);
+const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
 
   // Streaming state
@@ -245,9 +244,6 @@ function ChatPageInner() {
           }
         }
 
-        if (data?.tags?.human_design) {
-          setEnergyTag(data.tags.human_design);
-        }
       } catch {
         // Forecast API failed — try to build something personal from the user profile
         try {
@@ -629,15 +625,36 @@ function ChatPageInner() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep flex flex-col">
+      <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
+        {/* Subtle space background — fixed so it doesn't scroll with messages */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1200&q=60"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            width: "100%", height: "100%",
+            objectFit: "cover",
+            opacity: 0.06,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
         {/* Header */}
-        <div className="px-5 pt-12 pb-4" style={{ background: "linear-gradient(180deg, rgba(184,125,212,0.08) 0%, transparent 100%)", borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
-          <div className="max-w-lg mx-auto">
-            <p className="font-body text-xs tracking-[0.2em] uppercase mb-1 text-text-secondary" style={{ color: "#b87dd4" }}>
+        <div className="px-5 pt-12 pb-4 relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
+          <div className="absolute inset-0 pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
+          </div>
+          <div className="max-w-lg mx-auto relative z-10">
+            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary" style={{ color: "#7d6680" }}>
               Your Higher Self
             </p>
             <div className="flex items-center justify-between">
-              <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>SOLRAY</h1>
+              <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}
@@ -651,15 +668,13 @@ function ChatPageInner() {
                 <button
                   onClick={startNewChat}
                   title="New chat"
-                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[10px] tracking-widest hover:border-amber-sun hover:text-amber-sun transition-colors"
+                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[10px] tracking-widest transition-colors"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#7d6680"; (e.currentTarget as HTMLElement).style.color = "#7d6680"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
                 >
                   + New
                 </button>
-                <span className="px-3 py-1 rounded-full border border-forest-border font-body text-text-secondary text-[10px] tracking-widest">
-                  {energyTag}
-                </span>
               </div>
-            </div>
           </div>
         </div>
 
@@ -671,11 +686,12 @@ function ChatPageInner() {
               if (el) { el.scrollTop = el.scrollHeight; }
               setAutoScroll(true);
             }}
-            className="fixed z-30 w-10 h-10 rounded-full bg-amber-sun text-forest-deep flex items-center justify-center shadow-lg active:scale-95 transition-all"
-            style={{ bottom: "110px", right: "20px" }}
+            className="fixed z-30 active:scale-95 transition-all"
+            style={{ bottom: "100px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.90)", backdropFilter: "blur(12px)", padding: "8px 20px", borderRadius: "999px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
             aria-label="Scroll to bottom"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <span className="font-body text-[9px] tracking-widest uppercase" style={{ color: "#e8e0cc" }}>scroll down</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e8e0cc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
             </svg>
           </button>
@@ -684,11 +700,60 @@ function ChatPageInner() {
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" onScroll={handleScroll}>
           <div className="max-w-lg mx-auto space-y-4">
+
+            {/* Empty / loading state — visible for the brief moment before
+                the greeting arrives. A centered wisteria glow with the
+                logo pulsing says "I am here" without words. */}
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center pt-20 pb-10 animate-fade-in">
+                <div
+                  className="w-16 h-16 rounded-full overflow-hidden mb-6"
+                  style={{
+                    boxShadow: "0 0 40px rgba(125,102,128,0.30), 0 0 80px rgba(125,102,128,0.12)",
+                    animation: "pulse 2.4s ease-in-out infinite",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.jpg" alt="Solray" className="w-full h-full object-cover" />
+                </div>
+                <p className="font-heading text-text-secondary/30 text-sm tracking-[0.18em] uppercase" style={{ fontWeight: 300 }}>
+                  listening…
+                </p>
+              </div>
+            )}
+
             {messages.map((msg) => {
               const isStreaming = streamingId === msg.id;
               const displayContent = isStreaming
                 ? msg.content.slice(0, streamedLength)
                 : msg.content;
+
+              // ── Greeting message — rendered as a centered invocation,
+              //    not a chat bubble. This is the first thing a user sees
+              //    when they open chat: a full-width poetic moment, not UI.
+              if (msg.id === "greeting") {
+                return (
+                  <div key={msg.id} className="flex flex-col items-center text-center pt-8 pb-4 animate-fade-in">
+                    {/* Ambient glow */}
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden mb-5"
+                      style={{ boxShadow: "0 0 32px rgba(125,102,128,0.25), 0 0 64px rgba(125,102,128,0.10)" }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo.jpg" alt="" aria-hidden="true" className="w-full h-full object-cover" />
+                    </div>
+                    {/* The greeting text — Cormorant Garamond, italic, large */}
+                    <p
+                      className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
+                      style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+                    >
+                      {isStreaming ? displayContent : msg.content}
+                      {isStreaming && <span className="inline-block w-0.5 h-4 bg-wisteria/60 ml-0.5 animate-pulse" />}
+                    </p>
+                    <div className="mt-5 w-12 h-px bg-forest-border/60" />
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -699,13 +764,13 @@ function ChatPageInner() {
                     <div
                       className={`rounded-2xl px-4 py-3 ${
                         msg.role === "user"
-                          ? "text-forest-deep rounded-br-sm"
+                          ? "text-text-primary rounded-br-sm"
                           : "text-text-primary rounded-bl-sm"
                       }`}
                       style={
                         msg.role === "user"
-                          ? { background: "linear-gradient(135deg, #b87dd4, #8a55b0)" }
-                          : { background: "rgba(184,125,212,0.05)", border: "2px solid rgba(184,125,212,0.3)" }
+                          ? { background: "linear-gradient(135deg, #7d6680, #5a4a5e)" }
+                          : { background: "rgba(125,102,128,0.05)", border: "2px solid rgba(125,102,128,0.3)" }
                       }
                     >
                       <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
@@ -729,8 +794,8 @@ function ChatPageInner() {
                     borderRadius: "50%",
                     animation: "spin 1.2s linear infinite",
                     objectFit: "cover",
-                    boxShadow: "0 0 24px rgba(184,125,212,0.4)",
-                    filter: "drop-shadow(0 0 12px rgba(184,125,212,0.3))",
+                    boxShadow: "0 0 24px rgba(125,102,128,0.45)",
+                    filter: "drop-shadow(0 0 12px rgba(125,102,128,0.35))",
                   }}
                 />
               </div>
@@ -752,11 +817,11 @@ function ChatPageInner() {
               placeholder="Speak freely…"
               className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
               style={{
-                "--focus-ring-color": "#b87dd4",
+                "--focus-ring-color": "#7d6680",
               } as React.CSSProperties & { "--focus-ring-color"?: string }}
               onFocus={(e) => {
-                e.target.style.borderColor = "#b87dd4";
-                e.target.style.boxShadow = "0 0 0 2px rgba(184,125,212,0.2)";
+                e.target.style.borderColor = "#7d6680";
+                e.target.style.boxShadow = "0 0 0 2px rgba(125,102,128,0.25)";
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = "rgb(26, 48, 32)";
@@ -766,7 +831,7 @@ function ChatPageInner() {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || sending}
-              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #b87dd4, #8a55b0)" }}
+              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #7d6680, #5a4a5e)" }}
             >
               {sending ? (
                 <LoadingSpinner size="sm" />
@@ -805,7 +870,7 @@ function ChatPageInner() {
                       <div key={s.sessionId} className="relative">
                         {renamingId === s.sessionId ? (
                           /* Inline rename input */
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-sun bg-forest-card">
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #7d6680" }}>
                             <input
                               autoFocus
                               type="text"
@@ -821,7 +886,7 @@ function ChatPageInner() {
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="font-body text-amber-sun text-[10px]"
+                              className="font-body text-[10px]" style={{ color: "#7d6680" }}
                             >
                               Save
                             </button>
@@ -832,8 +897,10 @@ function ChatPageInner() {
                               onClick={() => loadPastSession(s.sessionId)}
                               className={`flex-1 text-left px-4 py-3 rounded-xl border transition-colors ${
                                 s.sessionId === sessionId
-                                  ? "border-amber-sun bg-forest-card text-text-primary"
-                                  : "border-forest-border bg-forest-card text-text-secondary hover:border-amber-sun/50 hover:text-text-primary"
+                                  ? "bg-forest-card text-text-primary"
+                                  : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
+                              }`}
+                              style={s.sessionId === sessionId ? { border: "1px solid #7d6680" } : undefined
                               }`}
                             >
                               <p className="font-body text-text-secondary text-[10px] tracking-widest mb-1">
@@ -847,7 +914,9 @@ function ChatPageInner() {
                             <button
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title="Rename chat"
-                              className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-amber-sun transition-colors shrink-0"
+                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0" style={{ ["--hover-c" as any]: "#7d6680" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#7d6680"}
+                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

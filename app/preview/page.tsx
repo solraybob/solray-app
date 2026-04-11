@@ -117,7 +117,7 @@ export default function PreviewPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Failed to calculate blueprint");
+        throw new Error(err.detail || "Blueprint still forming. Try once more.");
       }
 
       const data = await res.json();
@@ -133,7 +133,7 @@ export default function PreviewPage() {
       setStep(3);
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+        err instanceof Error ? err.message : "Something felt off in the cosmos. Try once more.";
       setError(msg);
       setStep(1);
     } finally {
@@ -349,7 +349,7 @@ export default function PreviewPage() {
                 </div>
 
                 {error && (
-                  <p className="text-red-400 text-xs font-body text-center">
+                  <p className="text-ember text-xs font-body text-center">
                     {error}
                   </p>
                 )}

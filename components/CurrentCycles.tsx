@@ -68,6 +68,14 @@ interface CyclesResponse {
   generated_at: string;
 }
 
+// Safari-compatible sentence splitter (no lookbehind assertions)
+function splitFirstSentence(text: string): [string, string] {
+  const match = text.match(/^[\s\S]*?[.!?](?:\s|$)/);
+  const first = match ? match[0].trim() : text;
+  const rest = text.slice(match ? match[0].length : text.length).trim();
+  return [first, rest];
+}
+
 // Human-readable cycle title transformations
 const CYCLE_TITLE_MAP: Record<string, string> = {
   "Jupiter meets your Chiron": "Jupiter opens your deepest wound into wisdom",
@@ -127,8 +135,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
   const duration = `${fmtDate(cycle.started)} — ${fmtDate(cycle.ends)}`;
   const summary = cycle.summary || "";
-  const firstSentence = summary.split(/(?<=[.!?])\s+/)[0] || summary;
-  const rest = summary.slice(firstSentence.length).trim();
+  const [firstSentence, rest] = splitFirstSentence(summary);
 
   return (
     <div
@@ -238,6 +245,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
   const [expanded, setExpanded] = useState(false);
   const summary = cycle.summary || "";
+  const [upFirstSentence, upRest] = splitFirstSentence(summary);
 
   return (
     <div
@@ -275,18 +283,18 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
       </div>
 
       {/* Always show first sentence */}
-      {summary && (
+      {upFirstSentence && (
         <p className="text-text-secondary/70 text-[13px] font-body leading-snug mt-3">
-          {summary.split(/(?<=[.!?])\s+/)[0] || summary}
+          {upFirstSentence}
         </p>
       )}
 
       {/* Expanded: rest of summary + Go Deeper */}
       {expanded && (
         <>
-          {summary.split(/(?<=[.!?])\s+/).slice(1).join(" ") && (
+          {upRest && (
             <p className="text-text-secondary/60 text-[13px] font-body leading-snug mt-2">
-              {summary.split(/(?<=[.!?])\s+/).slice(1).join(" ")}
+              {upRest}
             </p>
           )}
           <div className="mt-3 flex justify-end">

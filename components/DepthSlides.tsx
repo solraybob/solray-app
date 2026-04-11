@@ -20,6 +20,8 @@ const SLIDES = [
     key: "astrology" as const,
     label: "The Sky",
     color: "#e8821a",
+    // Warm candlelight amber — golden glow matching the color
+    image: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="4"/>
@@ -33,7 +35,9 @@ const SLIDES = [
   {
     key: "human_design" as const,
     label: "Your Design",
-    color: "#5b6ff5",
+    color: "#7a8a9a", // mist — mental blueprint, cool geometric
+    // Earth from space — the cosmic blueprint of a body
+    image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="7" r="3"/>
@@ -44,7 +48,9 @@ const SLIDES = [
   {
     key: "gene_keys" as const,
     label: "Your Keys",
-    color: "#b87dd4",
+    color: "#7d6680", // wisteria — mystical keys, transformative
+    // Moon — the inner world, mystery, threshold
+    image: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
@@ -92,7 +98,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           }}
           onScroll={handleScroll}
         >
-          {SLIDES.map(({ key, label, icon, color }) => {
+          {SLIDES.map(({ key, label, icon, color, image }) => {
             const headline = tags[key] || "";
             const detail = tagDetails?.[key] || "";
             const isOpen = openKeys.has(key);
@@ -105,57 +111,61 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 style={{
                   width: "calc(100vw - 40px)",
                   scrollSnapAlign: "start",
-                  background: `linear-gradient(135deg, ${color}18 0%, #0a1f12 60%)`,
                   border: `1px solid ${isOpen ? color : `${color}35`}`,
                   borderRadius: "14px",
-                  padding: "16px",
+                  overflow: "hidden",
+                  // CSS multi-background: gradient on top, image behind — single property, no extra elements
+                  background: `linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%), url("${image}") center/cover`,
                 }}
               >
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span style={{ color }}>{icon}</span>
-                  <span
-                    className="font-body text-xs uppercase font-semibold tracking-widest"
-                    style={{ color }}
-                  >
-                    {label}
-                  </span>
-                  <span
-                    className="ml-auto"
-                    style={{
-                      color: isOpen ? color : `${color}70`,
-                      fontSize: "0.7rem",
-                      transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s ease",
-                      display: "inline-block",
-                    }}
-                  >
-                    ▼
-                  </span>
-                </div>
-
-                {/* Headline */}
-                <p
-                  className="font-body text-[13px] font-medium leading-relaxed"
-                  style={{ color: "#e8e0cc" }}
-                >
-                  {headline}
-                </p>
-
-                {/* Body — expands on tap */}
-                {isOpen && (
-                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${color}25` }}>
-                    <p
-                      className="font-body text-[13px] leading-relaxed"
+                {/* Content */}
+                <div style={{ padding: "16px" }}>
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span style={{ color }}>{icon}</span>
+                    <span
+                      className="font-body text-xs uppercase font-semibold tracking-widest"
+                      style={{ color }}
+                    >
+                      {label}
+                    </span>
+                    <span
+                      className="ml-auto"
                       style={{
-                        color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
-                        fontStyle: detail ? "normal" : "italic",
+                        color: isOpen ? color : `${color}70`,
+                        fontSize: "0.7rem",
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.3s ease",
+                        display: "inline-block",
                       }}
                     >
-                      {detail || "Deeper interpretation coming soon."}
-                    </p>
+                      ▼
+                    </span>
                   </div>
-                )}
+
+                  {/* Headline */}
+                  <p
+                    className="font-body text-[13px] font-medium leading-relaxed"
+                    style={{ color: "#e8e0cc" }}
+                  >
+                    {headline}
+                  </p>
+
+                  {/* Body — expands on tap */}
+                  {isOpen && (
+                    <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${color}25` }}>
+                      <p
+                        className="font-body text-[13px] leading-relaxed"
+                        style={{
+                          color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
+                          fontStyle: detail ? "normal" : "italic",
+                        }}
+                      >
+                        {detail || "Deeper interpretation coming soon."}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
