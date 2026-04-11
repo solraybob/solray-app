@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 // Bump this version string whenever you want to force a full cache clear on all devices.
-const APP_VERSION = "v14";
+const APP_VERSION = "v15";
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
