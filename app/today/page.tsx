@@ -18,20 +18,20 @@ const PLANET_HERO_IMAGES: Record<string, string> = {
   moon: "https://images.unsplash.com/photo-1518066000714-58c45f1a2c0a?auto=format&fit=crop&w=800&q=80",
   // Mercury — lightning storm in dark sky
   mercury: "https://images.unsplash.com/photo-1537420327992-d6e192287183?auto=format&fit=crop&w=800&q=80",
-  // Venus — pink and gold dawn sky
-  venus: "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?auto=format&fit=crop&w=800&q=80",
-  // Mars — dramatic red sunset sky
-  mars: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=800&q=80",
-  // Jupiter — epic towering storm clouds
+  // Venus — soft pink and gold sunrise sky, warm light
+  venus: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80",
+  // Mars — deep red sky at dusk, atmospheric and intense
+  mars: "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?auto=format&fit=crop&w=800&q=80",
+  // Jupiter — towering cumulonimbus storm clouds, vast sky
   jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
-  // Saturn — cold grey ringed sky, winter atmosphere
-  saturn: "https://images.unsplash.com/photo-1422464804701-7d8567a1b945?auto=format&fit=crop&w=800&q=80",
-  // Uranus — electric blue sky, unusual atmosphere
+  // Saturn — cold pale grey sky with ice clouds, stark
+  saturn: "https://images.unsplash.com/photo-1534794048419-b5e3b1a07c42?auto=format&fit=crop&w=800&q=80",
+  // Uranus — electric blue fractured ice sky, otherworldly
   uranus: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
-  // Neptune — deep blue ocean meeting dark sky
+  // Neptune — deep navy twilight ocean horizon meets sky
   neptune: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80",
-  // Pluto — dark starfield, edge of cosmos
-  pluto: "https://images.unsplash.com/photo-1543722530-d2c3201371e7?auto=format&fit=crop&w=800&q=80",
+  // Pluto — dark starfield, Milky Way, edge of cosmos
+  pluto: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=800&q=80",
   // Default — Milky Way
   default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
 };
