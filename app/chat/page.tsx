@@ -456,19 +456,22 @@ const [showHistory, setShowHistory] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  // Detect if user has manually scrolled up
-  const handleScroll = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setAutoScroll(distFromBottom < 60);
+  // Use IntersectionObserver on the bottom sentinel — reliable on iOS Safari
+  useEffect(() => {
+    const sentinel = messagesEndRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setAutoScroll(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, []);
 
   // Auto-scroll when new content arrives, but only if user is near the bottom
   useEffect(() => {
     if (autoScroll) {
-      const el = scrollContainerRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, streamedLength, autoScroll]);
 
@@ -699,8 +702,7 @@ const [showHistory, setShowHistory] = useState(false);
         {!autoScroll && (
           <button
             onClick={() => {
-              const el = scrollContainerRef.current;
-              if (el) { el.scrollTop = el.scrollHeight; }
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
               setAutoScroll(true);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
@@ -715,7 +717,7 @@ const [showHistory, setShowHistory] = useState(false);
         )}
 
         {/* Messages */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" onScroll={handleScroll}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32">
           <div className="max-w-lg mx-auto space-y-4">
 
             {/* Empty / loading state — visible for the brief moment before
