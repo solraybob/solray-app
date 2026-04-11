@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import CurrentCycles from "@/components/CurrentCycles";
@@ -153,36 +154,90 @@ function getEnergyNote(label: string, value: number): string {
   return bucket[2];
 }
 
+// Extended palette — aged pigments. Label stays in text.secondary;
+// color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
-  Mental: "#5b6ff5",
-  Emotional: "#e8821a",
-  Physical: "#4a7a5a",
-  Intuitive: "#b87dd4",
+  Mental:    "#7a8a9a", // mist
+  Emotional: "#c4623a", // ember
+  Physical:  "#6b7d4a", // moss
+  Intuitive: "#7d6680", // wisteria
+};
+
+// Prompts seeded into chat when a bar is tapped. Phrased as the user
+// asking their Higher Self — keeps the question in first-person voice.
+const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
+  Mental:    (p) => `My mental energy is at ${p}% today. What's shaping it, and how should I work with it?`,
+  Emotional: (p) => `My emotional energy is at ${p}% today. What's underneath this, and what does it need from me?`,
+  Physical:  (p) => `My physical energy is at ${p}% today. How should I move, rest, or pace myself?`,
+  Intuitive: (p) => `My intuitive energy is at ${p}% today. What is my gut trying to tell me I'm not listening to?`,
 };
 
 function EnergyBar({
   label,
   value,
   animate,
+  delayMs,
+  onAsk,
 }: {
   label: string;
   value: number;
   animate: boolean;
+  delayMs: number;
+  onAsk: (label: string, pct: number) => void;
 }) {
   const color = ENERGY_COLORS[label] || "#e8821a";
+  const pct = value * 10;
+
   return (
-    <div className="flex items-center gap-3">
-      <span className="font-body text-xs font-semibold tracking-widest uppercase w-20 shrink-0" style={{ color }}>
-        {label}
-      </span>
-      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(26,48,32,0.6)" }}>
+    <button
+      type="button"
+      onClick={() => onAsk(label, pct)}
+      aria-label={`Ask your Higher Self about your ${label.toLowerCase()} energy at ${pct} percent`}
+      className="group block w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-sun/40 rounded-sm"
+      style={{
+        opacity: animate ? 1 : 0,
+        transform: animate ? "translateY(0)" : "translateY(6px)",
+        transition: `opacity 600ms cubic-bezier(0.22, 0.8, 0.36, 1) ${delayMs}ms, transform 600ms cubic-bezier(0.22, 0.8, 0.36, 1) ${delayMs}ms`,
+      }}
+    >
+      {/* Label row — label and percentage both sit in text.secondary.
+          The color does the categorizing job; the label does the naming job. */}
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="font-body text-[10px] font-normal tracking-[0.22em] uppercase text-text-secondary">
+          {label}
+        </span>
+        <span
+          className="font-heading text-[15px] text-text-secondary/70"
+          style={{ fontFeatureSettings: '"lnum"' }}
+        >
+          {pct}
+        </span>
+      </div>
+
+      {/* 2px hairline track. Fill is solid ink at 85% in the category pigment.
+          4px dot marks the head of the line — the point where it stops. */}
+      <div
+        className="relative h-[2px] w-full"
+        style={{ background: "rgba(26, 48, 32, 0.6)" }}
+      >
         <div
-          className="h-full rounded-full transition-all duration-1000"
-          style={{ width: animate ? `${value * 10}%` : "0%", background: `linear-gradient(to right, ${color}, transparent)` }}
+          className="absolute inset-y-0 left-0 transition-opacity duration-200 group-hover:opacity-100"
+          style={{
+            width: `${pct}%`,
+            background: color,
+            opacity: 0.85,
+          }}
+        />
+        <div
+          className="absolute top-1/2 h-[4px] w-[4px] rounded-full transition-transform duration-200 group-hover:scale-110"
+          style={{
+            left: `${pct}%`,
+            background: color,
+            transform: "translate(-50%, -50%)",
+          }}
         />
       </div>
-      <span className="font-body text-xs font-medium w-8 text-right" style={{ color }}>{value * 10}%</span>
-    </div>
+    </button>
   );
 }
 
@@ -430,7 +485,23 @@ export default function TodayPage() {
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState(0);
   const { token } = useAuth();
+  const router = useRouter();
   const backgroundFetchDone = useRef(false);
+
+  // Tap an energy bar → seed a first-person question into chat and navigate.
+  // Uses the same sessionStorage pattern as AskButton on the profile page.
+  const handleEnergyAsk = (label: string, pct: number) => {
+    const promptBuilder = ENERGY_PROMPTS[label];
+    const prompt = promptBuilder
+      ? promptBuilder(pct)
+      : `What does my ${label.toLowerCase()} energy at ${pct}% mean for today?`;
+    try {
+      sessionStorage.setItem("solray_chat_prompt", prompt);
+    } catch (_) {
+      // ignore — navigation still works, just without the seeded prompt
+    }
+    router.push("/chat");
+  };
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -590,20 +661,53 @@ export default function TodayPage() {
                 </div>
               )}
 
-              {/* ENERGY BARS — more padding */}
-              <div
-                className="mt-12 mb-10 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 2 ? 1 : 0,
-                  transform: visibleSections >= 2 ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
-                <div className="space-y-5">
-                  <EnergyBar label="Mental" value={forecast.energy.mental} animate={barsAnimated} />
-                  <EnergyBar label="Emotional" value={forecast.energy.emotional} animate={barsAnimated} />
-                  <EnergyBar label="Physical" value={forecast.energy.physical} animate={barsAnimated} />
-                  <EnergyBar label="Intuitive" value={forecast.energy.intuitive} animate={barsAnimated} />
+              {/* ENERGY BARS — the daily ritual. Hairline ink-lines,
+                  each row fades in on its own clock at 80ms stagger. */}
+              <div className="mt-14 mb-12">
+                {/* Parallel label to "Today's Weather" on the hero card */}
+                <p
+                  className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-7 transition-opacity duration-700"
+                  style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
+                >
+                  Today, In You
+                </p>
+                <div className="space-y-[22px]">
+                  <EnergyBar
+                    label="Mental"
+                    value={forecast.energy.mental}
+                    animate={barsAnimated}
+                    delayMs={120}
+                    onAsk={handleEnergyAsk}
+                  />
+                  <EnergyBar
+                    label="Emotional"
+                    value={forecast.energy.emotional}
+                    animate={barsAnimated}
+                    delayMs={200}
+                    onAsk={handleEnergyAsk}
+                  />
+                  <EnergyBar
+                    label="Physical"
+                    value={forecast.energy.physical}
+                    animate={barsAnimated}
+                    delayMs={280}
+                    onAsk={handleEnergyAsk}
+                  />
+                  <EnergyBar
+                    label="Intuitive"
+                    value={forecast.energy.intuitive}
+                    animate={barsAnimated}
+                    delayMs={360}
+                    onAsk={handleEnergyAsk}
+                  />
                 </div>
+                {/* Faint hint — italic Cormorant, only on first paint */}
+                <p
+                  className="font-heading italic text-text-secondary/50 text-[13px] text-center mt-7 transition-opacity duration-700"
+                  style={{ opacity: visibleSections >= 2 ? 1 : 0 }}
+                >
+                  Tap any line to ask your Higher Self why.
+                </p>
               </div>
 
 
