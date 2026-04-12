@@ -668,20 +668,17 @@ function ChatPageInner() {
             <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
           </div>
-          <div className="max-w-lg mx-auto px-5 py-3 relative z-10">
-            <div className="flex items-center">
-              <div className="flex-1 min-w-0">
-                <p className="font-body text-[10px] tracking-[0.18em] uppercase truncate" style={{ color: "#7d6680" }}>
-                  Your Higher Self
-                </p>
-              </div>
+          <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
+            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#7d6680" }}>
+              Your Higher Self
+            </p>
+            <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
-                className="font-heading tracking-[0.15em] text-text-primary text-center shrink-0 px-2"
+                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 ORACLE
               </h1>
-              <div className="flex-1 flex justify-end min-w-0">
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}
@@ -701,7 +698,6 @@ function ChatPageInner() {
                 >
                   + New
                 </button>
-              </div>
               </div>
             </div>
           </div>

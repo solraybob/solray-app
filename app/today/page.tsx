@@ -629,24 +629,20 @@ export default function TodayPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep pb-24">
-        {/* Header — three-column flex: left tag, center title, right date. No overlap on small screens. */}
+        {/* Header — tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 py-3">
-            <div className="flex items-center">
-              <div className="flex-1 min-w-0">
-                <p className="font-body text-[10px] tracking-[0.18em] uppercase truncate" style={{ color: "#e8821a" }}>
-                  Living By Design
-                </p>
-              </div>
+          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
+            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#e8821a" }}>
+              Living By Design
+            </p>
+            <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
-                className="font-heading tracking-[0.15em] text-text-primary text-center shrink-0 px-2"
+                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 SOLRAY
               </h1>
-              <div className="flex-1 flex justify-end min-w-0">
-                <span className="font-body text-text-secondary text-[10px]">{today}</span>
-              </div>
+              <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
         </div>
