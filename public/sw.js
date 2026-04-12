@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solray-v15';
+const CACHE_NAME = 'solray-v16';
 
 // Only cache static assets, NOT HTML pages
 const urlsToCache = [
@@ -24,14 +24,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Never cache HTML pages - always fetch fresh from network
-  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-  // For other assets, try cache first
+  // Always fetch fresh from network — Next.js uses content-addressed hashes so
+  // there is no benefit to caching JS/CSS here, and stale cache causes update issues.
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((cached) => {
+      // Only serve from cache for pre-cached static icons/images
+      if (cached && urlsToCache.some(u => event.request.url.endsWith(u))) {
+        return cached;
+      }
+      return fetch(event.request);
+    })
   );
 });
 
