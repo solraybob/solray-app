@@ -661,19 +661,24 @@ function ChatPageInner() {
             zIndex: 0,
           }}
         />
-        {/* Header */}
-        <div className="px-5 pt-12 pb-4 relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
+        {/* Header — Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
+        <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
           <div className="absolute inset-0 pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
           </div>
-          <div className="max-w-lg mx-auto relative z-10">
-            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1 text-text-secondary" style={{ color: "#7d6680" }}>
-              Your Higher Self
-            </p>
+          <div className="max-w-lg mx-auto px-5 py-3 relative z-10">
             <div className="flex items-center justify-between">
-              <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
+              <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#7d6680" }}>
+                Your Higher Self
+              </p>
+              <h1
+                className="font-heading text-2xl tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                style={{ fontWeight: 300 }}
+              >
+                ORACLE
+              </h1>
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHistory}

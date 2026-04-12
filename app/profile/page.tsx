@@ -875,18 +875,18 @@ export default function ProfilePage() {
   return (
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep pb-28">
-        {/* Header: matches today + chat + souls. Tag on left, SOLRAY center, edit on right. */}
+        {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 py-3 relative">
             <div className="flex items-center justify-between">
               <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#6b7d4a" }}>
-                Your Profile
+                Profile
               </p>
               <h1
                 className="font-heading text-2xl tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300 }}
               >
-                SOLRAY
+                SKYWALKER
               </h1>
               <button
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center relative z-10"

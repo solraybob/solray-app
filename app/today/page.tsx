@@ -629,14 +629,19 @@ export default function TodayPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep pb-24">
-        {/* Header — matches chat page: tag above, title + controls row below. Not sticky. */}
+        {/* Header — Souls reference pattern: tag left, title absolute center, date right */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 py-3 relative">
-            <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-1" style={{ color: "#e8821a" }}>
-              Living By Design
-            </p>
             <div className="flex items-center justify-between">
-              <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
+              <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#e8821a" }}>
+                Living By Design
+              </p>
+              <h1
+                className="font-heading text-2xl tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                style={{ fontWeight: 300 }}
+              >
+                SOLRAY
+              </h1>
               <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
