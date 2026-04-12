@@ -61,7 +61,7 @@ interface SavedPerson {
   created_at: number;
 }
 
-type BondLens = "romantic" | "friendship" | "working";
+type BondLens = "romantic" | "friendship" | "working" | "family";
 type BondPartner =
   | { kind: "saved"; person: SavedPerson }
   | { kind: "connection"; connection: ConnectedSoul };
@@ -446,8 +446,9 @@ export default function SoulsPage() {
     const chart = partnerChart(bondPartner);
     const pName = partnerName(bondPartner);
     const lensLabel =
-      bondLens === "romantic" ? "romantic dynamic"
+      bondLens === "romantic"   ? "romantic dynamic"
       : bondLens === "friendship" ? "friendship dynamic"
+      : bondLens === "family"     ? "family dynamic"
       : "working dynamic";
 
     const chartSummary = [
@@ -766,6 +767,7 @@ function BondCard({ myName, partner, lens, onPickPartner, onChangeLens, onRead, 
     { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
     { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
     { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
+    { key: "family",     label: "Family",     hint: "roots, roles, belonging" },
   ];
   const chart = partner ? partnerChart(partner) : null;
 
