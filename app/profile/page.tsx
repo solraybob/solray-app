@@ -729,8 +729,27 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Avatar is loaded from the server via /users/me (see blueprint useEffect below).
-  // localStorage is kept as an instant-load cache so there's no flicker on re-visit.
+  // Avatar: read localStorage immediately for instant display, then sync from server in background.
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("solray_avatar");
+      if (cached) setAvatarUrl(cached);
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    // Background sync: always pull the server copy of the photo so it reflects
+    // the latest upload from any device (server is the source of truth).
+    apiFetch("/users/me", {}, token)
+      .then((data) => {
+        if (data.profile?.profile_photo) {
+          setAvatarUrl(data.profile.profile_photo);
+          try { localStorage.setItem("solray_avatar", data.profile.profile_photo); } catch (_) {}
+        }
+      })
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -784,18 +803,6 @@ export default function ProfilePage() {
     // No cache — fetch full blueprint (first load only)
     apiFetch("/users/me", {}, token)
       .then((data) => {
-        // Sync profile photo from server — this is the source of truth across devices
-        if (data.profile?.profile_photo) {
-          setAvatarUrl(data.profile.profile_photo);
-          try { localStorage.setItem("solray_avatar", data.profile.profile_photo); } catch (_) {}
-        } else {
-          // Fall back to localStorage cache (same device, photo not yet synced)
-          try {
-            const cached = localStorage.getItem("solray_avatar");
-            if (cached) setAvatarUrl(cached);
-          } catch (_) {}
-        }
-
         if (data.blueprint) {
           const bpWithUser = {
             ...data.blueprint,
