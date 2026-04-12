@@ -730,37 +730,21 @@ export default function ProfilePage() {
   const [avatarSaving, setAvatarSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Avatar: read localStorage immediately for instant display, then sync from server in background.
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem("solray_avatar");
-      if (cached) setAvatarUrl(cached);
-    } catch (_) {}
-  }, []);
-
-  useEffect(() => {
-    if (!token) return;
-    // Background sync: always pull the server copy of the photo so it reflects
-    // the latest upload from any device (server is the source of truth).
-    apiFetch("/users/me", {}, token)
-      .then((data) => {
-        if (data.profile?.profile_photo) {
-          setAvatarUrl(data.profile.profile_photo);
-          try { localStorage.setItem("solray_avatar", data.profile.profile_photo); } catch (_) {}
-        }
-      })
-      .catch(() => {});
-  }, [token]);
-
   useEffect(() => {
     if (!token) return;
 
     const BP_CACHE_KEY = "solray_blueprint";
-    // Bump this version when the blueprint schema changes to force a re-fetch.
-    const BP_CACHE_VERSION = 3; // v3: incarnation cross name + Gene Keys Hologenetic Profile
+    // Bump when blueprint schema changes. v4 adds _profile_photo to cache.
+    const BP_CACHE_VERSION = 4;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function loadFromBlueprint(bp: any) {
+      // Load avatar: prefer cache entry, fall back to solray_avatar key
+      const photo = bp._profile_photo || (() => {
+        try { return localStorage.getItem("solray_avatar"); } catch { return null; }
+      })();
+      if (photo) setAvatarUrl(photo);
+
       try {
         const p = parseProfile(bp);
         setProfile(p);
@@ -771,37 +755,36 @@ export default function ProfilePage() {
       }
     }
 
-    // Try cache first — cheap path
+    // Try cache first — cheap path (no network call)
     try {
       const cached = localStorage.getItem(BP_CACHE_KEY);
       if (cached) {
         const bp = JSON.parse(cached);
-        // Bust stale cache if schema version is behind
         if ((bp._cache_version ?? 0) < BP_CACHE_VERSION) {
           localStorage.removeItem(BP_CACHE_KEY);
           // Fall through to fresh fetch below
-        } else
-        // If name is missing from cache, fetch from a lightweight endpoint
-        if (!bp._name) {
+        } else if (!bp._name) {
           apiFetch("/users/me", {}, token)
             .then((data) => {
               const bpWithUser = {
                 ...bp,
                 _name: data.profile?.name || data.name || "",
                 _username: data.profile?.username || data.username || "",
+                _profile_photo: data.profile?.profile_photo || bp._profile_photo || null,
               };
               try { localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser)); } catch (_) {}
               loadFromBlueprint(bpWithUser);
             })
             .catch(() => loadFromBlueprint(bp));
+          return;
         } else {
           loadFromBlueprint(bp);
+          return;
         }
-        return;
       }
     } catch (_) {}
 
-    // No cache — fetch full blueprint (first load only)
+    // No cache — fetch full blueprint (first load or after cache bust)
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
@@ -809,6 +792,7 @@ export default function ProfilePage() {
             ...data.blueprint,
             _name: data.profile?.name || data.name || "",
             _username: data.profile?.username || data.username || "",
+            _profile_photo: data.profile?.profile_photo || null,
             _cachedAt: Date.now(),
             _cache_version: BP_CACHE_VERSION,
           };
@@ -906,6 +890,15 @@ export default function ProfilePage() {
         // Show immediately
         setAvatarUrl(resized);
         try { localStorage.setItem("solray_avatar", resized); } catch (_) {}
+
+        // Write photo into blueprint cache so other devices get it on next cache-bust
+        try {
+          const bpRaw = localStorage.getItem("solray_blueprint");
+          if (bpRaw) {
+            const bp = JSON.parse(bpRaw);
+            localStorage.setItem("solray_blueprint", JSON.stringify({ ...bp, _profile_photo: resized }));
+          }
+        } catch (_) {}
 
         // Persist to server — read token fresh from localStorage to avoid stale closure
         const liveToken = token || (typeof localStorage !== "undefined" ? localStorage.getItem("solray_token") : null);
