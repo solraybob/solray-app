@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import AstroGeography from "@/components/AstroGeography";
+import NatalWheel from "@/components/NatalWheel";
+import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -1201,19 +1203,26 @@ function parseBlueprintForChart(blueprint: any) {
   const gk = blueprint?.gene_keys;
   const numRaw = blueprint?.numerology;
 
-  const planetsRaw: { planet: string; symbol: string; sign: string; degree: string; house: number; retrograde?: boolean }[] = [];
+  const planetsRaw: { planet: string; symbol: string; sign: string; degree: string; longitude: number; house: number; retrograde?: boolean }[] = [];
   if (natal?.planets) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [name, data] of Object.entries(natal.planets as Record<string, any>)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const d = data as any;
       if (!d.sign || d.sign === 'Unknown' || d.longitude === null) continue;
-      planetsRaw.push({ planet: name, symbol: PLANET_SYMBOLS[name] ?? "●", sign: d.sign, degree: formatDegree(d.degree), house: d.house, retrograde: d.retrograde });
+      planetsRaw.push({ planet: name, symbol: PLANET_SYMBOLS[name] ?? "●", sign: d.sign, degree: formatDegree(d.degree), longitude: d.longitude, house: d.house, retrograde: d.retrograde });
     }
   }
   if (natal?.ascendant) {
-    planetsRaw.push({ planet: "ASC", symbol: "↑", sign: natal.ascendant.sign, degree: formatDegree(natal.ascendant.degree), house: 1 });
+    planetsRaw.push({ planet: "ASC", symbol: "↑", sign: natal.ascendant.sign, degree: formatDegree(natal.ascendant.degree), longitude: natal.ascendant.longitude, house: 1 });
   }
+
+  const ascLongitude: number | null = natal?.ascendant?.longitude ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const houseCusps: number[] = Array.isArray(natal?.house_cusps)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? (natal.house_cusps as any[]).map((h) => (typeof h === "number" ? h : h?.longitude)).filter((n) => typeof n === "number")
+    : [];
 
   const keyChannels: string[] = hd?.defined_channels
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1302,7 +1311,32 @@ function parseBlueprintForChart(blueprint: any) {
     short_meanings: numRaw.short_meanings ?? {},
   } : null;
 
-  return { natal: planetsRaw, human_design: humanDesign, numerology, gene_keys: geneKeys };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hdGates: number[] = Array.isArray((hd as any)?.defined_gates)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? ((hd as any).defined_gates as any[]).map((g) => (typeof g === "number" ? g : parseInt(g, 10))).filter((n) => Number.isFinite(n))
+    : [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hdChannels: Array<[number, number]> = Array.isArray((hd as any)?.defined_channels)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? ((hd as any).defined_channels as any[]).map((ch) => {
+        if (Array.isArray(ch)) return [Number(ch[0]), Number(ch[1])] as [number, number];
+        if (ch && typeof ch === "object") return [Number(ch.gate_a), Number(ch.gate_b)] as [number, number];
+        return [0, 0] as [number, number];
+      }).filter(([a, b]) => a > 0 && b > 0)
+    : [];
+
+  return {
+    natal: planetsRaw,
+    ascLongitude,
+    houseCusps,
+    human_design: humanDesign,
+    hd_gates: hdGates,
+    hd_channels: hdChannels,
+    numerology,
+    gene_keys: geneKeys,
+  };
 }
 
 // Ask button — opens chat with a pre-set question about a profile element.
@@ -1392,6 +1426,15 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       {/* Natal Chart */}
       <CollapsibleSection title="Natal Chart" defaultOpen={false}>
         <div className="mt-2">
+          {/* Wheel */}
+          <div className="mb-5">
+            <NatalWheel
+              planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
+              ascLongitude={chart.ascLongitude}
+              houseCusps={chart.houseCusps}
+              size={320}
+            />
+          </div>
           {/* Core trio */}
           <div className="space-y-4 mb-6">
             {core.map((p) => {
@@ -1469,6 +1512,14 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       {/* Human Design */}
       <CollapsibleSection title="Human Design" defaultOpen={false}>
         <div className="space-y-4 mt-2">
+          {/* Bodygraph */}
+          <div className="mb-2">
+            <BodyGraph
+              definedCenters={chart.human_design.defined_centres}
+              definedChannels={chart.hd_channels}
+              size={280}
+            />
+          </div>
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
               <div className="flex items-center justify-between mb-1">
