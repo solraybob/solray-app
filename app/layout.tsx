@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import Footer from "@/components/Footer";
 import SwipeNavigator from "@/components/SwipeNavigator";
+import BottomNav from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Solray",
@@ -38,6 +39,7 @@ export default function RootLayout({
           <SwipeNavigator>
             {children}
           </SwipeNavigator>
+          <BottomNav />
           <Footer />
         </AuthProvider>
         <ServiceWorkerRegistration />

@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import BottomNav from "@/components/BottomNav";
 import AstroGeography from "@/components/AstroGeography";
 import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
@@ -1196,7 +1195,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <BottomNav />
       </div>
     </ProtectedRoute>
   );

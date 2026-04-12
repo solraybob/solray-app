@@ -62,8 +62,13 @@ const navItems = [
   },
 ];
 
+const NAV_ROUTES = ["/today", "/chat", "/souls", "/profile"];
+
 export default function BottomNav() {
   const pathname = usePathname();
+
+  // Only show on the four main nav screens
+  if (!NAV_ROUTES.includes(pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-forest-dark border-t border-forest-border nav-safe">

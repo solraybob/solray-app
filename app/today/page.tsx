@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import BottomNav from "@/components/BottomNav";
 import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
@@ -781,7 +780,6 @@ export default function TodayPage() {
           </div>
         )}
 
-        <BottomNav />
       </div>
     </ProtectedRoute>
   );
