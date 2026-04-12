@@ -1,13 +1,12 @@
 "use client";
 
 /**
- * NatalWheel — minimalist circular natal chart.
+ * NatalWheel — natal chart wheel with visible contrast and SVG line-art glyphs.
  *
- * Uses SVG line-art glyphs (from AstroGlyphs) rather than the unicode zodiac
- * and planet characters because those render as emoji on iOS. Element colors
- * are from the Solray aged palette: fire ember, earth moss, air mist, water
- * slate. ASC sits at the 9 o'clock position; planets move clockwise as
- * ecliptic longitude increases.
+ * Design intent: the wheel must be immediately legible on the dark forest
+ * background. Approach: dark filled inner disk creates separation, element-
+ * colored zodiac ring sectors at meaningful opacity, planet glyphs sized to
+ * be readable, aspect lines bold enough to trace.
  */
 
 import Glyph from "./AstroGlyphs";
@@ -29,105 +28,111 @@ type Aspect = {
 interface NatalWheelProps {
   planets: Planet[];
   ascLongitude: number | null;
-  houseCusps?: number[]; // 12 cusp longitudes; optional (falls back to whole-sign)
+  houseCusps?: number[];
   aspects?: Aspect[];
   size?: number;
 }
 
-// Major aspect colors (muted for wheel use)
-const ASPECT_LINE: Record<string, { color: string; opacity: number }> = {
-  conjunction: { color: "#e8821a", opacity: 0.55 }, // ember
-  opposition:  { color: "#c85848", opacity: 0.55 }, // muted red
-  trine:       { color: "#6b7d4a", opacity: 0.55 }, // moss
-  square:      { color: "#b06a2a", opacity: 0.55 }, // burnt ochre
-  sextile:     { color: "#7a8a9a", opacity: 0.5  }, // mist
+const ASPECT_LINE: Record<string, { color: string; opacity: number; dash?: string }> = {
+  conjunction: { color: "#e8821a", opacity: 0.70 },
+  opposition:  { color: "#c05858", opacity: 0.65 },
+  trine:       { color: "#6b7d4a", opacity: 0.70 },
+  square:      { color: "#c4723a", opacity: 0.65 },
+  sextile:     { color: "#7a8a9a", opacity: 0.60, dash: "4 3" },
 };
 const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
-const ELEMENT_COLOR = [
-  "#e8821a", // Aries — fire / ember
-  "#6b7d4a", // Taurus — earth / moss
-  "#7a8a9a", // Gemini — air / mist
-  "#4a6670", // Cancer — water / slate
-  "#e8821a", // Leo — fire
+
+// Element colors per sign index (Aries=0 ... Pisces=11)
+const SIGN_ELEMENT_COLOR = [
+  "#c4623a", // Aries — fire
+  "#6b7d4a", // Taurus — earth
+  "#7a8a9a", // Gemini — air
+  "#4a6670", // Cancer — water
+  "#c4623a", // Leo — fire
   "#6b7d4a", // Virgo — earth
   "#7a8a9a", // Libra — air
   "#4a6670", // Scorpio — water
-  "#e8821a", // Sagittarius — fire
+  "#c4623a", // Sagittarius — fire
   "#6b7d4a", // Capricorn — earth
   "#7a8a9a", // Aquarius — air
   "#4a6670", // Pisces — water
 ];
 
-export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects = [], size = 320 }: NatalWheelProps) {
+export default function NatalWheel({
+  planets,
+  ascLongitude,
+  houseCusps,
+  aspects = [],
+  size = 320,
+}: NatalWheelProps) {
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p className="font-body text-text-secondary/60 text-[11px] tracking-[0.15em] uppercase">Wheel unavailable</p>
+        <p className="font-body text-text-secondary/60 text-[11px] tracking-[0.15em] uppercase">
+          Wheel unavailable
+        </p>
       </div>
     );
   }
 
   const cx = size / 2;
   const cy = size / 2;
-  const rOuter = size * 0.47;       // outer edge of zodiac ring
-  const rZodInner = size * 0.40;    // inner edge of zodiac ring / outer edge of house ring
-  const rHouseInner = size * 0.30;  // inner edge of house ring
-  const rPlanet = size * 0.35;      // where planet glyphs sit
-  const rCenter = size * 0.28;      // edge of open center
 
-  // Convert ecliptic longitude to SVG coords.
-  // ASC at 180° (9 o'clock); planets move clockwise as longitude increases.
+  // Radii — give each ring clear breathing room
+  const rOuter     = size * 0.465; // outer zodiac ring edge
+  const rZodInner  = size * 0.385; // zodiac / house ring boundary
+  const rHouseOut  = size * 0.385; // same as zodiac inner
+  const rHouseInner = size * 0.300; // inner edge of house band
+  const rPlanet    = size * 0.340; // planet glyph radius
+  const rAspect    = size * 0.295; // aspect lines start/end
+  const rCenter    = size * 0.155; // open center disk
+
+  // ASC at 9-o'clock; increasing ecliptic lon goes clockwise in chart space
+  // but counterclockwise in screen space (y is flipped).
   const lonToXY = (lon: number, r: number) => {
-    const chartAngleDeg = 180 + (lon - ascLongitude);
-    const rad = (chartAngleDeg * Math.PI) / 180;
+    const deg = 180 + (lon - ascLongitude);
+    const rad = (deg * Math.PI) / 180;
     return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
   };
 
-  // SVG arc path from lon1 to lon2 at radius r (drawn clockwise in chart terms).
+  // Wedge path between two concentric arcs
   const arcPath = (lon1: number, lon2: number, rA: number, rB: number) => {
     const p1 = lonToXY(lon1, rA);
     const p2 = lonToXY(lon2, rA);
     const p3 = lonToXY(lon2, rB);
     const p4 = lonToXY(lon1, rB);
-    // Determine which way to go. In our coord system, increasing lon
-    // goes clockwise in astrological terms but counterclockwise in screen
-    // terms (because we flipped y). SVG large-arc-flag is 1 for > 180°.
     let span = ((lon2 - lon1) % 360 + 360) % 360;
     if (span === 0) span = 360;
     const large = span > 180 ? 1 : 0;
-    // Sweep flag: 0 because visually we want to go the "short way" in screen
-    // space matching the angular span from lon1 to lon2.
     return `M ${p1.x} ${p1.y} A ${rA} ${rA} 0 ${large} 0 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rB} ${rB} 0 ${large} 1 ${p4.x} ${p4.y} Z`;
   };
 
-  // Zodiac ring: 12 sectors (one per sign)
+  // Zodiac ring sectors
   const signSectors = Array.from({ length: 12 }, (_, i) => {
     const startLon = i * 30;
     const endLon = (i + 1) * 30;
     const midLon = startLon + 15;
-    const labelPos = lonToXY(midLon, (rOuter + rZodInner) / 2);
+    const labelR = (rOuter + rZodInner) / 2;
+    const labelPos = lonToXY(midLon, labelR);
     return {
       i,
       path: arcPath(startLon, endLon, rOuter, rZodInner),
       labelPos,
-      color: ELEMENT_COLOR[i],
+      color: SIGN_ELEMENT_COLOR[i],
     };
   });
 
-  // House cusps: use provided cusps if available, otherwise whole-sign from ASC.
-  const cusps: number[] = (houseCusps && houseCusps.length === 12)
+  // House cusps
+  const cusps: number[] = houseCusps && houseCusps.length === 12
     ? houseCusps
     : Array.from({ length: 12 }, (_, i) => (ascLongitude + i * 30) % 360);
 
-  // Resolve planet overlaps: if two planets are within ~5°, nudge them apart.
+  // Planet collision resolution (sort by lon, push crowded ones apart)
   const placed = [...planets]
     .filter((p) => typeof p.longitude === "number")
     .sort((a, b) => a.longitude - b.longitude);
 
-  // Simple collision push: walk through sorted planets, if neighbor is within
-  // 6° then push the later one forward until it's 6° clear. This is good
-  // enough for visual legibility without doing iterative layout.
-  const MIN_GAP = 6;
+  const MIN_GAP = 7;
   const adjusted: { p: Planet; displayLon: number }[] = [];
   for (const p of placed) {
     let display = p.longitude;
@@ -138,6 +143,21 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
     adjusted.push({ p, displayLon: display });
   }
 
+  // Pick planet color by the sign it occupies
+  const planetColor = (lon: number) => {
+    const signIdx = Math.floor(((lon % 360) + 360) % 360 / 30);
+    return SIGN_ELEMENT_COLOR[signIdx];
+  };
+
+  // Aspect lines — top 8 tightest majors
+  const byName: Record<string, Planet> = {};
+  for (const p of planets) byName[p.planet] = p;
+  const majorLines = aspects
+    .filter((a) => MAJOR_ASPECTS.has(a.aspect?.toLowerCase()))
+    .filter((a) => byName[a.planet1] && byName[a.planet2])
+    .sort((a, b) => a.orb - b.orb)
+    .slice(0, 8);
+
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
@@ -145,41 +165,56 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
       aria-label="Natal chart wheel"
     >
-      {/* Subtle radial glow behind the wheel */}
       <defs>
-        <radialGradient id="wheelGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="rgba(232,130,26,0.08)" />
-          <stop offset="60%" stopColor="rgba(125,102,128,0.04)" />
+        {/* Soft radial glow behind wheel */}
+        <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stopColor="rgba(232,130,26,0.10)" />
+          <stop offset="55%"  stopColor="rgba(74,102,112,0.06)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
+        {/* Dark fill for inner chart area to create contrast */}
+        <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stopColor="rgba(8,20,14,0.85)" />
+          <stop offset="100%" stopColor="rgba(6,16,10,0.75)" />
+        </radialGradient>
       </defs>
-      <circle cx={cx} cy={cy} r={rOuter} fill="url(#wheelGlow)" />
 
-      {/* Zodiac ring sectors */}
+      {/* Background glow */}
+      <circle cx={cx} cy={cy} r={rOuter + 4} fill="url(#nwGlow)" />
+
+      {/* Dark inner disk — creates contrast for glyphs */}
+      <circle cx={cx} cy={cy} r={rZodInner} fill="url(#nwInner)" />
+
+      {/* Zodiac ring sectors — filled with element color */}
       {signSectors.map((s) => (
         <g key={`sign-${s.i}`}>
-          <path d={s.path} fill={s.color} fillOpacity={0.06} stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
+          <path
+            d={s.path}
+            fill={s.color}
+            fillOpacity={0.16}
+            stroke={s.color}
+            strokeOpacity={0.25}
+            strokeWidth={0.5}
+          />
           <Glyph
             type="sign"
             id={s.i}
             x={s.labelPos.x}
             y={s.labelPos.y}
-            size={size * 0.065}
+            size={size * 0.072}
             color={s.color}
-            strokeWidth={1.1}
-            opacity={0.9}
+            strokeWidth={1.2}
+            opacity={1}
           />
         </g>
       ))}
 
-      {/* Outer + inner zodiac ring lines */}
-      <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={0.8} />
-      <circle cx={cx} cy={cy} r={rZodInner} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={0.6} />
+      {/* Ring borders */}
+      <circle cx={cx} cy={cy} r={rOuter}     fill="none" stroke="rgba(232,210,180,0.25)" strokeWidth={1} />
+      <circle cx={cx} cy={cy} r={rZodInner}  fill="none" stroke="rgba(232,210,180,0.20)" strokeWidth={0.8} />
+      <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke="rgba(232,210,180,0.14}" strokeWidth={0.6} />
 
-      {/* House ring */}
-      <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
-
-      {/* House cusp spokes. ASC + DSC (1st, 7th) and MC + IC (10th, 4th) are emphasized. */}
+      {/* House cusp lines */}
       {cusps.map((lon, idx) => {
         const inner = lonToXY(lon, rHouseInner);
         const outer = lonToXY(lon, rZodInner);
@@ -187,96 +222,93 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
         return (
           <line
             key={`cusp-${idx}`}
-            x1={inner.x}
-            y1={inner.y}
-            x2={outer.x}
-            y2={outer.y}
-            stroke={isAngle ? "rgba(232,210,180,0.4)" : "rgba(255,255,255,0.09)"}
-            strokeWidth={isAngle ? 1 : 0.5}
+            x1={inner.x} y1={inner.y}
+            x2={outer.x} y2={outer.y}
+            stroke={isAngle ? "rgba(232,210,180,0.55)" : "rgba(232,210,180,0.14)"}
+            strokeWidth={isAngle ? 1.2 : 0.5}
           />
         );
       })}
 
-      {/* ASC arrow marker at the 9 o'clock position */}
+      {/* ASC label */}
       {(() => {
-        const inner = lonToXY(ascLongitude, rCenter);
-        const outer = lonToXY(ascLongitude, rHouseInner);
+        const outer = lonToXY(ascLongitude, rZodInner - 10);
         return (
-          <g>
-            <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke="#e8d2b4" strokeWidth={1.2} strokeOpacity={0.5} />
-            <text
-              x={outer.x - 10}
-              y={outer.y + 3}
-              fontSize={size * 0.032}
-              fill="#e8d2b4"
-              fillOpacity={0.7}
-              textAnchor="end"
-              style={{ fontFamily: "serif", letterSpacing: "0.1em" }}
-            >
-              ASC
-            </text>
-          </g>
+          <text
+            x={outer.x}
+            y={outer.y}
+            fontSize={size * 0.030}
+            fill="#e8d2b4"
+            fillOpacity={0.8}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            style={{ fontFamily: "serif", letterSpacing: "0.08em" }}
+          >
+            ASC
+          </text>
         );
       })()}
 
-      {/* Aspect lines: five tightest major aspects, drawn inside the house ring */}
-      {(() => {
-        const byName: Record<string, Planet> = {};
-        for (const p of planets) byName[p.planet] = p;
-        const majors = aspects
-          .filter((a) => MAJOR_ASPECTS.has(a.aspect?.toLowerCase()))
-          .filter((a) => byName[a.planet1] && byName[a.planet2])
-          .sort((a, b) => a.orb - b.orb)
-          .slice(0, 5);
-        return majors.map((a, i) => {
-          const p1 = byName[a.planet1];
-          const p2 = byName[a.planet2];
-          const c1 = lonToXY(p1.longitude, rCenter);
-          const c2 = lonToXY(p2.longitude, rCenter);
-          const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
-          return (
-            <line
-              key={`asp-${i}`}
-              x1={c1.x}
-              y1={c1.y}
-              x2={c2.x}
-              y2={c2.y}
-              stroke={cfg.color}
-              strokeOpacity={cfg.opacity}
-              strokeWidth={1}
-            />
-          );
-        });
-      })()}
+      {/* Aspect lines drawn in the center zone */}
+      {majorLines.map((a, i) => {
+        const p1 = byName[a.planet1];
+        const p2 = byName[a.planet2];
+        const c1 = lonToXY(p1.longitude, rAspect);
+        const c2 = lonToXY(p2.longitude, rAspect);
+        const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
+        if (!cfg) return null;
+        return (
+          <line
+            key={`asp-${i}`}
+            x1={c1.x} y1={c1.y}
+            x2={c2.x} y2={c2.y}
+            stroke={cfg.color}
+            strokeOpacity={cfg.opacity}
+            strokeWidth={1.1}
+            strokeDasharray={cfg.dash}
+          />
+        );
+      })}
+
+      {/* Inner center circle — visual anchor */}
+      <circle cx={cx} cy={cy} r={rCenter} fill="rgba(6,16,10,0.6)" stroke="rgba(232,210,180,0.12)" strokeWidth={0.5} />
 
       {/* Planets */}
       {adjusted.map(({ p, displayLon }) => {
-        const pos = lonToXY(displayLon, rPlanet);
-        const tick1 = lonToXY(p.longitude, rHouseInner);
-        const tick2 = lonToXY(p.longitude, rHouseInner - 4);
         if (p.planet === "ASC") return null;
+        const pos  = lonToXY(displayLon, rPlanet);
+        const tick1 = lonToXY(p.longitude, rHouseInner);
+        const tick2 = lonToXY(p.longitude, rHouseInner - 6);
+        const pColor = planetColor(p.longitude);
         return (
           <g key={`pl-${p.planet}`}>
-            {/* Thin tick showing true longitude on the inner ring */}
-            <line x1={tick1.x} y1={tick1.y} x2={tick2.x} y2={tick2.y} stroke="rgba(232,210,180,0.4)" strokeWidth={0.8} />
+            {/* Tick at true ecliptic position */}
+            <line
+              x1={tick1.x} y1={tick1.y}
+              x2={tick2.x} y2={tick2.y}
+              stroke={pColor}
+              strokeOpacity={0.7}
+              strokeWidth={1}
+            />
+            {/* Glyph colored by element of the occupied sign */}
             <Glyph
               type="planet"
               id={p.planet}
               x={pos.x}
               y={pos.y}
-              size={size * 0.075}
-              color="#f5f0e8"
-              strokeWidth={1.1}
+              size={size * 0.085}
+              color={pColor}
+              strokeWidth={1.3}
             />
             {p.retrograde && (
               <text
-                x={pos.x + size * 0.035}
-                y={pos.y - size * 0.03}
-                fontSize={size * 0.022}
+                x={pos.x + size * 0.038}
+                y={pos.y - size * 0.032}
+                fontSize={size * 0.024}
                 fill="#e8821a"
-                fillOpacity={0.85}
+                fillOpacity={0.9}
                 textAnchor="middle"
-                style={{ fontFamily: "sans-serif" }}
+                style={{ fontFamily: "sans-serif", fontStyle: "italic" }}
               >
                 R
               </text>
@@ -285,8 +317,8 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
         );
       })}
 
-      {/* Central small dot */}
-      <circle cx={cx} cy={cy} r={1.5} fill="rgba(232,210,180,0.5)" />
+      {/* Center dot */}
+      <circle cx={cx} cy={cy} r={2} fill="rgba(232,210,180,0.5)" />
     </svg>
   );
 }

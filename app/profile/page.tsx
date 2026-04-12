@@ -1613,22 +1613,93 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       {/* Numerology */}
       {chart.numerology && (
         <CollapsibleSection title="Numerology" defaultOpen={false}>
-          <div className="space-y-3 mt-2">
+          <div className="mt-3 space-y-3">
             {[
-              { label: "Life Path", value: chart.numerology.life_path, q: `My Life Path number is ${chart.numerology.life_path}. What does this reveal about my destiny and core purpose?` },
-              { label: "Expression", value: chart.numerology.expression, q: `My Expression number is ${chart.numerology.expression}. What does this say about my natural talents?` },
-              { label: "Soul Urge", value: chart.numerology.soul_urge, q: `My Soul Urge number is ${chart.numerology.soul_urge}. What does my heart truly desire?` },
-              { label: `Personal Year ${chart.numerology.current_year}`, value: chart.numerology.personal_year, q: `I'm in a Personal Year ${chart.numerology.personal_year} in ${chart.numerology.current_year}. What themes and opportunities should I focus on?` },
-            ].map(({ label, value, q }) => (
-              <div key={label} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
-                <span className="text-amber-sun font-heading text-3xl w-10 text-center leading-none">{value}</span>
-                <div className="flex-1">
-                  <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">{label}</p>
-                  <p className="text-text-secondary/60 text-xs font-body mt-0.5">{chart.numerology!.short_meanings[String(value)] || ""}</p>
+              {
+                label: "Life Path",
+                sub: "your core direction",
+                value: chart.numerology.life_path,
+                q: `My Life Path number is ${chart.numerology.life_path}. What does this reveal about my destiny and core purpose?`,
+              },
+              {
+                label: "Expression",
+                sub: "your natural talents",
+                value: chart.numerology.expression,
+                q: `My Expression number is ${chart.numerology.expression}. What does this say about my natural talents?`,
+              },
+              {
+                label: "Soul Urge",
+                sub: "what your heart wants",
+                value: chart.numerology.soul_urge,
+                q: `My Soul Urge number is ${chart.numerology.soul_urge}. What does my heart truly desire?`,
+              },
+              {
+                label: `Personal Year`,
+                sub: `${chart.numerology.current_year} energy`,
+                value: chart.numerology.personal_year,
+                q: `I'm in a Personal Year ${chart.numerology.personal_year} in ${chart.numerology.current_year}. What themes and opportunities should I focus on?`,
+              },
+            ].map(({ label, sub, value, q }) => {
+              const meaning = chart.numerology!.short_meanings[String(value)] || "";
+              return (
+                <div
+                  key={label}
+                  className="relative rounded-2xl border border-forest-border/40 bg-forest-card/25 overflow-hidden px-5 py-4"
+                >
+                  {/* Faint decorative ring behind the number */}
+                  <svg
+                    width="88" height="88"
+                    viewBox="0 0 88 88"
+                    className="absolute top-3 left-3 pointer-events-none"
+                    aria-hidden="true"
+                  >
+                    <circle cx={44} cy={44} r={38} fill="none" stroke="#7d6680" strokeWidth={0.8} opacity={0.22} />
+                    <circle cx={44} cy={44} r={32} fill="none" stroke="#7d6680" strokeWidth={0.4} strokeDasharray="3 5" opacity={0.18} />
+                  </svg>
+
+                  <div className="flex items-center gap-5">
+                    {/* Big number */}
+                    <div className="w-[72px] h-[72px] flex items-center justify-center shrink-0">
+                      <span
+                        className="font-heading leading-none select-none"
+                        style={{
+                          fontSize: value >= 10 ? "2.8rem" : "3.5rem",
+                          fontWeight: 300,
+                          color: "#7d6680",
+                          letterSpacing: "-0.02em",
+                          textShadow: "0 0 24px rgba(125,102,128,0.35)",
+                        }}
+                      >
+                        {value}
+                      </span>
+                    </div>
+
+                    {/* Label + meaning */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#7d6680" }}>
+                        {label}
+                      </p>
+                      <p className="font-body text-text-secondary/50 text-[10px] tracking-[0.12em] uppercase mb-2">
+                        {sub}
+                      </p>
+                      {meaning && (
+                        <p
+                          className="font-heading text-text-primary/75 leading-snug"
+                          style={{ fontSize: "0.95rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+                        >
+                          {meaning}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Ask button */}
+                    <div className="shrink-0 self-start">
+                      <AskButton topic={`${label} ${value}`} question={q} />
+                    </div>
+                  </div>
                 </div>
-                <AskButton topic={`${label} ${value}`} question={q} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CollapsibleSection>
       )}
