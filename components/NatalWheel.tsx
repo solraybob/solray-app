@@ -42,6 +42,23 @@ const ASPECT_LINE: Record<string, { color: string; opacity: number; dash?: strin
 };
 const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
 
+// Per-planet colors matching the Sky Now section on the Today page
+const PLANET_COLOR: Record<string, string> = {
+  Sun:       "#e8821a", // amber — hero
+  Moon:      "#7a8a9a", // mist
+  Mercury:   "#d8d0bc", // pearl
+  Venus:     "#7d6680", // wisteria
+  Mars:      "#c4623a", // ember
+  Jupiter:   "#6b7d4a", // moss
+  Saturn:    "#4a6670", // slate
+  Uranus:    "#7a8a9a", // mist
+  Neptune:   "#7d6680", // wisteria
+  Pluto:     "#4a6670", // slate
+  NorthNode: "#8a9e8d", // sage
+  Chiron:    "#d8d0bc", // pearl
+  ASC:       "#e8d2b4", // warm cream
+};
+
 // Element colors per sign index (Aries=0 ... Pisces=11)
 const SIGN_ELEMENT_COLOR = [
   "#c4623a", // Aries — fire
@@ -143,11 +160,8 @@ export default function NatalWheel({
     adjusted.push({ p, displayLon: display });
   }
 
-  // Pick planet color by the sign it occupies
-  const planetColor = (lon: number) => {
-    const signIdx = Math.floor(((lon % 360) + 360) % 360 / 30);
-    return SIGN_ELEMENT_COLOR[signIdx];
-  };
+  // Per-planet color — same palette as the Sky Now strip on the Today page
+  const planetColor = (name: string) => PLANET_COLOR[name] ?? "#8a9e8d";
 
   // Aspect lines — top 8 tightest majors
   const byName: Record<string, Planet> = {};
@@ -276,10 +290,10 @@ export default function NatalWheel({
       {/* Planets */}
       {adjusted.map(({ p, displayLon }) => {
         if (p.planet === "ASC") return null;
-        const pos  = lonToXY(displayLon, rPlanet);
+        const pos   = lonToXY(displayLon, rPlanet);
         const tick1 = lonToXY(p.longitude, rHouseInner);
-        const tick2 = lonToXY(p.longitude, rHouseInner - 6);
-        const pColor = planetColor(p.longitude);
+        const tick2 = lonToXY(p.longitude, rHouseInner - 5);
+        const pColor = planetColor(p.planet);
         return (
           <g key={`pl-${p.planet}`}>
             {/* Tick at true ecliptic position */}
@@ -287,18 +301,18 @@ export default function NatalWheel({
               x1={tick1.x} y1={tick1.y}
               x2={tick2.x} y2={tick2.y}
               stroke={pColor}
-              strokeOpacity={0.7}
-              strokeWidth={1}
+              strokeOpacity={0.65}
+              strokeWidth={0.9}
             />
-            {/* Glyph in cream — always legible on the dark inner disk */}
+            {/* Glyph colored to match the Sky Now planet palette */}
             <Glyph
               type="planet"
               id={p.planet}
               x={pos.x}
               y={pos.y}
-              size={size * 0.063}
-              color="#f0ebe0"
-              strokeWidth={1.4}
+              size={size * 0.052}
+              color={pColor}
+              strokeWidth={1.5}
             />
             {p.retrograde && (
               <text
