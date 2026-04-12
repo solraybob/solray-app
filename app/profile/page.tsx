@@ -727,6 +727,7 @@ export default function ProfilePage() {
   const [savingHandle, setSavingHandle] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Avatar: read localStorage immediately for instant display, then sync from server in background.
@@ -908,8 +909,16 @@ export default function ProfilePage() {
 
         // Persist to server so it syncs across devices
         if (token) {
+          setAvatarSaving("saving");
           apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, token)
-            .catch(() => { /* non-fatal — photo is still in localStorage */ });
+            .then(() => {
+              setAvatarSaving("saved");
+              setTimeout(() => setAvatarSaving("idle"), 3000);
+            })
+            .catch(() => {
+              setAvatarSaving("error");
+              setTimeout(() => setAvatarSaving("idle"), 4000);
+            });
         }
       };
       img.src = rawBase64;
@@ -1026,6 +1035,16 @@ export default function ProfilePage() {
                     onChange={handleAvatarChange}
                   />
                 </div>
+                {/* Upload status */}
+                {avatarSaving === "saving" && (
+                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>saving...</p>
+                )}
+                {avatarSaving === "saved" && (
+                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>saved</p>
+                )}
+                {avatarSaving === "error" && (
+                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a" }}>save failed. try again.</p>
+                )}
 
                 {/* Handle (username) — with relative z positioning for gradient overlay */}
                 <div className="relative z-10">
