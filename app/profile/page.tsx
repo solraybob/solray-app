@@ -1061,7 +1061,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#7a8a9a" }}>
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#6b7d4a" }}>
                   Soul Map
                 </p>
 

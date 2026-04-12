@@ -6,7 +6,7 @@
  * Unicode glyphs (♈-♓, ☉-♇) render as color emoji on iOS and many Android
  * builds, which conflicts with Solray's no-emoji rule. Every symbol here is
  * hand-drawn in a 24x24 viewBox with round caps/joins, designed to stay clean
- * at 14-22px on screen.
+ * at 12-18px on screen.
  */
 
 import React from "react";
@@ -15,11 +15,11 @@ import React from "react";
 // Zodiac sign paths (index 0 = Aries … 11 = Pisces)
 // ---------------------------------------------------------------------------
 const SIGN_PATHS: Record<number, React.ReactElement> = {
-  // Aries ♈ — two horn arcs sweeping up from a shared center point
+  // Aries ♈ — two horn arcs sweeping up from a shared center, meeting at a Y
   0: (
     <>
-      <path d="M 12 18 C 7 17 4 11 5 6 C 6 2 9 2 12 6" fill="none" />
-      <path d="M 12 18 C 17 17 20 11 19 6 C 18 2 15 2 12 6" fill="none" />
+      <path d="M 12 17 C 7 16 4 10 6 5 C 7 2 10 2 12 6" fill="none" />
+      <path d="M 12 17 C 17 16 20 10 18 5 C 17 2 14 2 12 6" fill="none" />
     </>
   ),
 
@@ -27,26 +27,27 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
   1: (
     <>
       <circle cx={12} cy={15} r={5} fill="none" />
-      <path d="M 7 15 C 7 7 17 7 17 15" fill="none" />
+      <path d="M 7 15 C 7 6 17 6 17 15" fill="none" />
     </>
   ),
 
-  // Gemini ♊ — twin pillars with top and bottom rails
+  // Gemini ♊ — twin pillars with gently curved top and bottom rails
   2: (
     <>
-      <path d="M 5 4 H 19 M 5 20 H 19 M 9 4 V 20 M 15 4 V 20" fill="none" />
+      <path d="M 5 4 Q 12 2 19 4" fill="none" />
+      <path d="M 5 20 Q 12 22 19 20" fill="none" />
+      <path d="M 9 4 V 20" fill="none" />
+      <path d="M 15 4 V 20" fill="none" />
     </>
   ),
 
-  // Cancer ♋ — 6-9 shape: two offset circles with curling tails
+  // Cancer ♋ — interlocking 6-9: two offset circles with curling tails
   3: (
     <>
-      <circle cx={9} cy={9} r={3.5} fill="none" />
-      <circle cx={15} cy={15} r={3.5} fill="none" />
-      {/* Upper tail curling away */}
-      <path d="M 5.5 9 Q 4 6 9 5.5" fill="none" />
-      {/* Lower tail curling away */}
-      <path d="M 18.5 15 Q 20 18 15 18.5" fill="none" />
+      <circle cx={9.5} cy={9.5} r={3.5} fill="none" />
+      <circle cx={14.5} cy={14.5} r={3.5} fill="none" />
+      <path d="M 6 9.5 C 4 6.5 6.5 4 9.5 5.5" fill="none" />
+      <path d="M 18 14.5 C 20 17.5 17.5 20 14.5 18.5" fill="none" />
     </>
   ),
 
@@ -67,24 +68,25 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Libra ♎ — dome arc resting on a horizon line, base below
+  // Libra ♎ — dome arc resting on two horizon lines
   6: (
     <>
+      <path d="M 7 13 C 7 6 17 6 17 13" fill="none" />
       <path d="M 3 13 H 21" fill="none" />
       <path d="M 3 19 H 21" fill="none" />
-      <path d="M 7 13 C 7 6 17 6 17 13" fill="none" />
     </>
   ),
 
-  // Scorpio ♏ — three arched humps, last leg ends in a diagonal arrow
+  // Scorpio ♏ — three arched humps, tail sweeps into a downward arrow
   7: (
     <>
-      <path d="M 3 16 V 7 C 3 3 8 3 8 7 C 8 3 13 3 13 7 V 11 L 19 17" fill="none" />
-      <path d="M 19 17 L 15 15 M 19 17 L 17 21" fill="none" />
+      <path d="M 3 15 V 7 C 3 3 8 3 8 7 C 8 3 13 3 13 7 V 12" fill="none" />
+      <path d="M 13 12 L 20 18" fill="none" />
+      <path d="M 16 14 L 20 18 L 17 22" fill="none" />
     </>
   ),
 
-  // Sagittarius ♐ — diagonal arrow pointing upper-right with arrowhead
+  // Sagittarius ♐ — diagonal arrow pointing upper-right with clean arrowhead
   8: (
     <>
       <path d="M 5 19 L 19 5" fill="none" />
@@ -92,7 +94,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Capricorn ♑ — V-shape: left leg descends, right horn curves into a tail
+  // Capricorn ♑ — V left leg descends, right horn curves into a fish tail
   9: (
     <>
       <path d="M 4 5 L 11 17" fill="none" />
@@ -109,7 +111,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Pisces ♓ — two opposing arcs (fish) connected by a center bar
+  // Pisces ♓ — two opposing arcs connected by a center bar
   11: (
     <>
       <path d="M 7 3 C 3 7 3 17 7 21" fill="none" />
@@ -217,7 +219,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // NorthNode — upward horseshoe
+  // NorthNode — upward horseshoe with base circles
   NorthNode: (
     <>
       <path d="M 5 16 V 10 A 7 7 0 0 1 19 10 V 16" fill="none" />
