@@ -550,7 +550,14 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   );
 }
 
-// Collapsible Section with color accents
+// Section accent colors, mapped to the Solray extended palette
+const SECTION_ACCENTS: Record<string, string> = {
+  "Natal Chart":     "#e8821a", // ember
+  "Astro Geography": "#7a8a9a", // mist
+  "Human Design":    "#6b7d4a", // moss
+  "Numerology":      "#7d6680", // wisteria
+  "Gene Keys":       "#4a6670", // slate
+};
 
 function CollapsibleSection({
   title,
@@ -562,36 +569,38 @@ function CollapsibleSection({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-
-  // Color mapping for section headers
-  const sectionColors: Record<string, string> = {
-    "Natal Chart": "#e8821a",
-    "Astro Geography": "#7a8a9a",
-    "Human Design": "#7a8a9a",
-    "Numerology": "#7d6680",
-    "Gene Keys": "#7d6680",
-  };
-  
-  const borderColor = sectionColors[title] || "#8a9e8d";
+  const accent = SECTION_ACCENTS[title] || "#8a9e8d";
 
   return (
-    <div className="border border-forest-border rounded-2xl overflow-hidden mb-4" style={{ borderLeft: `4px solid ${borderColor}` }}>
+    <div className="rounded-2xl border border-forest-border/50 bg-forest-card/20 overflow-hidden mb-4 transition-colors">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
+        className="w-full px-5 py-4 text-left hover:bg-forest-card/30 transition-colors"
       >
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{title}</h2>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#8a9e8d"
-          strokeWidth="2"
-          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <span
+              className="font-body text-[10px] tracking-[0.22em] uppercase mb-1"
+              style={{ color: accent }}
+            >
+              {title}
+            </span>
+            <span className="font-body text-text-secondary/70 text-[11px]">
+              {open ? "Tap to collapse" : "Tap to open"}
+            </span>
+          </div>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#8a9e8d"
+            strokeWidth="2"
+            className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
       </button>
       {open && <div className="px-5 pb-5">{children}</div>}
     </div>
@@ -610,7 +619,7 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function SunTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border-2 border-amber-sun text-amber-sun text-[10px] tracking-widest uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-amber-sun/60 text-amber-sun text-[10px] tracking-[0.22em] uppercase">
       {children}
     </span>
   );
@@ -618,7 +627,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#7a8a9a", borderColor: "#7a8a9a" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#7a8a9a", borderColor: "rgba(122,138,154,0.6)" }}>
       {children}
     </span>
   );
@@ -626,7 +635,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border-2 text-[10px] tracking-widest uppercase" style={{ color: "#7d6680", borderColor: "#7d6680" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#7d6680", borderColor: "rgba(125,102,128,0.6)" }}>
       {children}
     </span>
   );
@@ -884,10 +893,8 @@ export default function ProfilePage() {
           >
             <div className="max-w-lg mx-auto px-5">
               {/* Avatar + Identity */}
-              <div className="pt-10 pb-8 flex flex-col items-center gap-2 relative overflow-hidden">
-                {/* Contextual sun-sign planet image — same pattern as CurrentCycles cards.
-                    Maps the user's Sun sign to the matching planet's atmospheric image.
-                    Stays at 0.09 opacity so text remains fully readable. */}
+              <div className="pt-6 pb-5 flex flex-col items-center gap-2 relative overflow-hidden">
+                {/* Contextual sun-sign planet image: very subtle ambient wash behind the avatar */}
                 {profile?.sunSign && (() => {
                   const sunSignPlanetImages: Record<string, string> = {
                     // Fire signs
@@ -910,23 +917,23 @@ export default function ProfilePage() {
                   const imgSrc = sunSignPlanetImages[profile.sunSign];
                   if (!imgSrc) return null;
                   return (
-                    <div className="absolute inset-x-0 -top-10 h-64 pointer-events-none">
+                    <div className="absolute inset-x-0 -top-6 h-48 pointer-events-none">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imgSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.09 }} />
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.4) 0%, rgba(5,15,8,0.95) 100%)" }} />
+                      <img src={imgSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.06 }} />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,1) 100%)" }} />
                     </div>
                   );
                 })()}
-                
+
                 {/* Avatar with camera overlay */}
                 <div className="relative mb-1 z-10">
-                  {/* Gradient border ring */}
+                  {/* Soft single-tone ring, no gradient */}
                   <div
-                    className="absolute inset-0 rounded-full p-0.5 opacity-70"
-                    style={{ background: "linear-gradient(135deg, #e8821a, #7d6680)", zIndex: -1 }}
+                    className="absolute -inset-[2px] rounded-full"
+                    style={{ border: "1px solid rgba(232,130,26,0.35)", zIndex: -1 }}
                   />
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold shadow-lg overflow-hidden relative bg-forest-deep"
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold overflow-hidden relative bg-forest-deep"
                   >
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -1018,9 +1025,20 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Greeting-style intro, same rhythm as chat + souls */}
+              <div className="flex flex-col items-center text-center pt-2 pb-6">
+                <p
+                  className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
+                  style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+                >
+                  Your whole blueprint, in one place. Open any section to go deeper.
+                </p>
+                <div className="mt-5 w-12 h-px bg-forest-border/60" />
+              </div>
+
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center">
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#7a8a9a" }}>
                   Soul Map
                 </p>
 
@@ -1032,11 +1050,10 @@ export default function ProfilePage() {
                     <div className="relative border border-forest-border/50 rounded-2xl p-4 bg-forest-card/40 backdrop-blur-sm">
                     <SoulMapRadarChart radar={profile.radar} />
 
-                      {/* Legend */}
-                      <div className="mt-2 flex justify-center gap-5 font-body text-[10px] tracking-widest">
-                        <span style={{ color: "#7a8a9a" }}>● Blue-Purple = your profile</span>
-                        <span style={{ color: "#8a9e8d" }}>○ Dashed = balance point</span>
-                      </div>
+                      {/* Quiet caption instead of a dev-style legend */}
+                      <p className="mt-3 font-body text-text-secondary/60 text-[10px] tracking-[0.15em] uppercase text-center">
+                        The dashed ring is balance
+                      </p>
 
                       {/* Mini bar legend — all 7 dimensions with values and colored bars */}
                       <div className="mt-4 space-y-2 px-1">
@@ -1079,11 +1096,11 @@ export default function ProfilePage() {
               {/* Full Blueprint — merged from chart page */}
               {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
 
-              {/* Sign Out */}
-              <div className="mt-4 mb-6">
+              {/* Sign Out: quiet, centered text link */}
+              <div className="mt-6 mb-8 flex justify-center">
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-3 rounded-2xl border border-forest-border/60 font-body text-text-secondary text-xs tracking-widest uppercase hover:border-amber-sun/40 hover:text-amber-sun transition-all duration-200 flex items-center justify-center gap-2"
+                  className="font-body text-text-secondary/60 text-[10px] tracking-[0.22em] uppercase hover:text-text-secondary transition-colors flex items-center gap-2"
                 >
                   <IconSignOut />
                   Sign Out
@@ -1455,12 +1472,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-text-secondary text-[10px] font-body tracking-wider uppercase">Type</p>
+                <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase">Type</p>
                 <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
               </div>
-              <p className="text-amber-sun font-heading text-3xl leading-tight">{chart.human_design.type}</p>
+              <p className="font-heading leading-tight" style={{ color: "#6b7d4a", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
               {HD_TYPE_MEANINGS[chart.human_design.type] && (
-                <p className="text-text-secondary/50 text-xs font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
+                <p className="text-text-secondary/60 text-[12px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
               )}
             </div>
           )}
@@ -1483,10 +1500,16 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             </div>
           )}
           <div>
-            <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Defined Centres</p>
+            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2">Defined Centres</p>
             <div className="flex flex-wrap gap-2">
               {chart.human_design.defined_centres.map((c) => (
-                <span key={c} className="px-2.5 py-1 bg-forest-card border border-amber-sun/30 rounded-full text-amber-sun text-xs font-body">{c}</span>
+                <span
+                  key={c}
+                  className="px-2.5 py-1 rounded-full text-[11px] font-body tracking-[0.05em]"
+                  style={{ color: "#6b7d4a", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(107,125,74,0.45)", background: "rgba(107,125,74,0.06)" }}
+                >
+                  {c}
+                </span>
               ))}
             </div>
           </div>
@@ -1540,7 +1563,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       <CollapsibleSection title="Gene Keys" defaultOpen={false}>
         <div className="space-y-5 mt-2">
           {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="bg-forest-card rounded-xl p-4">
+            <div key={gk!.name} className="bg-forest-card/30 border border-forest-border/40 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
