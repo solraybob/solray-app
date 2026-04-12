@@ -576,7 +576,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 // Section accent colors, mapped to the Solray extended palette
 const SECTION_ACCENTS: Record<string, string> = {
   "Natal Chart":     "#e8821a", // ember
-  "Astro Geography": "#7a8a9a", // mist
+  "Astrocartography": "#7a8a9a", // mist
   "Human Design":    "#6b7d4a", // moss
   "Numerology":      "#7d6680", // wisteria
   "Gene Keys":       "#4a6670", // slate
@@ -1721,8 +1721,8 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         </CollapsibleSection>
       )}
 
-      {/* Astro Geography */}
-      <CollapsibleSection title="Astro Geography" defaultOpen={false}>
+      {/* Astrocartography */}
+      <CollapsibleSection title="Astrocartography" defaultOpen={false}>
         <div className="mt-2">
           <p className="text-text-secondary text-xs font-body leading-relaxed mb-4">
             Where in the world your planetary energies are strongest. Each line marks where a planet was rising, setting, or at its peak at your birth moment.
