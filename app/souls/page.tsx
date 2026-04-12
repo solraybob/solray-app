@@ -780,10 +780,10 @@ interface BondCardProps {
 
 function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens, onRead, reading }: BondCardProps) {
   const lenses: { key: BondLens; label: string; hint: string }[] = [
-    { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
-    { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
-    { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
     { key: "family",     label: "Family",     hint: "roots, roles, belonging" },
+    { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
+    { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
+    { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
   ];
   const chart = partner ? partnerChart(partner) : null;
 
@@ -796,7 +796,7 @@ function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens
         boxShadow: "0 20px 60px -30px rgba(74,102,112,0.35)",
       }}
     >
-      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-[#4a6670]/70 mb-1">Read the Bond</p>
+      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-[#4a6670]/70 mb-1">Dynamics</p>
       <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
         Where two charts meet.
       </h2>
@@ -902,7 +902,7 @@ function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens
           color: "#f5f0e8",
         }}
       >
-        {reading ? <LoadingSpinner size="sm" /> : "Read the Bond →"}
+        {reading ? <LoadingSpinner size="sm" /> : "Read the Dynamic →"}
       </button>
     </div>
   );
