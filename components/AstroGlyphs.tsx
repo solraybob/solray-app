@@ -108,6 +108,14 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
 
 // Planet glyphs keyed by canonical name used in the backend.
 const PLANET_PATHS: Record<string, React.ReactElement> = {
+  // ASC: upward arrow rising from a horizontal base — the Ascendant
+  ASC: (
+    <>
+      <path d="M 4 20 H 20" fill="none" />
+      <path d="M 12 18 V 5" fill="none" />
+      <path d="M 7 10 L 12 5 L 17 10" fill="none" />
+    </>
+  ),
   // Sun: circle with center dot
   Sun: (
     <>

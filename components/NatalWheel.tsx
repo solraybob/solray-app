@@ -212,7 +212,7 @@ export default function NatalWheel({
       {/* Ring borders */}
       <circle cx={cx} cy={cy} r={rOuter}     fill="none" stroke="rgba(232,210,180,0.25)" strokeWidth={1} />
       <circle cx={cx} cy={cy} r={rZodInner}  fill="none" stroke="rgba(232,210,180,0.20)" strokeWidth={0.8} />
-      <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke="rgba(232,210,180,0.14}" strokeWidth={0.6} />
+      <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke="rgba(232,210,180,0.14)" strokeWidth={0.6} />
 
       {/* House cusp lines */}
       {cusps.map((lon, idx) => {
@@ -290,14 +290,14 @@ export default function NatalWheel({
               strokeOpacity={0.7}
               strokeWidth={1}
             />
-            {/* Glyph colored by element of the occupied sign */}
+            {/* Glyph in cream — always legible on the dark inner disk */}
             <Glyph
               type="planet"
               id={p.planet}
               x={pos.x}
               y={pos.y}
               size={size * 0.085}
-              color={pColor}
+              color="#f0ebe0"
               strokeWidth={1.3}
             />
             {p.retrograde && (

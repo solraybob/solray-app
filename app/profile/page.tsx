@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import AstroGeography from "@/components/AstroGeography";
 import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
+import { Glyph } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 
@@ -1474,7 +1475,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               };
               return (
                 <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
-                  <span className="text-3xl w-10 text-center leading-none">{p.symbol}</span>
+                  <svg width={32} height={32} viewBox="0 0 32 32" className="shrink-0 opacity-90">
+                    <Glyph type="planet" id={p.planet} x={16} y={16} size={26} color="#f0ebe0" strokeWidth={1.3} />
+                  </svg>
                   <div className="flex-1">
                     <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">{label}</p>
                     <p className="font-body text-text-secondary/50 text-[10px]">{subtitles[label]}</p>
@@ -1502,7 +1505,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             <div className="space-y-1">
               {rest.map((p) => (
                 <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
-                  <span className="text-xl w-7 text-center opacity-70">{p.symbol}</span>
+                  <svg width={22} height={22} viewBox="0 0 22 22" className="shrink-0 opacity-80">
+                    <Glyph type="planet" id={p.planet} x={11} y={11} size={18} color="#f0ebe0" strokeWidth={1.2} />
+                  </svg>
                   <span className="font-body text-text-primary text-[13px] flex-1">{p.planet}</span>
                   <span className="font-body text-text-secondary text-[13px]">{p.sign}</span>
                   <span className="font-body text-text-secondary text-[10px]">{p.degree}</span>
