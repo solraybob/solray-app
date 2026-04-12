@@ -907,18 +907,24 @@ export default function ProfilePage() {
         setAvatarUrl(resized);
         try { localStorage.setItem("solray_avatar", resized); } catch (_) {}
 
-        // Persist to server so it syncs across devices
-        if (token) {
+        // Persist to server — read token fresh from localStorage to avoid stale closure
+        const liveToken = token || (typeof localStorage !== "undefined" ? localStorage.getItem("solray_token") : null);
+        if (liveToken) {
           setAvatarSaving("saving");
-          apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, token)
+          apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, liveToken)
             .then(() => {
               setAvatarSaving("saved");
               setTimeout(() => setAvatarSaving("idle"), 3000);
             })
-            .catch(() => {
+            .catch((err) => {
+              console.error("[avatar upload] PATCH /users/photo failed:", err);
               setAvatarSaving("error");
-              setTimeout(() => setAvatarSaving("idle"), 4000);
+              setTimeout(() => setAvatarSaving("idle"), 6000);
             });
+        } else {
+          console.warn("[avatar upload] no token available — photo saved locally only");
+          setAvatarSaving("error");
+          setTimeout(() => setAvatarSaving("idle"), 6000);
         }
       };
       img.src = rawBase64;
@@ -1043,7 +1049,7 @@ export default function ProfilePage() {
                   <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>saved</p>
                 )}
                 {avatarSaving === "error" && (
-                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a" }}>save failed. try again.</p>
+                  <p className="font-body text-[11px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>photo not saved. check connection.</p>
                 )}
 
                 {/* Handle (username) — with relative z positioning for gradient overlay */}
