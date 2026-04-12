@@ -1611,17 +1611,17 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       <CollapsibleSection title="Gene Keys" defaultOpen={false}>
         <div className="space-y-5 mt-2">
           {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="bg-forest-card/30 border border-forest-border/40 rounded-2xl p-4">
+            <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(74,102,112,0.08)", border: "1px solid rgba(74,102,112,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
+                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "#7a8a9a" }}>{gk!.name}</span>
                   <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
                 </div>
                 <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
-                <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
+                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "#7a8a9a" }} />
                 <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #7d6680, #7a8a9a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
