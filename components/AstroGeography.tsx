@@ -420,7 +420,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => {
                   const spotNames = powerSpots.map(s => s.city).join(", ");
                   sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-                    topic: "Astro Geography Power Spots",
+                    topic: "Astrocartography Power Spots",
                     question: `My astrocartography shows my top power spots are: ${spotNames}. Can you explain what these locations mean for me and why they are energetically significant?`
                   }));
                   window.location.href = "/chat";

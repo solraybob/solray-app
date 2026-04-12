@@ -443,7 +443,7 @@ export default function PreviewPage() {
                   This is just the beginning. Your full blueprint includes{" "}
                   <span className="text-text-primary">Human Design</span>,{" "}
                   <span className="text-text-primary">Gene Keys</span>,{" "}
-                  <span className="text-text-primary">Astro Geography</span> and
+                  <span className="text-text-primary">Astrocartography</span> and
                   a <span className="text-text-primary">Higher Self</span> who
                   knows you.
                 </p>
