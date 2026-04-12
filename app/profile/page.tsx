@@ -1527,16 +1527,6 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         </div>
       </CollapsibleSection>
 
-      {/* Astro Geography */}
-      <CollapsibleSection title="Astro Geography" defaultOpen={false}>
-        <div className="mt-2">
-          <p className="text-text-secondary text-xs font-body leading-relaxed mb-4">
-            Where in the world your planetary energies are strongest. Each line marks where a planet was rising, setting, or at its peak at your birth moment.
-          </p>
-          <AstroGeography token={token} />
-        </div>
-      </CollapsibleSection>
-
       {/* Human Design */}
       <CollapsibleSection title="Human Design" defaultOpen={false}>
         <div className="space-y-4 mt-2">
@@ -1612,6 +1602,28 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               </div>
             </div>
           )}
+        </div>
+      </CollapsibleSection>
+
+      {/* Gene Keys */}
+      <CollapsibleSection title="Gene Keys" defaultOpen={false}>
+        <div className="space-y-5 mt-2">
+          {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
+            <div key={gk!.name} className="bg-forest-card/30 border border-forest-border/40 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
+                  <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
+                </div>
+                <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
+                <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
+                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #7d6680, #7a8a9a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+              </div>
+            </div>
+          ))}
         </div>
       </CollapsibleSection>
 
@@ -1709,25 +1721,13 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
         </CollapsibleSection>
       )}
 
-      {/* Gene Keys */}
-      <CollapsibleSection title="Gene Keys" defaultOpen={false}>
-        <div className="space-y-5 mt-2">
-          {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="bg-forest-card/30 border border-forest-border/40 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-sun text-xs font-body tracking-wider uppercase">{gk!.name}</span>
-                  <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
-                </div>
-                <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
-                <GKPill label="Gift" value={gk!.gift} color="text-amber-sun" />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #7d6680, #7a8a9a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
-              </div>
-            </div>
-          ))}
+      {/* Astro Geography */}
+      <CollapsibleSection title="Astro Geography" defaultOpen={false}>
+        <div className="mt-2">
+          <p className="text-text-secondary text-xs font-body leading-relaxed mb-4">
+            Where in the world your planetary energies are strongest. Each line marks where a planet was rising, setting, or at its peak at your birth moment.
+          </p>
+          <AstroGeography token={token} />
         </div>
       </CollapsibleSection>
     </>

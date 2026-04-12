@@ -201,9 +201,9 @@ export default function NatalWheel({
             id={s.i}
             x={s.labelPos.x}
             y={s.labelPos.y}
-            size={size * 0.072}
+            size={size * 0.054}
             color={s.color}
-            strokeWidth={1.2}
+            strokeWidth={1.3}
             opacity={1}
           />
         </g>
@@ -296,9 +296,9 @@ export default function NatalWheel({
               id={p.planet}
               x={pos.x}
               y={pos.y}
-              size={size * 0.085}
+              size={size * 0.063}
               color="#f0ebe0"
-              strokeWidth={1.3}
+              strokeWidth={1.4}
             />
             {p.retrograde && (
               <text
