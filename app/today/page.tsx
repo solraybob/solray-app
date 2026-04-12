@@ -637,8 +637,8 @@ export default function TodayPage() {
                 Living By Design
               </p>
               <h1
-                className="font-heading text-2xl tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300 }}
+                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 SOLRAY
               </h1>
