@@ -1297,11 +1297,12 @@ function parseBlueprintForChart(blueprint: any) {
   if (gk?.lifes_work || gk?.evolution) {
     geneKeys = {
       lifes_work: gkBuild("Life's Work", gk.lifes_work),
-      evolution: gkBuild("Evolution", gk.evolution),
-      radiance: gkBuild("Radiance", gk.radiance),
-      vocation: gkBuild("Vocation", gk.vocation),
-      culture: gkBuild("Culture", gk.culture),
-      pearl: gkBuild("Pearl", gk.pearl),
+      evolution:  gkBuild("Evolution",   gk.evolution),
+      radiance:   gkBuild("Radiance",    gk.radiance),
+      purpose:    gkBuild("Purpose",     gk.purpose),
+      attraction: gkBuild("Attraction",  gk.attraction),
+      iq:         gkBuild("IQ",          gk.iq),
+      eq:         gkBuild("EQ",          gk.eq),
     };
   } else if (gk?.natal_gene_keys) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1311,10 +1312,11 @@ function parseBlueprintForChart(blueprint: any) {
     const profileMap = [
       { name: "Life's Work", gateKey: String(cc.Sun?.gate || 64) },
       { name: "Evolution", gateKey: String(cc.Earth?.gate || 63) },
-      { name: "Radiance", gateKey: String(uc.Sun?.gate || 35) },
-      { name: "Vocation", gateKey: String(uc.Earth?.gate || 5) },
-      { name: "Culture", gateKey: String(uc.Jupiter?.gate || 45) },
-      { name: "Pearl", gateKey: String(uc.Moon?.gate || 52) },
+      { name: "Radiance",   gateKey: String(uc.Sun?.gate       || 35) },
+      { name: "Purpose",    gateKey: String(uc.Earth?.gate     || 5)  },
+      { name: "Attraction", gateKey: String(cc.Venus?.gate     || 32) },
+      { name: "IQ",         gateKey: String(cc.SouthNode?.gate || 29) },
+      { name: "EQ",         gateKey: String(cc.Moon?.gate      || 28) },
     ];
     profileMap.forEach(({ name, gateKey }) => {
       const entry = natalGK[gateKey];
