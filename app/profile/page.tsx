@@ -1122,10 +1122,12 @@ export default function ProfilePage() {
 // Blueprint Sections (merged from chart page)
 // ---------------------------------------------------------------------------
 
+// Two-letter planet abbreviations, no unicode glyphs (those render as emoji
+// on many platforms, which conflicts with Solray's no-emoji rule).
 const PLANET_SYMBOLS: Record<string, string> = {
-  Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀", Mars: "♂",
-  Jupiter: "♃", Saturn: "♄", Uranus: "♅", Neptune: "♆", Pluto: "♇",
-  NorthNode: "☊", Chiron: "⚷", Ceres: "⚳", ASC: "↑",
+  Sun: "Su", Moon: "Mo", Mercury: "Me", Venus: "Ve", Mars: "Ma",
+  Jupiter: "Ju", Saturn: "Sa", Uranus: "Ur", Neptune: "Ne", Pluto: "Pl",
+  NorthNode: "Nd", Chiron: "Ch", Ceres: "Ce", ASC: "As",
 };
 
 function formatDegree(d: number): string {
@@ -1432,6 +1434,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
               ascLongitude={chart.ascLongitude}
               houseCusps={chart.houseCusps}
+              aspects={aspects}
               size={320}
             />
           </div>

@@ -21,15 +21,33 @@ type Planet = {
   retrograde?: boolean;
 };
 
+type Aspect = {
+  planet1: string;
+  planet2: string;
+  aspect: string;
+  orb: number;
+};
+
 interface NatalWheelProps {
   planets: Planet[];
   ascLongitude: number | null;
   houseCusps?: number[]; // 12 cusp longitudes; optional (falls back to whole-sign)
+  aspects?: Aspect[];
   size?: number;
 }
 
-// Zodiac sign symbols + element colors (Solray aged palette)
-const SIGN_SYMBOLS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+// Three-letter zodiac sign labels. No unicode glyphs, no emoji.
+const SIGN_SYMBOLS = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"];
+
+// Major aspect colors (muted for wheel use)
+const ASPECT_LINE: Record<string, { color: string; opacity: number }> = {
+  conjunction: { color: "#e8821a", opacity: 0.55 }, // ember
+  opposition:  { color: "#c85848", opacity: 0.55 }, // muted red
+  trine:       { color: "#6b7d4a", opacity: 0.55 }, // moss
+  square:      { color: "#b06a2a", opacity: 0.55 }, // burnt ochre
+  sextile:     { color: "#7a8a9a", opacity: 0.5  }, // mist
+};
+const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
 const ELEMENT_COLOR = [
   "#e8821a", // Aries — fire / ember
   "#6b7d4a", // Taurus — earth / moss
@@ -45,7 +63,7 @@ const ELEMENT_COLOR = [
   "#4a6670", // Pisces — water
 ];
 
-export default function NatalWheel({ planets, ascLongitude, houseCusps, size = 320 }: NatalWheelProps) {
+export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects = [], size = 320 }: NatalWheelProps) {
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -150,12 +168,12 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, size = 3
           <text
             x={s.labelPos.x}
             y={s.labelPos.y}
-            fontSize={size * 0.045}
+            fontSize={size * 0.032}
             fill={s.color}
             fillOpacity={0.85}
             textAnchor="middle"
             dominantBaseline="central"
-            style={{ fontFamily: "serif", fontWeight: 300 }}
+            style={{ fontFamily: "sans-serif", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase" }}
           >
             {s.symbol}
           </text>
@@ -209,6 +227,36 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, size = 3
         );
       })()}
 
+      {/* Aspect lines: five tightest major aspects, drawn inside the house ring */}
+      {(() => {
+        const byName: Record<string, Planet> = {};
+        for (const p of planets) byName[p.planet] = p;
+        const majors = aspects
+          .filter((a) => MAJOR_ASPECTS.has(a.aspect?.toLowerCase()))
+          .filter((a) => byName[a.planet1] && byName[a.planet2])
+          .sort((a, b) => a.orb - b.orb)
+          .slice(0, 5);
+        return majors.map((a, i) => {
+          const p1 = byName[a.planet1];
+          const p2 = byName[a.planet2];
+          const c1 = lonToXY(p1.longitude, rCenter);
+          const c2 = lonToXY(p2.longitude, rCenter);
+          const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
+          return (
+            <line
+              key={`asp-${i}`}
+              x1={c1.x}
+              y1={c1.y}
+              x2={c2.x}
+              y2={c2.y}
+              stroke={cfg.color}
+              strokeOpacity={cfg.opacity}
+              strokeWidth={1}
+            />
+          );
+        });
+      })()}
+
       {/* Planets */}
       {adjusted.map(({ p, displayLon }) => {
         const pos = lonToXY(displayLon, rPlanet);
@@ -222,23 +270,23 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, size = 3
             <text
               x={pos.x}
               y={pos.y}
-              fontSize={size * 0.048}
+              fontSize={size * 0.038}
               fill="#f5f0e8"
               textAnchor="middle"
               dominantBaseline="central"
-              style={{ fontFamily: "serif", fontWeight: 300 }}
+              style={{ fontFamily: "sans-serif", fontWeight: 400, letterSpacing: "0.04em" }}
             >
               {p.symbol}
             </text>
             {p.retrograde && (
               <text
-                x={pos.x + size * 0.028}
-                y={pos.y - size * 0.018}
+                x={pos.x + size * 0.03}
+                y={pos.y - size * 0.02}
                 fontSize={size * 0.022}
                 fill="#e8821a"
-                fillOpacity={0.8}
+                fillOpacity={0.85}
                 textAnchor="middle"
-                style={{ fontFamily: "serif" }}
+                style={{ fontFamily: "sans-serif" }}
               >
                 R
               </text>
