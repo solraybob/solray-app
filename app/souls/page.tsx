@@ -41,6 +41,7 @@ interface ConnectedSoul {
     moon_sign: string | null;
     hd_type: string | null;
     hd_profile: string | null;
+    profile_photo?: string | null;
   };
   connected_since: string;
 }
@@ -97,6 +98,11 @@ function partnerInitial(p: BondPartner): string {
   return n?.[0]?.toUpperCase() || "·";
 }
 
+function partnerPhoto(p: BondPartner): string | null {
+  if (p.kind === "connection") return p.connection.soul.profile_photo || null;
+  return null;
+}
+
 function partnerChart(p: BondPartner): { sun_sign: string | null; hd_type: string | null; hd_profile: string | null } {
   if (p.kind === "saved") return p.person.profile;
   const s = p.connection.soul;
@@ -134,9 +140,13 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-            <span className="font-heading text-xl text-text-primary">{soul.soul.name?.[0]?.toUpperCase() || "·"}</span>
-          </div>
+          {soul.soul.profile_photo ? (
+            <img src={soul.soul.profile_photo} alt={soul.soul.name} className="w-12 h-12 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+              <span className="font-heading text-xl text-text-primary">{soul.soul.name?.[0]?.toUpperCase() || "·"}</span>
+            </div>
+          )}
           <div>
             <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{soul.soul.name}</h3>
             <p className="font-body text-text-secondary text-[13px]">
@@ -240,6 +250,7 @@ export default function SoulsPage() {
   const router = useRouter();
 
   const [myUsername, setMyUsername] = useState<string | null>(null);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -285,6 +296,9 @@ export default function SoulsPage() {
           apiFetch("/souls", {}, token),
         ]);
         setMyUsername(me?.profile?.username || null);
+        const serverPhoto = me?.profile?.profile_photo || null;
+        const localPhoto = (() => { try { return localStorage.getItem("solray_avatar"); } catch { return null; } })();
+        setMyAvatar(serverPhoto || localPhoto);
         setPendingInvites(pending?.pending || []);
         setConnectedSouls(dedupeSouls(souls?.souls || []));
       } catch {
@@ -518,6 +532,7 @@ export default function SoulsPage() {
           {/* Hero: Read the Bond */}
           <BondCard
             myName={myUsername || null}
+            myAvatar={myAvatar}
             partner={bondPartner}
             lens={bondLens}
             onPickPartner={() => {
@@ -754,6 +769,7 @@ export default function SoulsPage() {
 
 interface BondCardProps {
   myName: string | null;
+  myAvatar?: string | null;
   partner: BondPartner | null;
   lens: BondLens;
   onPickPartner: () => void;
@@ -762,7 +778,7 @@ interface BondCardProps {
   reading: boolean;
 }
 
-function BondCard({ myName, partner, lens, onPickPartner, onChangeLens, onRead, reading }: BondCardProps) {
+function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens, onRead, reading }: BondCardProps) {
   const lenses: { key: BondLens; label: string; hint: string }[] = [
     { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
     { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
@@ -795,10 +811,14 @@ function BondCard({ myName, partner, lens, onPickPartner, onChangeLens, onRead, 
             border: "1px solid rgba(245,240,232,0.12)",
           }}
         >
-          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#f5f0e8] font-heading text-sm"
-               style={{ background: "linear-gradient(135deg, #4a6670, #3a5560)" }}>
-            {myName?.[0]?.toUpperCase() || "·"}
-          </div>
+          {myAvatar ? (
+            <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#f5f0e8] font-heading text-sm shrink-0"
+                 style={{ background: "linear-gradient(135deg, #4a6670, #3a5560)" }}>
+              {myName?.[0]?.toUpperCase() || "·"}
+            </div>
+          )}
           <span className="font-body text-[12px] text-text-primary">You</span>
         </div>
 
@@ -816,9 +836,13 @@ function BondCard({ myName, partner, lens, onPickPartner, onChangeLens, onRead, 
         >
           {partner ? (
             <>
-              <div className="w-7 h-7 rounded-full bg-forest-border flex items-center justify-center font-heading text-sm text-text-primary shrink-0">
-                {partnerInitial(partner)}
-              </div>
+              {partnerPhoto(partner) ? (
+                <img src={partnerPhoto(partner)!} alt={partnerName(partner)} className="w-7 h-7 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-forest-border flex items-center justify-center font-heading text-sm text-text-primary shrink-0">
+                  {partnerInitial(partner)}
+                </div>
+              )}
               <span className="font-body text-[12px] text-text-primary truncate">{partnerName(partner)}</span>
             </>
           ) : (
@@ -970,9 +994,13 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                   onClick={() => onPick({ kind: "connection", connection: c })}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl text-left"
                 >
-                  <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                    <span className="font-heading text-base text-text-primary">{c.soul.name?.[0]?.toUpperCase() || "·"}</span>
-                  </div>
+                  {c.soul.profile_photo ? (
+                    <img src={c.soul.profile_photo} alt={c.soul.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                      <span className="font-heading text-base text-text-primary">{c.soul.name?.[0]?.toUpperCase() || "·"}</span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-body text-text-primary text-sm font-semibold truncate">{c.soul.name}</p>
                     <p className="text-text-secondary text-[11px] font-body truncate">
@@ -1203,15 +1231,19 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
       <div className="flex items-center gap-4">
         {/* Avatar with gradient border */}
         <div
-          className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 relative"
+          className="w-12 h-12 rounded-full shrink-0 relative"
           style={{
             background: "linear-gradient(135deg, #4a6670, #4a6670)",
             padding: "2px",
           }}
         >
-          <div className="w-full h-full rounded-full bg-forest-card flex items-center justify-center">
-            <span className="font-heading text-xl text-text-primary">{avatarInitial}</span>
-          </div>
+          {soul.profile_photo ? (
+            <img src={soul.profile_photo} alt={soul.name} className="w-full h-full rounded-full object-cover" />
+          ) : (
+            <div className="w-full h-full rounded-full bg-forest-card flex items-center justify-center">
+              <span className="font-heading text-xl text-text-primary">{avatarInitial}</span>
+            </div>
+          )}
         </div>
         <div className="flex-1">
           <h3 className="font-heading text-xl text-text-primary">{soul.name}</h3>
