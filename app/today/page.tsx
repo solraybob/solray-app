@@ -637,18 +637,6 @@ export default function TodayPage() {
             </p>
             <div className="flex items-center justify-between">
               <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-              {/* Sun logo — 48px to match the "thinking" sun on the chat page */}
-              <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "50%", transform: "translate(-50%, -30%)" }}>
-                <div className="w-12 h-12 rounded-full overflow-hidden">
-                  <Image
-                    src="/logo.jpg"
-                    alt="Solray"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
               <span className="font-body text-text-secondary text-[10px]">{today}</span>
             </div>
           </div>
