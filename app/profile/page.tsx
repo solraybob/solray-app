@@ -729,13 +729,8 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Load avatar from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("solray_avatar");
-      if (stored) setAvatarUrl(stored);
-    } catch (_) {}
-  }, []);
+  // Avatar is loaded from the server via /users/me (see blueprint useEffect below).
+  // localStorage is kept as an instant-load cache so there's no flicker on re-visit.
 
   useEffect(() => {
     if (!token) return;
@@ -789,6 +784,18 @@ export default function ProfilePage() {
     // No cache — fetch full blueprint (first load only)
     apiFetch("/users/me", {}, token)
       .then((data) => {
+        // Sync profile photo from server — this is the source of truth across devices
+        if (data.profile?.profile_photo) {
+          setAvatarUrl(data.profile.profile_photo);
+          try { localStorage.setItem("solray_avatar", data.profile.profile_photo); } catch (_) {}
+        } else {
+          // Fall back to localStorage cache (same device, photo not yet synced)
+          try {
+            const cached = localStorage.getItem("solray_avatar");
+            if (cached) setAvatarUrl(cached);
+          } catch (_) {}
+        }
+
         if (data.blueprint) {
           const bpWithUser = {
             ...data.blueprint,
@@ -867,15 +874,38 @@ export default function ProfilePage() {
     }
   };
 
-  // Handle avatar selection
+  // Handle avatar selection — resize to max 400px, save to server + localStorage
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      try { localStorage.setItem("solray_avatar", base64); } catch (_) {}
-      setAvatarUrl(base64);
+      const rawBase64 = ev.target?.result as string;
+
+      // Resize to max 400px on longest side before storing (keeps payload small)
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width  = Math.round(img.width  * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const resized = canvas.toDataURL("image/jpeg", 0.82);
+
+        // Show immediately
+        setAvatarUrl(resized);
+        try { localStorage.setItem("solray_avatar", resized); } catch (_) {}
+
+        // Persist to server so it syncs across devices
+        if (token) {
+          apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, token)
+            .catch(() => { /* non-fatal — photo is still in localStorage */ });
+        }
+      };
+      img.src = rawBase64;
     };
     reader.readAsDataURL(file);
   };
