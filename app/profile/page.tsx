@@ -160,7 +160,7 @@ function parseProfile(blueprint: any): ProfileData {
     evolution = { gate: gk.evolution.gate ?? 63, gift: gk.evolution.gift ?? "", shadow: gk.evolution.shadow ?? "" };
   }
 
-  const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
+  const crossLabel = hd?.incarnation_cross?.name ?? hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
   const name = _cachedName || user?.name || blueprint?.name || "Your Name";
   const handle = _cachedUsername || user?.handle || blueprint?.handle || user?.email?.split("@")[0] || "you";
 
@@ -1277,7 +1277,7 @@ function parseBlueprintForChart(blueprint: any) {
   };
   const rawProfile = hd?.profile ?? "";
   const profileDisplay = rawProfile && PROFILE_NAMES[rawProfile] ? `${rawProfile}: ${PROFILE_NAMES[rawProfile]}` : rawProfile;
-  const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
+  const crossLabel = hd?.incarnation_cross?.name ?? hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
 
   const humanDesign = {
     type: hd?.type ?? "",
