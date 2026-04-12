@@ -504,21 +504,15 @@ export default function SoulsPage() {
         </div>
 
         <div className="max-w-lg mx-auto px-5 pt-5 space-y-6 animate-fade-in">
-          {/* Page intro, styled like the chat greeting message */}
-          <div className="flex justify-start">
-            <div className="max-w-[85%] flex flex-col items-start">
-              <div
-                className="rounded-2xl rounded-bl-sm px-4 py-3 text-text-primary"
-                style={{
-                  background: "rgba(74,102,112,0.05)",
-                  border: "2px solid rgba(74,102,112,0.3)",
-                }}
-              >
-                <p className="font-body text-[14px] leading-relaxed">
-                  Add someone&apos;s birth details, pick how you relate (romantic, friendship, or work) and read what the charts say about your dynamic.
-                </p>
-              </div>
-            </div>
+          {/* Page intro: exact same style as the chat greeting */}
+          <div className="flex flex-col items-center text-center pt-2 pb-2">
+            <p
+              className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
+              style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+            >
+              Add someone&apos;s birth details, pick how you relate and read what the charts say about your dynamic.
+            </p>
+            <div className="mt-5 w-12 h-px bg-forest-border/60" />
           </div>
 
           {/* Hero: Read the Bond */}
