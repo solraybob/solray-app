@@ -487,18 +487,20 @@ export default function SoulsPage() {
       <div className="min-h-[100dvh] bg-forest-deep pb-24">
         {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 py-3 relative">
-            <div className="flex items-center justify-between">
-              <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#4a6670" }}>
-                Your Field
-              </p>
+          <div className="max-w-lg mx-auto px-5 py-3">
+            <div className="flex items-center">
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-[10px] tracking-[0.18em] uppercase truncate" style={{ color: "#4a6670" }}>
+                  Your Field
+                </p>
+              </div>
               <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                className="font-heading tracking-[0.15em] text-text-primary text-center shrink-0 px-2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 SOULS
               </h1>
-              <span className="w-[60px]" aria-hidden="true" />
+              <div className="flex-1" aria-hidden="true" />
             </div>
           </div>
         </div>

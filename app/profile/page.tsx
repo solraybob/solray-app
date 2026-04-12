@@ -877,29 +877,33 @@ export default function ProfilePage() {
       <div className="min-h-[100dvh] bg-forest-deep pb-28">
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 py-3 relative">
-            <div className="flex items-center justify-between">
-              <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#6b7d4a" }}>
-                Profile
-              </p>
+          <div className="max-w-lg mx-auto px-5 py-3">
+            <div className="flex items-center">
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-[10px] tracking-[0.18em] uppercase truncate" style={{ color: "#6b7d4a" }}>
+                  Profile
+                </p>
+              </div>
               <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                className="font-heading tracking-[0.15em] text-text-primary text-center shrink-0 px-2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 SKYWALKER
               </h1>
-              <button
-                className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center relative z-10"
-                title="Edit profile"
-                aria-label="Edit profile"
-                style={{ minWidth: "32px", minHeight: "32px" }}
-                onClick={() => { setNameInput(profile?.name || ""); setHandleInput(profile?.handle || ""); setEditingName(true); setEditingHandle(true); setSaveError(null); }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
+              <div className="flex-1 flex justify-end min-w-0">
+                <button
+                  className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
+                  title="Edit profile"
+                  aria-label="Edit profile"
+                  style={{ minWidth: "32px", minHeight: "32px" }}
+                  onClick={() => { setNameInput(profile?.name || ""); setHandleInput(profile?.handle || ""); setEditingName(true); setEditingHandle(true); setSaveError(null); }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
