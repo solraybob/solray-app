@@ -266,8 +266,8 @@ export default function SoulsPage() {
 
   // Quick Bond state — hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
-  const [bondPartner, setBondPartner] = useState<BondPartner | null>(null);
-  const [bondLens, setBondLens] = useState<BondLens>("romantic");
+  const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
+  const [bondLens, setBondLens] = useState<BondLens>("family");
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [readingBond, setReadingBond] = useState(false);
@@ -432,12 +432,17 @@ export default function SoulsPage() {
     router.push(`/group/${code}`);
   };
 
-  // Persist a newly-added person and auto-select them as the bond partner
+  // Persist a newly-added person and add them to the bond partners
   const handlePersonAdded = (person: SavedPerson) => {
     const next = [person, ...savedPeople].slice(0, 50);
     setSavedPeople(next);
     writeSavedPeople(next);
-    setBondPartner({ kind: "saved", person });
+    const newPartner: BondPartner = { kind: "saved", person };
+    if (bondLens === "family") {
+      setBondPartners(prev => [...prev, newPartner]);
+    } else {
+      setBondPartners([newPartner]);
+    }
     setAddPersonOpen(false);
   };
 
@@ -445,32 +450,75 @@ export default function SoulsPage() {
     const next = savedPeople.filter((p) => p.id !== id);
     setSavedPeople(next);
     writeSavedPeople(next);
-    if (bondPartner?.kind === "saved" && bondPartner.person.id === id) {
-      setBondPartner(null);
-    }
+    setBondPartners(prev => prev.filter(p => !(p.kind === "saved" && p.person.id === id)));
   };
 
   // Fire the Bond reading — route to /chat?compat=1 with context
   const readTheBond = async () => {
-    if (!bondPartner) return;
+    if (bondPartners.length === 0) return;
     setReadingBond(true);
     setErrorMessage(null);
 
-    const chart = partnerChart(bondPartner);
-    const pName = partnerName(bondPartner);
     const lensLabel =
       bondLens === "romantic"   ? "romantic dynamic"
       : bondLens === "friendship" ? "friendship dynamic"
       : bondLens === "family"     ? "family dynamic"
       : "working dynamic";
 
+    // Family with multiple people: build a group context
+    if (bondLens === "family" && bondPartners.length > 1) {
+      const lines: string[] = [];
+      let primaryBlueprint: unknown = null;
+
+      for (const p of bondPartners) {
+        const chart = partnerChart(p);
+        const name  = partnerName(p);
+        const summary = [
+          chart.sun_sign && `Sun in ${chart.sun_sign}`,
+          chart.hd_type  && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
+        ].filter(Boolean).join(", ");
+        lines.push(`${name}: ${summary || "chart not yet computed"}`);
+
+        if (p.kind === "connection" && !primaryBlueprint) {
+          try {
+            const data = await apiFetch(`/souls/${p.connection.connection_id}/blueprint`, {}, token);
+            primaryBlueprint = data?.blueprint || null;
+          } catch { /* non-fatal */ }
+        }
+      }
+
+      const names = bondPartners.map(partnerName);
+      const nameList = names.length === 2
+        ? names.join(" and ")
+        : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+
+      const introMessage =
+        `Read the family dynamic between me, ${nameList}. ` +
+        `Here are their charts: ${lines.join("; ")}. ` +
+        `What is the energy of this family as a whole? Where is there harmony, friction, and what does each person bring to the group?`;
+
+      sessionStorage.setItem("solray_compat_context", JSON.stringify({
+        soulName: nameList,
+        introMessage,
+        soulBlueprint: primaryBlueprint,
+        lens: bondLens,
+      }));
+
+      setReadingBond(false);
+      router.push("/chat?compat=1");
+      return;
+    }
+
+    // Single partner reading (all non-family lenses, or family with one person)
+    const bondPartner = bondPartners[0];
+    const chart  = partnerChart(bondPartner);
+    const pName  = partnerName(bondPartner);
+
     const chartSummary = [
       chart.sun_sign && `Sun in ${chart.sun_sign}`,
-      chart.hd_type && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
+      chart.hd_type  && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
     ].filter(Boolean).join(", ");
 
-    // For saved-person partners we already have a computed blueprint-shape
-    // from /souls/calculate-blueprint; for connection partners we fetch it.
     let soulBlueprint: unknown = null;
     if (bondPartner.kind === "connection") {
       try {
@@ -532,17 +580,23 @@ export default function SoulsPage() {
           <BondCard
             myName={myUsername || null}
             myAvatar={myAvatar}
-            partner={bondPartner}
+            partners={bondPartners}
             lens={bondLens}
             onPickPartner={() => {
-              // If nothing saved and no connections, jump straight to Add
               if (savedPeople.length === 0 && connectedSouls.length === 0) {
                 setAddPersonOpen(true);
               } else {
                 setPartnerPickerOpen(true);
               }
             }}
-            onChangeLens={setBondLens}
+            onRemovePartner={(i) => setBondPartners(prev => prev.filter((_, idx) => idx !== i))}
+            onChangeLens={(l) => {
+              setBondLens(l);
+              // Trim to one person when leaving family
+              if (l !== "family" && bondPartners.length > 1) {
+                setBondPartners(prev => prev.slice(0, 1));
+              }
+            }}
             onRead={readTheBond}
             reading={readingBond}
           />
@@ -736,7 +790,12 @@ export default function SoulsPage() {
             savedPeople={savedPeople}
             connections={connectedSouls}
             onPick={(p) => {
-              setBondPartner(p);
+              if (bondLens === "family") {
+                // In family mode: add to the group (max 5 people + you = 6 total)
+                setBondPartners(prev => prev.length < 5 ? [...prev, p] : prev);
+              } else {
+                setBondPartners([p]);
+              }
               setPartnerPickerOpen(false);
             }}
             onAddNew={() => {
@@ -768,22 +827,29 @@ export default function SoulsPage() {
 interface BondCardProps {
   myName: string | null;
   myAvatar?: string | null;
-  partner: BondPartner | null;
+  partners: BondPartner[];
   lens: BondLens;
   onPickPartner: () => void;
+  onRemovePartner: (i: number) => void;
   onChangeLens: (l: BondLens) => void;
   onRead: () => void;
   reading: boolean;
 }
 
-function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens, onRead, reading }: BondCardProps) {
+const MAX_FAMILY_MEMBERS = 5;
+
+function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePartner, onChangeLens, onRead, reading }: BondCardProps) {
   const lenses: { key: BondLens; label: string; hint: string }[] = [
     { key: "family",     label: "Family",     hint: "roots, roles, belonging" },
     { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
     { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
     { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
   ];
-  const chart = partner ? partnerChart(partner) : null;
+
+  const isFamily   = lens === "family";
+  const partner    = partners[0] ?? null;
+  const chart      = partner ? partnerChart(partner) : null;
+  const canAddMore = isFamily && partners.length < MAX_FAMILY_MEMBERS;
 
   return (
     <div
@@ -799,15 +865,13 @@ function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens
         Where two charts meet.
       </h2>
 
-      {/* You & Partner pills */}
-      <div className="flex items-center gap-3 mb-5">
-        {/* You — fixed */}
+      {/* You + partner(s) pills */}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+
+        {/* You — always fixed */}
         <div
-          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full"
-          style={{
-            background: "rgba(245,240,232,0.04)",
-            border: "1px solid rgba(245,240,232,0.12)",
-          }}
+          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0"
+          style={{ background: "rgba(245,240,232,0.04)", border: "1px solid rgba(245,240,232,0.12)" }}
         >
           {myAvatar ? (
             <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
@@ -820,41 +884,58 @@ function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens
           <span className="font-body text-[12px] text-text-primary">You</span>
         </div>
 
-        <span className="text-[#4a6670]/60 text-sm" aria-hidden="true">✦</span>
+        {/* Selected partners */}
+        {partners.map((p, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full shrink-0"
+            style={{ background: "rgba(74,102,112,0.08)", border: "1px solid rgba(74,102,112,0.45)" }}
+          >
+            <span className="text-[#4a6670]/50 text-xs shrink-0" aria-hidden="true">✦</span>
+            {partnerPhoto(p) ? (
+              <img src={partnerPhoto(p)!} alt={partnerName(p)} className="w-6 h-6 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-forest-border flex items-center justify-center font-heading text-xs text-text-primary shrink-0">
+                {partnerInitial(p)}
+              </div>
+            )}
+            <span className="font-body text-[12px] text-text-primary max-w-[80px] truncate">{partnerName(p)}</span>
+            <button
+              type="button"
+              onClick={() => onRemovePartner(i)}
+              className="w-4 h-4 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors shrink-0 ml-0.5"
+              aria-label={`Remove ${partnerName(p)}`}
+            >
+              ×
+            </button>
+          </div>
+        ))}
 
-        {/* Partner — picker */}
-        <button
-          type="button"
-          onClick={onPickPartner}
-          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full flex-1 min-w-0 transition-all hover:border-[#5a7680]/60"
-          style={{
-            background: partner ? "rgba(74,102,112,0.08)" : "transparent",
-            border: partner ? "1px solid rgba(74,102,112,0.45)" : "1px dashed rgba(245,240,232,0.25)",
-          }}
-        >
-          {partner ? (
-            <>
-              {partnerPhoto(partner) ? (
-                <img src={partnerPhoto(partner)!} alt={partnerName(partner)} className="w-7 h-7 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-forest-border flex items-center justify-center font-heading text-sm text-text-primary shrink-0">
-                  {partnerInitial(partner)}
-                </div>
-              )}
-              <span className="font-body text-[12px] text-text-primary truncate">{partnerName(partner)}</span>
-            </>
-          ) : (
-            <>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center font-body text-[13px] text-text-secondary shrink-0"
-                   style={{ border: "1px dashed rgba(245,240,232,0.25)" }}>+</div>
-              <span className="font-body text-[12px] text-text-secondary">Choose someone</span>
-            </>
-          )}
-        </button>
+        {/* Add button — always shown when no partners, or in family mode with room */}
+        {(partners.length === 0 || canAddMore) && (
+          <button
+            type="button"
+            onClick={onPickPartner}
+            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-[#5a7680]/60"
+            style={{
+              background: "transparent",
+              border: "1px dashed rgba(245,240,232,0.25)",
+            }}
+          >
+            {partners.length === 0 && (
+              <span className="text-[#4a6670]/50 text-xs" aria-hidden="true">✦</span>
+            )}
+            <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[13px] text-text-secondary shrink-0"
+                 style={{ border: "1px dashed rgba(245,240,232,0.25)" }}>+</div>
+            <span className="font-body text-[12px] text-text-secondary">
+              {partners.length === 0 ? "Choose someone" : isFamily ? "Add another" : ""}
+            </span>
+          </button>
+        )}
       </div>
 
-      {/* Chart whisper for the selected partner */}
-      {partner && chart && (chart.sun_sign || chart.hd_type) && (
+      {/* Chart whisper — only for single partner on non-family lenses */}
+      {!isFamily && partner && chart && (chart.sun_sign || chart.hd_type) && (
         <p className="font-body text-[11px] text-text-secondary mb-5 -mt-2 pl-1">
           {chart.sun_sign && <>☉ {chart.sun_sign}</>}
           {chart.sun_sign && chart.hd_type && " · "}
@@ -893,14 +974,14 @@ function BondCard({ myName, myAvatar, partner, lens, onPickPartner, onChangeLens
       <button
         type="button"
         onClick={onRead}
-        disabled={!partner || reading}
+        disabled={partners.length === 0 || reading}
         className="w-full py-3.5 rounded-xl font-body font-semibold text-[13px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
           background: "linear-gradient(135deg, #4a6670, #3a5560)",
           color: "#f5f0e8",
         }}
       >
-        {reading ? <LoadingSpinner size="sm" /> : "Read the Dynamic →"}
+        {reading ? <LoadingSpinner size="sm" /> : isFamily && partners.length > 1 ? "Read the Family →" : "Read the Dynamic →"}
       </button>
     </div>
   );
