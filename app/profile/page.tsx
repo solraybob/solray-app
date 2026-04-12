@@ -741,6 +741,8 @@ export default function ProfilePage() {
     if (!token) return;
 
     const BP_CACHE_KEY = "solray_blueprint";
+    // Bump this version when the blueprint schema changes to force a re-fetch.
+    const BP_CACHE_VERSION = 3; // v3: incarnation cross name + Gene Keys Hologenetic Profile
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function loadFromBlueprint(bp: any) {
@@ -759,6 +761,11 @@ export default function ProfilePage() {
       const cached = localStorage.getItem(BP_CACHE_KEY);
       if (cached) {
         const bp = JSON.parse(cached);
+        // Bust stale cache if schema version is behind
+        if ((bp._cache_version ?? 0) < BP_CACHE_VERSION) {
+          localStorage.removeItem(BP_CACHE_KEY);
+          // Fall through to fresh fetch below
+        } else
         // If name is missing from cache, fetch from a lightweight endpoint
         if (!bp._name) {
           apiFetch("/users/me", {}, token)
@@ -787,7 +794,8 @@ export default function ProfilePage() {
             ...data.blueprint,
             _name: data.profile?.name || data.name || "",
             _username: data.profile?.username || data.username || "",
-            _cachedAt: Date.now()
+            _cachedAt: Date.now(),
+            _cache_version: BP_CACHE_VERSION,
           };
           try { localStorage.setItem(BP_CACHE_KEY, JSON.stringify(bpWithUser)); } catch (_) {}
           loadFromBlueprint(bpWithUser);
