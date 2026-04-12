@@ -45,7 +45,8 @@ interface ProfileData {
   evolutionGate: number;
   evolutionGift: string;
   evolutionShadow: string;
-  radar: RadarValues;
+  radar: RadarValues;        // proportional percentages — for bar legend
+  radarDisplay: RadarValues; // max-normalized per group — for spider shape
   aspects: NatalAspect[];
 }
 
@@ -112,6 +113,23 @@ function computeRadar(blueprint: any): RadarValues {
   };
 }
 
+// Max-normalized radar values — used only for the spider chart shape.
+// Within each group (elements, modalities) the dominant axis reaches 100%,
+// giving the polygon a full, readable shape regardless of how balanced the chart is.
+function computeRadarDisplay(proportional: RadarValues): RadarValues {
+  const maxE = Math.max(proportional.fire, proportional.earth, proportional.air, proportional.water, 1);
+  const maxM = Math.max(proportional.cardinal, proportional.fixed, proportional.mutable, 1);
+  return {
+    fire:     clamp(Math.round((proportional.fire / maxE) * 100)),
+    earth:    clamp(Math.round((proportional.earth / maxE) * 100)),
+    air:      clamp(Math.round((proportional.air / maxE) * 100)),
+    water:    clamp(Math.round((proportional.water / maxE) * 100)),
+    cardinal: clamp(Math.round((proportional.cardinal / maxM) * 100)),
+    fixed:    clamp(Math.round((proportional.fixed / maxM) * 100)),
+    mutable:  clamp(Math.round((proportional.mutable / maxM) * 100)),
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseProfile(blueprint: any): ProfileData {
   const natal = blueprint?.astrology?.natal ?? {};
@@ -172,6 +190,7 @@ function parseProfile(blueprint: any): ProfileData {
     evolutionGift: evolution.gift,
     evolutionShadow: evolution.shadow,
     radar: computeRadar(blueprint),
+    radarDisplay: computeRadarDisplay(computeRadar(blueprint)),
     aspects,
   };
 }
@@ -241,21 +260,22 @@ function useAnimatedProgress(delay: number): number {
 }
 
 interface SoulMapRadarChartProps {
-  radar: RadarValues;
+  radar: RadarValues;        // proportional % — drives bar legend
+  radarDisplay: RadarValues; // max-normalized — drives spider shape
 }
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire: "#c4623a",
-  Earth: "#6b7d4a",
-  Air: "#7a8a9a",
-  Water: "#4a6670",
-  Cardinal: "#e8821a",
-  Fixed: "#e8821a",
-  Mutable: "#e8821a",
+  Fire:     "#c4623a", // ember-red
+  Earth:    "#6b7d4a", // moss
+  Air:      "#7a8a9a", // mist
+  Water:    "#4a6670", // slate
+  Cardinal: "#e8821a", // ember (initiating, outward)
+  Fixed:    "#7d6680", // wisteria (holding, inward)
+  Mutable:  "#8a9e8d", // sage (adapting, fluid)
 };
 
-function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
+function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
   const progress = useAnimatedProgress(0);
 
   const OUTER = 112;
@@ -265,8 +285,9 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
   const cy = TOTAL / 2;
   const gridLevels = [25, 50, 75, 100];
 
-  const radarValues = SOUL_AXIS_KEYS.map((key) => radar[key]);
-  const animatedValues = radarValues.map((v) => v * progress);
+  // Spider uses max-normalized display values so the shape always fills the chart
+  const displayValues = SOUL_AXIS_KEYS.map((key) => radarDisplay[key]);
+  const animatedValues = displayValues.map((v) => v * progress);
 
 
 
@@ -340,9 +361,9 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
         strokeOpacity={progress}
       />
 
-      {/* Vertex dots with gradient border glow */}
+      {/* Vertex dots — positioned by display values (max-normalized) */}
       {SOUL_AXIS_KEYS.map((key, i) => {
-        const r = (radar[key] / 100) * OUTER * progress;
+        const r = (radarDisplay[key] / 100) * OUTER * progress;
         const [x, y] = getPoint7(cx, cy, r, i);
         return (
           <g key={key}>
@@ -1049,7 +1070,7 @@ export default function ProfilePage() {
                     <div className="absolute inset-0 bg-forest-card/40" style={{ background: "radial-gradient(ellipse at center, rgba(122, 138, 154,0.12) 0%, rgba(125, 102, 128,0.06) 40%, transparent 70%)" }} />
                     {/* Content */}
                     <div className="relative border border-forest-border/50 rounded-2xl p-4 bg-forest-card/40 backdrop-blur-sm">
-                    <SoulMapRadarChart radar={profile.radar} />
+                    <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
                       {/* Quiet caption instead of a dev-style legend */}
                       <p className="mt-3 font-body text-text-secondary/60 text-[10px] tracking-[0.15em] uppercase text-center">
