@@ -509,7 +509,7 @@ export default function SoulsPage() {
             className="font-body text-sm mt-3 leading-relaxed"
             style={{ color: "#4a6670", fontStyle: "italic" }}
           >
-            Add someone's birth details, choose how you relate — romantic, friendship, or work — and read what the charts say about your dynamic.
+            Add someone's birth details, choose how you relate (romantic, friendship, or work) and read what the charts say about your dynamic.
           </p>
           </div>{/* end z-10 */}
         </div>{/* end header */}

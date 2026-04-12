@@ -1219,7 +1219,7 @@ function parseBlueprintForChart(blueprint: any) {
     "6/2": "Role Model / Hermit", "6/3": "Role Model / Martyr",
   };
   const rawProfile = hd?.profile ?? "";
-  const profileDisplay = rawProfile && PROFILE_NAMES[rawProfile] ? `${rawProfile} — ${PROFILE_NAMES[rawProfile]}` : rawProfile;
+  const profileDisplay = rawProfile && PROFILE_NAMES[rawProfile] ? `${rawProfile}: ${PROFILE_NAMES[rawProfile]}` : rawProfile;
   const crossLabel = hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
 
   const humanDesign = {
@@ -1372,9 +1372,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             {core.map((p) => {
               const label = p.planet === "ASC" ? "Rising" : p.planet;
               const subtitles: Record<string, string> = {
-                Sun: "Your core identity — how you shine",
-                Moon: "Your emotional nature — how you feel",
-                Rising: "Your outer mask — how the world sees you",
+                Sun: "Your core identity, how you shine",
+                Moon: "Your emotional nature, how you feel",
+                Rising: "Your outer mask, how the world sees you",
               };
               const questions: Record<string, string> = {
                 Sun: `What does my ${p.sign} Sun mean for my identity and life path?`,

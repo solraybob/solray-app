@@ -310,7 +310,7 @@ export default function OnboardPage() {
           )}
 
           {step === 2 && (
-            <StepWrapper label="What is your gender?" subtitle="Used to tune your reading — nothing more.">
+            <StepWrapper label="What is your gender?" subtitle="Used to tune your reading. Nothing more.">
               <div className="grid grid-cols-2 gap-3">
                 {(["female", "male"] as const).map((opt) => {
                   const active = sex === opt;
