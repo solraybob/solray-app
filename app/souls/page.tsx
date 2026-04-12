@@ -485,32 +485,41 @@ export default function SoulsPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep pb-24">
-        {/* Header: slim bar matching chat + today, SOULS in the same SOLRAY lettering */}
-        <div className="px-5 pt-12 pb-4 relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
-          <div className="absolute inset-0 pointer-events-none">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60"
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ opacity: 0.07 }}
-            />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
-          </div>
-          <div className="max-w-lg mx-auto relative z-10 flex items-center justify-center">
-            <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOULS</h1>
+        {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
+        <div className="border-b border-forest-border/50">
+          <div className="max-w-lg mx-auto px-5 py-3 relative">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-[10px] tracking-[0.22em] uppercase" style={{ color: "#4a6670" }}>
+                Your Field
+              </p>
+              <h1
+                className="font-heading text-2xl tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
+                style={{ fontWeight: 300 }}
+              >
+                SOULS
+              </h1>
+              <span className="w-[60px]" aria-hidden="true" />
+            </div>
           </div>
         </div>
 
         <div className="max-w-lg mx-auto px-5 pt-5 space-y-6 animate-fade-in">
-          {/* Page intro sits in the content area, not the header */}
-          <p
-            className="font-body text-[13px] leading-relaxed"
-            style={{ color: "#4a6670" }}
-          >
-            Add someone's birth details, choose how you relate (romantic, friendship, or work) and read what the charts say about your dynamic.
-          </p>
+          {/* Page intro, styled like the chat greeting message */}
+          <div className="flex justify-start">
+            <div className="max-w-[85%] flex flex-col items-start">
+              <div
+                className="rounded-2xl rounded-bl-sm px-4 py-3 text-text-primary"
+                style={{
+                  background: "rgba(74,102,112,0.05)",
+                  border: "2px solid rgba(74,102,112,0.3)",
+                }}
+              >
+                <p className="font-body text-[14px] leading-relaxed">
+                  Add someone&apos;s birth details, pick how you relate (romantic, friendship, or work) and read what the charts say about your dynamic.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Hero: Read the Bond */}
           <BondCard
