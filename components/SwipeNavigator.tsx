@@ -62,9 +62,29 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     const el = wrapRef.current;
     if (!el) return;
 
+    // Walk up the DOM from the touch target. If any ancestor is a
+    // horizontally scrollable container (overflow-x: auto/scroll), the
+    // gesture belongs to that element, not the page navigator.
+    const isInsideHScroll = (target: EventTarget | null): boolean => {
+      let node = target as HTMLElement | null;
+      while (node && node !== el) {
+        const style = window.getComputedStyle(node);
+        const overflowX = style.overflowX;
+        if (
+          (overflowX === "auto" || overflowX === "scroll") &&
+          node.scrollWidth > node.clientWidth
+        ) {
+          return true;
+        }
+        node = node.parentElement;
+      }
+      return false;
+    };
+
     const onStart = (e: TouchEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (isInsideHScroll(e.target)) return;
 
       startX.current = e.touches[0].clientX;
       startY.current = e.touches[0].clientY;
