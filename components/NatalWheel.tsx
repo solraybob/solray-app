@@ -3,16 +3,14 @@
 /**
  * NatalWheel — minimalist circular natal chart.
  *
- * Design philosophy: "Living By Design" / clean + minimalistic.
- * One outer zodiac ring, one thin inner house ring, planet glyphs at their
- * ecliptic longitude. No aspect lines by default. Element colors are drawn
- * from the Solray extended palette so it visually harmonizes with the rest
- * of the app: fire = ember, earth = moss, air = mist, water = slate.
- *
- * Convention: ASC is drawn at the 9 o'clock position (left), planets move
- * clockwise around the wheel as ecliptic longitude increases (standard
- * astrological wheel orientation).
+ * Uses SVG line-art glyphs (from AstroGlyphs) rather than the unicode zodiac
+ * and planet characters because those render as emoji on iOS. Element colors
+ * are from the Solray aged palette: fire ember, earth moss, air mist, water
+ * slate. ASC sits at the 9 o'clock position; planets move clockwise as
+ * ecliptic longitude increases.
  */
+
+import Glyph from "./AstroGlyphs";
 
 type Planet = {
   planet: string;
@@ -35,9 +33,6 @@ interface NatalWheelProps {
   aspects?: Aspect[];
   size?: number;
 }
-
-// Three-letter zodiac sign labels. No unicode glyphs, no emoji.
-const SIGN_SYMBOLS = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"];
 
 // Major aspect colors (muted for wheel use)
 const ASPECT_LINE: Record<string, { color: string; opacity: number }> = {
@@ -116,7 +111,6 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
       path: arcPath(startLon, endLon, rOuter, rZodInner),
       labelPos,
       color: ELEMENT_COLOR[i],
-      symbol: SIGN_SYMBOLS[i],
     };
   });
 
@@ -165,18 +159,16 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
       {signSectors.map((s) => (
         <g key={`sign-${s.i}`}>
           <path d={s.path} fill={s.color} fillOpacity={0.06} stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
-          <text
+          <Glyph
+            type="sign"
+            id={s.i}
             x={s.labelPos.x}
             y={s.labelPos.y}
-            fontSize={size * 0.032}
-            fill={s.color}
-            fillOpacity={0.85}
-            textAnchor="middle"
-            dominantBaseline="central"
-            style={{ fontFamily: "sans-serif", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase" }}
-          >
-            {s.symbol}
-          </text>
+            size={size * 0.065}
+            color={s.color}
+            strokeWidth={1.1}
+            opacity={0.9}
+          />
         </g>
       ))}
 
@@ -267,21 +259,19 @@ export default function NatalWheel({ planets, ascLongitude, houseCusps, aspects 
           <g key={`pl-${p.planet}`}>
             {/* Thin tick showing true longitude on the inner ring */}
             <line x1={tick1.x} y1={tick1.y} x2={tick2.x} y2={tick2.y} stroke="rgba(232,210,180,0.4)" strokeWidth={0.8} />
-            <text
+            <Glyph
+              type="planet"
+              id={p.planet}
               x={pos.x}
               y={pos.y}
-              fontSize={size * 0.038}
-              fill="#f5f0e8"
-              textAnchor="middle"
-              dominantBaseline="central"
-              style={{ fontFamily: "sans-serif", fontWeight: 400, letterSpacing: "0.04em" }}
-            >
-              {p.symbol}
-            </text>
+              size={size * 0.075}
+              color="#f5f0e8"
+              strokeWidth={1.1}
+            />
             {p.retrograde && (
               <text
-                x={pos.x + size * 0.03}
-                y={pos.y - size * 0.02}
+                x={pos.x + size * 0.035}
+                y={pos.y - size * 0.03}
                 fontSize={size * 0.022}
                 fill="#e8821a"
                 fillOpacity={0.85}

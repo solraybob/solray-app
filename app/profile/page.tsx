@@ -95,18 +95,20 @@ function computeRadar(blueprint: any): RadarValues {
   if (ascSign) addSign(ascSign, POINTS_PER_ANGLE);
   if (mcSign) addSign(mcSign, POINTS_PER_ANGLE);
 
-  // Normalize to 0–100 (elements share same max, modalities share same max)
-  const maxElement = Math.max(counts.fire, counts.earth, counts.air, counts.water, 1);
-  const maxModality = Math.max(counts.cardinal, counts.fixed, counts.mutable, 1);
+  // Proportional partition: elements share 100% of the element total,
+  // modalities share 100% of the modality total. No single element can
+  // be 100% unless it literally accounts for every point in the chart.
+  const totalElement = counts.fire + counts.earth + counts.air + counts.water || 1;
+  const totalModality = counts.cardinal + counts.fixed + counts.mutable || 1;
 
   return {
-    fire: clamp(Math.round((counts.fire / maxElement) * 100)),
-    earth: clamp(Math.round((counts.earth / maxElement) * 100)),
-    air: clamp(Math.round((counts.air / maxElement) * 100)),
-    water: clamp(Math.round((counts.water / maxElement) * 100)),
-    cardinal: clamp(Math.round((counts.cardinal / maxModality) * 100)),
-    fixed: clamp(Math.round((counts.fixed / maxModality) * 100)),
-    mutable: clamp(Math.round((counts.mutable / maxModality) * 100)),
+    fire: clamp(Math.round((counts.fire / totalElement) * 100)),
+    earth: clamp(Math.round((counts.earth / totalElement) * 100)),
+    air: clamp(Math.round((counts.air / totalElement) * 100)),
+    water: clamp(Math.round((counts.water / totalElement) * 100)),
+    cardinal: clamp(Math.round((counts.cardinal / totalModality) * 100)),
+    fixed: clamp(Math.round((counts.fixed / totalModality) * 100)),
+    mutable: clamp(Math.round((counts.mutable / totalModality) * 100)),
   };
 }
 
@@ -281,10 +283,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
           <stop offset="0%" stopColor="rgba(122, 138, 154,0.08)" />
           <stop offset="100%" stopColor="rgba(122, 138, 154,0)" />
         </radialGradient>
-        <linearGradient id="radarPolygon" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#7a8a9a" />
-          <stop offset="100%" stopColor="#7d6680" />
-        </linearGradient>
+        {/* Moss green is the shared color for the Soul Map section */}
       </defs>
 
       {/* Radial gradient background glow */}
@@ -330,12 +329,12 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
         opacity={0.30}
       />
 
-      {/* Main blue-to-purple gradient polygon */}
+      {/* Main moss polygon */}
       <polygon
         points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
-        fill="url(#radarPolygon)"
-        fillOpacity={0.35 * progress}
-        stroke="url(#radarPolygon)"
+        fill="#6b7d4a"
+        fillOpacity={0.22 * progress}
+        stroke="#6b7d4a"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeOpacity={progress}
@@ -353,7 +352,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
               cy={y}
               r={5.5}
               fill="none"
-              stroke="url(#radarPolygon)"
+              stroke="#6b7d4a"
               strokeWidth={0.5}
               opacity={progress * 0.4}
             />
@@ -362,7 +361,7 @@ function SoulMapRadarChart({ radar }: SoulMapRadarChartProps) {
               cx={x}
               cy={y}
               r={3}
-              fill="url(#radarPolygon)"
+              fill="#6b7d4a"
               opacity={progress * 0.9}
             />
           </g>
