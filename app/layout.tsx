@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import VersionCheck from "@/components/VersionCheck";
 import Footer from "@/components/Footer";
 import SwipeNavigator from "@/components/SwipeNavigator";
 import BottomNav from "@/components/BottomNav";
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-forest-deep min-h-screen text-text-primary">
+        <VersionCheck />
         <AuthProvider>
           <SwipeNavigator>
             {children}
