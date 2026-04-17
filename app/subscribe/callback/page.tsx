@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
  * The token and card info arrive as URL query params.
  * We forward them to /subscribe which handles the attach logic.
  */
-export default function SecurePayCallback() {
+function SecurePayCallbackInner() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -24,5 +24,17 @@ export default function SecurePayCallback() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
     </div>
+  );
+}
+
+export default function SecurePayCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+      </div>
+    }>
+      <SecurePayCallbackInner />
+    </Suspense>
   );
 }

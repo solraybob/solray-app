@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/api";
  * User lands here from the email link. Calls the backend to verify,
  * then shows success and redirects to the app.
  */
-export default function VerifyEmailPage() {
+function VerifyEmailInner() {
   const params = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -105,5 +105,17 @@ export default function VerifyEmailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+      </div>
+    }>
+      <VerifyEmailInner />
+    </Suspense>
   );
 }
