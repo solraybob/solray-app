@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "./LoadingSpinner";
+import TrialBanner from "./TrialBanner";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
@@ -25,5 +26,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!token) return null;
 
-  return <>{children}</>;
+  return (
+    <>
+      <TrialBanner />
+      {children}
+    </>
+  );
 }
