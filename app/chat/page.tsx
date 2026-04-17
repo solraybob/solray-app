@@ -130,9 +130,51 @@ function ChatPageInner() {
   const [renameValue, setRenameValue] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesRef = useRef<Message[]>([]);
+  const tokenRef = useRef<string | null>(null);
   const { token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Keep refs in sync so beforeunload and cleanup can read current values
+  // without stale closures
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { tokenRef.current = token; }, [token]);
+
+  // ── Session-close synthesis ───────────────────────────────────────────────
+  // Fires when the user navigates away or closes the tab. Uses fetch with
+  // keepalive:true so the browser sends the request even as the page unloads.
+  const triggerSessionSynthesis = useCallback(() => {
+    const tok = tokenRef.current;
+    const msgs = messagesRef.current;
+    if (!tok || !msgs.length) return;
+
+    const history = msgs
+      .filter((m) => m.id !== "greeting")
+      .map((m) => ({ role: m.role, content: m.content }));
+    const userCount = history.filter((m) => m.role === "user").length;
+    if (userCount < 3) return;
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    fetch(`${API_URL}/chat/synthesize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tok}`,
+      },
+      body: JSON.stringify({ conversation_history: history }),
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
+  // Wire to beforeunload (tab close / refresh) and component unmount (navigation)
+  useEffect(() => {
+    window.addEventListener("beforeunload", triggerSessionSynthesis);
+    return () => {
+      window.removeEventListener("beforeunload", triggerSessionSynthesis);
+      triggerSessionSynthesis();
+    };
+  }, [triggerSessionSynthesis]);
 
   // ── Streaming effect ──────────────────────────────────────────────────────
   useEffect(() => {
