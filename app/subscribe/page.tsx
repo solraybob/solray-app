@@ -45,9 +45,16 @@ function SubscribeContent() {
   // Handle SecurePay callback (token comes back as URL param)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const teyaToken = params.get("token");
-    const lastFour = params.get("last_four") || params.get("Pan")?.slice(-4);
-    const brand = params.get("card_type") || params.get("CardType") || "Card";
+
+    // Borgun param casing varies between test and live environments.
+    // Build a lowercase lookup so we catch token/Token/TOKEN etc.
+    const lc: Record<string, string> = {};
+    params.forEach((v, k) => { lc[k.toLowerCase()] = v; });
+
+    const teyaToken = lc["token"];
+    const rawPan = lc["pan"] || lc["maskedpan"] || "";
+    const lastFour = lc["last_four"] || (rawPan ? rawPan.slice(-4) : "");
+    const brand = lc["card_type"] || lc["cardtype"] || "Card";
 
     if (teyaToken && token) {
       setActionLoading(true);
