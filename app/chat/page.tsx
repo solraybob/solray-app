@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -131,6 +131,7 @@ function ChatPageInner() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // ── Streaming effect ──────────────────────────────────────────────────────
@@ -605,7 +606,15 @@ function ChatPageInner() {
       // Kick off streaming effect
       setStreamedLength(0);
       setStreamingId(reply.id);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        router.replace("/subscribe");
+        return;
+      }
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace("/login");
+        return;
+      }
       const mockReplies = [
         "The pattern you're sensing is real. Trust that recognition. Your intuition rarely lies at this depth.",
         "There is wisdom in what you're sitting with. Let it breathe a little longer before you act.",

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import CurrentCycles from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 
@@ -585,8 +585,16 @@ export default function TodayPage() {
           // Background refresh — update silently if different
           setForecast(parsed);
         }
-      } catch {
+      } catch (err) {
         if (!isBackground) {
+          if (err instanceof ApiError && err.status === 403) {
+            router.replace("/subscribe");
+            return;
+          }
+          if (err instanceof ApiError && err.status === 401) {
+            router.replace("/login");
+            return;
+          }
           setForecast(MOCK_FORECAST);
           setError("Reading from memory. Reconnect when ready to see the live sky.");
           setLoading(false);
