@@ -814,18 +814,23 @@ function getMoonPhaseLabel(p: number): string {
   return "Waning Crescent";
 }
 
+// Moon phase is the only place in the app where emoji are used. The
+// lunar glyphs (new through waning crescent) read as celestial symbols
+// rather than face/object emoji and fit the soft forest palette, so
+// they are kept as a deliberate, single-purpose carve-out from the
+// otherwise strict no-emoji rule.
 function getMoonEmoji(p: number): string {
-  if (p < 0.03 || p > 0.97) return "🌑";
-  if (p < 0.25) return "🌒";
-  if (p < 0.27) return "🌓";
-  if (p < 0.48) return "🌔";
-  if (p < 0.52) return "🌕";
-  if (p < 0.73) return "🌖";
-  if (p < 0.77) return "🌗";
-  return "🌘";
+  if (p < 0.03 || p > 0.97) return "\u{1F311}"; // new
+  if (p < 0.25) return "\u{1F312}";              // waxing crescent
+  if (p < 0.27) return "\u{1F313}";              // first quarter
+  if (p < 0.48) return "\u{1F314}";              // waxing gibbous
+  if (p < 0.52) return "\u{1F315}";              // full
+  if (p < 0.73) return "\u{1F316}";              // waning gibbous
+  if (p < 0.77) return "\u{1F317}";              // third quarter
+  return "\u{1F318}";                             // waning crescent
 }
 
-// Persistent moon cycle component — always visible
+// Persistent moon cycle component, always visible.
 function MoonCycleBar({ planets }: { planets: Planet[] }) {
   const phase = getMoonPhaseValue();
   const moonSign = planets.find(p => p.name === "Moon")?.sign || "";

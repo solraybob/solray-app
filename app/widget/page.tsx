@@ -27,7 +27,9 @@ interface ForecastData {
   };
 }
 
-// Moon phase calculation helpers
+// Moon phase calculation helpers. The lunar glyphs are the single
+// documented exception to Solray's no-emoji rule, see the note on
+// MoonCycleBar in app/today/page.tsx.
 function getMoonPhase(): { phase: number; label: string; emoji: string } {
   const now = new Date();
   const jd = (now.getTime() / 86400000) + 2440587.5;
@@ -48,14 +50,14 @@ function getMoonPhase(): { phase: number; label: string; emoji: string } {
   };
 
   const getMoonEmoji = (p: number): string => {
-    if (p < 0.03 || p > 0.97) return "🌑";
-    if (p < 0.25) return "🌒";
-    if (p < 0.27) return "🌓";
-    if (p < 0.48) return "🌔";
-    if (p < 0.52) return "🌕";
-    if (p < 0.73) return "🌖";
-    if (p < 0.77) return "🌗";
-    return "🌘";
+    if (p < 0.03 || p > 0.97) return "\u{1F311}";
+    if (p < 0.25) return "\u{1F312}";
+    if (p < 0.27) return "\u{1F313}";
+    if (p < 0.48) return "\u{1F314}";
+    if (p < 0.52) return "\u{1F315}";
+    if (p < 0.73) return "\u{1F316}";
+    if (p < 0.77) return "\u{1F317}";
+    return "\u{1F318}";
   };
 
   return {

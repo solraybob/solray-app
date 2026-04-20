@@ -1520,6 +1520,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               houseCusps={chart.houseCusps}
               aspects={aspects}
               size={320}
+              showLegend
             />
           </div>
           {/* Core trio */}

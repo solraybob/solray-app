@@ -67,17 +67,20 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
   Root:        { x: 130, y: 300 },
 };
 
-// Accent colors per center (muted Solray palette)
+// Accent colors per center, Solray aged-pigment palette. Values track the
+// bodygraph "proposed" spec in solray-contrast-compare.html so categorical
+// coding (throat / heart / sacral read as warm fire, spleen as moss, root
+// as slate) survives desaturation and harmonises with the forest field.
 const CENTER_COLOR: Record<CenterKey, string> = {
-  Head:        "#c9b884", // pearl / pale gold
-  Ajna:        "#8a7d68", // aged ivory
-  Throat:      "#9b86a0", // wisteria
-  G:           "#8a9e66", // moss
-  Heart:       "#c85848", // ember-red
-  Sacral:      "#d86848", // sacral red
-  Spleen:      "#6a8692", // slate
-  SolarPlexus: "#a87048", // ochre
-  Root:        "#8a4a38", // root brown
+  Head:        "#9b86a0", // wisteria
+  Ajna:        "#9babb9", // mist
+  Throat:      "#d47a52", // ember
+  G:           "#ece4cf", // pearl
+  Heart:       "#d47a52", // ember
+  Sacral:      "#d47a52", // ember
+  Spleen:      "#8a9e66", // moss
+  SolarPlexus: "#9b86a0", // wisteria
+  Root:        "#6a8692", // slate
 };
 
 // External label positions (outside the shape, in surrounding whitespace).
@@ -143,8 +146,8 @@ function CenterShape({
   color: string;
 }) {
   const fill = defined ? color : "transparent";
-  const fillOpacity = defined ? 0.85 : 0;
-  const stroke = defined ? color : "rgba(242,236,216,0.35)";
+  const fillOpacity = defined ? 1.0 : 0;
+  const stroke = defined ? color : "rgba(168,184,171,0.55)";
   const strokeWidth = 1.2;
   const size = 40;
 

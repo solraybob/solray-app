@@ -4,15 +4,22 @@
  * NatalWheel: natal chart wheel.
  *
  * Layer order (outside in):
- *   1. Zodiac ring, 12 sectors colored by element
+ *   1. Element-coloured zodiac ring, 12 sectors
  *   2. Sign glyphs, centered in each sector
  *   3. House / planet band, planets at rPlanet, tick marks at true longitude
  *   4. House number band, subtle Arabic numerals at rHouseNum
  *   5. Aspect web, top 8 tightest major aspects
  *   6. Center disk
  *
- * Retrograde marker: drawn before the planet glyph so the planet sits on top,
- * the ℞ peeks through from behind in the planet's own color.
+ * Five concentric ring circles (rOuter, rZodInner, rHouseInner, rNumInner,
+ * rCenter) give the wheel its four-track structure. Ring strokes are
+ * intentionally uniform so the eye reads the rings as a set, not a
+ * hierarchy of importance.
+ *
+ * Retrograde marker is drawn before the planet glyph so the planet sits
+ * on top and the Rx peeks through from behind in a muted secondary tone.
+ *
+ * Pass `showLegend` to render a compact legend beneath the wheel.
  */
 
 import Glyph from "./AstroGlyphs";
@@ -37,35 +44,36 @@ interface NatalWheelProps {
   houseCusps?: number[];
   aspects?: Aspect[];
   size?: number;
+  showLegend?: boolean;
 }
 
 const ASPECT_LINE: Record<string, { color: string; opacity: number; dash?: string }> = {
-  conjunction: { color: "#f39230", opacity: 0.85 },
-  opposition:  { color: "#c05858", opacity: 0.78 },
-  trine:       { color: "#8a9e66", opacity: 0.82 },
-  square:      { color: "#c4723a", opacity: 0.75 },
-  sextile:     { color: "#9babb9", opacity: 0.72, dash: "4 3" },
+  conjunction: { color: "#f39230", opacity: 0.62 },
+  opposition:  { color: "#6a8692", opacity: 0.62, dash: "6 3" },
+  trine:       { color: "#8a9e66", opacity: 0.62 },
+  square:      { color: "#d47a52", opacity: 0.62, dash: "3 3" },
+  sextile:     { color: "#9babb9", opacity: 0.62 },
 };
 const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
 
-// Per-planet colors matching the Sky Now section on the Today page
+// Per-planet colours matching the Sky Now section on the Today page.
 const PLANET_COLOR: Record<string, string> = {
   Sun:       "#f39230", // amber
-  Moon:      "#9babb9", // mist
-  Mercury:   "#ece4cf", // pearl
+  Moon:      "#ece4cf", // pearl
+  Mercury:   "#9babb9", // mist
   Venus:     "#9b86a0", // wisteria
   Mars:      "#d47a52", // ember
   Jupiter:   "#8a9e66", // moss
   Saturn:    "#6a8692", // slate
   Uranus:    "#9babb9", // mist
-  Neptune:   "#9b86a0", // wisteria
-  Pluto:     "#6a8692", // slate
-  NorthNode: "#8a9e8d", // sage
-  Chiron:    "#ece4cf", // pearl
-  ASC:       "#f0dcc0", // warm cream
+  Neptune:   "#6a8692", // slate
+  Pluto:     "#8a9e8d", // sage
+  NorthNode: "#8a9e8d",
+  Chiron:    "#ece4cf",
+  ASC:       "#f0dcc0",
 };
 
-// Element color per sign index (Aries=0 … Pisces=11)
+// Element color per sign index (Aries=0, Pisces=11).
 const SIGN_ELEMENT_COLOR = [
   "#d47a52", // Aries, fire
   "#8a9e66", // Taurus, earth
@@ -87,6 +95,7 @@ export default function NatalWheel({
   houseCusps,
   aspects = [],
   size = 320,
+  showLegend = false,
 }: NatalWheelProps) {
   if (ascLongitude == null) {
     return (
@@ -101,24 +110,29 @@ export default function NatalWheel({
   const cx = size / 2;
   const cy = size / 2;
 
-  // ── Radii ──────────────────────────────────────────────────────────────────
-  const rOuter      = size * 0.465; // outer zodiac rim
-  const rZodInner   = size * 0.385; // zodiac ↔ planet-band boundary
-  const rHouseInner = size * 0.305; // inner edge of planet / house band
-  const rPlanet     = size * 0.338; // planet glyph placement
+  // Radii, in share of `size`, calibrated to the mockup:
+  //   rOuter      = 149.5 / 320 = 0.467
+  //   rZodInner   = 123.2 / 320 = 0.385
+  //   rHouseInner =  97.6 / 320 = 0.305
+  //   rNumInner   =  72.0 / 320 = 0.225
+  //   rCenter     =  44.8 / 320 = 0.140
+  const rOuter      = size * 0.467;
+  const rZodInner   = size * 0.385;
+  const rHouseInner = size * 0.305;
+  const rPlanet     = size * 0.345; // planet glyph placement, between zodiac and house band
   const rHouseNum   = size * 0.262; // house number ring
-  const rNumInner   = size * 0.225; // inner edge of house-number band
-  const rAspect     = size * 0.205; // aspect line endpoints
-  const rCenter     = size * 0.140; // center disk
+  const rNumInner   = size * 0.225;
+  const rAspect     = size * 0.205;
+  const rCenter     = size * 0.140;
 
-  // ASC sits at 9-o'clock; ecliptic longitude increases clockwise in chart space
+  // ASC sits at 9 o'clock; ecliptic longitude increases clockwise in chart space.
   const lonToXY = (lon: number, r: number) => {
     const deg = 180 + (lon - ascLongitude);
     const rad = (deg * Math.PI) / 180;
     return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
   };
 
-  // Wedge path between two concentric arcs
+  // Wedge path between two concentric arcs.
   const arcPath = (lon1: number, lon2: number, rA: number, rB: number) => {
     const p1 = lonToXY(lon1, rA);
     const p2 = lonToXY(lon2, rA);
@@ -130,7 +144,7 @@ export default function NatalWheel({
     return `M ${p1.x} ${p1.y} A ${rA} ${rA} 0 ${large} 0 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rB} ${rB} 0 ${large} 1 ${p4.x} ${p4.y} Z`;
   };
 
-  // ── Zodiac ring ─────────────────────────────────────────────────────────────
+  // Zodiac ring.
   const signSectors = Array.from({ length: 12 }, (_, i) => {
     const startLon = i * 30;
     const endLon   = (i + 1) * 30;
@@ -144,13 +158,13 @@ export default function NatalWheel({
     };
   });
 
-  // ── House cusps ─────────────────────────────────────────────────────────────
+  // House cusps (equal-house fallback if real cusps absent).
   const cusps: number[] =
     houseCusps && houseCusps.length === 12
       ? houseCusps
       : Array.from({ length: 12 }, (_, i) => (ascLongitude + i * 30) % 360);
 
-  // ── House numbers, midpoint between consecutive cusps ────────────────────
+  // House numbers, centered on the midpoint between consecutive cusps.
   const houseNumbers = Array.from({ length: 12 }, (_, i) => {
     const start = cusps[i];
     const end   = cusps[(i + 1) % 12];
@@ -160,7 +174,7 @@ export default function NatalWheel({
     return { num: i + 1, pos: lonToXY(midLon, rHouseNum) };
   });
 
-  // ── Planet collision resolution ─────────────────────────────────────────────
+  // Planet collision resolution.
   const placed = [...planets]
     .filter((p) => typeof p.longitude === "number")
     .sort((a, b) => a.longitude - b.longitude);
@@ -178,7 +192,7 @@ export default function NatalWheel({
 
   const planetColor = (name: string) => PLANET_COLOR[name] ?? "#8a9e8d";
 
-  // ── Aspect lines, top 8 tightest majors ────────────────────────────────────
+  // Aspect lines, top 8 tightest majors.
   const byName: Record<string, Planet> = {};
   for (const p of planets) byName[p.planet] = p;
   const majorLines = aspects
@@ -187,184 +201,233 @@ export default function NatalWheel({
     .sort((a, b) => a.orb - b.orb)
     .slice(0, 8);
 
+  // Uniform ring stroke per the mockup's .prop .nw-svg CSS.
+  const ringStroke = "rgba(232,210,180,0.35)";
+  const ringWidth  = 1.25;
+
   return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      width="100%"
-      style={{ maxWidth: size, display: "block", margin: "0 auto" }}
-      aria-label="Natal chart wheel"
-    >
-      <defs>
-        <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stopColor="rgba(243,146,48,0.10)" />
-          <stop offset="55%"  stopColor="rgba(106,134,146,0.06)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-        </radialGradient>
-        <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stopColor="rgba(8,20,14,0.88)" />
-          <stop offset="100%" stopColor="rgba(6,16,10,0.78)" />
-        </radialGradient>
-      </defs>
+    <div style={{ maxWidth: size, margin: "0 auto" }}>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        width="100%"
+        style={{ display: "block" }}
+        aria-label="Natal chart wheel"
+      >
+        <defs>
+          <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="rgba(243,146,48,0.10)" />
+            <stop offset="55%"  stopColor="rgba(106,134,146,0.06)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+          </radialGradient>
+          <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="rgba(8,20,14,0.88)" />
+            <stop offset="100%" stopColor="rgba(6,16,10,0.78)" />
+          </radialGradient>
+        </defs>
 
-      {/* Background glow */}
-      <circle cx={cx} cy={cy} r={rOuter + 4} fill="url(#nwGlow)" />
+        {/* Background glow */}
+        <circle cx={cx} cy={cy} r={rOuter + 4} fill="url(#nwGlow)" />
 
-      {/* Dark inner disk */}
-      <circle cx={cx} cy={cy} r={rZodInner} fill="url(#nwInner)" />
+        {/* Dark inner disk */}
+        <circle cx={cx} cy={cy} r={rZodInner} fill="url(#nwInner)" />
 
-      {/* Zodiac ring sectors */}
-      {signSectors.map((s) => (
-        <g key={`sign-${s.i}`}>
-          <path
-            d={s.path}
-            fill={s.color}
-            fillOpacity={0.16}
-            stroke={s.color}
-            strokeOpacity={0.22}
-            strokeWidth={0.5}
-          />
-          <Glyph
-            type="sign"
-            id={s.i}
-            x={s.labelPos.x}
-            y={s.labelPos.y}
-            size={size * 0.050}
-            color={s.color}
-            strokeWidth={1.35}
-            opacity={1}
-          />
-        </g>
-      ))}
-
-      {/* Ring borders */}
-      <circle cx={cx} cy={cy} r={rOuter}      fill="none" stroke="rgba(232,210,180,0.25)" strokeWidth={1} />
-      <circle cx={cx} cy={cy} r={rZodInner}   fill="none" stroke="rgba(232,210,180,0.20)" strokeWidth={0.8} />
-      <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke="rgba(232,210,180,0.14)" strokeWidth={0.6} />
-      <circle cx={cx} cy={cy} r={rNumInner}   fill="none" stroke="rgba(232,210,180,0.10)" strokeWidth={0.5} />
-
-      {/* House cusp lines */}
-      {cusps.map((lon, idx) => {
-        const inner = lonToXY(lon, rNumInner);
-        const outer = lonToXY(lon, rZodInner);
-        const isAngle = idx === 0 || idx === 3 || idx === 6 || idx === 9;
-        return (
-          <line
-            key={`cusp-${idx}`}
-            x1={inner.x} y1={inner.y}
-            x2={outer.x} y2={outer.y}
-            stroke={isAngle ? "rgba(232,210,180,0.55)" : "rgba(232,210,180,0.13)"}
-            strokeWidth={isAngle ? 1.2 : 0.5}
-          />
-        );
-      })}
-
-      {/* ASC label */}
-      {(() => {
-        const pos = lonToXY(ascLongitude, rZodInner - 10);
-        return (
-          <text
-            x={pos.x} y={pos.y}
-            fontSize={size * 0.034}
-            fill="#f0dcc0"
-            fillOpacity={1.0}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            style={{ fontFamily: "serif", letterSpacing: "0.06em" }}
-          >
-            ASC
-          </text>
-        );
-      })()}
-
-      {/* House numbers 1-12 */}
-      {houseNumbers.map(({ num, pos }) => (
-        <text
-          key={`hn-${num}`}
-          x={pos.x} y={pos.y}
-          fontSize={size * 0.034}
-          fill="rgba(232,210,180,0.72)"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-        >
-          {num}
-        </text>
-      ))}
-
-      {/* Aspect lines */}
-      {majorLines.map((a, i) => {
-        const p1  = byName[a.planet1];
-        const p2  = byName[a.planet2];
-        const c1  = lonToXY(p1.longitude, rAspect);
-        const c2  = lonToXY(p2.longitude, rAspect);
-        const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
-        if (!cfg) return null;
-        return (
-          <line
-            key={`asp-${i}`}
-            x1={c1.x} y1={c1.y}
-            x2={c2.x} y2={c2.y}
-            stroke={cfg.color}
-            strokeOpacity={cfg.opacity}
-            strokeWidth={1.35}
-            strokeDasharray={cfg.dash}
-          />
-        );
-      })}
-
-      {/* Center disk */}
-      <circle cx={cx} cy={cy} r={rCenter} fill="rgba(6,16,10,0.65)" stroke="rgba(232,210,180,0.12)" strokeWidth={0.5} />
-
-      {/* Planets */}
-      {adjusted.map(({ p, displayLon }) => {
-        if (p.planet === "ASC") return null;
-        const pos    = lonToXY(displayLon, rPlanet);
-        const tick1  = lonToXY(p.longitude, rHouseInner);
-        const tick2  = lonToXY(p.longitude, rHouseInner - 4);
-        const pColor = planetColor(p.planet);
-        return (
-          <g key={`pl-${p.planet}`}>
-            {/* Tick at true ecliptic longitude */}
-            <line
-              x1={tick1.x} y1={tick1.y}
-              x2={tick2.x} y2={tick2.y}
-              stroke={pColor}
-              strokeOpacity={0.60}
-              strokeWidth={0.8}
+        {/* Zodiac ring sectors */}
+        {signSectors.map((s) => (
+          <g key={`sign-${s.i}`}>
+            <path
+              d={s.path}
+              fill={s.color}
+              fillOpacity={0.10}
+              stroke={s.color}
+              strokeOpacity={0.22}
+              strokeWidth={0.5}
             />
-
-            {/* Retrograde marker, drawn BEFORE planet so planet sits on top */}
-            {p.retrograde && (
-              <text
-                x={pos.x + size * 0.016}
-                y={pos.y + size * 0.012}
-                fontSize={size * 0.021}
-                fill={pColor}
-                fillOpacity={0.65}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ fontFamily: "serif", fontStyle: "italic" }}
-              >
-                ℞
-              </text>
-            )}
-
-            {/* Planet glyph, sits on top of the retrograde marker */}
             <Glyph
-              type="planet"
-              id={p.planet}
-              x={pos.x}
-              y={pos.y}
+              type="sign"
+              id={s.i}
+              x={s.labelPos.x}
+              y={s.labelPos.y}
               size={size * 0.047}
-              color={pColor}
-              strokeWidth={1.45}
+              color={s.color}
+              strokeWidth={1.35}
+              opacity={0.92}
             />
           </g>
-        );
-      })}
+        ))}
 
-      {/* Center dot */}
-      <circle cx={cx} cy={cy} r={2} fill="rgba(232,210,180,0.45)" />
-    </svg>
+        {/* Five ring borders, uniform stroke per the mockup */}
+        <circle cx={cx} cy={cy} r={rOuter}      fill="none" stroke={ringStroke} strokeWidth={ringWidth} />
+        <circle cx={cx} cy={cy} r={rZodInner}   fill="none" stroke={ringStroke} strokeWidth={ringWidth} />
+        <circle cx={cx} cy={cy} r={rHouseInner} fill="none" stroke={ringStroke} strokeWidth={ringWidth} />
+        <circle cx={cx} cy={cy} r={rNumInner}   fill="none" stroke={ringStroke} strokeWidth={ringWidth} />
+        <circle cx={cx} cy={cy} r={rCenter}     fill="none" stroke={ringStroke} strokeWidth={ringWidth} />
+
+        {/* House cusp lines. Angular cusps are solid; intermediate cusps are dashed. */}
+        {cusps.map((lon, idx) => {
+          const inner = lonToXY(lon, rNumInner);
+          const outer = lonToXY(lon, rZodInner);
+          const isAngle = idx === 0 || idx === 3 || idx === 6 || idx === 9;
+          return (
+            <line
+              key={`cusp-${idx}`}
+              x1={inner.x} y1={inner.y}
+              x2={outer.x} y2={outer.y}
+              stroke="rgba(232,210,180,0.72)"
+              strokeOpacity={isAngle ? 0.72 : 0.42}
+              strokeWidth={isAngle ? 1.25 : 1.0}
+              strokeDasharray={isAngle ? undefined : "2 3"}
+            />
+          );
+        })}
+
+        {/* ASC label */}
+        {(() => {
+          const pos = lonToXY(ascLongitude, rZodInner - 10);
+          return (
+            <text
+              x={pos.x} y={pos.y}
+              fontSize={size * 0.034}
+              fill="#f39230"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{ fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "0.22em", fontWeight: 600 }}
+            >
+              ASC
+            </text>
+          );
+        })()}
+
+        {/* House numbers 1-12 */}
+        {houseNumbers.map(({ num, pos }) => (
+          <text
+            key={`hn-${num}`}
+            x={pos.x} y={pos.y}
+            fontSize={size * 0.034}
+            fill="rgba(232,210,180,0.72)"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500 }}
+          >
+            {num}
+          </text>
+        ))}
+
+        {/* Aspect lines */}
+        {majorLines.map((a, i) => {
+          const p1  = byName[a.planet1];
+          const p2  = byName[a.planet2];
+          const c1  = lonToXY(p1.longitude, rAspect);
+          const c2  = lonToXY(p2.longitude, rAspect);
+          const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
+          if (!cfg) return null;
+          return (
+            <line
+              key={`asp-${i}`}
+              x1={c1.x} y1={c1.y}
+              x2={c2.x} y2={c2.y}
+              stroke={cfg.color}
+              strokeOpacity={cfg.opacity}
+              strokeWidth={1.35}
+              strokeLinecap="round"
+              strokeDasharray={cfg.dash}
+            />
+          );
+        })}
+
+        {/* Center disk */}
+        <circle cx={cx} cy={cy} r={rCenter} fill="rgba(6,16,10,0.65)" />
+
+        {/* Planets */}
+        {adjusted.map(({ p, displayLon }) => {
+          if (p.planet === "ASC") return null;
+          const pos    = lonToXY(displayLon, rPlanet);
+          const tick1  = lonToXY(p.longitude, rZodInner);
+          const tick2  = lonToXY(p.longitude, rZodInner - 6);
+          const pColor = planetColor(p.planet);
+          return (
+            <g key={`pl-${p.planet}`}>
+              {/* Tick at true ecliptic longitude, reaching into the zodiac ring */}
+              <line
+                x1={tick1.x} y1={tick1.y}
+                x2={tick2.x} y2={tick2.y}
+                stroke={pColor}
+                strokeOpacity={0.9}
+                strokeWidth={1.75}
+                strokeLinecap="round"
+              />
+
+              {/* Retrograde marker, drawn before the planet so the planet sits on top */}
+              {p.retrograde && (
+                <text
+                  x={pos.x + size * 0.020}
+                  y={pos.y + size * 0.014}
+                  fontSize={size * 0.028}
+                  fill="rgba(232,210,180,0.8)"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}
+                >
+                  Rx
+                </text>
+              )}
+
+              {/* Planet glyph */}
+              <Glyph
+                type="planet"
+                id={p.planet}
+                x={pos.x}
+                y={pos.y}
+                size={size * 0.047}
+                color={pColor}
+                strokeWidth={1.45}
+              />
+            </g>
+          );
+        })}
+
+        {/* Center dot */}
+        <circle cx={cx} cy={cy} r={1.75} fill="rgba(232,210,180,0.45)" />
+      </svg>
+
+      {showLegend && (
+        <div
+          className="flex flex-wrap justify-center"
+          style={{
+            gap: "10px 18px",
+            marginTop: 18,
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "rgba(232,210,180,0.6)",
+          }}
+        >
+          <LegendItem kind="dot"  color="#8a9e66" label="Trine" />
+          <LegendItem kind="dot"  color="#9babb9" label="Sextile" />
+          <LegendItem kind="dash" color="#d47a52" label="Square" />
+          <LegendItem kind="dash" color="#6a8692" label="Opposition" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LegendItem({
+  kind,
+  color,
+  label,
+}: {
+  kind: "dot" | "dash";
+  color: string;
+  label: string;
+}) {
+  return (
+    <span className="inline-flex items-center" style={{ gap: 8 }}>
+      {kind === "dot" ? (
+        <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block" }} />
+      ) : (
+        <span style={{ width: 18, height: 2, background: color, display: "inline-block" }} />
+      )}
+      {label}
+    </span>
   );
 }
