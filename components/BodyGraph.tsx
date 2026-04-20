@@ -107,16 +107,25 @@ interface BodyGraphProps {
   size?: number;
 }
 
-// Normalize a backend center name to our key
+// Normalize a backend center name to our key. Accepts the raw backend
+// enum ("G", "SolarPlexus", "Heart") as well as the display-formatted
+// variants produced by normaliseCentreName in app/profile/page.tsx
+// ("G Centre", "Solar Plexus", "Heart / Ego"). Previously "gcentre" and
+// "heartego" fell through as null and the bodygraph rendered those
+// centres as undefined even when the backend said they were defined.
 function normalize(name: string): CenterKey | null {
-  const n = name.toLowerCase().replace(/[^a-z]/g, "");
+  const n = (name || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (!n) return null;
   const map: Record<string, CenterKey> = {
     head: "Head",
     ajna: "Ajna",
     throat: "Throat",
     g: "G",
     gcenter: "G",
+    gcentre: "G",
     heart: "Heart",
+    heartego: "Heart",
+    egoheart: "Heart",
     will: "Heart",
     ego: "Heart",
     sacral: "Sacral",
