@@ -3,7 +3,10 @@
 import { useEffect } from "react";
 
 // Bump this version string whenever you want to force a full cache clear on all devices.
-const APP_VERSION = "v15";
+// v16: ships the new auto-update machinery (NEXT_PUBLIC_BUILD_ID + /api/build-id
+// polling in VersionCheck). Existing users get one last forced wipe so they
+// start from a clean state under the new system.
+const APP_VERSION = "v16";
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
