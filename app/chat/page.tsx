@@ -129,7 +129,7 @@ function ChatPageInner() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<Message[]>([]);
   const tokenRef = useRef<string | null>(null);
   const { token } = useAuth();
@@ -153,7 +153,8 @@ function ChatPageInner() {
       .filter((m) => m.id !== "greeting")
       .map((m) => ({ role: m.role, content: m.content }));
     const userCount = history.filter((m) => m.role === "user").length;
-    if (userCount < 3) return;
+    // Match the backend threshold: any 2+ turn exchange is worth synthesizing
+    if (userCount < 2) return;
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     fetch(`${API_URL}/chat/synthesize`, {
@@ -167,11 +168,20 @@ function ChatPageInner() {
     }).catch(() => {});
   }, []);
 
-  // Wire to beforeunload (tab close / refresh) and component unmount (navigation)
+  // Wire to beforeunload + pagehide + visibilitychange so mobile Safari and
+  // Chrome both get a synthesis trigger when the tab is backgrounded or
+  // closed. beforeunload alone is unreliable on iOS.
   useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") triggerSessionSynthesis();
+    };
     window.addEventListener("beforeunload", triggerSessionSynthesis);
+    window.addEventListener("pagehide", triggerSessionSynthesis);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("beforeunload", triggerSessionSynthesis);
+      window.removeEventListener("pagehide", triggerSessionSynthesis);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       triggerSessionSynthesis();
     };
   }, [triggerSessionSynthesis]);
@@ -525,6 +535,10 @@ function ChatPageInner() {
   // ── New Chat ──────────────────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
     if (!token) return;
+    // Synthesize the session we're leaving so memory carries forward into
+    // the new one. Without this, clicking "+ New" loses everything that
+    // wasn't already checkpointed in-session.
+    triggerSessionSynthesis();
     const sid = generateSessionId();
     setSessionId(sid);
     const greeting = await buildGreeting(token);
@@ -536,10 +550,13 @@ function ChatPageInner() {
     saveSession(newSession);
     setMessages([greeting]);
     setShowHistory(false);
-  }, [token, buildGreeting]);
+  }, [token, buildGreeting, triggerSessionSynthesis]);
 
   // ── Load past session ─────────────────────────────────────────────────────
   const loadPastSession = useCallback((sid: string) => {
+    // Synthesize the session we're leaving so recent context is not lost
+    // when we hop back into an older one.
+    triggerSessionSynthesis();
     const session = loadSession(sid);
     if (session) {
       setSessionId(session.sessionId);
@@ -547,7 +564,7 @@ function ChatPageInner() {
       setShowHistory(false);
       setRenamingId(null);
     }
-  }, []);
+  }, [triggerSessionSynthesis]);
 
   // ── Open history panel ────────────────────────────────────────────────────
   const openHistory = useCallback(() => {
@@ -684,6 +701,23 @@ function ChatPageInner() {
       sendMessage();
     }
   };
+
+  // Auto-grow textarea as user types. Keeps text visible (no sideways scroll)
+  // and caps at 6 lines so the composer never eats the conversation.
+  const resizeInput = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const lineHeight = 22; // matches text-base leading
+    const maxHeight = lineHeight * 6 + 24; // ~6 lines + vertical padding
+    const next = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, []);
+
+  useEffect(() => {
+    resizeInput();
+  }, [input, resizeInput]);
 
   const formatTime = (iso: string) => {
     return new Date(iso).toLocaleTimeString("en-GB", {
@@ -872,18 +906,24 @@ function ChatPageInner() {
 
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 py-3 pb-20">
-          <div className="max-w-lg mx-auto flex gap-3 items-center">
-            <input
+          <div className="max-w-lg mx-auto flex gap-3 items-end">
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Speak freely…"
               className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
               style={{
-                "--focus-ring-color": "#9b86a0",
-              } as React.CSSProperties & { "--focus-ring-color"?: string }}
+                resize: "none",
+                overflowY: "hidden",
+                lineHeight: "1.4",
+                maxHeight: "156px",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+                wordBreak: "break-word",
+              }}
               onFocus={(e) => {
                 e.target.style.borderColor = "#9b86a0";
                 e.target.style.boxShadow = "0 0 0 2px rgba(155,134,160,0.25)";
@@ -896,7 +936,7 @@ function ChatPageInner() {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || sending}
-              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
+              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
             >
               {sending ? (
                 <LoadingSpinner size="sm" />
