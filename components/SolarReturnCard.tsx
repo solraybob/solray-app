@@ -154,7 +154,7 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
       <div
         className="rounded-2xl p-5 border border-amber-sun/40 overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, rgba(232, 130, 26, 0.1) 0%, rgba(232, 130, 26, 0.05) 100%)`,
+          background: `linear-gradient(135deg, rgba(243, 146, 48, 0.1) 0%, rgba(243, 146, 48, 0.05) 100%)`,
         }}
       >
         {/* Icon and title */}

@@ -61,8 +61,8 @@ export default function TrialBanner() {
         background: "#071510",
         borderBottom: "1px solid #1a3020",
         borderTop: urgent
-          ? "1px solid rgba(196,98,58,0.35)"
-          : "1px solid rgba(232,130,26,0.20)",
+          ? "1px solid rgba(212,122,82,0.35)"
+          : "1px solid rgba(243,146,48,0.20)",
       }}
     >
       <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center justify-between gap-4">
@@ -70,7 +70,7 @@ export default function TrialBanner() {
         <div className="flex items-center gap-3 min-w-0">
           <span
             className="font-body text-[9px] tracking-[0.18em] uppercase shrink-0"
-            style={{ color: urgent ? "#c4623a" : "#e8821a", opacity: 0.9 }}
+            style={{ color: urgent ? "#d47a52" : "#f39230", opacity: 0.9 }}
           >
             Trial
           </span>
@@ -89,13 +89,13 @@ export default function TrialBanner() {
             className="font-body text-[10px] tracking-widest uppercase px-3 py-1 rounded-lg transition-colors"
             style={{
               background: "transparent",
-              border: urgent ? "1px solid rgba(196,98,58,0.5)" : "1px solid rgba(232,130,26,0.35)",
-              color: urgent ? "#c4623a" : "#e8821a",
+              border: urgent ? "1px solid rgba(212,122,82,0.5)" : "1px solid rgba(243,146,48,0.35)",
+              color: urgent ? "#d47a52" : "#f39230",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(196,98,58,0.10)"
-                : "rgba(232,130,26,0.08)";
+                ? "rgba(212,122,82,0.10)"
+                : "rgba(243,146,48,0.08)";
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLElement).style.background = "transparent";
@@ -121,7 +121,7 @@ export default function TrialBanner() {
           style={{
             height: "100%",
             width: `${progress * 100}%`,
-            background: urgent ? "rgba(196,98,58,0.60)" : "rgba(232,130,26,0.45)",
+            background: urgent ? "rgba(212,122,82,0.60)" : "rgba(243,146,48,0.45)",
             transition: "width 0.6s ease",
           }}
         />

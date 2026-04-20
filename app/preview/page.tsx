@@ -154,7 +154,7 @@ export default function PreviewPage() {
           border: none;
           border-bottom: 1px solid #1a3020;
           padding: 12px 0;
-          color: #f5f0e8;
+          color: #f2ecd8;
           font-family: "Inter", sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
@@ -162,7 +162,7 @@ export default function PreviewPage() {
         }
         .preview-input:focus {
           outline: none;
-          border-bottom-color: #e8821a;
+          border-bottom-color: #f39230;
         }
         .preview-input::placeholder {
           color: #8a9e8d;
@@ -184,7 +184,7 @@ export default function PreviewPage() {
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #f5f0e8;
+          color: #f2ecd8;
           font-family: "Inter", sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -194,8 +194,8 @@ export default function PreviewPage() {
         }
         .preview-dropdown-item:hover,
         .preview-dropdown-item:focus {
-          background: rgba(232, 130, 26, 0.15);
-          color: #e8821a;
+          background: rgba(243, 146, 48, 0.15);
+          color: #f39230;
           outline: none;
         }
         .preview-dropdown-item + .preview-dropdown-item {
@@ -364,9 +364,9 @@ export default function PreviewPage() {
                 className="pulse-orb w-24 h-24 rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle at 40% 35%, #e8821a55, #0a1f1200 70%)",
-                  border: "1px solid rgba(232,130,26,0.2)",
-                  boxShadow: "0 0 40px rgba(232,130,26,0.1)",
+                    "radial-gradient(circle at 40% 35%, #f3923055, #0a1f1200 70%)",
+                  border: "1px solid rgba(243,146,48,0.2)",
+                  boxShadow: "0 0 40px rgba(243,146,48,0.1)",
                 }}
               />
               <p className="font-body text-sm text-text-secondary">

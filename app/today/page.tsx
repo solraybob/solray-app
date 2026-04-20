@@ -156,10 +156,10 @@ function getEnergyNote(label: string, value: number): string {
 // Extended palette — aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
-  Mental:    "#7a8a9a", // mist
-  Emotional: "#c4623a", // ember
-  Physical:  "#6b7d4a", // moss
-  Intuitive: "#7d6680", // wisteria
+  Mental:    "#9babb9", // mist
+  Emotional: "#d47a52", // ember
+  Physical:  "#8a9e66", // moss
+  Intuitive: "#9b86a0", // wisteria
 };
 
 // Prompts seeded into chat when a bar is tapped. Phrased as the user
@@ -192,7 +192,7 @@ function EnergyBar({
   delayMs: number;
   onAsk: (label: string, pct: number) => void;
 }) {
-  const color = ENERGY_COLORS[label] || "#e8821a";
+  const color = ENERGY_COLORS[label] || "#f39230";
   const pct = toDisplayPct(value);
 
   // Animation is driven by pure CSS @keyframes (see globals.css), not React
@@ -267,16 +267,16 @@ function EnergyBar({
 //   Jupiter       → moss        (expansion, growth, abundance)
 //   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
-  Sun:     "#e8821a",  // amber-sun — hero
-  Moon:    "#7a8a9a",  // mist
-  Mercury: "#d8d0bc",  // pearl
-  Venus:   "#7d6680",  // wisteria
-  Mars:    "#c4623a",  // ember
-  Jupiter: "#6b7d4a",  // moss
-  Saturn:  "#4a6670",  // indigo
-  Uranus:  "#7a8a9a",  // mist (paired with Moon)
-  Neptune: "#7d6680",  // wisteria (paired with Venus)
-  Pluto:   "#4a6670",  // indigo (paired with Saturn)
+  Sun:     "#f39230",  // amber-sun — hero
+  Moon:    "#9babb9",  // mist
+  Mercury: "#ece4cf",  // pearl
+  Venus:   "#9b86a0",  // wisteria
+  Mars:    "#d47a52",  // ember
+  Jupiter: "#8a9e66",  // moss
+  Saturn:  "#6a8692",  // indigo
+  Uranus:  "#9babb9",  // mist (paired with Moon)
+  Neptune: "#9b86a0",  // wisteria (paired with Venus)
+  Pluto:   "#6a8692",  // indigo (paired with Saturn)
 };
 
 function PlanetCard({ planet }: { planet: Planet }) {
@@ -390,13 +390,13 @@ function HeroImageCard({
           priority
           unoptimized
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.65) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.78) 100%)" }} />
 
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
-            className="font-heading text-2xl leading-[1.25] text-center"
-            style={{ color: "#e8e0cc", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)" }}
+            className="font-heading text-[26px] leading-[1.22] text-center"
+            style={{ color: "#f2ecd8", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,0.85), 0 1px 5px rgba(0,0,0,0.95)" }}
           >
             {dayTitle}
           </h1>
@@ -404,7 +404,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-[9px] tracking-[0.2em] uppercase" style={{ color: "rgba(232,224,204,0.65)" }}>
+          <p className="font-body text-[11px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
             Today&apos;s Weather
           </p>
           <svg
@@ -415,7 +415,7 @@ function HeroImageCard({
               transition: "transform 0.3s ease",
             }}
           >
-            <path d="M1 1L8 8L15 1" stroke="#e8821a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1L8 8L15 1" stroke="#f39230" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       </div>
@@ -639,7 +639,7 @@ export default function TodayPage() {
         {/* Header — tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#e8821a" }}>
+            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#f39230" }}>
               Living By Design
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>

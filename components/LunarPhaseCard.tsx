@@ -26,8 +26,8 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Full Moon"
       >
-        <circle cx="14" cy="14" r="11" fill="#d8d0bc" opacity="0.92" />
-        <circle cx="14" cy="14" r="11" stroke="#7a8a9a" strokeWidth="1.2" fill="none" />
+        <circle cx="14" cy="14" r="11" fill="#ece4cf" opacity="0.92" />
+        <circle cx="14" cy="14" r="11" stroke="#9babb9" strokeWidth="1.2" fill="none" />
       </svg>
     );
   }
@@ -44,12 +44,12 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
     >
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        fill="#d8d0bc"
+        fill="#ece4cf"
         opacity="0.92"
       />
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        stroke="#7a8a9a"
+        stroke="#9babb9"
         strokeWidth="1.2"
         fill="none"
       />
@@ -134,7 +134,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="font-heading text-base leading-tight"
-              style={{ color: "#d8d0bc", fontWeight: 400, letterSpacing: "0.01em" }}
+              style={{ color: "#ece4cf", fontWeight: 400, letterSpacing: "0.01em" }}
             >
               {event.type} in {event.sign}
             </span>

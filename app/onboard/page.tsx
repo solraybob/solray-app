@@ -46,10 +46,10 @@ function BlueprintLoader() {
       <div
         className="w-20 h-20 rounded-full mb-10"
         style={{
-          background: "radial-gradient(circle at 40% 35%, #e8821a55, #0a1f1200 70%)",
-          border: "1px solid rgba(232,130,26,0.2)",
+          background: "radial-gradient(circle at 40% 35%, #f3923055, #0a1f1200 70%)",
+          border: "1px solid rgba(243,146,48,0.2)",
           animation: "pulse 2s ease-in-out infinite",
-          boxShadow: "0 0 40px rgba(232,130,26,0.1)",
+          boxShadow: "0 0 40px rgba(243,146,48,0.1)",
         }}
       />
       <div className="space-y-4 w-full max-w-xs">
@@ -72,7 +72,7 @@ function BlueprintLoader() {
               <p
                 className="font-body text-sm"
                 style={{
-                  color: i === visibleCount - 1 ? "#f5f0e8" : "#8a9e8d",
+                  color: i === visibleCount - 1 ? "#f2ecd8" : "#8a9e8d",
                 }}
               >
                 {text}
@@ -321,9 +321,9 @@ export default function OnboardPage() {
                       onClick={() => setSex(opt)}
                       className="sex-card"
                       style={{
-                        borderColor: active ? "#e8821a" : "#1a3020",
-                        background: active ? "rgba(232,130,26,0.08)" : "transparent",
-                        color: active ? "#f5f0e8" : "#8a9e8d",
+                        borderColor: active ? "#f39230" : "#1a3020",
+                        background: active ? "rgba(243,146,48,0.08)" : "transparent",
+                        color: active ? "#f2ecd8" : "#8a9e8d",
                       }}
                     >
                       <span className="font-heading text-2xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
@@ -481,14 +481,14 @@ export default function OnboardPage() {
           border: none;
           border-bottom: 1px solid #1a3020;
           padding: 12px 0;
-          color: #f5f0e8;
+          color: #f2ecd8;
           font-family: 'Inter', sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
         }
         .onboard-input:focus {
-          border-bottom-color: #e8821a;
+          border-bottom-color: #f39230;
         }
         .onboard-input::placeholder {
           color: #8a9e8d;
@@ -505,8 +505,8 @@ export default function OnboardPage() {
           cursor: pointer;
         }
         .sex-card:hover {
-          border-color: rgba(232,130,26,0.55);
-          color: #f5f0e8;
+          border-color: rgba(243,146,48,0.55);
+          color: #f2ecd8;
         }
         .sex-card:active {
           transform: scale(0.98);
@@ -528,7 +528,7 @@ export default function OnboardPage() {
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #f5f0e8;
+          color: #f2ecd8;
           font-family: 'Inter', sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -538,8 +538,8 @@ export default function OnboardPage() {
         }
         .city-dropdown-item:hover,
         .city-dropdown-item:focus {
-          background: rgba(232,130,26,0.15);
-          color: #e8821a;
+          background: rgba(243,146,48,0.15);
+          color: #f39230;
           outline: none;
         }
         .city-dropdown-item + .city-dropdown-item {

@@ -43,11 +43,11 @@ export default function VerifyEmailBanner({
     <div
       className="px-4 py-3 flex items-center justify-between gap-3"
       style={{
-        background: "rgba(232,130,26,0.08)",
-        borderBottom: "1px solid rgba(232,130,26,0.15)",
+        background: "rgba(243,146,48,0.08)",
+        borderBottom: "1px solid rgba(243,146,48,0.15)",
       }}
     >
-      <p className="text-xs" style={{ color: "var(--amber, #e8821a)" }}>
+      <p className="text-xs" style={{ color: "var(--amber, #f39230)" }}>
         {sent
           ? "Verification email sent. Check your inbox."
           : "Please verify your email to unlock all features."}
@@ -59,7 +59,7 @@ export default function VerifyEmailBanner({
             disabled={sending}
             className="text-xs px-3 py-1 rounded-sm transition-opacity"
             style={{
-              background: "var(--amber, #e8821a)",
+              background: "var(--amber, #f39230)",
               color: "#050f08",
               opacity: sending ? 0.5 : 1,
             }}

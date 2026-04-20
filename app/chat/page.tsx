@@ -719,7 +719,7 @@ function ChatPageInner() {
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
           </div>
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#7d6680" }}>
+            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#9b86a0" }}>
               Your Higher Self
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -743,7 +743,7 @@ function ChatPageInner() {
                   onClick={startNewChat}
                   title="New chat"
                   className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[10px] tracking-widest transition-colors"
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#7d6680"; (e.currentTarget as HTMLElement).style.color = "#7d6680"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
                 >
                   + New
@@ -762,7 +762,7 @@ function ChatPageInner() {
               setAutoScroll(true);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
-            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(125,102,128,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(155,134,160,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
             aria-label="Scroll to bottom"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#050f08" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -783,7 +783,7 @@ function ChatPageInner() {
                 <div
                   className="w-16 h-16 rounded-full overflow-hidden mb-6"
                   style={{
-                    boxShadow: "0 0 40px rgba(125,102,128,0.30), 0 0 80px rgba(125,102,128,0.12)",
+                    boxShadow: "0 0 40px rgba(155,134,160,0.30), 0 0 80px rgba(155,134,160,0.12)",
                     animation: "pulse 2.4s ease-in-out infinite",
                   }}
                 >
@@ -835,8 +835,8 @@ function ChatPageInner() {
                       }`}
                       style={
                         msg.role === "user"
-                          ? { background: "linear-gradient(135deg, #7d6680, #5a4a5e)" }
-                          : { background: "rgba(125,102,128,0.05)", border: "2px solid rgba(125,102,128,0.3)" }
+                          ? { background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }
+                          : { background: "rgba(155,134,160,0.05)", border: "2px solid rgba(155,134,160,0.3)" }
                       }
                     >
                       <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
@@ -860,8 +860,8 @@ function ChatPageInner() {
                     borderRadius: "50%",
                     animation: "spin 1.2s linear infinite",
                     objectFit: "cover",
-                    boxShadow: "0 0 24px rgba(125,102,128,0.45)",
-                    filter: "drop-shadow(0 0 12px rgba(125,102,128,0.35))",
+                    boxShadow: "0 0 24px rgba(155,134,160,0.45)",
+                    filter: "drop-shadow(0 0 12px rgba(155,134,160,0.35))",
                   }}
                 />
               </div>
@@ -882,11 +882,11 @@ function ChatPageInner() {
               placeholder="Speak freely…"
               className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
               style={{
-                "--focus-ring-color": "#7d6680",
+                "--focus-ring-color": "#9b86a0",
               } as React.CSSProperties & { "--focus-ring-color"?: string }}
               onFocus={(e) => {
-                e.target.style.borderColor = "#7d6680";
-                e.target.style.boxShadow = "0 0 0 2px rgba(125,102,128,0.25)";
+                e.target.style.borderColor = "#9b86a0";
+                e.target.style.boxShadow = "0 0 0 2px rgba(155,134,160,0.25)";
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = "rgb(26, 48, 32)";
@@ -896,7 +896,7 @@ function ChatPageInner() {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || sending}
-              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #7d6680, #5a4a5e)" }}
+              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
             >
               {sending ? (
                 <LoadingSpinner size="sm" />
@@ -935,7 +935,7 @@ function ChatPageInner() {
                       <div key={s.sessionId} className="relative">
                         {renamingId === s.sessionId ? (
                           /* Inline rename input */
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #7d6680" }}>
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #9b86a0" }}>
                             <input
                               autoFocus
                               type="text"
@@ -951,7 +951,7 @@ function ChatPageInner() {
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="font-body text-[10px]" style={{ color: "#7d6680" }}
+                              className="font-body text-[10px]" style={{ color: "#9b86a0" }}
                             >
                               Save
                             </button>
@@ -965,7 +965,7 @@ function ChatPageInner() {
                                   ? "bg-forest-card text-text-primary"
                                   : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
                               }`}
-                              style={s.sessionId === sessionId ? { border: "1px solid #7d6680" } : undefined}
+                              style={s.sessionId === sessionId ? { border: "1px solid #9b86a0" } : undefined}
                             >
                               <p className="font-body text-text-secondary text-[10px] tracking-widest mb-1">
                                 {s.customName || s.date}
@@ -979,7 +979,7 @@ function ChatPageInner() {
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title="Rename chat"
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#7d6680"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#9b86a0"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -992,7 +992,7 @@ function ChatPageInner() {
                               onClick={(e) => deleteSession(e, s.sessionId)}
                               title="Delete chat"
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#c4623a"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#d47a52"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

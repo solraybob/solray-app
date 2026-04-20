@@ -86,7 +86,7 @@ export default function PullToRefresh() {
           width: 40,
           height: 40,
           borderRadius: '50%',
-          border: '3px solid #e8821a',
+          border: '3px solid #f39230',
           borderTopColor: 'transparent',
           transform: `rotate(${rotation}deg)`,
           opacity: Math.min(1, percentage / 100),
@@ -99,7 +99,7 @@ export default function PullToRefresh() {
           style={{
             marginTop: 8,
             fontSize: '12px',
-            color: '#e8821a',
+            color: '#f39230',
             textAlign: 'center',
             whiteSpace: 'nowrap',
             opacity: (percentage - 80) / 20,

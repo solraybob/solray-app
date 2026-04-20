@@ -53,9 +53,9 @@ function VerifyEmailInner() {
           <>
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: "rgba(107,125,74,0.15)" }}
+              style={{ background: "rgba(138,158,102,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7d4a" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8a9e66" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -78,9 +78,9 @@ function VerifyEmailInner() {
           <>
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: "rgba(196,98,58,0.15)" }}
+              style={{ background: "rgba(212,122,82,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c4623a" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d47a52" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -97,7 +97,7 @@ function VerifyEmailInner() {
             <button
               onClick={() => router.push("/today")}
               className="px-6 py-2.5 rounded-sm text-sm"
-              style={{ background: "var(--amber, #e8821a)", color: "#050f08" }}
+              style={{ background: "var(--amber, #f39230)", color: "#050f08" }}
             >
               Go to App
             </button>

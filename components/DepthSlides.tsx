@@ -20,7 +20,7 @@ const SLIDES = [
   {
     key: "astrology" as const,
     label: "The Sky",
-    color: "#e8821a",
+    color: "#f39230",
     // Warm candlelight amber — golden glow matching the color
     image: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=60",
     icon: (
@@ -36,7 +36,7 @@ const SLIDES = [
   {
     key: "human_design" as const,
     label: "Your Design",
-    color: "#7a8a9a", // mist — mental blueprint, cool geometric
+    color: "#9babb9", // mist — mental blueprint, cool geometric
     // Earth from space — the cosmic blueprint of a body
     image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
     icon: (
@@ -49,7 +49,7 @@ const SLIDES = [
   {
     key: "gene_keys" as const,
     label: "Your Keys",
-    color: "#7d6680", // wisteria — mystical keys, transformative
+    color: "#9b86a0", // wisteria — mystical keys, transformative
     // Moon — the inner world, mystery, threshold
     image: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
     icon: (
@@ -149,7 +149,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                       </span>
                     </div>
                     {/* Headline */}
-                    <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#e8e0cc" }}>
+                    <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#f2ecd8" }}>
                       {headline}
                     </p>
                   </div>

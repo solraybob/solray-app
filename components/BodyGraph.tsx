@@ -1,20 +1,26 @@
 "use client";
 
 /**
- * BodyGraph — minimalist Human Design bodygraph.
+ * BodyGraph: minimalist Human Design bodygraph.
  *
  * Shows the 9 centers with their traditional shapes, colored in the Solray
  * aged palette when defined and hollow when undefined. Defined channels
- * are drawn as lines between the two centers they connect. Gate numbers
- * are hidden by default for a clean look; toggle via the `showGates` prop.
+ * are drawn as amber lines between the two centers they connect. Gate
+ * numbers are hidden by default for a clean look.
  *
- * Center coordinates are a standard bodygraph layout, hand-tuned to fit a
- * 260x340 viewBox so it slots cleanly into a profile card.
+ * Center labels live OUTSIDE the shapes in the surrounding whitespace so
+ * they never collide with gate numbers, fit inside the small G diamond,
+ * or crowd a narrow Heart triangle. The viewBox is extended to give the
+ * labels breathing room on all sides.
+ *
+ * Center coordinates are a standard bodygraph layout tuned to a 260x340
+ * canvas; the viewBox is expanded to -10,-4,340,348 to make room for the
+ * external labels.
  */
 
 type CenterKey = "Head" | "Ajna" | "Throat" | "G" | "Heart" | "Sacral" | "Spleen" | "SolarPlexus" | "Root";
 
-// Gate → center lookup (canonical HD system)
+// Gate -> center lookup (canonical HD system)
 const GATE_TO_CENTER: Record<number, CenterKey> = {
   // Head
   64: "Head", 61: "Head", 63: "Head",
@@ -65,26 +71,31 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
 const CENTER_COLOR: Record<CenterKey, string> = {
   Head:        "#c9b884", // pearl / pale gold
   Ajna:        "#8a7d68", // aged ivory
-  Throat:      "#7d6680", // wisteria
-  G:           "#6b7d4a", // moss
+  Throat:      "#9b86a0", // wisteria
+  G:           "#8a9e66", // moss
   Heart:       "#c85848", // ember-red
   Sacral:      "#d86848", // sacral red
-  Spleen:      "#4a6670", // slate
+  Spleen:      "#6a8692", // slate
   SolarPlexus: "#a87048", // ochre
   Root:        "#8a4a38", // root brown
 };
 
-// Center display names
-const CENTER_LABEL: Record<CenterKey, string> = {
-  Head: "Head",
-  Ajna: "Ajna",
-  Throat: "Throat",
-  G: "G",
-  Heart: "Will",
-  Sacral: "Sacral",
-  Spleen: "Spleen",
-  SolarPlexus: "Solar",
-  Root: "Root",
+// External label positions (outside the shape, in surrounding whitespace).
+// Each entry is the x,y of the label anchor plus the SVG text-anchor.
+// Tuned so labels never collide with gate numbers or shape edges.
+const CENTER_LABEL_POS: Record<
+  CenterKey,
+  { x: number; y: number; anchor: "start" | "middle" | "end"; text: string }
+> = {
+  Head:        { x: 158, y: 24,  anchor: "start",  text: "HEAD" },
+  Ajna:        { x: 158, y: 86,  anchor: "start",  text: "AJNA" },
+  Throat:      { x: 158, y: 130, anchor: "start",  text: "THROAT" },
+  G:           { x: 101, y: 180, anchor: "end",    text: "G" },
+  Heart:       { x: 198, y: 168, anchor: "start",  text: "HEART" },
+  Sacral:      { x: 130, y: 267, anchor: "middle", text: "SACRAL" },
+  Spleen:      { x: 55,  y: 262, anchor: "middle", text: "SPLEEN" },
+  SolarPlexus: { x: 230, y: 230, anchor: "start",  text: "SOLAR" },
+  Root:        { x: 158, y: 300, anchor: "start",  text: "ROOT" },
 };
 
 interface BodyGraphProps {
@@ -117,32 +128,28 @@ function normalize(name: string): CenterKey | null {
   return map[n] ?? null;
 }
 
-// Render a center with its traditional shape
+// Render a center with its traditional shape, no embedded label.
 function CenterShape({
   type,
   x,
   y,
   defined,
   color,
-  label,
 }: {
   type: CenterKey;
   x: number;
   y: number;
   defined: boolean;
   color: string;
-  label: string;
 }) {
   const fill = defined ? color : "transparent";
   const fillOpacity = defined ? 0.85 : 0;
-  const stroke = defined ? color : "rgba(245,240,232,0.35)";
+  const stroke = defined ? color : "rgba(242,236,216,0.35)";
   const strokeWidth = 1.2;
   const size = 40;
 
-  let shape: React.ReactElement;
   if (type === "Head") {
-    // Triangle pointing up
-    shape = (
+    return (
       <polygon
         points={`${x},${y - size * 0.7} ${x - size * 0.7},${y + size * 0.45} ${x + size * 0.7},${y + size * 0.45}`}
         fill={fill}
@@ -151,9 +158,9 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else if (type === "Ajna") {
-    // Triangle pointing down
-    shape = (
+  }
+  if (type === "Ajna") {
+    return (
       <polygon
         points={`${x - size * 0.7},${y - size * 0.45} ${x + size * 0.7},${y - size * 0.45} ${x},${y + size * 0.7}`}
         fill={fill}
@@ -162,10 +169,10 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else if (type === "Throat" || type === "Sacral" || type === "Root") {
-    // Square
+  }
+  if (type === "Throat" || type === "Sacral" || type === "Root") {
     const s = size * 0.55;
-    shape = (
+    return (
       <rect
         x={x - s}
         y={y - s}
@@ -177,10 +184,10 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else if (type === "G") {
-    // Diamond
+  }
+  if (type === "G") {
     const s = size * 0.7;
-    shape = (
+    return (
       <polygon
         points={`${x},${y - s} ${x + s},${y} ${x},${y + s} ${x - s},${y}`}
         fill={fill}
@@ -189,10 +196,10 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else if (type === "Heart") {
-    // Small triangle pointing left (canonical: small triangle)
+  }
+  if (type === "Heart") {
     const s = size * 0.5;
-    shape = (
+    return (
       <polygon
         points={`${x + s},${y - s * 0.9} ${x + s},${y + s * 0.9} ${x - s * 0.9},${y}`}
         fill={fill}
@@ -201,10 +208,10 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else if (type === "Spleen") {
-    // Triangle pointing right
+  }
+  if (type === "Spleen") {
     const s = size * 0.6;
-    shape = (
+    return (
       <polygon
         points={`${x - s * 0.9},${y - s} ${x - s * 0.9},${y + s} ${x + s},${y}`}
         fill={fill}
@@ -213,41 +220,26 @@ function CenterShape({
         strokeWidth={strokeWidth}
       />
     );
-  } else {
-    // SolarPlexus: triangle pointing left
-    const s = size * 0.6;
-    shape = (
-      <polygon
-        points={`${x + s * 0.9},${y - s} ${x + s * 0.9},${y + s} ${x - s},${y}`}
-        fill={fill}
-        fillOpacity={fillOpacity}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-      />
-    );
   }
-
+  // SolarPlexus: triangle pointing left
+  const s = size * 0.6;
   return (
-    <g>
-      {shape}
-      <text
-        x={x}
-        y={y + 3}
-        fontSize={9}
-        fill={defined ? "#f5f0e8" : "rgba(245,240,232,0.55)"}
-        textAnchor="middle"
-        dominantBaseline="central"
-        style={{ fontFamily: "var(--font-body, sans-serif)", letterSpacing: "0.08em" }}
-      >
-        {label}
-      </text>
-    </g>
+    <polygon
+      points={`${x + s * 0.9},${y - s} ${x + s * 0.9},${y + s} ${x - s},${y}`}
+      fill={fill}
+      fillOpacity={fillOpacity}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+    />
   );
 }
 
 export default function BodyGraph({ definedCenters, definedChannels, size = 280 }: BodyGraphProps) {
-  const viewBoxW = 260;
-  const viewBoxH = 340;
+  // Extended viewBox gives the external labels breathing room on all sides.
+  const vbX = -10;
+  const vbY = -4;
+  const vbW = 340;
+  const vbH = 348;
 
   const definedSet = new Set<CenterKey>(
     definedCenters.map(normalize).filter((c): c is CenterKey => c !== null)
@@ -265,12 +257,12 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
 
   return (
     <svg
-      viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
+      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width="100%"
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
       aria-label="Human Design bodygraph"
     >
-      {/* Channel lines behind the centers */}
+      {/* Channel lines behind the centers, amber at 60% for warmth */}
       {Array.from(centerPairs).map((key) => {
         const [a, b] = key.split("|") as [CenterKey, CenterKey];
         const p1 = CENTER_POS[a];
@@ -283,8 +275,9 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y1={p1.y}
             x2={p2.x}
             y2={p2.y}
-            stroke="rgba(232,210,180,0.35)"
-            strokeWidth={2}
+            stroke="rgba(243,146,48,0.60)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
           />
         );
       })}
@@ -300,8 +293,31 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y={pos.y}
             defined={definedSet.has(key)}
             color={CENTER_COLOR[key]}
-            label={CENTER_LABEL[key]}
           />
+        );
+      })}
+
+      {/* External labels, placed in surrounding whitespace */}
+      {(Object.keys(CENTER_LABEL_POS) as CenterKey[]).map((key) => {
+        const lbl = CENTER_LABEL_POS[key];
+        return (
+          <text
+            key={`lbl-${key}`}
+            x={lbl.x}
+            y={lbl.y}
+            textAnchor={lbl.anchor}
+            dominantBaseline="middle"
+            fill="#a8b8ab"
+            fillOpacity={0.92}
+            style={{
+              fontFamily: "Inter, system-ui, sans-serif",
+              fontSize: "9.5px",
+              fontWeight: 500,
+              letterSpacing: "0.20em",
+            }}
+          >
+            {lbl.text}
+          </text>
         );
       })}
     </svg>

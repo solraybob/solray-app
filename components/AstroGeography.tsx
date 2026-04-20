@@ -324,7 +324,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 style={{
                   border: `1px solid ${active ? color : "rgba(26,48,32,0.8)"}`,
                   background: active ? `${color}20` : "transparent",
-                  color: active ? color : "#4a5e4d",
+                  color: active ? color : "#6a8068",
                 }}
               >
                 <span>{symbol}</span>
@@ -345,9 +345,9 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => toggleType(type)}
                 className="px-2.5 py-1 rounded-full text-[10px] font-body tracking-wider transition-all"
                 style={{
-                  border: `1px solid ${active ? "#e8821a" : "rgba(26,48,32,0.8)"}`,
-                  background: active ? "rgba(232,130,26,0.1)" : "transparent",
-                  color: active ? "#e8821a" : "#4a5e4d",
+                  border: `1px solid ${active ? "#f39230" : "rgba(26,48,32,0.8)"}`,
+                  background: active ? "rgba(243,146,48,0.1)" : "transparent",
+                  color: active ? "#f39230" : "#6a8068",
                 }}
               >
                 {labels[type]}
@@ -385,15 +385,15 @@ export default function AstroGeography({ token }: { token: string | null }) {
           {/* Legend */}
           <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#e8821a" strokeWidth="1.5" /></svg>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" /></svg>
               <span className="text-text-secondary text-[9px] font-body">MC / ASC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#e8821a" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
               <span className="text-text-secondary text-[9px] font-body">IC / DSC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#e8821a" /></svg>
+              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#f39230" /></svg>
               <span className="text-text-secondary text-[9px] font-body">Birth place</span>
             </div>
           </div>
@@ -653,9 +653,9 @@ function FullscreenMap({
             const y = latToY(spot.lat);
             return (
               <g key={`fs-power-${idx}`}>
-                <circle cx={x} cy={y} r={6} fill="#e8821a" opacity={0.9} />
-                <circle cx={x} cy={y} r={12} fill="none" stroke="#e8821a" strokeWidth={1} opacity={0.4} />
-                <text x={x} y={y - 14} textAnchor="middle" fill="#e8821a"
+                <circle cx={x} cy={y} r={6} fill="#f39230" opacity={0.9} />
+                <circle cx={x} cy={y} r={12} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
+                <text x={x} y={y - 14} textAnchor="middle" fill="#f39230"
                   fontSize={9} fontFamily="Inter, sans-serif" fontWeight="600">
                   ★ {spot.city}
                 </text>
@@ -663,9 +663,9 @@ function FullscreenMap({
             );
           })}
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={5} fill="#e8821a" opacity={0.9} />
+            r={5} fill="#f39230" opacity={0.9} />
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={9} fill="none" stroke="#e8821a" strokeWidth={1} opacity={0.4} />
+            r={9} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
         </svg>
       </div>
     </div>
@@ -788,8 +788,8 @@ function MapSVG({
           <g key={`power-${idx}`}>
             <defs>
               <radialGradient id={`power-glow-${idx}`}>
-                <stop offset="0%" stopColor="#e8821a" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#e8821a" stopOpacity={0} />
+                <stop offset="0%" stopColor="#f39230" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="#f39230" stopOpacity={0} />
               </radialGradient>
             </defs>
             {/* Pulsing glow background */}
@@ -803,13 +803,13 @@ function MapSVG({
               }}
             />
             {/* Core dot */}
-            <circle cx={x} cy={y} r={4} fill="#e8821a" opacity={0.95} />
+            <circle cx={x} cy={y} r={4} fill="#f39230" opacity={0.95} />
             {/* Label */}
             <text
               x={x}
               y={y - 10}
               textAnchor="middle"
-              fill="#e8821a"
+              fill="#f39230"
               fontSize={7}
               fontFamily="Inter, sans-serif"
               fontWeight="600"
@@ -822,8 +822,8 @@ function MapSVG({
       })}
 
       {/* Birth location marker */}
-      <circle cx={birthX} cy={birthY} r={5} fill="#e8821a" opacity={0.9} />
-      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="#e8821a" strokeWidth={1} opacity={0.4} />
+      <circle cx={birthX} cy={birthY} r={5} fill="#f39230" opacity={0.9} />
+      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
 
       {/* Tooltip */}
       {hoveredLine && (

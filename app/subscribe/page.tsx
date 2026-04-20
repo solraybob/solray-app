@@ -223,28 +223,28 @@ function SubscribeContent() {
         <div className="space-y-3">
           {/* Trial without card: add payment */}
           {sub.status === "trial" && !sub.card_last_four && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #e8821a)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Add Payment Method
             </ActionButton>
           )}
 
           {/* Trial with card: activate now */}
           {sub.status === "trial" && sub.card_last_four && (
-            <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #e8821a)">
+            <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #f39230)">
               Subscribe Now ({sub.price}/month)
             </ActionButton>
           )}
 
           {/* Expired: restart */}
           {sub.status === "expired" && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #e8821a)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Subscribe ({sub.price || "$23.00"}/month)
             </ActionButton>
           )}
 
           {/* Past due: update card */}
           {sub.status === "past_due" && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #e8821a)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Update Payment Method
             </ActionButton>
           )}
@@ -266,7 +266,7 @@ function SubscribeContent() {
         </div>
 
         {error && (
-          <p className="text-sm mt-4" style={{ color: "var(--ember, #c4623a)" }}>
+          <p className="text-sm mt-4" style={{ color: "var(--ember, #d47a52)" }}>
             {error}
           </p>
         )}
@@ -318,10 +318,10 @@ function TrialOffer({
             "Transit tracking and cycle awareness",
           ].map((item) => (
             <div key={item} className="flex items-start gap-3 mb-3">
-              <span className="text-xs mt-0.5" style={{ color: "var(--amber, #e8821a)" }}>
+              <span className="text-xs mt-0.5" style={{ color: "var(--amber, #f39230)" }}>
                 *
               </span>
-              <span className="text-sm" style={{ color: "var(--text-primary, #e8e0cc)" }}>
+              <span className="text-sm" style={{ color: "var(--text-primary, #f2ecd8)" }}>
                 {item}
               </span>
             </div>
@@ -341,12 +341,12 @@ function TrialOffer({
           </p>
         </div>
 
-        <ActionButton onClick={onStart} loading={loading} color="var(--amber, #e8821a)">
+        <ActionButton onClick={onStart} loading={loading} color="var(--amber, #f39230)">
           Begin Your Journey
         </ActionButton>
 
         {error && (
-          <p className="text-sm mt-4" style={{ color: "var(--ember, #c4623a)" }}>
+          <p className="text-sm mt-4" style={{ color: "var(--ember, #d47a52)" }}>
             {error}
           </p>
         )}
@@ -357,9 +357,9 @@ function TrialOffer({
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
-    trial: { bg: "rgba(232,130,26,0.15)", text: "var(--amber, #e8821a)" },
-    active: { bg: "rgba(107,125,74,0.15)", text: "var(--moss, #6b7d4a)" },
-    past_due: { bg: "rgba(196,98,58,0.15)", text: "var(--ember, #c4623a)" },
+    trial: { bg: "rgba(243,146,48,0.15)", text: "var(--amber, #f39230)" },
+    active: { bg: "rgba(138,158,102,0.15)", text: "var(--moss, #8a9e66)" },
+    past_due: { bg: "rgba(212,122,82,0.15)", text: "var(--ember, #d47a52)" },
     cancelled: { bg: "rgba(138,158,141,0.1)", text: "var(--text-secondary, #8a9e8d)" },
     expired: { bg: "rgba(138,158,141,0.1)", text: "var(--text-secondary, #8a9e8d)" },
   };

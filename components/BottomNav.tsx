@@ -10,7 +10,7 @@ const navItems = [
   {
     href: "/today",
     label: "Today",
-    color: "#e8821a", // amber-sun — hero
+    color: "#f39230", // amber-sun — hero
 
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -29,7 +29,7 @@ const navItems = [
   {
     href: "/chat",
     label: "Chat",
-    color: "#7d6680", // wisteria
+    color: "#9b86a0", // wisteria
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -39,7 +39,7 @@ const navItems = [
   {
     href: "/souls",
     label: "Souls",
-    color: "#4a6670", // indigo
+    color: "#6a8692", // indigo
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -52,7 +52,7 @@ const navItems = [
   {
     href: "/profile",
     label: "Profile",
-    color: "#6b7d4a", // moss
+    color: "#8a9e66", // moss
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -80,12 +80,12 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               className="flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200"
-              style={{ color: isActive ? item.color : "#4a5e4d" }}
+              style={{ color: isActive ? item.color : "#6a8068" }}
             >
               {item.icon}
               <span
                 className="text-[9px] font-body tracking-wider uppercase"
-                style={{ color: isActive ? item.color : "#4a5e4d" }}
+                style={{ color: isActive ? item.color : "#6a8068" }}
               >
                 {item.label}
               </span>

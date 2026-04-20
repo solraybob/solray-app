@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * NatalWheel — natal chart wheel.
+ * NatalWheel: natal chart wheel.
  *
  * Layer order (outside in):
- *   1. Zodiac ring — 12 sectors colored by element
- *   2. Sign glyphs — centered in each sector
- *   3. House / planet band — planets at rPlanet, tick marks at true longitude
- *   4. House number band — subtle Arabic numerals at rHouseNum
- *   5. Aspect web — top 8 tightest major aspects
+ *   1. Zodiac ring, 12 sectors colored by element
+ *   2. Sign glyphs, centered in each sector
+ *   3. House / planet band, planets at rPlanet, tick marks at true longitude
+ *   4. House number band, subtle Arabic numerals at rHouseNum
+ *   5. Aspect web, top 8 tightest major aspects
  *   6. Center disk
  *
  * Retrograde marker: drawn before the planet glyph so the planet sits on top,
@@ -40,45 +40,45 @@ interface NatalWheelProps {
 }
 
 const ASPECT_LINE: Record<string, { color: string; opacity: number; dash?: string }> = {
-  conjunction: { color: "#e8821a", opacity: 0.70 },
-  opposition:  { color: "#c05858", opacity: 0.65 },
-  trine:       { color: "#6b7d4a", opacity: 0.70 },
-  square:      { color: "#c4723a", opacity: 0.65 },
-  sextile:     { color: "#7a8a9a", opacity: 0.60, dash: "4 3" },
+  conjunction: { color: "#f39230", opacity: 0.85 },
+  opposition:  { color: "#c05858", opacity: 0.78 },
+  trine:       { color: "#8a9e66", opacity: 0.82 },
+  square:      { color: "#c4723a", opacity: 0.75 },
+  sextile:     { color: "#9babb9", opacity: 0.72, dash: "4 3" },
 };
 const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
 
 // Per-planet colors matching the Sky Now section on the Today page
 const PLANET_COLOR: Record<string, string> = {
-  Sun:       "#e8821a", // amber
-  Moon:      "#7a8a9a", // mist
-  Mercury:   "#d8d0bc", // pearl
-  Venus:     "#7d6680", // wisteria
-  Mars:      "#c4623a", // ember
-  Jupiter:   "#6b7d4a", // moss
-  Saturn:    "#4a6670", // slate
-  Uranus:    "#7a8a9a", // mist
-  Neptune:   "#7d6680", // wisteria
-  Pluto:     "#4a6670", // slate
+  Sun:       "#f39230", // amber
+  Moon:      "#9babb9", // mist
+  Mercury:   "#ece4cf", // pearl
+  Venus:     "#9b86a0", // wisteria
+  Mars:      "#d47a52", // ember
+  Jupiter:   "#8a9e66", // moss
+  Saturn:    "#6a8692", // slate
+  Uranus:    "#9babb9", // mist
+  Neptune:   "#9b86a0", // wisteria
+  Pluto:     "#6a8692", // slate
   NorthNode: "#8a9e8d", // sage
-  Chiron:    "#d8d0bc", // pearl
-  ASC:       "#e8d2b4", // warm cream
+  Chiron:    "#ece4cf", // pearl
+  ASC:       "#f0dcc0", // warm cream
 };
 
 // Element color per sign index (Aries=0 … Pisces=11)
 const SIGN_ELEMENT_COLOR = [
-  "#c4623a", // Aries — fire
-  "#6b7d4a", // Taurus — earth
-  "#7a8a9a", // Gemini — air
-  "#4a6670", // Cancer — water
-  "#c4623a", // Leo — fire
-  "#6b7d4a", // Virgo — earth
-  "#7a8a9a", // Libra — air
-  "#4a6670", // Scorpio — water
-  "#c4623a", // Sagittarius — fire
-  "#6b7d4a", // Capricorn — earth
-  "#7a8a9a", // Aquarius — air
-  "#4a6670", // Pisces — water
+  "#d47a52", // Aries, fire
+  "#8a9e66", // Taurus, earth
+  "#9babb9", // Gemini, air
+  "#6a8692", // Cancer, water
+  "#d47a52", // Leo, fire
+  "#8a9e66", // Virgo, earth
+  "#9babb9", // Libra, air
+  "#6a8692", // Scorpio, water
+  "#d47a52", // Sagittarius, fire
+  "#8a9e66", // Capricorn, earth
+  "#9babb9", // Aquarius, air
+  "#6a8692", // Pisces, water
 ];
 
 export default function NatalWheel({
@@ -150,7 +150,7 @@ export default function NatalWheel({
       ? houseCusps
       : Array.from({ length: 12 }, (_, i) => (ascLongitude + i * 30) % 360);
 
-  // ── House numbers — midpoint between consecutive cusps ────────────────────
+  // ── House numbers, midpoint between consecutive cusps ────────────────────
   const houseNumbers = Array.from({ length: 12 }, (_, i) => {
     const start = cusps[i];
     const end   = cusps[(i + 1) % 12];
@@ -178,7 +178,7 @@ export default function NatalWheel({
 
   const planetColor = (name: string) => PLANET_COLOR[name] ?? "#8a9e8d";
 
-  // ── Aspect lines — top 8 tightest majors ────────────────────────────────────
+  // ── Aspect lines, top 8 tightest majors ────────────────────────────────────
   const byName: Record<string, Planet> = {};
   for (const p of planets) byName[p.planet] = p;
   const majorLines = aspects
@@ -196,8 +196,8 @@ export default function NatalWheel({
     >
       <defs>
         <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stopColor="rgba(232,130,26,0.10)" />
-          <stop offset="55%"  stopColor="rgba(74,102,112,0.06)" />
+          <stop offset="0%"   stopColor="rgba(243,146,48,0.10)" />
+          <stop offset="55%"  stopColor="rgba(106,134,146,0.06)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
         <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
@@ -264,9 +264,9 @@ export default function NatalWheel({
         return (
           <text
             x={pos.x} y={pos.y}
-            fontSize={size * 0.028}
-            fill="#e8d2b4"
-            fillOpacity={0.80}
+            fontSize={size * 0.034}
+            fill="#f0dcc0"
+            fillOpacity={1.0}
             textAnchor="middle"
             dominantBaseline="middle"
             style={{ fontFamily: "serif", letterSpacing: "0.06em" }}
@@ -276,13 +276,13 @@ export default function NatalWheel({
         );
       })()}
 
-      {/* House numbers 1–12 */}
+      {/* House numbers 1-12 */}
       {houseNumbers.map(({ num, pos }) => (
         <text
           key={`hn-${num}`}
           x={pos.x} y={pos.y}
-          fontSize={size * 0.027}
-          fill="rgba(232,210,180,0.42)"
+          fontSize={size * 0.034}
+          fill="rgba(232,210,180,0.72)"
           textAnchor="middle"
           dominantBaseline="middle"
           style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
@@ -306,7 +306,7 @@ export default function NatalWheel({
             x2={c2.x} y2={c2.y}
             stroke={cfg.color}
             strokeOpacity={cfg.opacity}
-            strokeWidth={1.1}
+            strokeWidth={1.35}
             strokeDasharray={cfg.dash}
           />
         );
@@ -333,7 +333,7 @@ export default function NatalWheel({
               strokeWidth={0.8}
             />
 
-            {/* Retrograde marker — drawn BEFORE planet so planet sits on top */}
+            {/* Retrograde marker, drawn BEFORE planet so planet sits on top */}
             {p.retrograde && (
               <text
                 x={pos.x + size * 0.016}
@@ -349,13 +349,13 @@ export default function NatalWheel({
               </text>
             )}
 
-            {/* Planet glyph — sits on top of the retrograde marker */}
+            {/* Planet glyph, sits on top of the retrograde marker */}
             <Glyph
               type="planet"
               id={p.planet}
               x={pos.x}
               y={pos.y}
-              size={size * 0.040}
+              size={size * 0.047}
               color={pColor}
               strokeWidth={1.45}
             />

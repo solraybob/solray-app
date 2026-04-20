@@ -9,19 +9,21 @@
   --bg-dark: #071510;
   --card: #0a1f12;
   --border: #1a3020;
-  --amber: #e8821a;
-  --text-primary: #e8e0cc;
-  --text-secondary: #8a9e8d;
+  --amber: #f39230;
+  --text-primary: #f2ecd8;
+  --text-secondary: #a8b8ab;
+  --text-muted: #8a9e8d;
 
   /* Aged-pigment palette. Kept in sync with tailwind.config.ts so that
      inline styles (gradients, CSS-in-JS, onFocus handlers) can reach
-     the same tokens as Tailwind classes. */
-  --ember:    #c4623a;
-  --moss:     #6b7d4a;
-  --mist:     #7a8a9a;
-  --indigo:   #4a6670;
-  --wisteria: #7d6680;
-  --pearl:    #d8d0bc;
+     the same tokens as Tailwind classes. Lifted one step in 2026 so
+     every body-size use passes WCAG AA on forest-deep. */
+  --ember:    #d47a52;
+  --moss:     #8a9e66;
+  --mist:     #9babb9;
+  --indigo:   #6a8692;
+  --wisteria: #9b86a0;
+  --pearl:    #ece4cf;
 }
 
 * {
@@ -30,7 +32,7 @@
 
 html, body {
   background-color: #050f08;
-  color: #e8e0cc;
+  color: #f2ecd8;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

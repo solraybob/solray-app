@@ -266,12 +266,12 @@ interface SoulMapRadarChartProps {
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire:     "#c4623a", // ember-red
-  Earth:    "#6b7d4a", // moss
-  Air:      "#7a8a9a", // mist
-  Water:    "#4a6670", // slate
-  Cardinal: "#e8821a", // ember (initiating, outward)
-  Fixed:    "#7d6680", // wisteria (holding, inward)
+  Fire:     "#d47a52", // ember-red
+  Earth:    "#8a9e66", // moss
+  Air:      "#9babb9", // mist
+  Water:    "#6a8692", // slate
+  Cardinal: "#f39230", // ember (initiating, outward)
+  Fixed:    "#9b86a0", // wisteria (holding, inward)
   Mutable:  "#8a9e8d", // sage (adapting, fluid)
 };
 
@@ -353,9 +353,9 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       {/* Main moss polygon */}
       <polygon
         points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
-        fill="#6b7d4a"
+        fill="#8a9e66"
         fillOpacity={0.22 * progress}
-        stroke="#6b7d4a"
+        stroke="#8a9e66"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeOpacity={progress}
@@ -373,7 +373,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cy={y}
               r={5.5}
               fill="none"
-              stroke="#6b7d4a"
+              stroke="#8a9e66"
               strokeWidth={0.5}
               opacity={progress * 0.4}
             />
@@ -382,7 +382,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cx={x}
               cy={y}
               r={3}
-              fill="#6b7d4a"
+              fill="#8a9e66"
               opacity={progress * 0.9}
             />
           </g>
@@ -390,7 +390,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       })}
 
       {/* Center dot */}
-      <circle cx={cx} cy={cy} r={2} fill="#e8821a" opacity={0.3} />
+      <circle cx={cx} cy={cy} r={2} fill="#f39230" opacity={0.3} />
 
       {/* Axis labels — colored by element/modality */}
       {SOUL_AXIS_LABELS.map((label, i) => {
@@ -422,15 +422,15 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
 const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
   trine:          { symbol: "△",  label: "Trine",          color: "#2a9d8f", major: true },
   sextile:        { symbol: "⚹",  label: "Sextile",        color: "#8a9e8d", major: true },
-  conjunction:    { symbol: "☌",  label: "Conjunction",    color: "#e8821a", major: true },
+  conjunction:    { symbol: "☌",  label: "Conjunction",    color: "#f39230", major: true },
   opposition:     { symbol: "☍",  label: "Opposition",     color: "#e05c5c", major: true },
   square:         { symbol: "□",  label: "Square",         color: "#d4813a", major: true },
   quincunx:       { symbol: "⚻",  label: "Quincunx",      color: "#7c6fcd", major: true },
   semi_sextile:   { symbol: "⚺",  label: "Semi-Sextile",  color: "#7a9e80", major: false },
-  semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "#9e9e8a", major: false },
-  sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "#9e9e8a", major: false },
-  quintile:       { symbol: "Q",  label: "Quintile",       color: "#9e9e8a", major: false },
-  bi_quintile:    { symbol: "bQ", label: "Bi-Quintile",    color: "#9e9e8a", major: false },
+  semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "#a8b8ab", major: false },
+  sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "#a8b8ab", major: false },
+  quintile:       { symbol: "Q",  label: "Quintile",       color: "#a8b8ab", major: false },
+  bi_quintile:    { symbol: "bQ", label: "Bi-Quintile",    color: "#a8b8ab", major: false },
 };
 
 const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
@@ -457,7 +457,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   };
 
   const renderPlanetPairs = (key: string, list: NatalAspect[]) => {
-    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", color: "#9e9e8a" };
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", color: "#a8b8ab" };
     return (
       <div className="mt-1 pl-6 space-y-1">
         {list.map((a, i) => (
@@ -477,7 +477,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   };
 
   const renderAspectRow = (key: string, list: NatalAspect[]) => {
-    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", label: key, color: "#9e9e8a", major: false };
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", label: key, color: "#a8b8ab", major: false };
     const isOpen = openAspects[key] ?? false;
     return (
       <div key={key}>
@@ -574,11 +574,11 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 
 // Section accent colors, mapped to the Solray extended palette
 const SECTION_ACCENTS: Record<string, string> = {
-  "Natal Chart":     "#e8821a", // ember
-  "Astrocartography": "#7a8a9a", // mist
-  "Human Design":    "#6b7d4a", // moss
-  "Numerology":      "#7d6680", // wisteria
-  "Gene Keys":       "#4a6670", // slate
+  "Natal Chart":     "#f39230", // ember
+  "Astrocartography": "#9babb9", // mist
+  "Human Design":    "#8a9e66", // moss
+  "Numerology":      "#9b86a0", // wisteria
+  "Gene Keys":       "#6a8692", // slate
 };
 
 function CollapsibleSection({
@@ -649,7 +649,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#7a8a9a", borderColor: "rgba(122,138,154,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#9babb9", borderColor: "rgba(155,171,185,0.6)" }}>
       {children}
     </span>
   );
@@ -657,7 +657,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#7d6680", borderColor: "rgba(125,102,128,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#9b86a0", borderColor: "rgba(155,134,160,0.6)" }}>
       {children}
     </span>
   );
@@ -930,7 +930,7 @@ export default function ProfilePage() {
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6b7d4a" }}>
+            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#8a9e66" }}>
               Profile
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -1005,7 +1005,7 @@ export default function ProfilePage() {
                   {/* Soft single-tone ring, no gradient */}
                   <div
                     className="absolute -inset-[2px] rounded-full"
-                    style={{ border: "1px solid rgba(232,130,26,0.35)", zIndex: -1 }}
+                    style={{ border: "1px solid rgba(243,146,48,0.35)", zIndex: -1 }}
                   />
                   <div
                     className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold overflow-hidden relative bg-forest-deep"
@@ -1123,7 +1123,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#6b7d4a" }}>
+                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#8a9e66" }}>
                   Soul Map
                 </p>
 
@@ -1539,7 +1539,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               return (
                 <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
                   <svg width={32} height={32} viewBox="0 0 32 32" className="shrink-0 opacity-90">
-                    <Glyph type="planet" id={p.planet} x={16} y={16} size={26} color="#f0ebe0" strokeWidth={1.3} />
+                    <Glyph type="planet" id={p.planet} x={16} y={16} size={26} color="#f2ecd8" strokeWidth={1.3} />
                   </svg>
                   <div className="flex-1">
                     <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">{label}</p>
@@ -1569,7 +1569,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               {rest.map((p) => (
                 <div key={p.planet} className="flex items-center gap-3 py-1.5 border-b border-forest-border/50 last:border-0">
                   <svg width={22} height={22} viewBox="0 0 22 22" className="shrink-0 opacity-80">
-                    <Glyph type="planet" id={p.planet} x={11} y={11} size={18} color="#f0ebe0" strokeWidth={1.2} />
+                    <Glyph type="planet" id={p.planet} x={11} y={11} size={18} color="#f2ecd8" strokeWidth={1.2} />
                   </svg>
                   <span className="font-body text-text-primary text-[13px] flex-1">{p.planet}</span>
                   <span className="font-body text-text-secondary text-[13px]">{p.sign}</span>
@@ -1607,7 +1607,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase">Type</p>
                 <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
               </div>
-              <p className="font-heading leading-tight" style={{ color: "#6b7d4a", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
+              <p className="font-heading leading-tight" style={{ color: "#8a9e66", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
               {HD_TYPE_MEANINGS[chart.human_design.type] && (
                 <p className="text-text-secondary/60 text-[12px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
               )}
@@ -1638,7 +1638,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <span
                   key={c}
                   className="px-2.5 py-1 rounded-full text-[11px] font-body tracking-[0.05em]"
-                  style={{ color: "#6b7d4a", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(107,125,74,0.45)", background: "rgba(107,125,74,0.06)" }}
+                  style={{ color: "#8a9e66", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
                 >
                   {c}
                 </span>
@@ -1672,18 +1672,18 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       <CollapsibleSection title="Gene Keys" defaultOpen={false}>
         <div className="space-y-5 mt-2">
           {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(74,102,112,0.08)", border: "1px solid rgba(74,102,112,0.28)" }}>
+            <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "#7a8a9a" }}>{gk!.name}</span>
+                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "#9babb9" }}>{gk!.name}</span>
                   <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
                 </div>
                 <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
-                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "#7a8a9a" }} />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #7d6680, #7a8a9a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "#9babb9" }} />
+                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #9b86a0, #9babb9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}
@@ -1733,8 +1733,8 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     className="absolute top-3 left-3 pointer-events-none"
                     aria-hidden="true"
                   >
-                    <circle cx={44} cy={44} r={38} fill="none" stroke="#7d6680" strokeWidth={0.8} opacity={0.22} />
-                    <circle cx={44} cy={44} r={32} fill="none" stroke="#7d6680" strokeWidth={0.4} strokeDasharray="3 5" opacity={0.18} />
+                    <circle cx={44} cy={44} r={38} fill="none" stroke="#9b86a0" strokeWidth={0.8} opacity={0.22} />
+                    <circle cx={44} cy={44} r={32} fill="none" stroke="#9b86a0" strokeWidth={0.4} strokeDasharray="3 5" opacity={0.18} />
                   </svg>
 
                   <div className="flex items-center gap-5">
@@ -1745,9 +1745,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                         style={{
                           fontSize: value >= 10 ? "2.8rem" : "3.5rem",
                           fontWeight: 300,
-                          color: "#7d6680",
+                          color: "#9b86a0",
                           letterSpacing: "-0.02em",
-                          textShadow: "0 0 24px rgba(125,102,128,0.35)",
+                          textShadow: "0 0 24px rgba(155,134,160,0.35)",
                         }}
                       >
                         {value}
@@ -1756,7 +1756,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
 
                     {/* Label + meaning */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#7d6680" }}>
+                      <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#9b86a0" }}>
                         {label}
                       </p>
                       <p className="font-body text-text-secondary/50 text-[10px] tracking-[0.12em] uppercase mb-2">

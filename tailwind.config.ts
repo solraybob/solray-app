@@ -16,24 +16,26 @@ const config: Config = {
           border: "#1a3020",
         },
         amber: {
-          // Amber-sun remains the hero accent — logo, primary CTAs,
+          // Amber-sun remains the hero accent: logo, primary CTAs,
           // focus rings, the Sun planet. Everything else pulls from the
           // aged-pigment palette below.
-          sun: "#e8821a",
+          sun: "#f39230",
         },
-        // Aged-pigment palette — desaturated earth tones meant to
-        // harmonize with the forest background and the amber-sun hero.
-        // Each tone is a single value (not a scale) used via Tailwind's
-        // /opacity syntax: bg-ember/20, text-mist, border-indigo/30, etc.
-        ember:    "#c4623a",  // warm secondary, errors, action heat
-        moss:     "#6b7d4a",  // growth, physical, abundance
-        mist:     "#7a8a9a",  // air, intellect, silvery coolness
-        indigo:   "#4a6670",  // deep water, structure, the field
-        wisteria: "#7d6680",  // soft purple, intuition, higher self
-        pearl:    "#d8d0bc",  // luminous neutral, moon highlights
+        // Aged-pigment palette. Desaturated earth tones, lifted one step
+        // in 2026 so every body-size use passes WCAG AA on the forest
+        // background. Each tone is a single value (not a scale) used via
+        // Tailwind's /opacity syntax: bg-ember/20, text-mist,
+        // border-indigo/30, etc.
+        ember:    "#d47a52",  // warm secondary, errors, action heat
+        moss:     "#8a9e66",  // growth, physical, abundance
+        mist:     "#9babb9",  // air, intellect, silvery coolness
+        indigo:   "#6a8692",  // deep water, structure, the field
+        wisteria: "#9b86a0",  // soft purple, intuition, higher self
+        pearl:    "#ece4cf",  // luminous neutral, moon highlights
         text: {
-          primary: "#e8e0cc",
-          secondary: "#8a9e8d",
+          primary:   "#f2ecd8",
+          secondary: "#a8b8ab",
+          muted:     "#8a9e8d",
         },
       },
       fontFamily: {

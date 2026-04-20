@@ -397,7 +397,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
                       style={{
                         width: i === activeIndex ? 16 : 6,
                         height: 6,
-                        background: i === activeIndex ? "#e8821a" : "#1a3020",
+                        background: i === activeIndex ? "#f39230" : "#1a3020",
                       }}
                     />
                   ))}
