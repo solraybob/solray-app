@@ -16,13 +16,22 @@
  * intentionally uniform so the eye reads the rings as a set, not a
  * hierarchy of importance.
  *
+ * Sign and planet glyphs are typographic: Unicode codepoints (U+2648..U+2653
+ * for signs, U+2609..U+2647 for planets) paired with U+FE0E text-presentation
+ * variation selector, rendered in Cormorant Garamond. U+FE0E forces serif
+ * text rendering across iOS / Android / Chrome, so the glyphs come out as
+ * drawn characters, never as colour emoji. This is the single carved-out
+ * path through Solray's no-emoji rule: the variation selector makes these
+ * typography, not emoji. Matches solray-contrast-compare.html "proposed" pane
+ * and solray-components.html decision 11/Icons.
+ *
  * Retrograde marker is drawn before the planet glyph so the planet sits
  * on top and the Rx peeks through from behind in a muted secondary tone.
  *
  * Pass `showLegend` to render a compact legend beneath the wheel.
  */
 
-import Glyph from "./AstroGlyphs";
+import { signText, planetText, GLYPH_FONT_FAMILY } from "./AstroGlyphs";
 
 type Planet = {
   planet: string;
@@ -242,16 +251,18 @@ export default function NatalWheel({
               strokeOpacity={0.22}
               strokeWidth={0.5}
             />
-            <Glyph
-              type="sign"
-              id={s.i}
+            <text
               x={s.labelPos.x}
               y={s.labelPos.y}
-              size={size * 0.047}
-              color={s.color}
-              strokeWidth={1.35}
-              opacity={0.92}
-            />
+              fill={s.color}
+              fillOpacity={0.92}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={size * 0.047}
+              style={{ fontFamily: GLYPH_FONT_FAMILY, fontWeight: 500 }}
+            >
+              {signText(s.i)}
+            </text>
           </g>
         ))}
 
@@ -371,16 +382,18 @@ export default function NatalWheel({
                 </text>
               )}
 
-              {/* Planet glyph */}
-              <Glyph
-                type="planet"
-                id={p.planet}
+              {/* Planet glyph, typographic per solray-components.html decision 11 */}
+              <text
                 x={pos.x}
                 y={pos.y}
-                size={size * 0.047}
-                color={pColor}
-                strokeWidth={1.45}
-              />
+                fill={pColor}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={size * 0.047}
+                style={{ fontFamily: GLYPH_FONT_FAMILY, fontWeight: 500 }}
+              >
+                {planetText(p.planet)}
+              </text>
             </g>
           );
         })}

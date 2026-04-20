@@ -1,15 +1,87 @@
 "use client";
 
 /**
- * AstroGlyphs — SVG line-art for the 12 zodiac signs and classical planets.
+ * AstroGlyphs — zodiac sign and planet glyphs.
  *
- * Unicode glyphs (♈-♓, ☉-♇) render as color emoji on iOS and many Android
- * builds, which conflicts with Solray's no-emoji rule. Every symbol here is
- * hand-drawn in a 24x24 viewBox with round caps/joins, designed to stay clean
- * at 12-18px on screen.
+ * The wheel (and the profile planet lists) render typographic Unicode glyphs
+ * in Cormorant Garamond. Each glyph is paired with U+FE0E (VARIATION
+ * SELECTOR-15, "text presentation") which suppresses emoji rendering across
+ * iOS, Android, and Chrome, so ♈︎ comes out as a clean serif character and
+ * never as a color pictograph. This matches the proposed spec in
+ * solray-contrast-compare.html and the component library's typographic-icons
+ * decision: "Planet symbols remain typographic, because the glyph carries the
+ * meaning better than any custom mark would."
+ *
+ * The hand-drawn 24x24 SVG paths below are retained as a fallback for cases
+ * where a typographic glyph cannot be styled precisely enough (nothing uses
+ * them today, but both the Glyph component and the path tables are still
+ * exported in case a future context calls for the line-art variant).
  */
 
 import React from "react";
+
+// ---------------------------------------------------------------------------
+// Typographic glyph constants (primary path — used by NatalWheel and profile)
+// ---------------------------------------------------------------------------
+
+// U+FE0E, VARIATION SELECTOR-15. Forces the preceding Unicode glyph to render
+// as text, not emoji. Append after every astrological glyph before placing it
+// in the DOM.
+export const TEXT_VS = "\uFE0E";
+
+// Zodiac signs, index 0 = Aries, index 11 = Pisces. Codepoints U+2648 .. U+2653.
+export const SIGN_UNICODE: readonly string[] = [
+  "\u2648", // Aries
+  "\u2649", // Taurus
+  "\u264A", // Gemini
+  "\u264B", // Cancer
+  "\u264C", // Leo
+  "\u264D", // Virgo
+  "\u264E", // Libra
+  "\u264F", // Scorpio
+  "\u2650", // Sagittarius
+  "\u2651", // Capricorn
+  "\u2652", // Aquarius
+  "\u2653", // Pisces
+];
+
+// Classical and outer planets keyed by backend planet name. Nodes and Chiron
+// included for completeness; Chiron uses U+26B7 which is less widely supported
+// in bare-bones system serifs but falls back cleanly.
+export const PLANET_UNICODE: Record<string, string> = {
+  Sun:       "\u2609", // ☉
+  Moon:      "\u263D", // ☽
+  Mercury:   "\u263F", // ☿
+  Venus:     "\u2640", // ♀
+  Mars:      "\u2642", // ♂
+  Jupiter:   "\u2643", // ♃
+  Saturn:    "\u2644", // ♄
+  Uranus:    "\u2645", // ♅
+  Neptune:   "\u2646", // ♆
+  Pluto:     "\u2647", // ♇
+  NorthNode: "\u260A", // ☊
+  SouthNode: "\u260B", // ☋
+  Chiron:    "\u26B7", // ⚷
+};
+
+// Retrograde marker, U+211E. Placed in Inter (not Cormorant) in the wheel so
+// it reads as a typographic annotation rather than part of the glyph.
+export const RETROGRADE_UNICODE = "\u211E";
+
+/** Returns the text-presentation sign glyph for index (0 = Aries .. 11 = Pisces). */
+export function signText(index: number): string {
+  const g = SIGN_UNICODE[index];
+  return g ? g + TEXT_VS : "";
+}
+
+/** Returns the text-presentation planet glyph for a backend planet name. */
+export function planetText(name: string): string {
+  const g = PLANET_UNICODE[name];
+  return g ? g + TEXT_VS : "";
+}
+
+/** Serif stack used for all astrological glyphs in the wheel, matching the mockup. */
+export const GLYPH_FONT_FAMILY = "'Cormorant Garamond', Georgia, serif";
 
 // ---------------------------------------------------------------------------
 // Zodiac sign paths (index 0 = Aries … 11 = Pisces)
