@@ -639,15 +639,24 @@ function FullscreenMap({
                 strokeDasharray={line.type === "IC" || line.type === "DSC" ? "4,3" : undefined} />
             );
           })}
-          {visibleLines.filter(l => l.type === "MC" && l.lon !== undefined).map((line, i) => {
-            const x = lonToX(line.lon!);
-            return (
-              <text key={`fslabel-${i}`} x={x + 3} y={16} fill={line.color}
-                fontSize={8} fontFamily="Inter, sans-serif" opacity={0.9}>
-                {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol} {line.planet}
-              </text>
-            );
-          })}
+          {(() => {
+            const slots: { x: number; row: number }[] = [];
+            const mcLines = visibleLines.filter(l => l.type === "MC" && l.lon !== undefined);
+            return mcLines.map((line, i) => {
+              const x = lonToX(line.lon!);
+              let row = 0;
+              // reserve ~70px horizontal space per label (glyph + planet name)
+              while (slots.some(s => s.row === row && Math.abs(s.x - x) < 70)) row++;
+              slots.push({ x, row });
+              const y = 14 + row * 12;
+              return (
+                <text key={`fslabel-${i}`} x={x + 3} y={y} fill={line.color}
+                  fontSize={9} fontFamily="'Cormorant Garamond', Georgia, serif" opacity={0.9}>
+                  {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol} {line.planet}
+                </text>
+              );
+            });
+          })()}
           {powerSpots.map((spot, idx) => {
             const x = lonToX(spot.lon);
             const y = latToY(spot.lat);
@@ -759,26 +768,35 @@ function MapSVG({
         );
       })}
 
-      {/* Planet labels on MC lines */}
-      {visibleLines
-        .filter(l => l.type === "MC" && l.lon !== undefined)
-        .map((line, i) => {
+      {/* Planet glyphs on MC lines, stacked vertically to avoid collision.
+          Each glyph slot reserves 14px of horizontal space; when an earlier glyph
+          falls within that window, the next one drops to the row below instead
+          of stacking on top and creating the cluttered smear we had at the top. */}
+      {(() => {
+        const slots: { x: number; row: number }[] = [];
+        const mcLines = visibleLines.filter(l => l.type === "MC" && l.lon !== undefined);
+        return mcLines.map((line, i) => {
           const x = lonToX(line.lon!);
           if (x < 10 || x > MAP_W - 10) return null;
+          let row = 0;
+          while (slots.some(s => s.row === row && Math.abs(s.x - x) < 14)) row++;
+          slots.push({ x, row });
+          const y = 14 + row * 12;
           return (
             <text
               key={`label-${line.planet}-${i}`}
               x={x + 3}
-              y={30}
+              y={y}
               fill={line.color}
-              fontSize={9}
-              fontFamily="Inter, sans-serif"
-              opacity={0.8}
+              fontSize={10}
+              fontFamily="'Cormorant Garamond', Georgia, serif"
+              opacity={0.85}
             >
               {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol}
             </text>
           );
-        })}
+        });
+      })()}
 
       {/* Power spots as glowing amber dots */}
       {powerSpots.map((spot, idx) => {
