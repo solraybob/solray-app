@@ -1751,22 +1751,20 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   key={label}
                   className="relative rounded-2xl border border-forest-border/40 bg-forest-card/25 overflow-hidden px-5 py-4"
                 >
-                  {/* Faint decorative ring behind the number */}
-                  <svg
-                    width="88" height="88"
-                    viewBox="0 0 88 88"
-                    className="absolute top-3 left-3 pointer-events-none"
-                    aria-hidden="true"
-                  >
-                    <circle cx={44} cy={44} r={38} fill="none" stroke="#9b86a0" strokeWidth={0.8} opacity={0.22} />
-                    <circle cx={44} cy={44} r={32} fill="none" stroke="#9b86a0" strokeWidth={0.4} strokeDasharray="3 5" opacity={0.18} />
-                  </svg>
-
                   <div className="flex items-center gap-5">
-                    {/* Big number */}
-                    <div className="w-[72px] h-[72px] flex items-center justify-center shrink-0">
+                    {/* Big number with decorative ring around it */}
+                    <div className="relative w-[88px] h-[88px] shrink-0 flex items-center justify-center">
+                      <svg
+                        width="88" height="88"
+                        viewBox="0 0 88 88"
+                        className="absolute inset-0 pointer-events-none"
+                        aria-hidden="true"
+                      >
+                        <circle cx={44} cy={44} r={38} fill="none" stroke="#9b86a0" strokeWidth={0.8} opacity={0.22} />
+                        <circle cx={44} cy={44} r={32} fill="none" stroke="#9b86a0" strokeWidth={0.4} strokeDasharray="3 5" opacity={0.18} />
+                      </svg>
                       <span
-                        className="font-heading leading-none select-none"
+                        className="font-heading leading-none select-none relative"
                         style={{
                           fontSize: value >= 10 ? "2.8rem" : "3.5rem",
                           fontWeight: 300,
