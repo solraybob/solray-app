@@ -133,13 +133,18 @@ function ChatPageInner() {
   const messagesRef = useRef<Message[]>([]);
   const tokenRef = useRef<string | null>(null);
 
-  // Voice recording (Web Speech API)
+  // Voice recording (MediaRecorder + backend Whisper)
+  // We record audio to a blob client-side and POST it to /chat/transcribe.
+  // This works on every browser that exposes MediaRecorder, including iOS
+  // Safari installed as a PWA, where the Web Speech API silently fails.
   const [isRecording, setIsRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
-  const baseInputRef = useRef<string>("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordMimeRef = useRef<string>("audio/webm");
   const { token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -635,7 +640,8 @@ function ChatPageInner() {
 
     // If voice is active, stop it so the final transcript commits before send.
     try {
-      recognitionRef.current?.stop?.();
+      const rec = mediaRecorderRef.current;
+      if (rec && rec.state !== "inactive") rec.stop();
     } catch {
       // ignore
     }
@@ -717,39 +723,113 @@ function ChatPageInner() {
     }
   };
 
-  // Detect Web Speech API support once on mount
+  // Detect MediaRecorder + getUserMedia support once on mount.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    setVoiceSupported(!!SR);
+    const ok = typeof window.MediaRecorder !== "undefined"
+      && !!navigator.mediaDevices
+      && typeof navigator.mediaDevices.getUserMedia === "function";
+    setVoiceSupported(ok);
   }, []);
 
-  // Stop any active recognition on unmount
+  // Tear down recorder + mic stream on unmount so the iOS mic indicator
+  // doesn't linger after the user navigates away mid-recording.
   useEffect(() => {
     return () => {
       try {
-        recognitionRef.current?.stop?.();
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop();
+        }
       } catch {
         // ignore
       }
-      recognitionRef.current = null;
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
     };
   }, []);
 
+  // Pick a MediaRecorder mimeType the current browser actually supports.
+  // Order matters: Chrome/Android prefer webm/opus, iOS Safari only does mp4.
+  const pickRecorderMime = useCallback((): string => {
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4;codecs=mp4a.40.2",
+      "audio/mp4",
+      "audio/aac",
+    ];
+    for (const m of candidates) {
+      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(m)) {
+        return m;
+      }
+    }
+    return ""; // let the browser default
+  }, []);
+
+  // Send a recorded blob to the backend Whisper endpoint and append the
+  // transcript to whatever the user has typed so far.
+  const transcribeBlob = useCallback(async (blob: Blob, mime: string) => {
+    if (!blob.size) {
+      setTranscribing(false);
+      return;
+    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const ext = mime.includes("mp4") || mime.includes("aac") ? "m4a" : "webm";
+    const form = new FormData();
+    form.append("file", blob, `voice.${ext}`);
+
+    setTranscribing(true);
+    try {
+      const t = tokenRef.current || token;
+      const res = await fetch(`${apiUrl}/chat/transcribe`, {
+        method: "POST",
+        headers: t ? { Authorization: `Bearer ${t}` } : undefined,
+        body: form,
+      });
+      if (!res.ok) {
+        let detail = "";
+        try {
+          const j = await res.json();
+          detail = j?.detail || "";
+        } catch {
+          // ignore
+        }
+        throw new Error(detail || `Transcription failed (${res.status})`);
+      }
+      const data = await res.json();
+      const transcript = (data?.transcript || "").trim();
+      if (!transcript) {
+        setVoiceError("Nothing heard. Try again, a little closer to the mic.");
+        return;
+      }
+      setInput((prev) => {
+        const base = prev.replace(/\s+$/, "");
+        return base ? base + " " + transcript : transcript;
+      });
+      // Focus so the user can edit before sending.
+      requestAnimationFrame(() => inputRef.current?.focus());
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Voice input failed. Try again.";
+      setVoiceError(msg);
+    } finally {
+      setTranscribing(false);
+    }
+  }, [token]);
+
   const stopRecording = useCallback(() => {
     try {
-      recognitionRef.current?.stop?.();
+      const rec = mediaRecorderRef.current;
+      if (rec && rec.state !== "inactive") {
+        rec.stop();
+      }
     } catch {
       // ignore
     }
   }, []);
 
-  const toggleRecording = useCallback(() => {
+  const toggleRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
 
     if (isRecording) {
       stopRecording();
@@ -758,63 +838,77 @@ function ChatPageInner() {
 
     setVoiceError(null);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rec: any = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = (typeof navigator !== "undefined" && navigator.language) || "en-US";
-
-    // Preserve whatever is already typed, add trailing space if needed.
-    const existing = input.replace(/\s+$/, "");
-    baseInputRef.current = existing ? existing + " " : "";
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onresult = (e: any) => {
-      let interim = "";
-      let newlyFinal = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) newlyFinal += t;
-        else interim += t;
-      }
-      if (newlyFinal) {
-        baseInputRef.current += newlyFinal;
-      }
-      setInput(baseInputRef.current + interim);
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onerror = (e: any) => {
-      const code = e?.error || "unknown";
-      if (code === "not-allowed" || code === "service-not-allowed") {
-        setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
-      } else if (code === "no-speech") {
-        // silent pause, don't surface
-      } else if (code === "audio-capture") {
-        setVoiceError("No microphone found.");
-      } else if (code !== "aborted") {
-        setVoiceError("Voice input interrupted. Try again.");
-      }
-    };
-
-    rec.onend = () => {
-      // Commit whatever trailing interim text is on screen as the final value.
-      setInput((prev) => prev.replace(/\s+$/, ""));
-      setIsRecording(false);
-      recognitionRef.current = null;
-    };
-
-    recognitionRef.current = rec;
+    // Ask for the mic. iOS shows a permission sheet on the first request;
+    // subsequent recordings reuse the granted permission for the session.
+    let stream: MediaStream;
     try {
-      rec.start();
-      setIsRecording(true);
-      // Focus the textarea so any manual edits land right after the transcript.
-      inputRef.current?.focus();
-    } catch {
-      setVoiceError("Couldn't start voice input. Try again.");
-      recognitionRef.current = null;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err: unknown) {
+      const e = err as { name?: string; message?: string };
+      const name = e?.name || "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setVoiceError("No microphone found.");
+      } else {
+        setVoiceError("Couldn't open the microphone. Try again.");
+      }
+      return;
     }
-  }, [input, isRecording, stopRecording]);
+
+    const mime = pickRecorderMime();
+    recordMimeRef.current = mime || "audio/webm";
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    } catch {
+      stream.getTracks().forEach((t) => t.stop());
+      setVoiceError("This browser can't record audio.");
+      return;
+    }
+
+    recordedChunksRef.current = [];
+    mediaRecorderRef.current = recorder;
+    mediaStreamRef.current = stream;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        recordedChunksRef.current.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const chunks = recordedChunksRef.current;
+      const usedMime = recordMimeRef.current || recorder.mimeType || "audio/webm";
+      const blob = new Blob(chunks, { type: usedMime });
+      // Release the mic immediately so the iOS recording indicator clears.
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      recordedChunksRef.current = [];
+      setIsRecording(false);
+      transcribeBlob(blob, usedMime);
+    };
+
+    recorder.onerror = () => {
+      setVoiceError("Recording stopped unexpectedly.");
+      stream.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+    };
+
+    try {
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      stream.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      setVoiceError("Couldn't start recording. Try again.");
+    }
+  }, [isRecording, pickRecorderMime, stopRecording, transcribeBlob]);
 
   // Auto-grow textarea as user types. Keeps text visible (no sideways scroll)
   // and caps at 6 lines so the composer never eats the conversation.
@@ -1027,10 +1121,16 @@ function ChatPageInner() {
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{ background: "#c8a27a", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
                 />
-                Listening. Tap the mic again to stop.
+                Recording. Tap the mic again to stop.
               </div>
             )}
-            {voiceError && !isRecording && (
+            {transcribing && !isRecording && (
+              <div className="flex items-center gap-2 mb-2 font-body text-[11px] tracking-[0.14em] uppercase text-text-secondary">
+                <LoadingSpinner size="sm" />
+                Transcribing…
+              </div>
+            )}
+            {voiceError && !isRecording && !transcribing && (
               <div className="mb-2 font-body text-[11px] text-text-secondary">{voiceError}</div>
             )}
             <div className="flex gap-3 items-end">
@@ -1063,10 +1163,10 @@ function ChatPageInner() {
               {voiceSupported && (
                 <button
                   onClick={toggleRecording}
-                  disabled={sending}
+                  disabled={sending || transcribing}
                   aria-label={isRecording ? "Stop voice input" : "Start voice input"}
                   aria-pressed={isRecording}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-30 shrink-0 self-end"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-50 shrink-0 self-end"
                   style={{
                     background: isRecording
                       ? "linear-gradient(135deg, #c8a27a, #8a6a48)"
@@ -1078,7 +1178,9 @@ function ChatPageInner() {
                     boxShadow: isRecording ? "0 0 16px rgba(200,162,122,0.35)" : undefined,
                   }}
                 >
-                  {isRecording ? (
+                  {transcribing ? (
+                    <LoadingSpinner size="sm" />
+                  ) : isRecording ? (
                     // Stop icon (rounded square)
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <rect x="5" y="5" width="14" height="14" rx="2" />
