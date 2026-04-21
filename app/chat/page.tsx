@@ -132,6 +132,14 @@ function ChatPageInner() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<Message[]>([]);
   const tokenRef = useRef<string | null>(null);
+
+  // Voice recording (Web Speech API)
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  const baseInputRef = useRef<string>("");
   const { token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -625,6 +633,13 @@ function ChatPageInner() {
   const sendMessage = async () => {
     if (!input.trim() || sending) return;
 
+    // If voice is active, stop it so the final transcript commits before send.
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {
+      // ignore
+    }
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -701,6 +716,105 @@ function ChatPageInner() {
       sendMessage();
     }
   };
+
+  // Detect Web Speech API support once on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setVoiceSupported(!!SR);
+  }, []);
+
+  // Stop any active recognition on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        recognitionRef.current?.stop?.();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleRecording = useCallback(() => {
+    if (typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+
+    setVoiceError(null);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec: any = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = (typeof navigator !== "undefined" && navigator.language) || "en-US";
+
+    // Preserve whatever is already typed, add trailing space if needed.
+    const existing = input.replace(/\s+$/, "");
+    baseInputRef.current = existing ? existing + " " : "";
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      let interim = "";
+      let newlyFinal = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) newlyFinal += t;
+        else interim += t;
+      }
+      if (newlyFinal) {
+        baseInputRef.current += newlyFinal;
+      }
+      setInput(baseInputRef.current + interim);
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onerror = (e: any) => {
+      const code = e?.error || "unknown";
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
+      } else if (code === "no-speech") {
+        // silent pause, don't surface
+      } else if (code === "audio-capture") {
+        setVoiceError("No microphone found.");
+      } else if (code !== "aborted") {
+        setVoiceError("Voice input interrupted. Try again.");
+      }
+    };
+
+    rec.onend = () => {
+      // Commit whatever trailing interim text is on screen as the final value.
+      setInput((prev) => prev.replace(/\s+$/, ""));
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setIsRecording(true);
+      // Focus the textarea so any manual edits land right after the transcript.
+      inputRef.current?.focus();
+    } catch {
+      setVoiceError("Couldn't start voice input. Try again.");
+      recognitionRef.current = null;
+    }
+  }, [input, isRecording, stopRecording]);
 
   // Auto-grow textarea as user types. Keeps text visible (no sideways scroll)
   // and caps at 6 lines so the composer never eats the conversation.
@@ -906,46 +1020,94 @@ function ChatPageInner() {
 
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 py-3 pb-20">
-          <div className="max-w-lg mx-auto flex gap-3 items-end">
-            <textarea
-              ref={inputRef}
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Speak freely…"
-              className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
-              style={{
-                resize: "none",
-                overflowY: "hidden",
-                lineHeight: "1.4",
-                maxHeight: "156px",
-                whiteSpace: "pre-wrap",
-                overflowWrap: "break-word",
-                wordBreak: "break-word",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#9b86a0";
-                e.target.style.boxShadow = "0 0 0 2px rgba(155,134,160,0.25)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgb(26, 48, 32)";
-                e.target.style.boxShadow = "none";
-              }}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || sending}
-              className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
-            >
-              {sending ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+          <div className="max-w-lg mx-auto">
+            {isRecording && (
+              <div className="flex items-center gap-2 mb-2 font-body text-[11px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: "#c8a27a", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
+                />
+                Listening. Tap the mic again to stop.
+              </div>
+            )}
+            {voiceError && !isRecording && (
+              <div className="mb-2 font-body text-[11px] text-text-secondary">{voiceError}</div>
+            )}
+            <div className="flex gap-3 items-end">
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isRecording ? "Listening…" : "Speak freely…"}
+                className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
+                style={{
+                  resize: "none",
+                  overflowY: "hidden",
+                  lineHeight: "1.4",
+                  maxHeight: "156px",
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#9b86a0";
+                  e.target.style.boxShadow = "0 0 0 2px rgba(155,134,160,0.25)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "rgb(26, 48, 32)";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+              {voiceSupported && (
+                <button
+                  onClick={toggleRecording}
+                  disabled={sending}
+                  aria-label={isRecording ? "Stop voice input" : "Start voice input"}
+                  aria-pressed={isRecording}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-30 shrink-0 self-end"
+                  style={{
+                    background: isRecording
+                      ? "linear-gradient(135deg, #c8a27a, #8a6a48)"
+                      : "rgba(106,134,146,0.12)",
+                    border: isRecording
+                      ? "1px solid rgba(200,162,122,0.6)"
+                      : "1px solid rgba(106,134,146,0.35)",
+                    color: isRecording ? "#f2ecd8" : "#9babb9",
+                    boxShadow: isRecording ? "0 0 16px rgba(200,162,122,0.35)" : undefined,
+                  }}
+                >
+                  {isRecording ? (
+                    // Stop icon (rounded square)
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <rect x="5" y="5" width="14" height="14" rx="2" />
+                    </svg>
+                  ) : (
+                    // Mic icon
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="9" y="3" width="6" height="12" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0" />
+                      <line x1="12" y1="18" x2="12" y2="22" />
+                      <line x1="8" y1="22" x2="16" y2="22" />
+                    </svg>
+                  )}
+                </button>
               )}
-            </button>
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || sending}
+                className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
+              >
+                {sending ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
