@@ -163,89 +163,127 @@ function SubscribeContent() {
   }
 
   // Has subscription: show status + management
+  const statusSubtitle: Record<string, string> = {
+    trial: "Your five-day window. Your chart, yours to explore.",
+    active: "Living by design. Your chart, spoken to, every day.",
+    past_due: "A charge did not clear. We will try again shortly.",
+    cancelled: "Cancelled. Your access continues until the period ends.",
+    expired: "Your trial has ended. Rejoin when you are ready.",
+  };
+
+  const dateFmt = (d: string) =>
+    new Date(d).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
   return (
-    <div className="min-h-screen px-6 pt-16 pb-32">
+    <div className="min-h-screen px-6 pt-20 pb-32">
       <div className="max-w-md mx-auto">
+        {/* Eyebrow */}
+        <p
+          className="text-[10px] tracking-[0.3em] uppercase mb-5 text-center"
+          style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
+        >
+          Subscription
+        </p>
+
         {/* Header */}
         <h1
-          className="text-3xl font-light mb-2"
-          style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
+          className="text-5xl mb-5 text-center"
+          style={{
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontWeight: 300,
+            letterSpacing: "-0.01em",
+            color: "var(--text-primary, #f2ecd8)",
+          }}
         >
-          Your Subscription
+          Your membership
         </h1>
-        <p className="text-sm mb-10" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
-          {sub.status === "trial" && "You are on a free trial."}
-          {sub.status === "active" && "Your subscription is active."}
-          {sub.status === "past_due" && "There was an issue with your payment. We are retrying."}
-          {sub.status === "cancelled" && "Your subscription has been cancelled."}
-          {sub.status === "expired" && "Your trial has expired."}
+
+        <p
+          className="text-base mb-14 leading-relaxed text-center"
+          style={{
+            color: "var(--text-secondary, #8a9e8d)",
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontStyle: "italic",
+            fontWeight: 300,
+          }}
+        >
+          {statusSubtitle[sub.status || ""] || ""}
         </p>
 
         {/* Status card */}
         <div
-          className="rounded-sm p-6 mb-6"
-          style={{ background: "var(--card, #0a1f12)", border: "1px solid var(--border, #1a3020)" }}
+          className="rounded-sm p-7 mb-10"
+          style={{
+            background: "rgba(10, 31, 18, 0.6)",
+            border: "1px solid rgba(243, 146, 48, 0.14)",
+          }}
         >
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-xs tracking-widest uppercase" style={{ color: "var(--text-secondary)" }}>
+          <div className="flex justify-between items-center mb-6">
+            <span
+              className="text-[10px] tracking-[0.3em] uppercase"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Status
             </span>
             <StatusBadge status={sub.status || ""} />
           </div>
 
-          {sub.status === "trial" && sub.trial_end && (
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Trial ends {new Date(sub.trial_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-            </p>
-          )}
+          <div className="space-y-3">
+            {sub.status === "trial" && sub.trial_end && (
+              <DetailRow label="Trial ends" value={dateFmt(sub.trial_end)} />
+            )}
 
-          {sub.current_period_end && sub.status !== "trial" && (
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              {sub.status === "cancelled" ? "Access until" : "Next billing"}{" "}
-              {new Date(sub.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-            </p>
-          )}
+            {sub.current_period_end && sub.status !== "trial" && (
+              <DetailRow
+                label={sub.status === "cancelled" ? "Access until" : "Next billing"}
+                value={dateFmt(sub.current_period_end)}
+              />
+            )}
 
-          {sub.card_brand && sub.card_last_four && (
-            <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
-              {sub.card_brand} ending in {sub.card_last_four}
-            </p>
-          )}
+            {sub.card_brand && sub.card_last_four && (
+              <DetailRow
+                label="Card on file"
+                value={`${sub.card_brand} \u00b7 ${sub.card_last_four}`}
+              />
+            )}
 
-          {sub.price && sub.status !== "expired" && (
-            <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
-              {sub.price}/month
-            </p>
-          )}
+            {sub.price && sub.status !== "expired" && (
+              <DetailRow label="Price" value={`${sub.price} / month`} />
+            )}
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Trial without card: add payment */}
           {sub.status === "trial" && !sub.card_last_four && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Add Payment Method
+              Add payment method
             </ActionButton>
           )}
 
           {/* Trial with card: activate now */}
           {sub.status === "trial" && sub.card_last_four && (
             <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #f39230)">
-              Subscribe Now ({sub.price}/month)
+              Subscribe now
             </ActionButton>
           )}
 
           {/* Expired: restart */}
           {sub.status === "expired" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Subscribe ({sub.price || "$23.00"}/month)
+              Rejoin Solray
             </ActionButton>
           )}
 
           {/* Past due: update card */}
           {sub.status === "past_due" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Update Payment Method
+              Update payment method
             </ActionButton>
           )}
 
@@ -254,23 +292,46 @@ function SubscribeContent() {
             <button
               onClick={handleCancel}
               disabled={actionLoading}
-              className="w-full py-3 rounded-sm text-sm tracking-wide transition-colors"
+              className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
               style={{
                 color: "var(--text-secondary, #8a9e8d)",
-                border: "1px solid var(--border, #1a3020)",
+                border: "1px solid rgba(138, 158, 141, 0.25)",
+                background: "transparent",
               }}
             >
-              Cancel Subscription
+              Cancel subscription
             </button>
           )}
         </div>
 
         {error && (
-          <p className="text-sm mt-4" style={{ color: "var(--ember, #d47a52)" }}>
+          <p
+            className="text-sm mt-6 text-center"
+            style={{ color: "var(--ember, #d47a52)" }}
+          >
             {error}
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-baseline">
+      <span
+        className="text-[10px] tracking-[0.22em] uppercase"
+        style={{ color: "var(--text-secondary)", opacity: 0.7 }}
+      >
+        {label}
+      </span>
+      <span
+        className="text-[15px]"
+        style={{ color: "var(--text-primary, #f2ecd8)" }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
@@ -291,37 +352,75 @@ function TrialOffer({
   return (
     <div className="min-h-screen px-6 pt-20 pb-32">
       <div className="max-w-md mx-auto text-center">
-        <h1
-          className="text-4xl font-light mb-4"
-          style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
+        {/* Eyebrow */}
+        <p
+          className="text-[10px] tracking-[0.3em] uppercase mb-5"
+          style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Living by Design
+          Living by design
+        </p>
+
+        <h1
+          className="text-5xl mb-5"
+          style={{
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontWeight: 300,
+            letterSpacing: "-0.01em",
+            color: "var(--text-primary, #f2ecd8)",
+          }}
+        >
+          Your chart, spoken to.
         </h1>
-        <p className="text-sm mb-12" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
+
+        <p
+          className="text-base mb-14 leading-relaxed"
+          style={{
+            color: "var(--text-secondary, #8a9e8d)",
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontStyle: "italic",
+            fontWeight: 300,
+          }}
+        >
           Your exact birth moment, read against today's sky, every morning.
           Three systems, one voice, speaking to your chart alone.
         </p>
 
         {/* What you get */}
         <div
-          className="text-left rounded-sm p-6 mb-8"
-          style={{ background: "var(--card, #0a1f12)", border: "1px solid var(--border, #1a3020)" }}
+          className="text-left rounded-sm p-7 mb-10"
+          style={{
+            background: "rgba(10, 31, 18, 0.6)",
+            border: "1px solid rgba(243, 146, 48, 0.14)",
+          }}
         >
-          <p className="text-xs tracking-widest uppercase mb-5" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="text-[10px] tracking-[0.3em] uppercase mb-6"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Everything included
           </p>
           {[
             "Daily personalised forecast",
-            "Higher Self Oracle (unlimited conversations)",
-            "Soul Connections (compatibility readings)",
+            "Higher Self Oracle, unlimited",
+            "Soul Connections and compatibility readings",
             "Full natal chart, Human Design, and Gene Keys",
             "Transit tracking and cycle awareness",
           ].map((item) => (
-            <div key={item} className="flex items-start gap-3 mb-3">
-              <span className="text-xs mt-0.5" style={{ color: "var(--amber, #f39230)" }}>
-                *
-              </span>
-              <span className="text-sm" style={{ color: "var(--text-primary, #f2ecd8)" }}>
+            <div key={item} className="flex items-start gap-4 mb-3.5 last:mb-0">
+              <span
+                className="mt-[7px] shrink-0"
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 999,
+                  background: "var(--amber, #f39230)",
+                  opacity: 0.75,
+                }}
+              />
+              <span
+                className="text-[15px] leading-snug"
+                style={{ color: "var(--text-primary, #f2ecd8)" }}
+              >
                 {item}
               </span>
             </div>
@@ -329,20 +428,45 @@ function TrialOffer({
         </div>
 
         {/* Pricing */}
-        <div className="mb-8">
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            5 days free, then
+        <div className="mb-10">
+          <p
+            className="text-xs tracking-wide"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Five days free, then
           </p>
-          <p className="text-3xl font-light mt-1" style={{ color: "var(--text-primary)" }}>
-            $23<span className="text-base" style={{ color: "var(--text-secondary)" }}>/month</span>
+          <p
+            className="mt-2"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+              fontWeight: 300,
+              fontSize: "3rem",
+              lineHeight: 1,
+            }}
+          >
+            $23
+            <span
+              className="ml-1"
+              style={{
+                fontSize: "1rem",
+                color: "var(--text-secondary)",
+                fontStyle: "italic",
+              }}
+            >
+              / month
+            </span>
           </p>
-          <p className="text-xs mt-2" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="text-xs mt-3 tracking-wide"
+            style={{ color: "var(--text-secondary)", opacity: 0.75 }}
+          >
             Cancel anytime. No commitment.
           </p>
         </div>
 
         <ActionButton onClick={onStart} loading={loading} color="var(--amber, #f39230)">
-          Begin Your Journey
+          Begin your journey
         </ActionButton>
 
         {error && (
@@ -356,21 +480,53 @@ function TrialOffer({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    trial: { bg: "rgba(243,146,48,0.15)", text: "var(--amber, #f39230)" },
-    active: { bg: "rgba(138,158,102,0.15)", text: "var(--moss, #8a9e66)" },
-    past_due: { bg: "rgba(212,122,82,0.15)", text: "var(--ember, #d47a52)" },
-    cancelled: { bg: "rgba(138,158,141,0.1)", text: "var(--text-secondary, #8a9e8d)" },
-    expired: { bg: "rgba(138,158,141,0.1)", text: "var(--text-secondary, #8a9e8d)" },
+  const colors: Record<string, { bg: string; text: string; border: string }> = {
+    trial: {
+      bg: "rgba(243,146,48,0.12)",
+      text: "var(--amber, #f39230)",
+      border: "rgba(243,146,48,0.35)",
+    },
+    active: {
+      bg: "rgba(138,158,102,0.12)",
+      text: "var(--moss, #8a9e66)",
+      border: "rgba(138,158,102,0.35)",
+    },
+    past_due: {
+      bg: "rgba(212,122,82,0.12)",
+      text: "var(--ember, #d47a52)",
+      border: "rgba(212,122,82,0.35)",
+    },
+    cancelled: {
+      bg: "rgba(138,158,141,0.08)",
+      text: "var(--text-secondary, #8a9e8d)",
+      border: "rgba(138,158,141,0.25)",
+    },
+    expired: {
+      bg: "rgba(138,158,141,0.08)",
+      text: "var(--text-secondary, #8a9e8d)",
+      border: "rgba(138,158,141,0.25)",
+    },
   };
   const c = colors[status] || colors.expired;
 
+  const label: Record<string, string> = {
+    trial: "Trial",
+    active: "Active",
+    past_due: "Retrying",
+    cancelled: "Cancelled",
+    expired: "Expired",
+  };
+
   return (
     <span
-      className="text-xs tracking-wide uppercase px-3 py-1 rounded-sm"
-      style={{ background: c.bg, color: c.text }}
+      className="text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full"
+      style={{
+        background: c.bg,
+        color: c.text,
+        border: `1px solid ${c.border}`,
+      }}
     >
-      {status.replace("_", " ")}
+      {label[status] || status.replace("_", " ")}
     </span>
   );
 }
@@ -390,11 +546,15 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="w-full py-3.5 rounded-sm text-sm tracking-wide font-medium transition-opacity disabled:opacity-50"
-      style={{ background: color, color: "#050f08" }}
+      className="w-full py-4 px-8 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110"
+      style={{
+        background: color,
+        color: "#050f08",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(243,146,48,0.12)",
+      }}
     >
       {loading ? (
-        <span className="inline-block w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+        <span className="inline-block w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin align-middle" />
       ) : (
         children
       )}
