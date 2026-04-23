@@ -207,6 +207,19 @@ function IconSignOut({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+// Subtle six-point star for the subscription entry. Line-only so it matches
+// the rest of the profile footer rather than calling for the eye.
+function IconStar({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v18" />
+      <path d="M3 12h18" />
+      <path d="M5.6 5.6l12.8 12.8" />
+      <path d="M18.4 5.6L5.6 18.4" />
+    </svg>
+  );
+}
+
 // Soul Map Radar — 7 axes, heptagonal polygon
 
 const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "cardinal", "fixed", "mutable"];
@@ -1181,8 +1194,15 @@ export default function ProfilePage() {
               {/* Full Blueprint — merged from chart page */}
               {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
 
-              {/* Sign Out: quiet, centered text link */}
-              <div className="mt-6 mb-8 flex justify-center">
+              {/* Subscription + Sign Out: quiet, centered text links */}
+              <div className="mt-6 mb-8 flex flex-col items-center gap-4">
+                <button
+                  onClick={() => router.push("/subscribe")}
+                  className="font-body text-text-secondary/60 text-[10px] tracking-[0.22em] uppercase hover:text-text-secondary transition-colors flex items-center gap-2"
+                >
+                  <IconStar />
+                  Subscription
+                </button>
                 <button
                   onClick={handleSignOut}
                   className="font-body text-text-secondary/60 text-[10px] tracking-[0.22em] uppercase hover:text-text-secondary transition-colors flex items-center gap-2"
