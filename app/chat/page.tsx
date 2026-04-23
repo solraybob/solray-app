@@ -795,6 +795,11 @@ function ChatPageInner() {
         } catch {
           // ignore
         }
+        // If the backend says transcription isn't configured, show a calm
+        // user-facing line instead of the raw server string.
+        if (res.status === 503 && /configured|GROQ|OPENAI/i.test(detail)) {
+          throw new Error("Voice input is warming up on our side. Type for now, it'll be on shortly.");
+        }
         throw new Error(detail || `Transcription failed (${res.status})`);
       }
       const data = await res.json();
