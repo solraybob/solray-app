@@ -73,6 +73,16 @@ html {
   padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
+/* Clearance for pages that sit behind the fixed BottomNav.
+   BottomNav renders 60-80px of content depending on text line-height,
+   plus env(safe-area-inset-bottom) on notch phones (up to 34px). 120px
+   base + env gives 40-56px of honest breathing room above the icons on
+   every phone we've seen, with no risk of the last row bleeding
+   underneath. Use on any scrollable page wrapper that shows BottomNav. */
+.pb-bottom-nav {
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 16px));
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

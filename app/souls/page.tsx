@@ -546,7 +546,7 @@ export default function SoulsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-[100dvh] bg-forest-deep pb-24">
+      <div className="min-h-[100dvh] bg-forest-deep pb-bottom-nav">
         {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">

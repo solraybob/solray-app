@@ -635,7 +635,7 @@ export default function TodayPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-[100dvh] bg-forest-deep pb-24">
+      <div className="min-h-[100dvh] bg-forest-deep pb-bottom-nav">
         {/* Header — tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
