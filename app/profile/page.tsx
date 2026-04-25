@@ -939,7 +939,10 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-[100dvh] bg-forest-deep pb-bottom-nav">
+      <div
+        className="min-h-[100dvh] bg-forest-deep"
+        style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
+      >
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
