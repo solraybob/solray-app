@@ -245,6 +245,16 @@ export default function SettingsPage() {
       setTimeout(() => setBirthStatus("idle"), 2200);
       return;
     }
+    // Birth-data updates recompute the user's full chart. We refuse to
+    // submit a city string that hasn't been resolved to coordinates,
+    // because backend geocoding can be slow or fail and we'd rather
+    // catch the ambiguity here than silently corrupt the chart.
+    if (birthCity.trim() && (birthLat == null || birthLon == null)) {
+      setBirthError("Pick a city from the suggestions so we can geolocate it precisely.");
+      setBirthStatus("error");
+      setTimeout(() => setBirthStatus("idle"), 3200);
+      return;
+    }
     setBirthStatus("saving");
     setBirthError(null);
     try {
@@ -256,15 +266,20 @@ export default function SettingsPage() {
       if (birthLat != null) body.birth_lat = birthLat;
       if (birthLon != null) body.birth_lon = birthLon;
       const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
-      // Replace the local blueprint cache so today/chart/profile all reflect
-      // the new chart on next render.
+      // Refresh the local blueprint cache from authoritative server data.
+      // We DO NOT inject local React state (name/username/photo) here —
+      // that's what an earlier draft did, and it could overwrite the
+      // cached identity fields with unsaved form input. Instead we
+      // re-fetch /users/me to get fresh, committed identity data and
+      // marry it to the new blueprint that the server just returned.
       try {
         if (res?.blueprint) {
+          const me = await apiFetch("/users/me", {}, token).catch(() => null);
           const bp = res.blueprint;
           bp._cache_version = 4;
-          bp._name = name;
-          bp._username = username;
-          bp._profile_photo = photo;
+          bp._name = me?.profile?.name ?? "";
+          bp._username = me?.profile?.username ?? "";
+          bp._profile_photo = me?.profile?.profile_photo ?? null;
           bp._cachedAt = Date.now();
           localStorage.setItem("solray_blueprint", JSON.stringify(bp));
         }

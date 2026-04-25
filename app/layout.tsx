@@ -41,7 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning is needed because the FOUC-killer below
+    // mutates <html data-theme="..."> before React hydrates. Without it,
+    // React would log a hydration mismatch on every cold load for users
+    // who chose the non-default theme on a previous visit.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
       </head>

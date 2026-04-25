@@ -58,8 +58,10 @@ export default function TrialBanner() {
   return (
     <div
       style={{
-        background: "#071510",
-        borderBottom: "1px solid #1a3020",
+        // Theme-aware: rgb(var(--rgb-bg-dark)) gives the forest header
+        // strip in dark mode, the warm cream strip in light mode.
+        background: "rgb(var(--rgb-bg-dark))",
+        borderBottom: "1px solid rgb(var(--rgb-border))",
         borderTop: urgent
           ? "1px solid rgba(212,122,82,0.35)"
           : "1px solid rgba(243,146,48,0.20)",
@@ -116,7 +118,7 @@ export default function TrialBanner() {
       </div>
 
       {/* Progress bar: days consumed out of 5 */}
-      <div style={{ height: "1px", background: "#1a3020" }}>
+      <div style={{ height: "1px", background: "rgb(var(--rgb-border))" }}>
         <div
           style={{
             height: "100%",
