@@ -268,18 +268,32 @@ export default function SettingsPage() {
       const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
       // Refresh the local blueprint cache from authoritative server data.
       // We DO NOT inject local React state (name/username/photo) here —
-      // that's what an earlier draft did, and it could overwrite the
-      // cached identity fields with unsaved form input. Instead we
-      // re-fetch /users/me to get fresh, committed identity data and
-      // marry it to the new blueprint that the server just returned.
+      // an earlier draft did, and it could overwrite the cached identity
+      // fields with unsaved form input.
+      //
+      // Order of preference for the identity fields:
+      //   1. Fresh /users/me response (best — known committed values)
+      //   2. Whatever was in the previous cache (preserves last-known-good
+      //      when /users/me fails on a network blip)
+      //   3. Empty (only when there's no cache and no network response —
+      //      effectively the "first save ever" path)
+      //
+      // The blueprint payload itself ALWAYS gets written; that's the whole
+      // point of the call and is authoritative regardless.
       try {
         if (res?.blueprint) {
           const me = await apiFetch("/users/me", {}, token).catch(() => null);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let prev: any = null;
+          try {
+            const raw = localStorage.getItem("solray_blueprint");
+            prev = raw ? JSON.parse(raw) : null;
+          } catch {}
           const bp = res.blueprint;
           bp._cache_version = 4;
-          bp._name = me?.profile?.name ?? "";
-          bp._username = me?.profile?.username ?? "";
-          bp._profile_photo = me?.profile?.profile_photo ?? null;
+          bp._name         = me?.profile?.name           ?? prev?._name           ?? "";
+          bp._username     = me?.profile?.username       ?? prev?._username       ?? "";
+          bp._profile_photo= me?.profile?.profile_photo  ?? prev?._profile_photo  ?? null;
           bp._cachedAt = Date.now();
           localStorage.setItem("solray_blueprint", JSON.stringify(bp));
         }
