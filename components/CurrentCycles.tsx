@@ -189,7 +189,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
       {/* Expanded reading — forest green panel below photo */}
       {expanded && rest && (
-        <div style={{ background: "#0a1f12", padding: "16px 20px", borderTop: "1px solid rgba(26,48,32,0.8)" }}>
+        <div style={{ background: "rgb(var(--rgb-card))", padding: "16px 20px", borderTop: "1px solid rgb(var(--rgb-border) / 0.8)" }}>
           <p className="text-text-secondary/80 text-[13px] font-body leading-relaxed">{rest}</p>
         </div>
       )}
@@ -397,7 +397,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
                       style={{
                         width: i === activeIndex ? 16 : 6,
                         height: 6,
-                        background: i === activeIndex ? "#f39230" : "#1a3020",
+                        background: i === activeIndex ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-border))",
                       }}
                     />
                   ))}

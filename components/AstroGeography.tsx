@@ -359,7 +359,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
         {/* Map */}
         <div
           className="relative rounded-2xl overflow-hidden border border-forest-border/50 cursor-pointer group"
-          style={{ background: "#0a1f12" }}
+          style={{ background: "rgb(var(--rgb-card))" }}
           onClick={() => setFullscreen(true)}
         >
           <MapSVG

@@ -168,7 +168,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
                 <p className="font-body text-text-primary font-semibold text-[13px]">View Profile</p>
                 <p className="font-body text-text-secondary text-[10px] mt-0.5">See {soul.soul.name}&rsquo;s chart, blueprint, and details</p>
               </div>
-              <span className="font-body text-[#6a8692] text-[10px]">Open</span>
+              <span className="font-body text-indigo text-[10px]">Open</span>
             </div>
           </button>
           <button
@@ -180,19 +180,19 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
                 <p className="font-body text-text-primary font-semibold text-[13px]">Your Reading</p>
                 <p className="font-body text-text-secondary text-[10px] mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
               </div>
-              <span className="font-body text-[#6a8692] text-[10px]">Open</span>
+              <span className="font-body text-indigo text-[10px]">Open</span>
             </div>
           </button>
           <button
             onClick={onGroupReading}
-            className="w-full text-left px-5 py-4 bg-[#6a8692]/5 border border-[#6a8692]/30 rounded-2xl transition-all hover:bg-[#5a7582]/10"
+            className="w-full text-left px-5 py-4 bg-indigo/5 border border-indigo/30 rounded-2xl transition-all hover:bg-[#5a7582]/10"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-body text-text-primary font-semibold text-[13px]">Group Reading</p>
                 <p className="font-body text-text-secondary text-[10px] mt-0.5">Invite {soul.soul.name} into a shared session together</p>
               </div>
-              <span className="font-body text-[#6a8692] text-[10px]">Share</span>
+              <span className="font-body text-indigo text-[10px]">Share</span>
             </div>
           </button>
         </div>
@@ -240,13 +240,13 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
         <div className="space-y-3">
           <button
             onClick={handleCopy}
-            className="w-full py-3.5 bg-[#6a8692]/10 border border-[#6a8692]/30 rounded-xl font-body text-[#6a8692] text-[13px] tracking-widest transition-all hover:bg-[#5a7582]/20"
+            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[13px] tracking-widest transition-all hover:bg-[#5a7582]/20"
           >
             {copied ? "Copied!" : `Copy link for ${soul.soul.name}`}
           </button>
           <button
             onClick={onEnterSession}
-            className="w-full py-3.5 bg-[#6a8692] text-forest-deep font-body font-semibold rounded-xl text-[13px] tracking-widest transition-all hover:opacity-90"
+            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[13px] tracking-widest transition-all hover:opacity-90"
           >
             Enter Session
           </button>
@@ -662,7 +662,7 @@ export default function SoulsPage() {
                     <button
                       onClick={() => handleSendInvite(user.username)}
                       disabled={sendingInvite === user.username || inviteSent.has(user.username)}
-                      className="shrink-0 px-3 py-1.5 bg-[#6a8692]/10 border border-[#6a8692]/30 text-[#6a8692] rounded-lg text-xs font-body transition-all hover:bg-[#5a7582]/20 disabled:opacity-40"
+                      className="shrink-0 px-3 py-1.5 bg-indigo/10 border border-indigo/30 text-indigo rounded-lg text-xs font-body transition-all hover:bg-[#5a7582]/20 disabled:opacity-40"
                     >
                       {sendingInvite === user.username ? (
                         <LoadingSpinner size="sm" />
@@ -714,7 +714,7 @@ export default function SoulsPage() {
                         key={invite.invite_id}
                         className="flex items-center gap-3 px-4 py-3 border rounded-2xl"
                         style={{
-                          background: "linear-gradient(135deg, rgba(106,134,146,0.08) 0%, #0a1f12 60%)",
+                          background: "linear-gradient(135deg, rgb(var(--rgb-indigo) / 0.08) 0%, rgb(var(--rgb-card)) 60%)",
                           borderColor: "rgba(106,134,146,0.25)",
                         }}
                       >
@@ -878,12 +878,12 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
     <div
       className="rounded-3xl p-6 relative overflow-hidden"
       style={{
-        background: "linear-gradient(155deg, rgba(106,134,146,0.10) 0%, rgba(10,31,18,0.95) 55%, #0a1f12 100%)",
+        background: "linear-gradient(155deg, rgb(var(--rgb-indigo) / 0.10) 0%, rgb(var(--rgb-card) / 0.95) 55%, rgb(var(--rgb-card)) 100%)",
         border: "1px solid rgba(106,134,146,0.25)",
         boxShadow: "0 20px 60px -30px rgba(106,134,146,0.35)",
       }}
     >
-      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-[#6a8692]/70 mb-1">Dynamics</p>
+      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-indigo/70 mb-1">Dynamics</p>
       <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
         Where two charts meet.
       </h2>
@@ -914,7 +914,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full shrink-0"
             style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.45)" }}
           >
-            <span className="text-[#6a8692]/50 text-xs shrink-0" aria-hidden="true">✦</span>
+            <span className="text-indigo/50 text-xs shrink-0" aria-hidden="true">✦</span>
             {partnerPhoto(p) ? (
               <img src={partnerPhoto(p)!} alt={partnerName(p)} className="w-6 h-6 rounded-full object-cover shrink-0" />
             ) : (
@@ -946,7 +946,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             }}
           >
             {partners.length === 0 && (
-              <span className="text-[#6a8692]/50 text-xs" aria-hidden="true">✦</span>
+              <span className="text-indigo/50 text-xs" aria-hidden="true">✦</span>
             )}
             <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[13px] text-text-secondary shrink-0"
                  style={{ border: "1px dashed rgba(242,236,216,0.25)" }}>+</div>
@@ -1333,7 +1333,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
             type="button"
             onClick={() => setTimeUnknown(!timeUnknown)}
             className={`font-body text-[11px] tracking-wider transition-colors -mt-2 ${
-              timeUnknown ? "text-[#6a8692]" : "text-text-secondary hover:text-text-primary"
+              timeUnknown ? "text-indigo" : "text-text-secondary hover:text-text-primary"
             }`}
           >
             {timeUnknown ? "✓ Using noon" : "Unknown birth time"}
@@ -1368,8 +1368,8 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                   ref={suggestionsRef}
                   className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl overflow-hidden shadow-xl"
                   style={{
-                    background: "#0a1f12",
-                    border: "1px solid rgba(242,236,216,0.12)",
+                    background: "rgb(var(--rgb-card))",
+                    border: "1px solid rgb(var(--rgb-text-primary) / 0.12)",
                     maxHeight: "14rem",
                     overflowY: "auto",
                   }}
@@ -1431,8 +1431,8 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
       onClick={onOpen}
       className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99]"
       style={{
-        background: "linear-gradient(135deg, rgba(74, 102, 112,0.06) 0%, #0a1f12 60%)",
-        border: "1px solid rgba(74, 102, 112,0.25)",
+        background: "linear-gradient(135deg, rgb(var(--rgb-indigo) / 0.06) 0%, rgb(var(--rgb-card)) 60%)",
+        border: "1px solid rgb(var(--rgb-indigo) / 0.25)",
       }}
     >
       <div className="flex items-center gap-4">

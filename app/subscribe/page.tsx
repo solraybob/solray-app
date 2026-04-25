@@ -58,6 +58,9 @@ function SubscribeContent() {
 
     if (teyaToken && token) {
       setActionLoading(true);
+      // Strip the token-bearing URL immediately so a refresh / share /
+      // history-back doesn't re-trigger the attach with a stale token.
+      window.history.replaceState({}, "", "/subscribe");
       import("@/lib/subscription").then(({ attachCard }) =>
         attachCard(token, {
           teya_token: teyaToken,
@@ -65,18 +68,19 @@ function SubscribeContent() {
           card_brand: brand,
         })
           .then(() => {
-            // Refresh status
-            return getSubscriptionStatus(token);
+            // Backend's /subscribe/card flips status to 'active' atomically
+            // when SecurePay returns successfully. Redirect to the welcome
+            // confirmation page; it pulls fresh status on mount and double-
+            // checks before celebrating.
+            router.replace("/subscribe/welcome");
           })
-          .then(setSub)
-          .catch((e) => setError(e.message))
-          .finally(() => setActionLoading(false))
+          .catch((e) => {
+            setError(e.message);
+            setActionLoading(false);
+          })
       );
-
-      // Clean URL
-      window.history.replaceState({}, "", "/subscribe");
     }
-  }, [token]);
+  }, [token, router]);
 
   // ------------------------------------------------------------------
   // Actions

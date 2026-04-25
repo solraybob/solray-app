@@ -157,7 +157,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
 
                 {/* Expanded reading — forest green panel below photo */}
                 {isOpen && (
-                  <div style={{ background: "#0a1f12", padding: "16px", borderTop: `1px solid ${color}25` }}>
+                  <div style={{ background: "rgb(var(--rgb-card))", padding: "16px", borderTop: `1px solid ${color}25` }}>
                     <p
                       className="font-body text-[13px] leading-relaxed"
                       style={{
