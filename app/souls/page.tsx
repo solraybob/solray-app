@@ -130,9 +130,10 @@ interface SoulActionsProps {
   onClose: () => void;
   onSoloReading: () => void;
   onGroupReading: () => void;
+  onViewProfile: () => void;
 }
 
-function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActionsProps) {
+function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfile }: SoulActionsProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
@@ -158,6 +159,18 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading }: SoulActio
           </div>
         </div>
         <div className="space-y-3">
+          <button
+            onClick={onViewProfile}
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#7a96a2]/30"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-body text-text-primary font-semibold text-[13px]">View Profile</p>
+                <p className="font-body text-text-secondary text-[10px] mt-0.5">See {soul.soul.name}&rsquo;s chart, blueprint, and details</p>
+              </div>
+              <span className="font-body text-[#6a8692] text-[10px]">Open</span>
+            </div>
+          </button>
           <button
             onClick={onSoloReading}
             className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#7a96a2]/30"
@@ -774,6 +787,13 @@ export default function SoulsPage() {
             onClose={() => setActiveSoul(null)}
             onSoloReading={() => openSoloReading(activeSoul)}
             onGroupReading={() => startGroupSession(activeSoul)}
+            onViewProfile={() => {
+              // The /profile/[id] page handles both public (full chart)
+              // and private (name + photo only) cases via the
+              // /users/:id/public-profile endpoint.
+              router.push(`/profile/${activeSoul.soul.id}`);
+              setActiveSoul(null);
+            }}
           />
         )}
 

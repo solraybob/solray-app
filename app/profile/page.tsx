@@ -958,14 +958,14 @@ export default function ProfilePage() {
               </h1>
               <button
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
-                title="Edit profile"
-                aria-label="Edit profile"
+                title="Settings"
+                aria-label="Settings"
                 style={{ minWidth: "32px", minHeight: "32px" }}
-                onClick={() => { setNameInput(profile?.name || ""); setHandleInput(profile?.handle || ""); setEditingName(true); setEditingHandle(true); setSaveError(null); }}
+                onClick={() => router.push("/profile/settings")}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
               </button>
             </div>
@@ -1197,23 +1197,8 @@ export default function ProfilePage() {
               {/* Full Blueprint — merged from chart page */}
               {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
 
-              {/* Subscription + Sign Out: quiet, centered text links */}
-              <div className="mt-6 mb-8 flex flex-col items-center gap-4">
-                <button
-                  onClick={() => router.push("/subscribe")}
-                  className="font-body text-text-secondary/60 text-[10px] tracking-[0.22em] uppercase hover:text-text-secondary transition-colors flex items-center gap-2"
-                >
-                  <IconStar />
-                  Subscription
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="font-body text-text-secondary/60 text-[10px] tracking-[0.22em] uppercase hover:text-text-secondary transition-colors flex items-center gap-2"
-                >
-                  <IconSignOut />
-                  Sign Out
-                </button>
-              </div>
+              {/* Subscription + Sign Out moved into /profile/settings (the gear
+                  in the header is the single canonical entry point now). */}
             </div>
           </div>
         )}

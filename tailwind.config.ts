@@ -9,33 +9,35 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // All tokens point at theme-aware CSS variables defined in
+        // app/globals.css. Each var is an "R G B" triplet so Tailwind's
+        // <alpha-value> opacity syntax (bg-forest-deep/40, text-mist/60)
+        // composes correctly under both dark (default) and light
+        // (data-theme="light") themes.
         forest: {
-          deep: "#050f08",
-          dark: "#071510",
-          card: "#0a1f12",
-          border: "#1a3020",
+          deep:   "rgb(var(--rgb-bg-deep) / <alpha-value>)",
+          dark:   "rgb(var(--rgb-bg-dark) / <alpha-value>)",
+          card:   "rgb(var(--rgb-card) / <alpha-value>)",
+          border: "rgb(var(--rgb-border) / <alpha-value>)",
         },
         amber: {
-          // Amber-sun remains the hero accent: logo, primary CTAs,
-          // focus rings, the Sun planet. Everything else pulls from the
-          // aged-pigment palette below.
-          sun: "#f39230",
+          // Amber-sun is the hero accent. Slightly deeper under the
+          // light theme so it holds against pearl.
+          sun: "rgb(var(--rgb-amber) / <alpha-value>)",
         },
-        // Aged-pigment palette. Desaturated earth tones, lifted one step
-        // in 2026 so every body-size use passes WCAG AA on the forest
-        // background. Each tone is a single value (not a scale) used via
-        // Tailwind's /opacity syntax: bg-ember/20, text-mist,
-        // border-indigo/30, etc.
-        ember:    "#d47a52",  // warm secondary, errors, action heat
-        moss:     "#8a9e66",  // growth, physical, abundance
-        mist:     "#9babb9",  // air, intellect, silvery coolness
-        indigo:   "#6a8692",  // deep water, structure, the field
-        wisteria: "#9b86a0",  // soft purple, intuition, higher self
-        pearl:    "#ece4cf",  // luminous neutral, moon highlights
+        // Aged-pigment palette. Used via Tailwind's /opacity syntax
+        // (bg-ember/20, text-mist, border-indigo/30). All entries flip
+        // with the active theme.
+        ember:    "rgb(var(--rgb-ember) / <alpha-value>)",
+        moss:     "rgb(var(--rgb-moss) / <alpha-value>)",
+        mist:     "rgb(var(--rgb-mist) / <alpha-value>)",
+        indigo:   "rgb(var(--rgb-indigo) / <alpha-value>)",
+        wisteria: "rgb(var(--rgb-wisteria) / <alpha-value>)",
+        pearl:    "rgb(var(--rgb-pearl) / <alpha-value>)",
         text: {
-          primary:   "#f2ecd8",
-          secondary: "#a8b8ab",
-          muted:     "#8a9e8d",
+          primary:   "rgb(var(--rgb-text-primary) / <alpha-value>)",
+          secondary: "rgb(var(--rgb-text-secondary) / <alpha-value>)",
+          muted:     "rgb(var(--rgb-text-muted) / <alpha-value>)",
         },
       },
       fontFamily: {

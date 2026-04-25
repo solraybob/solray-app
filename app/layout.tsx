@@ -1,12 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import VersionCheck from "@/components/VersionCheck";
 import PullToRefresh from "@/components/PullToRefresh";
 import Footer from "@/components/Footer";
 import SwipeNavigator from "@/components/SwipeNavigator";
 import BottomNav from "@/components/BottomNav";
+
+// Runs synchronously before React hydrates to set the correct theme on
+// <html>, eliminating a flash of the wrong palette for users who chose
+// light mode on a previous visit. Tiny, safe, self-contained.
+const themeFoucKiller = `(function(){try{var t=localStorage.getItem('solray-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "Solray",
@@ -36,16 +42,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
+      </head>
       <body className="bg-forest-deep min-h-screen text-text-primary">
         <VersionCheck />
         <PullToRefresh />
-        <AuthProvider>
-          <SwipeNavigator>
-            {children}
-          </SwipeNavigator>
-          <BottomNav />
-          <Footer />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SwipeNavigator>
+              {children}
+            </SwipeNavigator>
+            <BottomNav />
+            <Footer />
+          </AuthProvider>
+        </ThemeProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>

@@ -4,26 +4,92 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-deep: #050f08;
-  --bg-dark: #071510;
-  --card: #0a1f12;
-  --border: #1a3020;
-  --amber: #f39230;
-  --text-primary: #f2ecd8;
-  --text-secondary: #a8b8ab;
-  --text-muted: #8a9e8d;
+/* ───────────────────────────────────────────────────────────────────────────
+   THEME TOKENS
 
-  /* Aged-pigment palette. Kept in sync with tailwind.config.ts so that
-     inline styles (gradients, CSS-in-JS, onFocus handlers) can reach
-     the same tokens as Tailwind classes. Lifted one step in 2026 so
-     every body-size use passes WCAG AA on forest-deep. */
-  --ember:    #d47a52;
-  --moss:     #8a9e66;
-  --mist:     #9babb9;
-  --indigo:   #6a8692;
-  --wisteria: #9b86a0;
-  --pearl:    #ece4cf;
+   All colors live as RGB triplets ("R G B" with spaces, no commas) so
+   Tailwind's opacity modifier (e.g. bg-forest-deep/40) can compose with
+   them via rgb(var(--rgb-x) / <alpha-value>).
+
+   Default = dark forest. data-theme="light" = pearl/cream, with the
+   text + structural tones inverted to forest-deep so contrast holds.
+
+   The aged-pigment accents (ember/moss/mist/indigo/wisteria) stay close
+   to their dark-mode values. Where they fall under WCAG AA on pearl
+   they get a single deeper variant under [data-theme="light"], no other
+   per-page tuning required.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* DARK theme (default) — RGB triplets */
+  --rgb-bg-deep:        5  15   8;     /* #050f08 */
+  --rgb-bg-dark:        7  21  16;     /* #071510 */
+  --rgb-card:          10  31  18;     /* #0a1f12 */
+  --rgb-border:        26  48  32;     /* #1a3020 */
+  --rgb-amber:        243 146  48;     /* #f39230 — hero accent, theme-stable */
+  --rgb-text-primary: 242 236 216;     /* #f2ecd8 */
+  --rgb-text-secondary:168 184 171;    /* #a8b8ab */
+  --rgb-text-muted:   138 158 141;     /* #8a9e8d */
+
+  --rgb-ember:        212 122  82;     /* #d47a52 */
+  --rgb-moss:         138 158 102;     /* #8a9e66 */
+  --rgb-mist:         155 171 185;     /* #9babb9 */
+  --rgb-indigo:       106 134 146;     /* #6a8692 */
+  --rgb-wisteria:     155 134 160;     /* #9b86a0 */
+  --rgb-pearl:        236 228 207;     /* #ece4cf */
+
+  /* Legacy hex aliases — kept so any inline style still resolving to
+     these names continues to render the dark default. */
+  --bg-deep:        #050f08;
+  --bg-dark:        #071510;
+  --card:           #0a1f12;
+  --border:         #1a3020;
+  --amber:          #f39230;
+  --text-primary:   #f2ecd8;
+  --text-secondary: #a8b8ab;
+  --text-muted:     #8a9e8d;
+  --ember:          #d47a52;
+  --moss:           #8a9e66;
+  --mist:           #9babb9;
+  --indigo:         #6a8692;
+  --wisteria:       #9b86a0;
+  --pearl:          #ece4cf;
+}
+
+:root[data-theme="light"] {
+  /* LIGHT theme: pearl ground, deep-forest ink. The card sits one step
+     lighter than the page bg so layered content keeps a soft edge
+     without needing a hard border. Accents (moss/mist/indigo/wisteria)
+     are pushed darker so 13px body text on pearl still passes WCAG AA. */
+  --rgb-bg-deep:       236 228 207;     /* #ece4cf — pearl page bg */
+  --rgb-bg-dark:       224 214 189;     /* #e0d6bd — header strip */
+  --rgb-card:          245 239 222;     /* #f5efde — lifted card */
+  --rgb-border:        201 189 160;     /* #c9bda0 — warm tan hairline */
+  --rgb-amber:         208 110  20;     /* #d06e14 — deeper amber on cream */
+  --rgb-text-primary:  16  28  21;      /* #101c15 — near-black forest */
+  --rgb-text-secondary:74  90  72;      /* #4a5a48 */
+  --rgb-text-muted:   107 121 105;      /* #6b7969 */
+
+  --rgb-ember:        180  90  56;      /* #b45a38 */
+  --rgb-moss:          90 110  64;      /* #5a6e40 */
+  --rgb-mist:         100 122 144;      /* #647a90 */
+  --rgb-indigo:        60  92 110;      /* #3c5c6e */
+  --rgb-wisteria:     130 100 138;      /* #82648a */
+  --rgb-pearl:        245 239 222;      /* #f5efde — also the card tone */
+
+  --bg-deep:        #ece4cf;
+  --bg-dark:        #e0d6bd;
+  --card:           #f5efde;
+  --border:         #c9bda0;
+  --amber:          #d06e14;
+  --text-primary:   #101c15;
+  --text-secondary: #4a5a48;
+  --text-muted:     #6b7969;
+  --ember:          #b45a38;
+  --moss:           #5a6e40;
+  --mist:           #647a90;
+  --indigo:         #3c5c6e;
+  --wisteria:       #82648a;
+  --pearl:          #f5efde;
 }
 
 * {
@@ -31,8 +97,8 @@
 }
 
 html, body {
-  background-color: #050f08;
-  color: #f2ecd8;
+  background-color: rgb(var(--rgb-bg-deep));
+  color: rgb(var(--rgb-text-primary));
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -49,11 +115,11 @@ h1, h2, h3 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #071510;
+  background: rgb(var(--rgb-bg-dark));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a3020;
+  background: rgb(var(--rgb-border));
   border-radius: 2px;
 }
 
