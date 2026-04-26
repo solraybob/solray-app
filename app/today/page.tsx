@@ -586,15 +586,22 @@ export default function TodayPage() {
           setForecast(parsed);
         }
       } catch (err) {
+        // 403 = trial expired or subscription lapsed. ALWAYS redirect,
+        // even from a background fetch — otherwise the user sits on a
+        // cached forecast forever, can't tell their trial is over, and
+        // has no obvious path to /subscribe. That's the "locked out of
+        // the app" symptom from real users.
+        if (err instanceof ApiError && err.status === 403) {
+          router.replace("/subscribe");
+          return;
+        }
+        // 401 = auth itself is bad. Same reasoning: kick them to /login
+        // even if they were rendering from cache.
+        if (err instanceof ApiError && err.status === 401) {
+          router.replace("/login");
+          return;
+        }
         if (!isBackground) {
-          if (err instanceof ApiError && err.status === 403) {
-            router.replace("/subscribe");
-            return;
-          }
-          if (err instanceof ApiError && err.status === 401) {
-            router.replace("/login");
-            return;
-          }
           setForecast(MOCK_FORECAST);
           setError("Reading from memory. Reconnect when ready to see the live sky.");
           setLoading(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { getSubscriptionStatus } from "@/lib/subscription";
 import LoadingSpinner from "./LoadingSpinner";
@@ -18,6 +18,11 @@ import TrialBanner from "./TrialBanner";
  *      clear path back. The /subscribe page already carries the right
  *      copy for every post-trial state.
  *
+ * Subscribe-pages bypass the access gate. Both /subscribe and
+ * /subscribe/welcome are reachable for users without active access —
+ * if we redirected those, an expired user trying to rejoin would hit
+ * an infinite loop (gate → /subscribe → gate → /subscribe ...).
+ *
  * Backend endpoints (forecast, chat, blueprint reads) all enforce
  * `require_premium` independently — this gate is the UX layer on top of
  * that, so an expired user gets cleanly redirected instead of seeing a
@@ -30,7 +35,15 @@ import TrialBanner from "./TrialBanner";
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname() || "";
   const [accessChecked, setAccessChecked] = useState(false);
+
+  // Pages where we explicitly do NOT enforce active-subscription
+  // (otherwise an expired user could never reach the page that lets
+  // them re-subscribe). Includes the welcome page so a brand-new
+  // subscriber's status-cache lag doesn't ricochet them off it either.
+  const isSubscribeRoute =
+    pathname === "/subscribe" || pathname.startsWith("/subscribe/");
 
   useEffect(() => {
     if (!loading && !token) {
@@ -40,6 +53,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!token) return;
+    if (isSubscribeRoute) {
+      // Bypass the access check entirely on subscribe routes — the
+      // page renders for every status state and contains its own CTAs.
+      setAccessChecked(true);
+      return;
+    }
     let cancelled = false;
     getSubscriptionStatus(token)
       .then((sub) => {
@@ -59,7 +78,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return () => {
       cancelled = true;
     };
-  }, [token, router]);
+  }, [token, router, isSubscribeRoute]);
 
   if (loading || (token && !accessChecked)) {
     return (
