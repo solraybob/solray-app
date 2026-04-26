@@ -536,24 +536,29 @@ export default function TodayPage() {
   useEffect(() => {
     if (!token) return;
 
+    // Cancellation flag for the in-flight fetches. If the user navigates
+    // away from /today before a fetch completes, we DO NOT want a late
+    // 403 to call router.replace and yank them off whichever page they
+    // navigated to. Set on cleanup; checked before any setState/router
+    // call inside fetchAndUpdate.
+    let cancelled = false;
+
     const _d = new Date();
     const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
     const cacheKey = `solray_forecast_${dateKey}`;
 
     async function fetchAndUpdate(isBackground: boolean) {
       try {
-        // Fix 2: Run /forecast/today and /users/me in parallel
+        // Run /forecast/today and /users/me in parallel
         const [forecastData] = await Promise.all([
           apiFetch("/forecast/today", {}, token),
-          // prefetch user data in parallel (used by other screens)
           apiFetch("/users/me", {}, token).then((userData) => {
+            if (cancelled) return;
             if (userData.blueprint) {
-              // Cache blueprint for chart screen
               try {
                 const bpCacheKey = "solray_blueprint";
                 const existing = localStorage.getItem(bpCacheKey);
                 const existingParsed = existing ? JSON.parse(existing) : null;
-                // Only update if newer or missing
                 if (!existingParsed || !existingParsed._cachedAt) {
                   localStorage.setItem(
                     bpCacheKey,
@@ -569,6 +574,8 @@ export default function TodayPage() {
           }),
         ]);
 
+        if (cancelled) return;
+
         const parsed = parseForecastData(forecastData);
 
         // Cache for next load
@@ -578,25 +585,27 @@ export default function TodayPage() {
           // ignore storage errors
         }
 
+        if (cancelled) return;
         if (!isBackground) {
           setForecast(parsed);
           setLoading(false);
         } else {
-          // Background refresh — update silently if different
           setForecast(parsed);
         }
       } catch (err) {
-        // 403 = trial expired or subscription lapsed. ALWAYS redirect,
-        // even from a background fetch — otherwise the user sits on a
-        // cached forecast forever, can't tell their trial is over, and
-        // has no obvious path to /subscribe. That's the "locked out of
-        // the app" symptom from real users.
+        // If we've already left /today, do nothing — let whichever
+        // page the user is now on handle its own auth/access state.
+        if (cancelled) return;
+
+        // 403 = trial expired or subscription lapsed. Redirect from
+        // both foreground AND background fetches; otherwise an expired
+        // user reading from cache is stranded with no UI cue.
         if (err instanceof ApiError && err.status === 403) {
           router.replace("/subscribe");
           return;
         }
-        // 401 = auth itself is bad. Same reasoning: kick them to /login
-        // even if they were rendering from cache.
+        // 401 = auth itself is bad. Kick them to /login even if they
+        // were rendering from cache.
         if (err instanceof ApiError && err.status === 401) {
           router.replace("/login");
           return;
@@ -609,7 +618,7 @@ export default function TodayPage() {
       }
     }
 
-    // Fix 3: Try localStorage cache first
+    // Try localStorage cache first
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -621,7 +630,7 @@ export default function TodayPage() {
           backgroundFetchDone.current = true;
           fetchAndUpdate(true);
         }
-        return;
+        return () => { cancelled = true; };
       }
     } catch (_) {
       // ignore parse errors
@@ -629,6 +638,7 @@ export default function TodayPage() {
 
     // No cache — fetch and show skeleton while loading
     fetchAndUpdate(false);
+    return () => { cancelled = true; };
   }, [token]);
 
   // Staggered section reveal
