@@ -308,6 +308,25 @@ function SubscribeContent() {
           )}
         </div>
 
+        {/* Always-on escape hatch back into the app. The subscribe page is
+            also the post-payment landing for some redirect paths, and a
+            paying user must NEVER be able to land here without a clear
+            way to get back to /today. Shown for every subscription state
+            so it's impossible to design ourselves into another stranded
+            paying-customer situation. */}
+        <div className="mt-8">
+          <button
+            onClick={() => router.push("/today")}
+            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            style={{
+              color: "var(--bg-deep, #050f08)",
+              background: "var(--amber, #f39230)",
+            }}
+          >
+            Continue to app
+          </button>
+        </div>
+
         {error && (
           <p
             className="text-sm mt-6 text-center"
