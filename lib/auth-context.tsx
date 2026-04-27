@@ -25,11 +25,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("solray_token");
-    const storedUser = localStorage.getItem("solray_user");
-    if (storedToken && storedUser) {
-      setTokenState(storedToken);
-      setUser(JSON.parse(storedUser));
+    // Defensive parse: if the stored user blob is corrupted (partial
+    // write during a PWA update, manual edit in DevTools, browser
+    // quirk) JSON.parse throws. An unhandled throw here breaks
+    // hydration of the entire AuthProvider, which means the whole
+    // React tree fails to render and the user sees a blank screen
+    // until they manually clear storage. Catch it, log them out
+    // cleanly, and keep loading so they land on /login.
+    try {
+      const storedToken = localStorage.getItem("solray_token");
+      const storedUser = localStorage.getItem("solray_user");
+      if (storedToken && storedUser) {
+        setTokenState(storedToken);
+        setUser(JSON.parse(storedUser));
+      }
+    } catch {
+      try {
+        localStorage.removeItem("solray_token");
+        localStorage.removeItem("solray_user");
+      } catch {/* ignore — storage may be unavailable entirely */}
+      setTokenState(null);
+      setUser(null);
     }
     setLoading(false);
   }, []);

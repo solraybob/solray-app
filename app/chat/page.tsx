@@ -132,6 +132,15 @@ function ChatPageInner() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<Message[]>([]);
   const tokenRef = useRef<string | null>(null);
+  // Set false in a cleanup effect; checked before any router.replace inside
+  // an awaited /chat response. Without this, a 403 that arrives after the
+  // user has already navigated away (e.g. swiped to /today, tapped BottomNav)
+  // yanks them off the new page back to /subscribe.
+  const isMountedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   // Voice recording (MediaRecorder + backend Whisper)
   // We record audio to a blob client-side and POST it to /chat/transcribe.
@@ -687,6 +696,12 @@ function ChatPageInner() {
       setStreamedLength(0);
       setStreamingId(reply.id);
     } catch (err) {
+      // If the user has already navigated away from /chat by the time the
+      // response lands, do nothing. Whichever page they're on now will
+      // handle its own auth/access state. Specifically, never call
+      // router.replace from a stale chat handler — it yanks the user off
+      // the new page they're trying to use.
+      if (!isMountedRef.current) return;
       if (err instanceof ApiError && err.status === 403) {
         router.replace("/subscribe");
         return;
@@ -712,7 +727,7 @@ function ChatPageInner() {
       setStreamedLength(0);
       setStreamingId(reply.id);
     } finally {
-      setSending(false);
+      if (isMountedRef.current) setSending(false);
     }
   };
 
