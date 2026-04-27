@@ -46,6 +46,12 @@ interface ConnectedSoul {
 }
 
 // Person saved locally without an account — birth data + cached profile
+// + the FULL blueprint we computed from their birth data when they were
+// added. We keep the full blueprint so the Oracle has every system to
+// read against (astro, numerology, astrocartography, human design,
+// gene keys), not just the summary fields. Without it, the AI ends up
+// asking the user for moon sign, defined centres, etc., because the
+// summary is only sun + HD type.
 interface SavedPerson {
   id: string;                // local uuid
   name: string;
@@ -58,6 +64,8 @@ interface SavedPerson {
     hd_type: string | null;
     hd_profile: string | null;
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  blueprint?: any;           // full blueprint dict (optional for back-compat with older saved entries)
   created_at: number;
 }
 
@@ -492,11 +500,20 @@ export default function SoulsPage() {
         ].filter(Boolean).join(", ");
         lines.push(`${name}: ${summary || "chart not yet computed"}`);
 
-        if (p.kind === "connection" && !primaryBlueprint) {
-          try {
-            const data = await apiFetch(`/souls/${p.connection.connection_id}/blueprint`, {}, token);
-            primaryBlueprint = data?.blueprint || null;
-          } catch { /* non-fatal */ }
+        // Same priority order as single-partner: connection > cached
+        // saved blueprint > fall through. We only need ONE primary
+        // blueprint for the chat (it's the focal lens for the whole
+        // family reading); the rest of the family's charts stay in
+        // the summary-line text.
+        if (!primaryBlueprint) {
+          if (p.kind === "connection") {
+            try {
+              const data = await apiFetch(`/souls/${p.connection.connection_id}/blueprint`, {}, token);
+              primaryBlueprint = data?.blueprint || null;
+            } catch { /* non-fatal */ }
+          } else if (p.person.blueprint) {
+            primaryBlueprint = p.person.blueprint;
+          }
         }
       }
 
@@ -532,6 +549,15 @@ export default function SoulsPage() {
       chart.hd_type  && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
     ].filter(Boolean).join(", ");
 
+    // Pull the full blueprint to hand to the Oracle. Three sources, in
+    // priority order:
+    //   1. Connection: live fetch from /souls/{id}/blueprint (always
+    //      authoritative).
+    //   2. Saved person with cached blueprint: use it directly.
+    //   3. Saved person without cached blueprint (added before this
+    //      fix): recompute from their stored birth data.
+    // Without this, the AI gets only a 3-field summary and asks the
+    // user for moon sign and defined centres mid-reading.
     let soulBlueprint: unknown = null;
     if (bondPartner.kind === "connection") {
       try {
@@ -539,6 +565,43 @@ export default function SoulsPage() {
         soulBlueprint = data?.blueprint || null;
       } catch {
         setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+      }
+    } else {
+      const saved = bondPartner.person;
+      if (saved.blueprint) {
+        soulBlueprint = saved.blueprint;
+      } else {
+        // Back-compat: people saved before we cached the full blueprint.
+        // Recompute on the fly. Slow (~2-3s) but only happens once per
+        // legacy person — we re-store the blueprint after.
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: saved.name,
+              sex: saved.sex,
+              birth_date: saved.birth_date,
+              birth_time: saved.birth_time,
+              birth_city: saved.birth_city,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            soulBlueprint = data?.blueprint || null;
+            // Persist for next time so this user doesn't pay the cost again.
+            if (soulBlueprint) {
+              const next = savedPeople.map((p) =>
+                p.id === saved.id ? { ...p, blueprint: soulBlueprint } : p
+              );
+              setSavedPeople(next);
+              writeSavedPeople(next);
+            }
+          }
+        } catch {
+          setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+        }
       }
     }
 
@@ -1251,6 +1314,11 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           hd_type: data?.profile?.hd_type ?? null,
           hd_profile: data?.profile?.hd_profile ?? null,
         },
+        // Persist the FULL blueprint the backend just computed. Without
+        // this, the Oracle reads this person from a 3-field summary and
+        // ends up asking the user for moon sign, defined centres, etc.
+        // We already had the data — we were just throwing it away.
+        blueprint: data?.blueprint ?? undefined,
         created_at: Date.now(),
       };
       onAdded(person);
