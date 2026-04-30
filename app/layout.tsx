@@ -8,6 +8,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import Footer from "@/components/Footer";
 import SwipeNavigator from "@/components/SwipeNavigator";
 import BottomNav from "@/components/BottomNav";
+import NativePushBootstrap from "@/components/NativePushBootstrap";
 
 // Runs synchronously before React hydrates to set the correct theme on
 // <html>, eliminating a flash of the wrong palette for users who chose
@@ -54,6 +55,7 @@ export default function RootLayout({
         <PullToRefresh />
         <ThemeProvider>
           <AuthProvider>
+            <NativePushBootstrap />
             <SwipeNavigator>
               {children}
             </SwipeNavigator>
