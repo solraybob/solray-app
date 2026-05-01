@@ -896,7 +896,35 @@ function ChatPageInner() {
     }
   }, [token]);
 
-  const stopRecording = useCallback(() => {
+  // True while a native (Capacitor) voice recording is active. Distinct
+  // from the MediaRecorder web flow because the stop/transcribe path
+  // looks completely different. We track which mode is active so the
+  // stop button knows where to dispatch.
+  const nativeRecordingRef = useRef<boolean>(false);
+
+  const stopRecording = useCallback(async () => {
+    // Native path: ask the Capacitor plugin to stop, get the blob back,
+    // hand it to the same transcribeBlob() the web flow uses.
+    if (nativeRecordingRef.current) {
+      nativeRecordingRef.current = false;
+      try {
+        const { stopNativeRecording } = await import("@/lib/native-voice");
+        const result = await stopNativeRecording();
+        setIsRecording(false);
+        if (result) {
+          await transcribeBlob(result.blob, result.mimeType);
+        } else {
+          setVoiceError("Recording didn't capture any audio. Try again.");
+        }
+      } catch (err) {
+        setIsRecording(false);
+        console.warn("[chat] native stop failed", err);
+        setVoiceError("Couldn't stop the recording. Try again.");
+      }
+      return;
+    }
+    // Web path: stop the MediaRecorder; its onstop handler runs the
+    // transcription flow.
     try {
       const rec = mediaRecorderRef.current;
       if (rec && rec.state !== "inactive") {
@@ -905,7 +933,7 @@ function ChatPageInner() {
     } catch {
       // ignore
     }
-  }, []);
+  }, [transcribeBlob]);
 
   const toggleRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -916,6 +944,30 @@ function ChatPageInner() {
     }
 
     setVoiceError(null);
+
+    // Native (Capacitor) shell: use the proper iOS/Android microphone
+    // API via the capacitor-voice-recorder plugin. This is the path
+    // that finally lets paying iOS users use voice from inside the
+    // installed app, with no WebKit cage and no Safari workaround.
+    try {
+      const { isRunningInCapacitor } = await import("@/lib/native-push");
+      if (isRunningInCapacitor()) {
+        const { startNativeRecording } = await import("@/lib/native-voice");
+        const ok = await startNativeRecording();
+        if (ok) {
+          nativeRecordingRef.current = true;
+          setIsRecording(true);
+        } else {
+          setVoiceError(
+            "Microphone permission was denied. Open Settings → Solray → Microphone to enable it, then try again."
+          );
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn("[chat] native voice path failed, falling back to web", err);
+      // Fall through to the web MediaRecorder path below.
+    }
 
     // Detect the runtime context first so we can give an accurate error
     // when getUserMedia fails. Three contexts behave very differently:
