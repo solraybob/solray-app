@@ -917,6 +917,45 @@ function ChatPageInner() {
 
     setVoiceError(null);
 
+    // Detect the runtime context first so we can give an accurate error
+    // when getUserMedia fails. Three contexts behave very differently:
+    //
+    //   1. Regular browser (Safari, Chrome, Firefox tab): getUserMedia
+    //      shows the system permission prompt the first time, and
+    //      respects the user's grant on subsequent calls.
+    //
+    //   2. Installed PWA on iOS Safari (Add to Home Screen): a
+    //      long-standing WKWebView limitation means getUserMedia often
+    //      throws NotAllowedError even when iOS Settings shows the
+    //      microphone enabled for solray.ai. There is no JS-side
+    //      workaround. Users must either (a) use the regular Safari
+    //      tab, or (b) wait for our native Capacitor build, which uses
+    //      a proper native mic API.
+    //
+    //   3. Installed PWA on Android Chrome: works as expected, no
+    //      special handling needed.
+    const isStandalonePWA = (() => {
+      if (typeof window === "undefined") return false;
+      const nav = window.navigator as unknown as { standalone?: boolean };
+      const matchesStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches;
+      return Boolean(nav.standalone) || Boolean(matchesStandalone);
+    })();
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || "")
+      || (navigator.platform === "MacIntel" && (navigator as unknown as { maxTouchPoints?: number }).maxTouchPoints! > 1);
+
+    // Ask the Permissions API what the OS-level grant actually says.
+    // Useful for distinguishing "user denied" from "user granted but
+    // the platform still won't honor it" (the iOS PWA case).
+    let permissionState: PermissionState | "unknown" = "unknown";
+    try {
+      // Some browsers don't support 'microphone' in permissions.query();
+      // wrap defensively.
+      const res = await (navigator.permissions as unknown as {
+        query: (d: { name: PermissionName }) => Promise<PermissionStatus>;
+      })?.query?.({ name: "microphone" as PermissionName });
+      if (res?.state) permissionState = res.state;
+    } catch { /* ignore — fall through to getUserMedia */ }
+
     // Ask for the mic. iOS shows a permission sheet on the first request;
     // subsequent recordings reuse the granted permission for the session.
     let stream: MediaStream;
@@ -926,7 +965,23 @@ function ChatPageInner() {
       const e = err as { name?: string; message?: string };
       const name = e?.name || "";
       if (name === "NotAllowedError" || name === "SecurityError") {
-        setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
+        // Two very different stories depending on what permissions said.
+        if (permissionState === "granted" && isIOS && isStandalonePWA) {
+          // The iOS PWA bug: OS says granted, WebKit refuses anyway.
+          setVoiceError(
+            "iOS doesn't allow voice in installed apps yet. Open solray.ai in Safari directly to use voice, or type your question."
+          );
+        } else if (permissionState === "denied") {
+          setVoiceError("Microphone is denied in browser settings. Tap the icon next to the URL to allow it.");
+        } else if (isIOS && isStandalonePWA) {
+          // Permissions API didn't say "granted" but we know the iOS
+          // PWA path is brittle. Same message — same user action.
+          setVoiceError(
+            "iOS doesn't allow voice in installed apps yet. Open solray.ai in Safari directly to use voice, or type your question."
+          );
+        } else {
+          setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
+        }
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         setVoiceError("No microphone found.");
       } else {
