@@ -965,19 +965,25 @@ function ChatPageInner() {
       const e = err as { name?: string; message?: string };
       const name = e?.name || "";
       if (name === "NotAllowedError" || name === "SecurityError") {
-        // Two very different stories depending on what permissions said.
-        if (permissionState === "granted" && isIOS && isStandalonePWA) {
-          // The iOS PWA bug: OS says granted, WebKit refuses anyway.
+        if ((permissionState === "granted" || permissionState === "unknown") && isIOS && isStandalonePWA) {
+          // The iOS PWA bug: WebKit refuses mic even when Settings says
+          // granted. There's no JS workaround, but we can punch the
+          // user out to Safari where the mic does work, on the same
+          // URL they were on. The "x-safari-https://" URL scheme on
+          // iOS forces a real Safari tab from inside any app or PWA;
+          // if that fails (older iOS, non-Safari default), we fall
+          // back to a regular https:// open which most setups still
+          // route into the system browser. The {action} sentinel tells
+          // the chat UI to render a "Use voice in Safari" button next
+          // to the error rather than just showing the message.
           setVoiceError(
-            "iOS doesn't allow voice in installed apps yet. Open solray.ai in Safari directly to use voice, or type your question."
+            "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
           );
         } else if (permissionState === "denied") {
           setVoiceError("Microphone is denied in browser settings. Tap the icon next to the URL to allow it.");
         } else if (isIOS && isStandalonePWA) {
-          // Permissions API didn't say "granted" but we know the iOS
-          // PWA path is brittle. Same message — same user action.
           setVoiceError(
-            "iOS doesn't allow voice in installed apps yet. Open solray.ai in Safari directly to use voice, or type your question."
+            "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
           );
         } else {
           setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
@@ -1264,9 +1270,54 @@ function ChatPageInner() {
                 Transcribing…
               </div>
             )}
-            {voiceError && !isRecording && !transcribing && (
-              <div className="mb-2 font-body text-[11px] text-text-secondary">{voiceError}</div>
-            )}
+            {voiceError && !isRecording && !transcribing && (() => {
+              // The voice error string can carry an inline {action}…{/action}
+              // marker. When the marker is present we render a tappable
+              // "Use voice in Safari" link that opens the current chat
+              // URL outside the PWA shell. The x-safari-https:// scheme
+              // forces a real Safari tab from inside the standalone PWA;
+              // browsers that don't recognise it fall through to the
+              // regular https:// navigation, which most setups still
+              // route into the system browser.
+              const m = voiceError.match(/^(.*?)\{action\}(.+?)\{\/action\}(.*)$/);
+              if (!m) {
+                return (
+                  <div className="mb-2 font-body text-[11px] text-text-secondary">{voiceError}</div>
+                );
+              }
+              const [, before, label, after] = m;
+              const openInSafari = () => {
+                if (typeof window === "undefined") return;
+                const target = window.location.href;
+                // x-safari-https:// is the iOS-only deep link that
+                // launches the URL in Safari from inside any app or
+                // PWA. On Android / desktop this scheme is unknown
+                // and the assignment silently fails; we fall back to
+                // window.open to open in a new tab.
+                try {
+                  window.location.href = "x-safari-" + target;
+                } catch { /* ignore — fall through */ }
+                setTimeout(() => {
+                  // If the deep link didn't move us off the page within
+                  // 300ms, the OS didn't recognise the scheme. Open in
+                  // a new tab instead.
+                  if (document.hidden) return;
+                  window.open(target, "_blank", "noopener");
+                }, 300);
+              };
+              return (
+                <div className="mb-2 font-body text-[11px] text-text-secondary">
+                  {before}
+                  <button
+                    onClick={openInSafari}
+                    className="underline underline-offset-4 text-amber-sun hover:opacity-80 transition-opacity"
+                  >
+                    {label}
+                  </button>
+                  {after}
+                </div>
+              );
+            })()}
             <div className="flex gap-3 items-end">
               <textarea
                 ref={inputRef}
