@@ -943,44 +943,82 @@ function ChatPageInner() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || "")
       || (navigator.platform === "MacIntel" && (navigator as unknown as { maxTouchPoints?: number }).maxTouchPoints! > 1);
 
+    // Detect Chrome so we can give Chrome-specific guidance for its
+    // three-layer permission model (OS → browser → site).
+    const ua = navigator.userAgent || "";
+    const isChrome = /Chrome\/\d/.test(ua) && !/Edg\/|OPR\//.test(ua);
+
     // Ask the Permissions API what the OS-level grant actually says.
     // Useful for distinguishing "user denied" from "user granted but
-    // the platform still won't honor it" (the iOS PWA case).
+    // the platform still won't honor it" (the iOS PWA case, or a
+    // Chrome OS-permission block on macOS/Windows).
     let permissionState: PermissionState | "unknown" = "unknown";
     try {
-      // Some browsers don't support 'microphone' in permissions.query();
-      // wrap defensively.
       const res = await (navigator.permissions as unknown as {
         query: (d: { name: PermissionName }) => Promise<PermissionStatus>;
       })?.query?.({ name: "microphone" as PermissionName });
       if (res?.state) permissionState = res.state;
     } catch { /* ignore — fall through to getUserMedia */ }
 
-    // Ask for the mic. iOS shows a permission sheet on the first request;
-    // subsequent recordings reuse the granted permission for the session.
+    // Diagnostic dump: anytime mic prep happens, log a single object
+    // with everything we know. Open DevTools → Console and tap mic to
+    // capture this. Helps differentiate "site permission blocked",
+    // "OS permission blocked", "iOS PWA cage", and "hardware muted".
+    if (process.env.NODE_ENV !== "production" || true) {
+      // eslint-disable-next-line no-console
+      console.log("[solray-mic] preflight", {
+        userAgent: ua,
+        isChrome,
+        isIOS,
+        isStandalonePWA,
+        permissionState,
+        host: window.location.host,
+        protocol: window.location.protocol,
+      });
+    }
+
+    // Ask for the mic.
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err: unknown) {
       const e = err as { name?: string; message?: string };
       const name = e?.name || "";
+      // eslint-disable-next-line no-console
+      console.error("[solray-mic] getUserMedia failed", {
+        name, message: e?.message,
+        permissionState, isChrome, isIOS, isStandalonePWA,
+      });
       if (name === "NotAllowedError" || name === "SecurityError") {
         if ((permissionState === "granted" || permissionState === "unknown") && isIOS && isStandalonePWA) {
-          // The iOS PWA bug: WebKit refuses mic even when Settings says
-          // granted. There's no JS workaround, but we can punch the
-          // user out to Safari where the mic does work, on the same
-          // URL they were on. The "x-safari-https://" URL scheme on
-          // iOS forces a real Safari tab from inside any app or PWA;
-          // if that fails (older iOS, non-Safari default), we fall
-          // back to a regular https:// open which most setups still
-          // route into the system browser. The {action} sentinel tells
-          // the chat UI to render a "Use voice in Safari" button next
-          // to the error rather than just showing the message.
+          // iOS PWA WebKit cage. Offer the Safari fallback link.
           setVoiceError(
             "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
           );
+        } else if (isChrome && permissionState === "granted") {
+          // Chrome thinks the site has permission, but the browser
+          // got NotAllowedError anyway. That means the OS layer is
+          // blocking — macOS Privacy & Security or Windows mic
+          // privacy. The user has to flip a system toggle, no
+          // browser-side fix.
+          setVoiceError(
+            "Chrome has the site permission but your operating system is blocking the microphone for Chrome. macOS: System Settings → Privacy & Security → Microphone → enable Google Chrome. Windows: Settings → Privacy → Microphone → allow Chrome. Then refresh this page."
+          );
+        } else if (isChrome && permissionState === "denied") {
+          // Chrome's per-site permission says blocked. The fix is
+          // the lock icon — toggling Chrome's general mic setting
+          // does not override a per-site block.
+          setVoiceError(
+            "Chrome blocked the microphone for this site. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
+          );
+        } else if (isChrome) {
+          // Chrome with unknown permission state — most likely a
+          // first-time block-popup answer. Same fix as denied.
+          setVoiceError(
+            "Microphone access was denied. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
+          );
         } else if (permissionState === "denied") {
-          setVoiceError("Microphone is denied in browser settings. Tap the icon next to the URL to allow it.");
+          setVoiceError("Microphone is denied in browser settings. Click the icon next to the URL to allow it.");
         } else if (isIOS && isStandalonePWA) {
           setVoiceError(
             "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
