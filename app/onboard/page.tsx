@@ -213,7 +213,14 @@ export default function OnboardPage() {
         throw new Error(err.detail || "Registration failed");
       }
       const data = await res.json();
-      setToken(data.token || data.access_token, data.profile || data.user || { id: data.user_id, email, name });
+      const newToken = data.token || data.access_token;
+      setToken(newToken, data.profile || data.user || { id: data.user_id, email, name });
+      // Funnel event: marks the moment a real signup completed. Powers
+      // the registration-drop-off canary alert.
+      try {
+        const { track } = await import("@/lib/analytics");
+        await track("register_success", undefined, newToken);
+      } catch { /* ignore — analytics is best-effort */ }
       // Show magical blueprint loading screen for at least 3.5 seconds
       setCalculatingBlueprint(true);
       await new Promise((resolve) => setTimeout(resolve, 3500));

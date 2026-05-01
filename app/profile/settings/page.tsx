@@ -24,6 +24,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { apiFetch } from "@/lib/api";
+import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 
 interface CitySuggestion { display: string; lat: number; lon: number; }
 
@@ -33,6 +34,11 @@ export default function SettingsPage() {
   const router = useRouter();
   const { token, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  // Analytics opt-out, mirrored on the server too. We initialise from
+  // the local flag so the toggle paints correctly on first render even
+  // if the server fetch hasn't returned yet.
+  const [analyticsOff, setAnalyticsOff] = useState<boolean>(false);
+  useEffect(() => { setAnalyticsOff(isAnalyticsOptedOut()); }, []);
 
   // ── Profile state ───────────────────────────────────────────────────────────
   const [name, setName]         = useState("");
@@ -474,6 +480,38 @@ export default function SettingsPage() {
                 <ThemeButton active={theme === "dark"}  onClick={() => setTheme("dark")}  label="Dark"  />
                 <ThemeButton active={theme === "light"} onClick={() => setTheme("light")} label="Light" />
               </div>
+            </Section>
+
+            {/* ── 4b. Analytics privacy ────────────────────────────────── */}
+            <Section
+              label="Anonymous analytics"
+              hint={analyticsOff
+                ? "Off. We won't record any usage events from this device."
+                : "On. Solray records anonymous usage events (which pages, which features) so we can fix what's broken and improve what's working. We never record chat content, birth data, or anything that identifies you beyond your account."}
+            >
+              <Toggle
+                label={analyticsOff ? "Off" : "On"}
+                checked={!analyticsOff}
+                onChange={async (next) => {
+                  // next=true means analytics is ON, opt-out is FALSE
+                  const optOut = !next;
+                  setAnalyticsOff(optOut);
+                  setAnalyticsOptedOut(optOut);
+                  // Mirror to the server so the flag persists across devices
+                  if (token) {
+                    try {
+                      await apiFetch("/users/analytics-opt-out", {
+                        method: "PATCH",
+                        body: JSON.stringify({ opt_out: optOut }),
+                      }, token);
+                    } catch {
+                      // Local flag is the immediate authority; server sync
+                      // is best-effort. If it fails, the user's choice on
+                      // this device still holds.
+                    }
+                  }
+                }}
+              />
             </Section>
 
             {/* ── 5. Birth details ─────────────────────────────────────── */}

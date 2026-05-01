@@ -40,6 +40,15 @@ function SubscribeContent() {
       .then(setSub)
       .catch(() => setSub(null))
       .finally(() => setLoading(false));
+    // Funnel event: every /subscribe view. The canary uses this to
+    // detect users stuck on /subscribe without tapping anything (which
+    // suggests the page is misbehaving).
+    void (async () => {
+      try {
+        const { track } = await import("@/lib/analytics");
+        await track("subscribe_view", undefined, token);
+      } catch { /* ignore */ }
+    })();
   }, [token]);
 
   // Handle SecurePay callback (token comes back as URL param)
@@ -105,6 +114,13 @@ function SubscribeContent() {
     if (!token) return;
     setActionLoading(true);
     setError("");
+    // Funnel event: user has explicitly tapped a payment-launch button.
+    // This is the "intent to pay" line that the canary divides into to
+    // produce the conversion-rate metric.
+    try {
+      const { track } = await import("@/lib/analytics");
+      await track("subscribe_card_tap", { sub_status: sub?.status ?? null }, token);
+    } catch { /* ignore */ }
     try {
       const session = await createSecurePaySession(token);
       if (session.session_url) {

@@ -509,6 +509,20 @@ export default function TodayPage() {
   const router = useRouter();
   const backgroundFetchDone = useRef(false);
 
+  // Funnel event: fires the first time a user reaches /today after signup.
+  // Powers the "registration → first today view" conversion measurement.
+  // trackOnce uses localStorage so this is per-device-per-user, fired
+  // exactly once forever.
+  useEffect(() => {
+    if (!token) return;
+    void (async () => {
+      try {
+        const { trackOnce } = await import("@/lib/analytics");
+        await trackOnce("today_first_view", undefined, token);
+      } catch { /* ignore */ }
+    })();
+  }, [token]);
+
   // Tap an energy bar → seed a first-person question into chat and navigate.
   // Uses the same sessionStorage pattern as AskButton on the profile page.
   const handleEnergyAsk = (label: string, pct: number) => {
