@@ -116,6 +116,16 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
 function ChatPageInner() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
+  // Soul-compatibility chat state. When the user opens chat from a Souls
+  // reading, we receive their full blueprint via sessionStorage. We
+  // hold it in component state so EVERY follow-up message carries the
+  // soul context to the backend, not just the first one. Without this,
+  // the Oracle had full chart data on message 1 and only conversation
+  // history on message 2+, which is why follow-ups read as "I need
+  // their moon sign and centres".
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [soulBlueprint, setSoulBlueprint] = useState<any>(null);
+  const [soulName, setSoulName] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -421,6 +431,13 @@ function ChatPageInner() {
             };
             sessionStorage.removeItem("solray_compat_context");
 
+            // Hoist the soul context into component state so every
+            // follow-up message in this session re-passes the blueprint
+            // to the backend. Without this, only the first message had
+            // soul context and the Oracle "forgot" their chart on msg 2+.
+            setSoulBlueprint(ctx.soulBlueprint ?? null);
+            setSoulName(ctx.soulName ?? null);
+
             const sid = generateSessionId();
             setSessionId(sid);
 
@@ -528,14 +545,36 @@ function ChatPageInner() {
   // ── Auto-scroll (only if user hasn't scrolled up) ────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  // True for the brief moment we're programmatically scrolling to the
+  // bottom on new content. The scroll-event listener checks this flag
+  // and ignores its own scroll, so a programmatic auto-scroll cannot
+  // re-enable autoScroll behind the user's back.
+  //
+  // Without this guard, the previous behavior was: user scrolls up to
+  // read, content streams in, auto-scroll sets scrollTop = scrollHeight,
+  // that fires the scroll event with dist=0, the listener reads "near
+  // bottom" and sets autoScroll=true, the next streamed token triggers
+  // another auto-scroll, the user is dragged back down on every keystroke
+  // of the model's reply. This was the "it takes me down to follow" bug.
+  const isProgrammaticScroll = useRef(false);
 
   // Native imperative scroll listener — works reliably on iOS Safari
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const onScroll = () => {
+      // Ignore scroll events that came from our own auto-scroll.
+      // Otherwise the user's read-up gets undone every render frame.
+      if (isProgrammaticScroll.current) return;
       const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      setAutoScroll(dist < 80);
+      // Hysteresis: enable auto-follow only when truly at the bottom
+      // (within 30px), disable as soon as the user has moved more than
+      // ~200px up. The gap prevents jitter from flipping the state.
+      if (dist < 30) {
+        setAutoScroll(true);
+      } else if (dist > 200) {
+        setAutoScroll(false);
+      }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
@@ -543,13 +582,20 @@ function ChatPageInner() {
 
   // Auto-scroll when new content arrives, only when near the bottom
   useEffect(() => {
-    if (autoScroll) {
-      const el = scrollContainerRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-    }
+    if (!autoScroll) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    isProgrammaticScroll.current = true;
+    el.scrollTop = el.scrollHeight;
+    // Release the flag after the scroll event has had a chance to fire
+    // and be ignored. requestAnimationFrame is enough on modern browsers;
+    // a setTimeout 50 is the iOS-Safari-paranoid version.
+    const t = setTimeout(() => { isProgrammaticScroll.current = false; }, 50);
+    return () => clearTimeout(t);
   }, [messages, streamedLength, autoScroll]);
 
-  // When user sends message, re-enable auto-scroll
+  // When user sends message, re-enable auto-scroll (they want to follow
+  // their own message landing).
   const resetScroll = useCallback(() => {
     setAutoScroll(true);
   }, []);
@@ -561,6 +607,11 @@ function ChatPageInner() {
     // the new one. Without this, clicking "+ New" loses everything that
     // wasn't already checkpointed in-session.
     triggerSessionSynthesis();
+    // A fresh chat is NOT a compat session unless the user re-enters via
+    // Souls. Clear any cached soul context so we don't leak Rut's chart
+    // into Bob's regular Higher Self chat.
+    setSoulBlueprint(null);
+    setSoulName(null);
     const sid = generateSessionId();
     setSessionId(sid);
     const greeting = await buildGreeting(token);
@@ -673,14 +724,22 @@ function ChatPageInner() {
       .map((m) => ({ role: m.role, content: m.content }));
 
     try {
+      // Build the request body. If we're in a soul-compatibility chat,
+      // re-pass the cached soul_blueprint on every message so the Oracle
+      // keeps full chart context across the whole session, not just msg 1.
+      const body: Record<string, unknown> = {
+        message: userMsg.content,
+        conversation_history: history,
+      };
+      if (soulBlueprint) {
+        body.soul_blueprint = soulBlueprint;
+      }
+
       const data = await apiFetch(
         "/chat",
         {
           method: "POST",
-          body: JSON.stringify({
-            message: userMsg.content,
-            conversation_history: history,
-          }),
+          body: JSON.stringify(body),
         },
         token
       );
