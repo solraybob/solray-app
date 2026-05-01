@@ -112,7 +112,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-text-secondary text-xs mt-8 font-body">
+        <p className="text-center text-text-secondary text-xs mt-5 font-body">
+          <Link href="/forgot-password" className="hover:text-text-primary transition-colors">
+            Forgot password?
+          </Link>
+        </p>
+
+        <p className="text-center text-text-secondary text-xs mt-6 font-body">
           New here?{" "}
           <Link href="/onboard" className="text-amber-sun hover:opacity-80 transition-opacity">
             Begin your journey
