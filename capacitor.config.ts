@@ -46,11 +46,14 @@ const config: CapacitorConfig = {
       'app.solray.ai',
       'solray.ai',
       'solray-backend-production.up.railway.app',
-      // Teya hosted SecurePay page — required for the in-app subscribe
-      // flow to redirect to card entry without bouncing the user out
-      // to a system browser.
-      'securepay.borgun.is',
-      'securepay.teya.com',
+      // Teya / SecurePay domains are deliberately NOT in this list. App
+      // Store Guideline 3.1.1 / 3.1.3 forbid digital subscriptions taken
+      // outside of IAP. The /subscribe page detects the native shell at
+      // runtime and hides every payment CTA, but this allow-list acts as
+      // a hard backstop: even if a Teya URL leaks into the WebView via
+      // a deep link, navigation is refused and the user can't be taken
+      // to a non-IAP card entry page. Subscriptions happen exclusively
+      // on solray.ai in a browser.
     ],
   },
   ios: {

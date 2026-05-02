@@ -214,8 +214,9 @@ If this is the first upload for `ai.solray.app`:
    - Privacy Policy URL: `https://solray.ai/legal#privacy`
    - Category: Lifestyle (primary), Health & Fitness (secondary)
    - Age rating: complete the questionnaire (mostly None)
-4. Pricing & Availability → Free (subscription handled in-app via
-   web flow, see Reader App entitlement below).
+4. Pricing & Availability → Free. The iOS app itself has no payment
+   surface (see section 12 for compliance details); subscriptions
+   happen on solray.ai in a browser.
 
 ---
 
@@ -237,24 +238,56 @@ direct Xcode build.
 
 ---
 
-## 12. Apple Reader App entitlement application (do this on day 1, parallel)
+## 12. iOS payment compliance (already wired in code; review before TestFlight)
 
-Required to avoid the 30% Apple cut on web-payment subscriptions.
+Solray does NOT qualify for the Apple Reader App entitlement. The
+Reader program is for apps whose primary functionality is reading
+magazines, newspapers, books, audio, music, or video. Solray is a
+generative subscription service (Higher Self chat, daily personalised
+readings, charts), which Apple does not classify as "reader" content.
 
-1. https://developer.apple.com/contact/request/reader-app-entitlement/
-2. Fill out the form. Solray qualifies as a Reader App because it
-   delivers digital content (daily readings, charts, AI Oracle
-   conversations) that the user pays for via web (Teya).
-3. Apple reviews in 2–4 weeks. Get this submitted NOW so it's ready
-   before the public App Store launch.
+For v1.0 we ship the Spotify / Netflix / Audible / Kindle pattern:
+the iOS app has no payment surface at all. New members subscribe on
+solray.ai in a browser, then sign in on iOS. Apple permits this for
+non-Reader subscription apps under 3.1.3(b) "Multiplatform Services"
+as long as no in-app payment CTA exists.
 
-If denied, fall back to either: (a) raise iOS price to $29.99/month
-to absorb the 30% cut, or (b) ship iOS as a free preview tier that
-funnels to web for subscription (riskier, sometimes rejected).
+Code in place to enforce this:
+
+- `app/subscribe/page.tsx`: when `isRunningInCapacitor()` is true and
+  the user has no subscription, renders `NativeMembershipView` (status
+  text, sign out, continue to app). Hides Add payment method, Subscribe
+  now, Rejoin Solray, Update payment method buttons across every state
+  inside Capacitor. Cancel button stays.
+- `components/TrialBanner.tsx`: suppressed entirely inside Capacitor so
+  the "Add card" CTA never appears anywhere in the app.
+- `capacitor.config.ts`: `securepay.borgun.is` and `securepay.teya.com`
+  removed from `allowNavigation`. Even a leaked deep link cannot reach
+  the Teya card entry page from inside the WebView.
+
+What this means for users:
+
+- Existing web subscribers: download the iOS app, sign in, full access. Zero friction.
+- New iOS-first users: install, register, automatic 5-day trial with no card. After day 5 they hit the NativeMembershipView and learn membership is managed on the web.
+- Cancel works inside the app on every platform.
+
+Verify in TestFlight before public submission:
+
+1. Sign in as an existing paid user. Confirm /today loads, chat works, /subscribe shows status (no payment buttons, Cancel visible).
+2. Register a new user inside the app. Confirm trial starts. Confirm /subscribe shows NativeMembershipView (no "Begin your journey", no $23 price, no card entry).
+3. Force-expire the trial via SQL on Railway. Confirm the app routes to /subscribe and renders NativeMembershipView with sign out and continue-to-app, no payment surface.
+4. Walk every protected page (today, chat, chart, souls, profile). No on-page CTA should say "Subscribe" or "Add card" anywhere.
+
+Future option (not v1.0): add Apple StoreKit IAP at $23/mo for new
+iOS-first subscribers. Costs 30% on those subscriptions ($16.10 net),
+web subscribers stay at full margin. Unlocks "subscribe in app" if
+later data shows iOS-first signups losing meaningful conversion to
+the web-detour. Worth doing only if iOS becomes a major acquisition
+channel.
 
 ---
 
-## 13. App Store submission (after Reader entitlement lands, ~30 min)
+## 13. App Store submission (~30 min)
 
 1. App Store Connect → Solray → App Store tab → + Version → 1.0.0.
 2. Fill out:

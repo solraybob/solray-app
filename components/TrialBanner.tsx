@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { isRunningInCapacitor } from "@/lib/native-push";
 import { getSubscriptionStatus, type SubscriptionStatus } from "@/lib/subscription";
 
 /**
@@ -22,6 +23,14 @@ export default function TrialBanner() {
 
   useEffect(() => {
     if (!token) return;
+    // App Store compliance: TrialBanner shows an "Add card" CTA that
+    // routes to /subscribe → Teya. That's a payment call to action and
+    // is forbidden inside the iOS / Android native shell under
+    // App Store Guideline 3.1.3. Suppress the banner entirely in native.
+    if (isRunningInCapacitor()) {
+      setDismissed(true);
+      return;
+    }
     if (sessionStorage.getItem("solray_trial_banner_dismissed") === "1") {
       setDismissed(true);
       return;

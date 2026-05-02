@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { isRunningInCapacitor } from "@/lib/native-push";
 import {
   getSubscriptionStatus,
   startTrial,
@@ -33,6 +34,19 @@ function SubscribeContent() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // App Store Guideline 3.1.1 / 3.1.3 compliance: when running inside the
+  // Capacitor native shell (iOS or Android), every payment-launching CTA
+  // must be hidden. Solray takes subscriptions exclusively through
+  // solray.ai on the web. The native app is sign-in-and-use only. New
+  // members subscribe on the web first, then sign in here. This is the
+  // same model Spotify, Netflix, Audible and Kindle use, and is the only
+  // model Apple approves for non-Reader subscription apps that don't
+  // implement StoreKit IAP.
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    setIsNative(isRunningInCapacitor());
+  }, []);
+
   // Fetch status on mount
   useEffect(() => {
     if (!token) return;
@@ -51,8 +65,11 @@ function SubscribeContent() {
     })();
   }, [token]);
 
-  // Handle SecurePay callback (token comes back as URL param)
+  // Handle SecurePay callback (token comes back as URL param). Skipped
+  // entirely on the native shell so the app never touches a Teya token,
+  // even if a stray URL is opened deep-linked into the WebView.
   useEffect(() => {
+    if (isNative) return;
     const params = new URLSearchParams(window.location.search);
 
     // Borgun param casing varies between test and live environments.
@@ -177,8 +194,15 @@ function SubscribeContent() {
     );
   }
 
-  // No subscription yet: show the offer
+  // No subscription yet.
+  // On the web, show the trial offer. On native (iOS/Android), App Store
+  // and Play Store rules prohibit any in-app payment CTA for digital
+  // subscriptions, so we render a sign-in-and-use view instead. New
+  // members must subscribe on the web at solray.ai, then sign in here.
   if (!sub || !sub.subscribed) {
+    if (isNative) {
+      return <NativeMembershipView />;
+    }
     return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} />;
   }
 
@@ -277,37 +301,59 @@ function SubscribeContent() {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions
+            All four payment-launching CTAs (Add payment method, Subscribe
+            now, Rejoin Solray, Update payment method) are HIDDEN inside
+            the Capacitor native shell to comply with App Store Guideline
+            3.1.1 / 3.1.3. On native, the only management action is Cancel
+            (which is purely a backend call, no payment) and the always-on
+            Continue to app button below. New cards and rejoin flows
+            happen on solray.ai in a browser. */}
         <div className="space-y-4">
           {/* Trial without card: add payment */}
-          {sub.status === "trial" && !sub.card_last_four && (
+          {!isNative && sub.status === "trial" && !sub.card_last_four && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Add payment method
             </ActionButton>
           )}
 
           {/* Trial with card: activate now */}
-          {sub.status === "trial" && sub.card_last_four && (
+          {!isNative && sub.status === "trial" && sub.card_last_four && (
             <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #f39230)">
               Subscribe now
             </ActionButton>
           )}
 
           {/* Expired: restart */}
-          {sub.status === "expired" && (
+          {!isNative && sub.status === "expired" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Rejoin Solray
             </ActionButton>
           )}
 
           {/* Past due: update card */}
-          {sub.status === "past_due" && (
+          {!isNative && sub.status === "past_due" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               Update payment method
             </ActionButton>
           )}
 
-          {/* Active or trial: cancel */}
+          {/* Native-only: a soft, non-CTA status line for the states where
+              the web user would have seen a payment button. No link, no
+              button, no call to action; just status info. Apple permits
+              status info; it does not permit calls to action that route
+              to non-IAP purchasing. */}
+          {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial") && (
+            <p
+              className="text-center text-[12px] leading-relaxed"
+              style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.85 }}
+            >
+              Your Solray membership is managed on the web.
+            </p>
+          )}
+
+          {/* Active or trial: cancel. Available on every platform; cancel
+              is a backend-only call and never touches a payment processor. */}
           {(sub.status === "active" || sub.status === "trial") && (
             <button
               onClick={handleCancel}
@@ -378,6 +424,90 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+/**
+ * NativeMembershipView
+ *
+ * Rendered when /subscribe loads inside the Capacitor native shell and the
+ * signed-in user has no active subscription. Apple App Store Guideline
+ * 3.1.1 prohibits any digital-subscription payment outside of IAP, and
+ * 3.1.3 prohibits buttons, external links, and calls to action that
+ * direct customers to non-IAP purchasing. Solray does not implement
+ * StoreKit IAP for v1.0, so the native app simply has no path to
+ * subscribe; new members must do so on solray.ai in a browser.
+ *
+ * Pattern follows Spotify, Netflix, Audible, Kindle: status info only,
+ * no CTAs to the web. The user can sign out, continue to the app
+ * (which will route them around content gates as a non-subscriber), or
+ * close the app and visit solray.ai on their own.
+ */
+function NativeMembershipView() {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  return (
+    <div className="min-h-screen px-6 pt-20 pb-32">
+      <div className="max-w-md mx-auto text-center">
+        <p
+          className="text-[10px] tracking-[0.3em] uppercase mb-5"
+          style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
+        >
+          Membership
+        </p>
+
+        <h1
+          className="text-5xl mb-5"
+          style={{
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontWeight: 300,
+            letterSpacing: "-0.01em",
+            color: "var(--text-primary, #f2ecd8)",
+          }}
+        >
+          Your Solray account.
+        </h1>
+
+        <p
+          className="text-base mb-12 leading-relaxed"
+          style={{
+            color: "var(--text-secondary, #8a9e8d)",
+            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontStyle: "italic",
+            fontWeight: 300,
+          }}
+        >
+          Solray memberships are managed on the web. Once you are a member,
+          you can sign in here and access everything.
+        </p>
+
+        <div className="space-y-3">
+          <button
+            onClick={() => router.push("/today")}
+            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            style={{
+              color: "var(--bg-deep, #050f08)",
+              background: "var(--amber, #f39230)",
+            }}
+          >
+            Continue to app
+          </button>
+
+          <button
+            onClick={logout}
+            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            style={{
+              color: "var(--text-secondary, #8a9e8d)",
+              border: "1px solid rgba(138, 158, 141, 0.25)",
+              background: "transparent",
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TrialOffer({
   onStart,
