@@ -132,14 +132,14 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                     {/* Label row */}
                     <div className="flex items-center gap-2 mb-3">
                       <span style={{ color }}>{icon}</span>
-                      <span className="font-body text-[10px] uppercase tracking-[0.22em]" style={{ color }}>
+                      <span className="font-body text-[12px] uppercase tracking-[0.22em]" style={{ color }}>
                         {label}
                       </span>
                       <span
                         className="ml-auto"
                         style={{
                           color: isOpen ? color : `${color}70`,
-                          fontSize: "0.7rem",
+                          fontSize: "0.85rem",
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 0.3s ease",
                           display: "inline-block",
@@ -149,7 +149,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                       </span>
                     </div>
                     {/* Headline */}
-                    <p className="font-body text-[13px] font-medium leading-relaxed" style={{ color: "#f2ecd8" }}>
+                    <p className="font-body text-[15px] font-medium leading-relaxed" style={{ color: "#f2ecd8" }}>
                       {headline}
                     </p>
                   </div>
@@ -159,7 +159,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 {isOpen && (
                   <div style={{ background: "rgb(var(--rgb-card))", padding: "16px", borderTop: `1px solid ${color}25` }}>
                     <p
-                      className="font-body text-[13px] leading-relaxed"
+                      className="font-body text-[15px] leading-relaxed"
                       style={{
                         color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
                         fontStyle: detail ? "normal" : "italic",

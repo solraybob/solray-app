@@ -320,7 +320,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
               <button
                 key={planet}
                 onClick={() => togglePlanet(planet)}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-body transition-all"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-[12px] font-body transition-all"
                 style={{
                   border: `1px solid ${active ? color : "rgba(26,48,32,0.8)"}`,
                   background: active ? `${color}20` : "transparent",
@@ -343,7 +343,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
               <button
                 key={type}
                 onClick={() => toggleType(type)}
-                className="px-2.5 py-1 rounded-full text-[10px] font-body tracking-wider transition-all"
+                className="px-2.5 py-1 rounded-full text-[12px] font-body tracking-wider transition-all"
                 style={{
                   border: `1px solid ${active ? "#f39230" : "rgba(26,48,32,0.8)"}`,
                   background: active ? "rgba(243,146,48,0.1)" : "transparent",
@@ -386,15 +386,15 @@ export default function AstroGeography({ token }: { token: string | null }) {
           <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
               <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" /></svg>
-              <span className="text-text-secondary text-[9px] font-body">MC / ASC</span>
+              <span className="text-text-secondary text-[11px] font-body">MC / ASC</span>
             </div>
             <div className="flex items-center gap-1">
               <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
-              <span className="text-text-secondary text-[9px] font-body">IC / DSC</span>
+              <span className="text-text-secondary text-[11px] font-body">IC / DSC</span>
             </div>
             <div className="flex items-center gap-1">
               <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#f39230" /></svg>
-              <span className="text-text-secondary text-[9px] font-body">Birth place</span>
+              <span className="text-text-secondary text-[11px] font-body">Birth place</span>
             </div>
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
             className="px-4 py-3 rounded-xl border transition-all"
             style={{ borderColor: `${hoveredLine.color}40`, background: `${hoveredLine.color}08` }}
           >
-            <p className="text-[10px] font-body tracking-wider uppercase mb-1" style={{ color: hoveredLine.color }}>
+            <p className="text-[12px] font-body tracking-wider uppercase mb-1" style={{ color: hoveredLine.color }}>
               {PLANET_SYMBOL_OVERRIDE[hoveredLine.planet] || hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
             </p>
             <p className="text-text-secondary text-xs font-body leading-relaxed">{hoveredLine.meaning}</p>
@@ -425,7 +425,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                   }));
                   window.location.href = "/chat";
                 }}
-                className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+                className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
               >
                 Ask →
               </button>
@@ -449,7 +449,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                       }));
                       window.location.href = "/chat";
                     }}
-                    className="text-[9px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+                    className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5"
                   >
                     Ask →
                   </button>
@@ -594,7 +594,7 @@ function FullscreenMap({
         </button>
       </div>
 
-      <div className="absolute bottom-4 left-4 text-text-secondary/40 text-[10px] font-body">
+      <div className="absolute bottom-4 left-4 text-text-secondary/40 text-[12px] font-body">
         Pinch or scroll to zoom · Drag to pan
       </div>
 

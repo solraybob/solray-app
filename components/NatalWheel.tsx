@@ -109,7 +109,7 @@ export default function NatalWheel({
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p className="font-body text-text-secondary/60 text-[11px] tracking-[0.15em] uppercase">
+        <p className="font-body text-text-secondary/60 text-[13px] tracking-[0.15em] uppercase">
           Wheel unavailable
         </p>
       </div>

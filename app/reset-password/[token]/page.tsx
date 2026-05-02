@@ -80,11 +80,11 @@ export default function ResetPasswordPage() {
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-body text-text-secondary text-[10px] mt-3 tracking-[0.22em] uppercase">Set new password</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Set new password</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="font-body text-text-secondary text-[13px] leading-relaxed text-center mb-4">
+          <p className="font-body text-text-secondary text-[15px] leading-relaxed text-center mb-4">
             Pick a new password. We&rsquo;ll log you in once it&rsquo;s set.
           </p>
 

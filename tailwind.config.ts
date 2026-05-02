@@ -44,6 +44,20 @@ const config: Config = {
         heading: ["Cormorant Garamond", "Georgia", "serif"],
         body: ["Inter", "system-ui", "sans-serif"],
       },
+      // Type-scale bump for readability. Default Tailwind sizes
+      // (xs=12px, sm=14px, base=16px) read as cramped on this app's
+      // dark forest background, especially for users in the older end
+      // of the demographic and anyone reading outdoors or without
+      // glasses. Bump each preset by 2px and shift line-heights up
+      // proportionally so paragraphs still breathe.
+      // Larger sizes (text-lg and up) are unchanged because they are
+      // already in the comfortable range and bumping headers would
+      // disrupt established layouts.
+      fontSize: {
+        xs:   ["0.875rem",  { lineHeight: "1.25rem"  }], // 14px / 20px (was 12 / 16)
+        sm:   ["0.9375rem", { lineHeight: "1.375rem" }], // 15px / 22px (was 14 / 20)
+        base: ["1.0625rem", { lineHeight: "1.625rem" }], // 17px / 26px (was 16 / 24)
+      },
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.4s ease-out",

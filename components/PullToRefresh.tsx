@@ -148,7 +148,7 @@ export default function PullToRefresh() {
         <div
           style={{
             marginTop: 8,
-            fontSize: "12px",
+            fontSize: "14px",
             color: "#f39230",
             textAlign: "center",
             whiteSpace: "nowrap",

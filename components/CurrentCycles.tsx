@@ -153,7 +153,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
               {humanizeCycleTitle(cycle.title)}
             </h3>
             <span
-              className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+              className="text-text-secondary/40 text-[13px] font-body shrink-0 mt-0.5 transition-transform duration-200"
               style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
             >
               ▾
@@ -168,21 +168,21 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
               <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep" style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }} />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">{fmtDate(cycle.started)}</span>
-              <span className="text-amber-sun/60 text-[9px] font-body tracking-wide">Peak {fmtDate(cycle.peak)}</span>
-              <span className="text-text-secondary/40 text-[9px] font-body tracking-wide">{fmtDate(cycle.ends)}</span>
+              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.started)}</span>
+              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">Peak {fmtDate(cycle.peak)}</span>
+              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.ends)}</span>
             </div>
           </div>
 
           {/* First sentence + phase badge always visible */}
           {firstSentence && (
-            <p className="text-text-secondary text-[13px] font-body leading-snug">{firstSentence}</p>
+            <p className="text-text-secondary text-[15px] font-body leading-snug">{firstSentence}</p>
           )}
           <div className="flex items-center gap-2 mt-3">
-            <span className={`text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
+            <span className={`text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
               {cycle.phase}
             </span>
-            <span className="text-text-secondary/30 text-[9px] font-body">orb {cycle.orb}°</span>
+            <span className="text-text-secondary/30 text-[11px] font-body">orb {cycle.orb}°</span>
           </div>
         </div>
       </div>
@@ -190,7 +190,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
       {/* Expanded reading — forest green panel below photo */}
       {expanded && rest && (
         <div style={{ background: "rgb(var(--rgb-card))", padding: "16px 20px", borderTop: "1px solid rgb(var(--rgb-border) / 0.8)" }}>
-          <p className="text-text-secondary/80 text-[13px] font-body leading-relaxed">{rest}</p>
+          <p className="text-text-secondary/80 text-[15px] font-body leading-relaxed">{rest}</p>
         </div>
       )}
     </div>
@@ -230,19 +230,19 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
               {humanizeCycleTitle(cycle.title)}
             </h4>
             <span
-              className="text-[9px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun/50 shrink-0"
+              className="text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun/50 shrink-0"
             >
               {cycle.days_until_orb >= 60
                   ? `in ${Math.round(cycle.days_until_orb / 30)} months`
                   : `in ${cycle.days_until_orb} days`}
             </span>
           </div>
-          <p className="text-text-secondary/60 text-[11px] font-body leading-snug">
+          <p className="text-text-secondary/60 text-[13px] font-body leading-snug">
             Enters orb {fmtDateLong(cycle.enters_orb)}
           </p>
         </div>
         <span
-          className="text-text-secondary/40 text-[11px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+          className="text-text-secondary/40 text-[13px] font-body shrink-0 mt-0.5 transition-transform duration-200"
           style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           ▾
@@ -251,7 +251,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
 
       {/* Always show first sentence */}
       {upFirstSentence && (
-        <p className="text-text-secondary/70 text-[13px] font-body leading-snug mt-3">
+        <p className="text-text-secondary/70 text-[15px] font-body leading-snug mt-3">
           {upFirstSentence}
         </p>
       )}
@@ -260,14 +260,14 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
       {expanded && (
         <>
           {upRest && (
-            <p className="text-text-secondary/60 text-[13px] font-body leading-snug mt-2">
+            <p className="text-text-secondary/60 text-[15px] font-body leading-snug mt-2">
               {upRest}
             </p>
           )}
           <div className="mt-3 flex justify-end">
             <button
               onClick={handleGoDeeper}
-              className="text-[11px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
+              className="text-[13px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
             >
               Go Deeper →
             </button>
@@ -348,7 +348,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
     <div className="mb-8">
       {/* Section header with pagination */}
       <div className="flex items-center justify-between mb-4">
-        <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase">
+        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
           Current Cycles
         </p>
         {!loading && total > 1 && (
@@ -361,7 +361,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
             >
               ‹
             </button>
-            <span className="font-body text-text-secondary/50" style={{ fontSize: "0.7rem", letterSpacing: "0.1em" }}>
+            <span className="font-body text-text-secondary/50" style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}>
               {activeIndex + 1} / {total}
             </span>
             <button
@@ -411,7 +411,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
             <div className={total > 0 ? "mt-6" : ""}>
               {/* Section label */}
               <div className="flex items-center gap-3 mb-3">
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase">
+                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
                   Coming Up
                 </p>
                 <div className="flex-1 h-px bg-forest-border/30" />

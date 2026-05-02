@@ -330,7 +330,7 @@ export default function SettingsPage() {
         {/* Header — back arrow on left, SETTINGS centered */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-moss))" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-moss))" }}>
               Profile
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -402,7 +402,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="font-body text-[12px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
+                    className="font-body text-[14px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
                   >
                     {photo ? "Replace photo" : "Upload photo"}
                   </button>
@@ -431,17 +431,17 @@ export default function SettingsPage() {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full font-body text-[14px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                     placeholder="Your name"
                   />
                 </FieldRow>
                 <FieldRow label="Username">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-body text-[14px] text-text-secondary">@</span>
+                    <span className="font-body text-[16px] text-text-secondary">@</span>
                     <input
                       value={username}
                       onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
-                      className="flex-1 font-body text-[14px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="flex-1 font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                       placeholder="yourusername"
                       autoCapitalize="none"
                       autoCorrect="off"
@@ -527,7 +527,7 @@ export default function SettingsPage() {
                     type="date"
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full font-body text-[14px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
                 <FieldRow label="Time">
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                     type="time"
                     value={birthTime}
                     onChange={(e) => setBirthTime(e.target.value)}
-                    className="w-full font-body text-[14px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
                 <FieldRow label="City">
@@ -550,12 +550,12 @@ export default function SettingsPage() {
                         setBirthLon(null);
                       }}
                       onFocus={() => birthCity.length >= 2 && setShowCitySuggestions(citySuggestions.length > 0)}
-                      className="w-full font-body text-[14px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                       placeholder="City, country"
                       autoCapitalize="words"
                     />
                     {cityLoading && (
-                      <span className="absolute right-1 top-1 text-[10px] text-text-muted">Searching…</span>
+                      <span className="absolute right-1 top-1 text-[12px] text-text-muted">Searching…</span>
                     )}
                     {showCitySuggestions && citySuggestions.length > 0 && (
                       <div
@@ -573,7 +573,7 @@ export default function SettingsPage() {
                               setShowCitySuggestions(false);
                               cityDirtyRef.current = false;
                             }}
-                            className="block w-full text-left px-3 py-2 font-body text-[13px] text-text-primary hover:bg-forest-border/40 transition-colors"
+                            className="block w-full text-left px-3 py-2 font-body text-[15px] text-text-primary hover:bg-forest-border/40 transition-colors"
                           >
                             {s.display}
                           </button>
@@ -592,7 +592,7 @@ export default function SettingsPage() {
             <Section label="Subscription" hint="Manage billing, see renewal date, cancel.">
               <button
                 onClick={() => router.push("/subscribe")}
-                className="font-body text-[12px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
+                className="font-body text-[14px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
               >
                 Manage subscription
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -605,7 +605,7 @@ export default function SettingsPage() {
             <div className="mt-12 mb-2 flex justify-center">
               <button
                 onClick={handleSignOut}
-                className="font-body text-text-secondary/70 text-[10px] tracking-[0.22em] uppercase hover:text-ember transition-colors"
+                className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase hover:text-ember transition-colors"
               >
                 Sign out
               </button>
@@ -639,13 +639,13 @@ function Section({
   return (
     <section className="py-6 border-b border-forest-border/40">
       <div className="flex items-baseline justify-between mb-3">
-        <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase">{label}</p>
-        {status === "saving" && <span className="font-body text-[10px] text-text-muted">Saving…</span>}
-        {status === "saved"  && <span className="font-body text-[10px] text-moss">Saved</span>}
+        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">{label}</p>
+        {status === "saving" && <span className="font-body text-[12px] text-text-muted">Saving…</span>}
+        {status === "saved"  && <span className="font-body text-[12px] text-moss">Saved</span>}
       </div>
       {children}
-      {error && <p className="mt-3 font-body text-[10px] text-ember">{error}</p>}
-      {hint  && !error && <p className="mt-3 font-body text-[11px] leading-relaxed text-text-muted">{hint}</p>}
+      {error && <p className="mt-3 font-body text-[12px] text-ember">{error}</p>}
+      {hint  && !error && <p className="mt-3 font-body text-[13px] leading-relaxed text-text-muted">{hint}</p>}
     </section>
   );
 }
@@ -653,7 +653,7 @@ function Section({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="font-body text-[10px] tracking-[0.18em] uppercase text-text-muted mb-1.5">{label}</p>
+      <p className="font-body text-[12px] tracking-[0.18em] uppercase text-text-muted mb-1.5">{label}</p>
       {children}
     </div>
   );
@@ -666,7 +666,7 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="font-body text-[10px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {status === "saving" ? "Saving" : "Save"}
     </button>
@@ -682,7 +682,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       onClick={() => onChange(!checked)}
       className="flex items-center justify-between w-full"
     >
-      <span className="font-body text-[14px] text-text-primary">{label}</span>
+      <span className="font-body text-[16px] text-text-primary">{label}</span>
       <span
         className="relative rounded-full transition-colors"
         style={{
@@ -710,7 +710,7 @@ function ThemeButton({ active, onClick, label }: { active: boolean; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 font-body text-[12px] tracking-[0.18em] uppercase py-2.5 rounded-full transition-colors"
+      className="flex-1 font-body text-[14px] tracking-[0.18em] uppercase py-2.5 rounded-full transition-colors"
       style={{
         backgroundColor: active ? "rgb(var(--rgb-amber) / 0.16)" : "transparent",
         color: active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-text-secondary))",

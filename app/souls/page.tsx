@@ -157,7 +157,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           )}
           <div>
             <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{soul.soul.name}</h3>
-            <p className="font-body text-text-secondary text-[13px]">
+            <p className="font-body text-text-secondary text-[15px]">
               {soul.soul.sun_sign && (
                 <>☉ {soul.soul.sun_sign}</>
               )}
@@ -173,10 +173,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[13px]">View Profile</p>
-                <p className="font-body text-text-secondary text-[10px] mt-0.5">See {soul.soul.name}&rsquo;s chart, blueprint, and details</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">View Profile</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">See {soul.soul.name}&rsquo;s chart, blueprint, and details</p>
               </div>
-              <span className="font-body text-indigo text-[10px]">Open</span>
+              <span className="font-body text-indigo text-[12px]">Open</span>
             </div>
           </button>
           <button
@@ -185,10 +185,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[13px]">Your Reading</p>
-                <p className="font-body text-text-secondary text-[10px] mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">Your Reading</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
               </div>
-              <span className="font-body text-indigo text-[10px]">Open</span>
+              <span className="font-body text-indigo text-[12px]">Open</span>
             </div>
           </button>
           <button
@@ -197,10 +197,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[13px]">Group Reading</p>
-                <p className="font-body text-text-secondary text-[10px] mt-0.5">Invite {soul.soul.name} into a shared session together</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">Group Reading</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">Invite {soul.soul.name} into a shared session together</p>
               </div>
-              <span className="font-body text-indigo text-[10px]">Share</span>
+              <span className="font-body text-indigo text-[12px]">Share</span>
             </div>
           </button>
         </div>
@@ -237,7 +237,7 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
         <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Group Reading</h2>
-        <p className="font-body text-text-secondary text-[13px] mb-6 leading-relaxed">
+        <p className="font-body text-text-secondary text-[15px] mb-6 leading-relaxed">
           Share this link with {soul.soul.name} to join your shared session. Both of you can ask questions and the guide speaks to you together.
         </p>
 
@@ -248,13 +248,13 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
         <div className="space-y-3">
           <button
             onClick={handleCopy}
-            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[13px] tracking-widest transition-all hover:bg-[#5a7582]/20"
+            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[15px] tracking-widest transition-all hover:bg-[#5a7582]/20"
           >
             {copied ? "Copied!" : `Copy link for ${soul.soul.name}`}
           </button>
           <button
             onClick={onEnterSession}
-            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[13px] tracking-widest transition-all hover:opacity-90"
+            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[15px] tracking-widest transition-all hover:opacity-90"
           >
             Enter Session
           </button>
@@ -629,7 +629,7 @@ export default function SoulsPage() {
         {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6a8692" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6a8692" }}>
               Your Field
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -682,7 +682,7 @@ export default function SoulsPage() {
 
           {/* Search — for deeper two-way connections with Solray users */}
           <div>
-            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2">Find a Soul</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">Find a Soul</p>
             <div className="relative">
               <input
                 type="text"
@@ -748,7 +748,7 @@ export default function SoulsPage() {
           {/* Quiet inline error surface — replaces alert() popups */}
           {errorMessage && (
             <div
-              className="rounded-xl px-4 py-3 font-body text-[12px] transition-opacity"
+              className="rounded-xl px-4 py-3 font-body text-[14px] transition-opacity"
               style={{
                 background: "rgba(196, 98, 58, 0.08)",
                 border: "1px solid rgba(196, 98, 58, 0.25)",
@@ -770,7 +770,7 @@ export default function SoulsPage() {
               {/* Pending requests */}
               {pendingInvites.length > 0 && (
                 <div>
-                  <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Pending Requests</p>
+                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">Pending Requests</p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
                       <div
@@ -820,7 +820,7 @@ export default function SoulsPage() {
               <div>
                 {connectedSouls.length > 0 ? (
                   <>
-                    <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-3">Connections</p>
+                    <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">Connections</p>
                     <div className="space-y-3">
                       {connectedSouls.map(connection => (
                         <SoulCard
@@ -833,7 +833,7 @@ export default function SoulsPage() {
                   </>
                 ) : (
                   <div className="text-center pt-4 pb-2">
-                    <p className="font-body text-text-secondary text-[12px] max-w-xs mx-auto">
+                    <p className="font-body text-text-secondary text-[14px] max-w-xs mx-auto">
                       No two-way connections yet. Invite someone above to share readings together.
                     </p>
                   </div>
@@ -946,7 +946,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         boxShadow: "0 20px 60px -30px rgba(106,134,146,0.35)",
       }}
     >
-      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-indigo/70 mb-1">Dynamics</p>
+      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-1">Dynamics</p>
       <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
         Where two charts meet.
       </h2>
@@ -967,7 +967,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
               {myName?.[0]?.toUpperCase() || "·"}
             </div>
           )}
-          <span className="font-body text-[12px] text-text-primary">You</span>
+          <span className="font-body text-[14px] text-text-primary">You</span>
         </div>
 
         {/* Selected partners */}
@@ -985,7 +985,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
                 {partnerInitial(p)}
               </div>
             )}
-            <span className="font-body text-[12px] text-text-primary max-w-[80px] truncate">{partnerName(p)}</span>
+            <span className="font-body text-[14px] text-text-primary max-w-[80px] truncate">{partnerName(p)}</span>
             <button
               type="button"
               onClick={() => onRemovePartner(i)}
@@ -1011,9 +1011,9 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             {partners.length === 0 && (
               <span className="text-indigo/50 text-xs" aria-hidden="true">✦</span>
             )}
-            <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[13px] text-text-secondary shrink-0"
+            <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[15px] text-text-secondary shrink-0"
                  style={{ border: "1px dashed rgba(242,236,216,0.25)" }}>+</div>
-            <span className="font-body text-[12px] text-text-secondary">
+            <span className="font-body text-[14px] text-text-secondary">
               {partners.length === 0 ? "Choose someone" : isFamily ? "Add another" : ""}
             </span>
           </button>
@@ -1022,7 +1022,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 
       {/* Chart whisper — only for single partner on non-family lenses */}
       {!isFamily && partner && chart && (chart.sun_sign || chart.hd_type) && (
-        <p className="font-body text-[11px] text-text-secondary mb-5 -mt-2 pl-1">
+        <p className="font-body text-[13px] text-text-secondary mb-5 -mt-2 pl-1">
           {chart.sun_sign && <>☉ {chart.sun_sign}</>}
           {chart.sun_sign && chart.hd_type && " · "}
           {chart.hd_type && (
@@ -1033,7 +1033,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 
       {/* Lens pills */}
       <div className="mb-6">
-        <p className="font-body text-[9px] tracking-[0.22em] uppercase text-text-secondary mb-2">Lens</p>
+        <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-2">Lens</p>
         <div className="flex gap-2">
           {lenses.map((l) => {
             const active = lens === l.key;
@@ -1050,7 +1050,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
                 }}
                 title={l.hint}
               >
-                <span className="font-body text-[11px]">{l.label}</span>
+                <span className="font-body text-[13px]">{l.label}</span>
               </button>
             );
           })}
@@ -1061,7 +1061,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         type="button"
         onClick={onRead}
         disabled={partners.length === 0 || reading}
-        className="w-full py-3.5 rounded-xl font-body font-semibold text-[13px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
           background: "linear-gradient(135deg, #6a8692, #5a7582)",
           color: "#f2ecd8",
@@ -1107,13 +1107,13 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                style={{ background: "linear-gradient(135deg, #6a8692, #5a7582)" }}>+</div>
           <div className="flex-1 text-left">
             <p className="font-body text-text-primary text-sm font-semibold">Add someone new</p>
-            <p className="font-body text-text-secondary text-[11px]">Their birth data stays on your device</p>
+            <p className="font-body text-text-secondary text-[13px]">Their birth data stays on your device</p>
           </div>
         </button>
 
         {savedPeople.length > 0 && (
           <div className="mb-4">
-            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2 px-1">Your People</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">Your People</p>
             <div className="space-y-2">
               {savedPeople.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
@@ -1127,7 +1127,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
-                      <p className="text-text-secondary text-[11px] font-body truncate">
+                      <p className="text-text-secondary text-[13px] font-body truncate">
                         {p.profile.sun_sign && <>☉ {p.profile.sun_sign}</>}
                         {p.profile.sun_sign && p.profile.hd_type && " · "}
                         {p.profile.hd_type}
@@ -1150,7 +1150,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 
         {connections.length > 0 && (
           <div>
-            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2 px-1">Connections</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">Connections</p>
             <div className="space-y-2">
               {connections.map((c) => (
                 <button
@@ -1168,7 +1168,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-body text-text-primary text-sm font-semibold truncate">{c.soul.name}</p>
-                    <p className="text-text-secondary text-[11px] font-body truncate">
+                    <p className="text-text-secondary text-[13px] font-body truncate">
                       {c.soul.sun_sign && <>☉ {c.soul.sun_sign}</>}
                       {c.soul.sun_sign && c.soul.hd_type && " · "}
                       {c.soul.hd_type}
@@ -1336,11 +1336,11 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
         <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>Add someone</h3>
-        <p className="font-body text-text-secondary text-[12px] mb-5">Their birth data stays on your device. Nothing is shared without their consent.</p>
+        <p className="font-body text-text-secondary text-[14px] mb-5">Their birth data stays on your device. Nothing is shared without their consent.</p>
 
         <div className="space-y-4">
           <div>
-            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Name</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Name</label>
             <input
               type="text"
               value={name}
@@ -1351,7 +1351,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </div>
 
           <div>
-            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Gender</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Gender</label>
             <div className="grid grid-cols-2 gap-2">
               {(["female", "male"] as const).map((opt) => {
                 const active = sex === opt;
@@ -1360,7 +1360,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     key={opt}
                     type="button"
                     onClick={() => setSex(opt)}
-                    className="py-2.5 rounded-xl transition-all font-body text-[12px]"
+                    className="py-2.5 rounded-xl transition-all font-body text-[14px]"
                     style={{
                       background: active ? "rgba(106,134,146,0.10)" : "transparent",
                       border: active ? "1px solid rgba(106,134,146,0.55)" : "1px solid rgba(242,236,216,0.12)",
@@ -1376,7 +1376,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth date</label>
+              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth date</label>
               <input
                 type="date"
                 value={birthDate}
@@ -1386,7 +1386,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               />
             </div>
             <div>
-              <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth time</label>
+              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth time</label>
               <input
                 type="time"
                 value={birthTime}
@@ -1400,7 +1400,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           <button
             type="button"
             onClick={() => setTimeUnknown(!timeUnknown)}
-            className={`font-body text-[11px] tracking-wider transition-colors -mt-2 ${
+            className={`font-body text-[13px] tracking-wider transition-colors -mt-2 ${
               timeUnknown ? "text-indigo" : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -1408,7 +1408,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </button>
 
           <div>
-            <label className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary">Birth city</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth city</label>
             <div className="relative">
               <input
                 ref={cityInputRef}
@@ -1446,7 +1446,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     <button
                       key={i}
                       type="button"
-                      className="w-full text-left px-4 py-2.5 font-body text-[13px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0"
+                      className="w-full text-left px-4 py-2.5 font-body text-[15px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setBirthCity(s.display);
@@ -1463,14 +1463,14 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </div>
 
           {error && (
-            <p className="text-ember text-[12px] font-body">{error}</p>
+            <p className="text-ember text-[14px] font-body">{error}</p>
           )}
 
           <button
             type="button"
             onClick={submit}
             disabled={!canSubmit}
-            className="w-full py-3.5 rounded-xl font-body font-semibold text-[13px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
+            className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
             style={{
               background: "linear-gradient(135deg, #6a8692, #5a7582)",
               color: "#f2ecd8",

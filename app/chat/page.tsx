@@ -1191,7 +1191,7 @@ function ChatPageInner() {
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
           </div>
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#9b86a0" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#9b86a0" }}>
               Your Higher Self
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -1214,7 +1214,7 @@ function ChatPageInner() {
                 <button
                   onClick={startNewChat}
                   title="New chat"
-                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[10px] tracking-widest transition-colors"
+                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors"
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
                 >
@@ -1313,7 +1313,7 @@ function ChatPageInner() {
                     >
                       <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
                     </div>
-                    <span className="font-body text-text-secondary text-[10px] mt-1 px-1">
+                    <span className="font-body text-text-secondary text-[12px] mt-1 px-1">
                       {formatTime(msg.timestamp)}
                     </span>
                   </div>
@@ -1346,7 +1346,7 @@ function ChatPageInner() {
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 py-3 pb-20">
           <div className="max-w-lg mx-auto">
             {isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[11px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
+              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{ background: "#c8a27a", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
@@ -1355,7 +1355,7 @@ function ChatPageInner() {
               </div>
             )}
             {transcribing && !isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[11px] tracking-[0.14em] uppercase text-text-secondary">
+              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase text-text-secondary">
                 <LoadingSpinner size="sm" />
                 Transcribing…
               </div>
@@ -1372,7 +1372,7 @@ function ChatPageInner() {
               const m = voiceError.match(/^(.*?)\{action\}(.+?)\{\/action\}(.*)$/);
               if (!m) {
                 return (
-                  <div className="mb-2 font-body text-[11px] text-text-secondary">{voiceError}</div>
+                  <div className="mb-2 font-body text-[13px] text-text-secondary">{voiceError}</div>
                 );
               }
               const [, before, label, after] = m;
@@ -1396,7 +1396,7 @@ function ChatPageInner() {
                 }, 300);
               };
               return (
-                <div className="mb-2 font-body text-[11px] text-text-secondary">
+                <div className="mb-2 font-body text-[13px] text-text-secondary">
                   {before}
                   <button
                     onClick={openInSafari}
@@ -1507,7 +1507,7 @@ function ChatPageInner() {
               {/* Scrollable list */}
               <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
-                  <p className="font-body text-text-secondary text-[13px] text-center py-6">No previous chats yet.</p>
+                  <p className="font-body text-text-secondary text-[15px] text-center py-6">No previous chats yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {pastSessions.map((s) => (
@@ -1526,11 +1526,11 @@ function ChatPageInner() {
                               }}
                               onBlur={() => commitRename(s.sessionId)}
                               placeholder={s.date}
-                              className="flex-1 bg-transparent text-text-primary font-body text-[13px] outline-none placeholder-text-secondary"
+                              className="flex-1 bg-transparent text-text-primary font-body text-[15px] outline-none placeholder-text-secondary"
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="font-body text-[10px]" style={{ color: "#9b86a0" }}
+                              className="font-body text-[12px]" style={{ color: "#9b86a0" }}
                             >
                               Save
                             </button>
@@ -1546,10 +1546,10 @@ function ChatPageInner() {
                               }`}
                               style={s.sessionId === sessionId ? { border: "1px solid #9b86a0" } : undefined}
                             >
-                              <p className="font-body text-text-secondary text-[10px] tracking-widest mb-1">
+                              <p className="font-body text-text-secondary text-[12px] tracking-widest mb-1">
                                 {s.customName || s.date}
                               </p>
-                              <p className="font-body text-text-primary text-[13px] truncate">
+                              <p className="font-body text-text-primary text-[15px] truncate">
                                 {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
                               </p>
                             </button>

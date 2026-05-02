@@ -58,12 +58,12 @@ export default function SubscribeWelcome() {
           Skip link IS the way home. Always-visible, always-tappable. */}
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-          <p className="font-body text-text-secondary/70 text-[10px] tracking-[0.22em] uppercase">
+          <p className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase">
             Subscription
           </p>
           <button
             onClick={() => router.push("/today")}
-            className="font-body text-amber-sun text-[11px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
+            className="font-body text-amber-sun text-[13px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
           >
             Continue to app
           </button>
@@ -99,7 +99,7 @@ export default function SubscribeWelcome() {
           </div>
         </div>
 
-        <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase text-center mb-3">
+        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center mb-3">
           Welcome to Solray
         </p>
         <h1
@@ -108,7 +108,7 @@ export default function SubscribeWelcome() {
         >
           You&rsquo;re in.
         </h1>
-        <p className="font-body text-text-secondary text-[14px] leading-relaxed text-center max-w-sm mx-auto mb-8">
+        <p className="font-body text-text-secondary text-[16px] leading-relaxed text-center max-w-sm mx-auto mb-8">
           Your subscription is active. The full Solray experience is unlocked
           and your daily forecasts will keep arriving each morning.
         </p>
@@ -116,7 +116,7 @@ export default function SubscribeWelcome() {
         {/* Primary CTA — large, above the fold on every phone, can't miss */}
         <button
           onClick={() => router.push("/today")}
-          className="w-full font-body text-[12px] tracking-[0.22em] uppercase py-3.5 rounded-full transition-colors mb-3"
+          className="w-full font-body text-[14px] tracking-[0.22em] uppercase py-3.5 rounded-full transition-colors mb-3"
           style={{
             backgroundColor: "rgb(var(--rgb-amber))",
             color: "rgb(var(--rgb-bg-deep))",
@@ -126,7 +126,7 @@ export default function SubscribeWelcome() {
         </button>
         <button
           onClick={() => router.push("/profile/settings")}
-          className="w-full font-body text-[10px] tracking-[0.22em] uppercase py-2.5 text-text-secondary/70 hover:text-text-secondary transition-colors mb-10"
+          className="w-full font-body text-[12px] tracking-[0.22em] uppercase py-2.5 text-text-secondary/70 hover:text-text-secondary transition-colors mb-10"
         >
           Manage subscription
         </button>
@@ -135,22 +135,22 @@ export default function SubscribeWelcome() {
             never block the page on this; the user can leave any time. */}
         {!statusLoading && sub && (sub.card_brand || sub.price || renews) && (
           <div className="rounded-2xl border border-forest-border/60 bg-forest-card/40 px-5 py-5 mb-10">
-            <div className="space-y-3 font-body text-[13px]">
+            <div className="space-y-3 font-body text-[15px]">
               {sub.card_brand && sub.card_last_four && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[11px] tracking-[0.18em] uppercase">Card on file</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Card on file</span>
                   <span className="text-text-primary">{sub.card_brand} &middot; {sub.card_last_four}</span>
                 </div>
               )}
               {sub.price && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[11px] tracking-[0.18em] uppercase">Price</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Price</span>
                   <span className="text-text-primary">{sub.price}</span>
                 </div>
               )}
               {renews && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[11px] tracking-[0.18em] uppercase">Next renewal</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Next renewal</span>
                   <span className="text-text-primary">{renews}</span>
                 </div>
               )}
@@ -160,10 +160,10 @@ export default function SubscribeWelcome() {
 
         {/* What's unlocked — three quiet bullets, no marketing tone */}
         <div>
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
             What&rsquo;s open to you
           </p>
-          <ul className="space-y-3 font-body text-[13px] text-text-primary leading-relaxed">
+          <ul className="space-y-3 font-body text-[15px] text-text-primary leading-relaxed">
             <UnlockRow>Daily personalised forecast and energy reading.</UnlockRow>
             <UnlockRow>Higher Self chat with full chart context and persistent memory.</UnlockRow>
             <UnlockRow>Souls — connect with others and read your dynamics together.</UnlockRow>

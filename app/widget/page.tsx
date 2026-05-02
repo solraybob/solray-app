@@ -168,7 +168,7 @@ export default function WidgetPage() {
               <span style={{ fontSize: "18px" }}>{moonPhase.emoji}</span>
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   color: "#a8a8a8",
                   fontFamily: "system-ui, -apple-system",
                 }}
@@ -180,7 +180,7 @@ export default function WidgetPage() {
             {/* Branding */}
             <span
               style={{
-                fontSize: "8px",
+                fontSize: "10px",
                 color: "#6b6b6b",
                 letterSpacing: "0.05em",
                 fontFamily: "system-ui, -apple-system",

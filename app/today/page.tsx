@@ -223,11 +223,11 @@ function EnergyBar({
           animation: `solrayLabelFade ${labelFadeMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) both`,
         }}
       >
-        <span className="font-body text-[10px] font-normal tracking-[0.22em] uppercase text-text-secondary">
+        <span className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
           {label}
         </span>
         <span
-          className="font-heading text-[15px] text-text-secondary/70"
+          className="font-heading text-[17px] text-text-secondary/70"
           style={{ fontFeatureSettings: '"lnum"' }}
         >
           {pct}
@@ -291,16 +291,16 @@ function PlanetCard({ planet }: { planet: Planet }) {
           {planet.symbol}
         </span>
         {planet.retrograde && (
-          <span className="text-[10px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
+          <span className="text-[12px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
         )}
       </div>
-      <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase mt-0.5">
+      <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase mt-0.5">
         {planet.name}
       </span>
-      <span className="font-body text-text-primary text-[13px] font-medium">
+      <span className="font-body text-text-primary text-[15px] font-medium">
         {planet.sign}
       </span>
-      <span className="font-body text-text-secondary/70 text-[10px]">{planet.degree}</span>
+      <span className="font-body text-text-secondary/70 text-[12px]">{planet.degree}</span>
     </div>
   );
 }
@@ -404,7 +404,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
-          <p className="font-body text-[11px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
+          <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
             Today&apos;s Weather
           </p>
           <svg
@@ -430,7 +430,7 @@ function HeroImageCard({
           {reading.split(/\n\n+/).map((para, i) => (
             <p
               key={i}
-              className={`font-body text-text-secondary text-[13px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
+              className={`font-body text-text-secondary text-[15px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
             >
               {para.trim()}
             </p>
@@ -673,7 +673,7 @@ export default function TodayPage() {
         {/* Header — tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#f39230" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#f39230" }}>
               Living By Design
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -683,7 +683,7 @@ export default function TodayPage() {
               >
                 SOLRAY
               </h1>
-              <span className="font-body text-text-secondary text-[10px]">{today}</span>
+              <span className="font-body text-text-secondary text-[12px]">{today}</span>
             </div>
           </div>
         </div>
@@ -717,7 +717,7 @@ export default function TodayPage() {
               {/* Subtle offline/error notice */}
               {error && (
                 <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
-                  <p className="text-text-secondary/60 text-[10px] font-body text-center">{error}</p>
+                  <p className="text-text-secondary/60 text-[12px] font-body text-center">{error}</p>
                 </div>
               )}
 
@@ -726,7 +726,7 @@ export default function TodayPage() {
               <div className="mt-14 mb-12">
                 {/* Parallel label to "Today's Weather" on the hero card */}
                 <p
-                  className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-7 transition-opacity duration-700"
+                  className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-7 transition-opacity duration-700"
                   style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
                 >
                   Today&apos;s Vibe
@@ -769,7 +769,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4">
+                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
                   Today&apos;s Dimensions
                 </p>
                 <DepthSlides
@@ -797,7 +797,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-3">
+                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
                   Sky Now
                 </p>
                 {/* Scrollable ticker */}
@@ -878,15 +878,15 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
         <div className="flex items-center gap-2">
           <span className="text-xl">{phaseEmoji}</span>
           <div>
-            <p className="font-body text-text-primary text-[13px] font-medium">{phaseLabel}</p>
+            <p className="font-body text-text-primary text-[15px] font-medium">{phaseLabel}</p>
             {moonSign && (
-              <p className="font-body text-text-secondary text-[10px]">Moon in {moonSign}</p>
+              <p className="font-body text-text-secondary text-[12px]">Moon in {moonSign}</p>
             )}
           </div>
         </div>
         <div className="text-right">
-          <p className="font-heading text-amber-sun text-[13px]">{illumination}%</p>
-          <p className="font-body text-text-secondary text-[10px]">illuminated</p>
+          <p className="font-heading text-amber-sun text-[15px]">{illumination}%</p>
+          <p className="font-body text-text-secondary text-[12px]">illuminated</p>
         </div>
       </div>
 
@@ -912,11 +912,11 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
 
         {/* Phase labels */}
         <div className="flex justify-between mt-2">
-          <span className="font-body text-text-secondary/60 text-[9px]">New</span>
-          <span className="font-body text-text-secondary/60 text-[9px]">1st Q</span>
-          <span className="font-body text-text-secondary/60 text-[9px]">Full</span>
-          <span className="font-body text-text-secondary/60 text-[9px]">3rd Q</span>
-          <span className="font-body text-text-secondary/60 text-[9px]">New</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">New</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">1st Q</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">Full</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">3rd Q</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">New</span>
         </div>
       </div>
     </div>

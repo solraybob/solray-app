@@ -80,14 +80,14 @@ export default function TrialBanner() {
         {/* Left: label + message */}
         <div className="flex items-center gap-3 min-w-0">
           <span
-            className="font-body text-[9px] tracking-[0.18em] uppercase shrink-0"
+            className="font-body text-[11px] tracking-[0.18em] uppercase shrink-0"
             style={{ color: urgent ? "#d47a52" : "#f39230", opacity: 0.9 }}
           >
             Trial
           </span>
           <p
             className="font-heading text-text-secondary truncate"
-            style={{ fontSize: "0.8rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+            style={{ fontSize: "0.95rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
           >
             {message}
           </p>
@@ -97,7 +97,7 @@ export default function TrialBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => router.push("/subscribe")}
-            className="font-body text-[10px] tracking-widest uppercase px-3 py-1 rounded-lg transition-colors"
+            className="font-body text-[12px] tracking-widest uppercase px-3 py-1 rounded-lg transition-colors"
             style={{
               background: "transparent",
               border: urgent ? "1px solid rgba(212,122,82,0.5)" : "1px solid rgba(243,146,48,0.35)",

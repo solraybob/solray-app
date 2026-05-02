@@ -84,7 +84,7 @@ export default function BottomNav() {
             >
               {item.icon}
               <span
-                className="text-[9px] font-body tracking-wider uppercase"
+                className="text-[11px] font-body tracking-wider uppercase"
                 style={{ color: isActive ? item.color : "#6a8068" }}
               >
                 {item.label}

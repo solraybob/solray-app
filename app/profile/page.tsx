@@ -480,7 +480,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
               <span style={{ color: cfg.color }}>{cfg.symbol}</span>{" "}
               {a.planet2}
             </span>
-            <span className="font-body text-[10px] text-text-secondary/50 ml-4">
+            <span className="font-body text-[12px] text-text-secondary/50 ml-4">
               {a.orb.toFixed(1)}°
             </span>
           </div>
@@ -501,10 +501,10 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
           <span className="text-base w-6 text-center flex-shrink-0" style={{ color: cfg.color }}>
             {cfg.symbol}
           </span>
-          <span className="font-body text-[13px] text-text-primary flex-1 text-left">
+          <span className="font-body text-[15px] text-text-primary flex-1 text-left">
             {cfg.label}
           </span>
-          <span className="font-body text-[10px] text-text-secondary/70 mr-2">
+          <span className="font-body text-[12px] text-text-secondary/70 mr-2">
             {list.length}
           </span>
           <svg
@@ -556,8 +556,8 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                 className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
               >
                 <span className="text-base w-6 text-center flex-shrink-0 text-text-secondary/50">·</span>
-                <span className="font-body text-[13px] text-text-secondary flex-1 text-left">Minor Aspects</span>
-                <span className="font-body text-[10px] text-text-secondary/70 mr-2">
+                <span className="font-body text-[15px] text-text-secondary flex-1 text-left">Minor Aspects</span>
+                <span className="font-body text-[12px] text-text-secondary/70 mr-2">
                   {minorGroups.reduce((s, k) => s + grouped[k].length, 0)}
                 </span>
                 <svg
@@ -615,12 +615,12 @@ function CollapsibleSection({
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span
-              className="font-body text-[10px] tracking-[0.22em] uppercase mb-1"
+              className="font-body text-[12px] tracking-[0.22em] uppercase mb-1"
               style={{ color: accent }}
             >
               {title}
             </span>
-            <span className="font-body text-text-secondary/70 text-[11px]">
+            <span className="font-body text-text-secondary/70 text-[13px]">
               {open ? "Tap to collapse" : "Tap to open"}
             </span>
           </div>
@@ -646,7 +646,7 @@ function CollapsibleSection({
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[10px] tracking-widest uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[12px] tracking-widest uppercase">
       {children}
     </span>
   );
@@ -654,7 +654,7 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function SunTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border border-amber-sun/60 text-amber-sun text-[10px] tracking-[0.22em] uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-amber-sun/60 text-amber-sun text-[12px] tracking-[0.22em] uppercase">
       {children}
     </span>
   );
@@ -662,7 +662,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#9babb9", borderColor: "rgba(155,171,185,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "#9babb9", borderColor: "rgba(155,171,185,0.6)" }}>
       {children}
     </span>
   );
@@ -670,7 +670,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[10px] tracking-[0.22em] uppercase" style={{ color: "#9b86a0", borderColor: "rgba(155,134,160,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "#9b86a0", borderColor: "rgba(155,134,160,0.6)" }}>
       {children}
     </span>
   );
@@ -946,7 +946,7 @@ export default function ProfilePage() {
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "#8a9e66" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#8a9e66" }}>
               Profile
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -1051,35 +1051,35 @@ export default function ProfilePage() {
                 </div>
                 {/* Upload status */}
                 {avatarSaving === "saving" && (
-                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>saving...</p>
+                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>saving...</p>
                 )}
                 {avatarSaving === "saved" && (
-                  <p className="font-body text-[10px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>saved</p>
+                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>saved</p>
                 )}
                 {avatarSaving === "error" && (
-                  <p className="font-body text-[11px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>photo not saved. check connection.</p>
+                  <p className="font-body text-[13px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>photo not saved. check connection.</p>
                 )}
 
                 {/* Handle (username) — with relative z positioning for gradient overlay */}
                 <div className="relative z-10">
                 {editingHandle ? (
                   <div className="flex items-center gap-2">
-                    <span className="font-body text-text-secondary text-[10px] tracking-widest uppercase">@</span>
+                    <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase">@</span>
                     <input
-                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 font-body text-[13px] text-text-primary focus:outline-none focus:border-amber-sun/60"
+                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 font-body text-[15px] text-text-primary focus:outline-none focus:border-amber-sun/60"
                       value={handleInput}
                       onChange={(e) => setHandleInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveHandle(); if (e.key === "Escape") setEditingHandle(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[10px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingHandle ? "…" : "Save"}
                     </button>
-                    <button onClick={() => setEditingHandle(false)} className="font-body text-[10px] text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingHandle(false)} className="font-body text-[12px] text-text-secondary">Cancel</button>
                   </div>
                 ) : (
                   profile?.handle && (
-                    <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">
+                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">
                       @{profile.handle}
                     </p>
                   )
@@ -1098,10 +1098,10 @@ export default function ProfilePage() {
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} disabled={savingName} className="font-body text-[10px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveName} disabled={savingName} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
                       {savingName ? "…" : "Save"}
                     </button>
-                    <button onClick={() => setEditingName(false)} className="font-body text-[10px] text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingName(false)} className="font-body text-[12px] text-text-secondary">Cancel</button>
                   </div>
                 ) : (
                     <h1
@@ -1113,7 +1113,7 @@ export default function ProfilePage() {
                   )}
 
                   {saveError && (
-                    <p className="font-body text-ember text-[10px]">{saveError}</p>
+                    <p className="font-body text-ember text-[12px]">{saveError}</p>
                   )}
                 </div>
 
@@ -1139,7 +1139,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#8a9e66" }}>
+                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#8a9e66" }}>
                   Soul Map
                 </p>
 
@@ -1152,7 +1152,7 @@ export default function ProfilePage() {
                     <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
                       {/* Quiet caption instead of a dev-style legend */}
-                      <p className="mt-3 font-body text-text-secondary/60 text-[10px] tracking-[0.15em] uppercase text-center">
+                      <p className="mt-3 font-body text-text-secondary/60 text-[12px] tracking-[0.15em] uppercase text-center">
                         The dashed ring is balance
                       </p>
 
@@ -1164,7 +1164,7 @@ export default function ProfilePage() {
                           const barColor = ELEMENT_COLORS[label] || "#8a9e8d";
                           return (
                             <div key={key} className="flex items-center gap-2">
-                              <span className="font-body text-text-secondary/80 text-[10px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
+                              <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
                                 {label}
                               </span>
                               <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
@@ -1176,7 +1176,7 @@ export default function ProfilePage() {
                                   }}
                                 />
                               </div>
-                              <span className="font-body text-text-secondary/70 text-[10px] w-7 text-right shrink-0">
+                              <span className="font-body text-text-secondary/70 text-[12px] w-7 text-right shrink-0">
                                 {val}%
                               </span>
                             </div>
@@ -1187,7 +1187,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-8 text-center">
-                    <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+                    <p className="font-body text-text-secondary text-[15px] leading-relaxed">
                       Complete your birth data to unlock your Soul Map
                     </p>
                   </div>
@@ -1270,10 +1270,10 @@ function normaliseCentreName(key: string): string {
 function HDRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="font-body text-text-secondary text-[10px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
+      <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
       <div className="flex-1">
-        <span className="font-body text-text-primary text-[13px]">{value}</span>
-        {meaning && <p className="font-body text-text-secondary/50 text-[10px] leading-snug mt-0.5">{meaning}</p>}
+        <span className="font-body text-text-primary text-[15px]">{value}</span>
+        {meaning && <p className="font-body text-text-secondary/50 text-[12px] leading-snug mt-0.5">{meaning}</p>}
       </div>
     </div>
   );
@@ -1282,7 +1282,7 @@ function HDRow({ label, value, meaning }: { label: string; value: string; meanin
 function GKPill({ label, value, color, style }: { label: string; value: string; color: string; style?: React.CSSProperties }) {
   return (
     <div className="text-center">
-      <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase mb-1">{label}</p>
+      <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase mb-1">{label}</p>
       <p className={`font-heading ${color}`} style={{ fontSize: "1.05rem", fontWeight: 400, ...style }}>{value}</p>
     </div>
   );
@@ -1447,7 +1447,7 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
   return (
     <button
       onClick={handleClick}
-      className="font-body text-[10px] tracking-[0.22em] uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+      className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
     >
       Ask →
     </button>
@@ -1504,7 +1504,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
   if (!chart) {
     return (
       <div className="mb-4 rounded-2xl border border-forest-border/50 bg-forest-card/30 px-5 py-6 text-center">
-        <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed">
           Your blueprint is still being woven. Refresh in a moment.
         </p>
       </div>
@@ -1563,12 +1563,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     {planetText(p.planet)}
                   </span>
                   <div className="flex-1">
-                    <p className="font-body text-text-secondary text-[10px] tracking-widest uppercase">{label}</p>
-                    <p className="font-body text-text-secondary/50 text-[10px]">{subtitles[label]}</p>
+                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">{label}</p>
+                    <p className="font-body text-text-secondary/50 text-[12px]">{subtitles[label]}</p>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{p.sign}</p>
-                    <p className="font-body text-text-secondary/60 text-[10px]">{p.degree}</p>
+                    <p className="font-body text-text-secondary/60 text-[12px]">{p.degree}</p>
                     {questions[label] && <AskButton topic={`${label} in ${p.sign}`} question={questions[label]} />}
                   </div>
                 </div>
@@ -1578,7 +1578,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {/* All planets */}
           <button
             onClick={() => setShowAll(!showAll)}
-            className="flex items-center gap-2 font-body text-text-secondary text-[10px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors"
+            className="flex items-center gap-2 font-body text-text-secondary text-[12px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors"
           >
             <span>{showAll ? "Hide planets" : "See all planets"}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}>
@@ -1604,11 +1604,11 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   >
                     {planetText(p.planet)}
                   </span>
-                  <span className="font-body text-text-primary text-[13px] flex-1">{p.planet}</span>
-                  <span className="font-body text-text-secondary text-[13px]">{p.sign}</span>
-                  <span className="font-body text-text-secondary text-[10px]">{p.degree}</span>
-                  {p.retrograde && <span className="font-body text-amber-sun/70 text-[10px] font-semibold">Rx</span>}
-                  <span className="font-body text-text-secondary text-[10px]">H{p.house}</span>
+                  <span className="font-body text-text-primary text-[15px] flex-1">{p.planet}</span>
+                  <span className="font-body text-text-secondary text-[15px]">{p.sign}</span>
+                  <span className="font-body text-text-secondary text-[12px]">{p.degree}</span>
+                  {p.retrograde && <span className="font-body text-amber-sun/70 text-[12px] font-semibold">Rx</span>}
+                  <span className="font-body text-text-secondary text-[12px]">H{p.house}</span>
                 </div>
               ))}
             </div>
@@ -1637,12 +1637,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase">Type</p>
+                <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase">Type</p>
                 <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
               </div>
               <p className="font-heading leading-tight" style={{ color: "#8a9e66", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
               {HD_TYPE_MEANINGS[chart.human_design.type] && (
-                <p className="text-text-secondary/60 text-[12px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
+                <p className="text-text-secondary/60 text-[14px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
               )}
             </div>
           )}
@@ -1665,12 +1665,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             </div>
           )}
           <div>
-            <p className="text-text-secondary text-[10px] font-body tracking-[0.22em] uppercase mb-2">Defined Centres</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">Defined Centres</p>
             <div className="flex flex-wrap gap-2">
               {chart.human_design.defined_centres.map((c) => (
                 <span
                   key={c}
-                  className="px-2.5 py-1 rounded-full text-[11px] font-body tracking-[0.05em]"
+                  className="px-2.5 py-1 rounded-full text-[13px] font-body tracking-[0.05em]"
                   style={{ color: "#8a9e66", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
                 >
                   {c}
@@ -1787,10 +1787,10 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
 
                     {/* Label + meaning */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-[10px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#9b86a0" }}>
+                      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#9b86a0" }}>
                         {label}
                       </p>
-                      <p className="font-body text-text-secondary/50 text-[10px] tracking-[0.12em] uppercase mb-2">
+                      <p className="font-body text-text-secondary/50 text-[12px] tracking-[0.12em] uppercase mb-2">
                         {sub}
                       </p>
                       {meaning && (

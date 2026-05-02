@@ -279,7 +279,7 @@ export default function OnboardPage() {
           </div>
           <div className="flex flex-col">
             <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</span>
-            <span className="font-heading text-[10px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
+            <span className="font-heading text-[12px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
           </div>
         </div>
         {/* Progress dots */}

@@ -227,7 +227,7 @@ function SubscribeContent() {
       <div className="max-w-md mx-auto">
         {/* Eyebrow */}
         <p
-          className="text-[10px] tracking-[0.3em] uppercase mb-5 text-center"
+          className="text-[12px] tracking-[0.3em] uppercase mb-5 text-center"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
           Subscription
@@ -268,7 +268,7 @@ function SubscribeContent() {
         >
           <div className="flex justify-between items-center mb-6">
             <span
-              className="text-[10px] tracking-[0.3em] uppercase"
+              className="text-[12px] tracking-[0.3em] uppercase"
               style={{ color: "var(--text-secondary)" }}
             >
               Status
@@ -345,7 +345,7 @@ function SubscribeContent() {
               to non-IAP purchasing. */}
           {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial") && (
             <p
-              className="text-center text-[12px] leading-relaxed"
+              className="text-center text-[14px] leading-relaxed"
               style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.85 }}
             >
               Your Solray membership is managed on the web.
@@ -358,7 +358,7 @@ function SubscribeContent() {
             <button
               onClick={handleCancel}
               disabled={actionLoading}
-              className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
+              className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
               style={{
                 color: "var(--text-secondary, #8a9e8d)",
                 border: "1px solid rgba(138, 158, 141, 0.25)",
@@ -379,7 +379,7 @@ function SubscribeContent() {
         <div className="mt-8">
           <button
             onClick={() => router.push("/today")}
-            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
             style={{
               color: "var(--bg-deep, #050f08)",
               background: "var(--amber, #f39230)",
@@ -406,13 +406,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline">
       <span
-        className="text-[10px] tracking-[0.22em] uppercase"
+        className="text-[12px] tracking-[0.22em] uppercase"
         style={{ color: "var(--text-secondary)", opacity: 0.7 }}
       >
         {label}
       </span>
       <span
-        className="text-[15px]"
+        className="text-[17px]"
         style={{ color: "var(--text-primary, #f2ecd8)" }}
       >
         {value}
@@ -449,7 +449,7 @@ function NativeMembershipView() {
     <div className="min-h-screen px-6 pt-20 pb-32">
       <div className="max-w-md mx-auto text-center">
         <p
-          className="text-[10px] tracking-[0.3em] uppercase mb-5"
+          className="text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
           Membership
@@ -483,7 +483,7 @@ function NativeMembershipView() {
         <div className="space-y-3">
           <button
             onClick={() => router.push("/today")}
-            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
             style={{
               color: "var(--bg-deep, #050f08)",
               background: "var(--amber, #f39230)",
@@ -494,7 +494,7 @@ function NativeMembershipView() {
 
           <button
             onClick={logout}
-            className="w-full py-4 rounded-full text-[10px] tracking-[0.3em] uppercase transition-colors"
+            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
             style={{
               color: "var(--text-secondary, #8a9e8d)",
               border: "1px solid rgba(138, 158, 141, 0.25)",
@@ -523,7 +523,7 @@ function TrialOffer({
       <div className="max-w-md mx-auto text-center">
         {/* Eyebrow */}
         <p
-          className="text-[10px] tracking-[0.3em] uppercase mb-5"
+          className="text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
           Living by design
@@ -563,7 +563,7 @@ function TrialOffer({
           }}
         >
           <p
-            className="text-[10px] tracking-[0.3em] uppercase mb-6"
+            className="text-[12px] tracking-[0.3em] uppercase mb-6"
             style={{ color: "var(--text-secondary)" }}
           >
             Everything included
@@ -587,7 +587,7 @@ function TrialOffer({
                 }}
               />
               <span
-                className="text-[15px] leading-snug"
+                className="text-[17px] leading-snug"
                 style={{ color: "var(--text-primary, #f2ecd8)" }}
               >
                 {item}
@@ -688,7 +688,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className="text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full"
+      className="text-[12px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full"
       style={{
         background: c.bg,
         color: c.text,
@@ -715,7 +715,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="w-full py-4 px-8 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110"
+      className="w-full py-4 px-8 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110"
       style={{
         background: color,
         color: "#050f08",

@@ -139,7 +139,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
               {event.type} in {event.sign}
             </span>
             <span
-              className="text-[10px] font-body tracking-wider px-2 py-0.5 rounded-full border"
+              className="text-[12px] font-body tracking-wider px-2 py-0.5 rounded-full border"
               style={{
                 color: "rgba(216, 208, 188, 0.85)",    // pearl
                 borderColor: "rgba(122, 138, 154, 0.35)", // mist
@@ -181,7 +181,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
 
       {/* Read more / Close toggle */}
       <button
-        className="mt-2.5 text-[11px] font-body tracking-wider"
+        className="mt-2.5 text-[13px] font-body tracking-wider"
         style={{ color: "rgba(216, 208, 188, 0.6)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
         onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
       >

@@ -87,7 +87,7 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
         <span className="text-text-secondary/70 text-xs font-body">{natalSymbol}</span>
         <span className="text-text-secondary/70 text-xs font-body">{aspect.natal_planet}</span>
         <div className="ml-auto flex items-center gap-1">
-          <span className="text-text-secondary/60 text-[10px] font-body">orb {aspect.orb.toFixed(1)}°</span>
+          <span className="text-text-secondary/60 text-[12px] font-body">orb {aspect.orb.toFixed(1)}°</span>
           <span className="text-amber-sun/70 text-xs">→</span>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
       </p>
 
       {/* Subtle label */}
-      <p className="text-text-secondary/50 text-[10px] font-body mt-2">Tap to explore in chat</p>
+      <p className="text-text-secondary/50 text-[12px] font-body mt-2">Tap to explore in chat</p>
     </div>
   );
 }

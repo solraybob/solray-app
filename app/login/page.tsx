@@ -71,7 +71,7 @@ export default function LoginPage() {
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
           <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em]" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</p>
-          <p className="font-body text-text-secondary text-[10px] mt-3 tracking-[0.22em] uppercase">Your cosmic intelligence</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Your cosmic intelligence</p>
         </div>
 
         {/* Form */}

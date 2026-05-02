@@ -323,7 +323,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             fillOpacity={0.92}
             style={{
               fontFamily: "Inter, system-ui, sans-serif",
-              fontSize: "9.5px",
+              fontSize: "11.5px",
               fontWeight: 500,
               letterSpacing: "0.20em",
             }}

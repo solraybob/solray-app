@@ -76,7 +76,7 @@ export default function ConnectionProfilePage() {
         {/* Header */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-indigo))" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-indigo))" }}>
               Soul
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -160,7 +160,7 @@ export default function ConnectionProfilePage() {
                     {profile.name}
                   </p>
                   {profile.username && (
-                    <p className="font-body text-text-secondary text-[12px] mt-1">@{profile.username}</p>
+                    <p className="font-body text-text-secondary text-[14px] mt-1">@{profile.username}</p>
                   )}
                 </div>
               </div>
@@ -186,7 +186,7 @@ function PrivateProfileNotice({ name }: { name: string }) {
       <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
         Private profile
       </p>
-      <p className="font-body text-text-secondary text-[13px] leading-relaxed max-w-xs mx-auto">
+      <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-xs mx-auto">
         {name} hasn&rsquo;t made their chart public. You stay connected on Souls, but their birth details are theirs to share.
       </p>
     </div>
@@ -212,8 +212,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Three-line essence line */}
       {(sunSign || hdType) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-3">Essence</p>
-          <div className="space-y-1.5 font-body text-[13px]">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Essence</p>
+          <div className="space-y-1.5 font-body text-[15px]">
             {sunSign  && <Row label="Sun"  value={sunSign}  />}
             {moonSign && <Row label="Moon" value={moonSign} />}
             {ascSign  && <Row label="Ascendant" value={ascSign} />}
@@ -226,8 +226,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Birth details — only when truly public */}
       {(profile.birth_date || profile.birth_city) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-3">Birth</p>
-          <div className="space-y-1.5 font-body text-[13px]">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Birth</p>
+          <div className="space-y-1.5 font-body text-[15px]">
             {profile.birth_date && <Row label="Date" value={profile.birth_date} />}
             {profile.birth_time && <Row label="Time" value={profile.birth_time} />}
             {profile.birth_city && <Row label="Place" value={profile.birth_city} />}
@@ -253,10 +253,10 @@ function EmptyState({
   return (
     <div className="mt-8 px-6 py-10 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
       <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>{title}</p>
-      <p className="font-body text-text-secondary text-[13px] leading-relaxed max-w-xs mx-auto mb-5">{body}</p>
+      <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-xs mx-auto mb-5">{body}</p>
       <button
         onClick={onAction}
-        className="font-body text-[10px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors"
+        className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors"
       >
         {actionLabel}
       </button>

@@ -53,27 +53,27 @@ export default function ForgotPasswordPage() {
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-body text-text-secondary text-[10px] mt-3 tracking-[0.22em] uppercase">Reset password</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Reset password</p>
         </div>
 
         {submitted ? (
           <div className="text-center space-y-4">
-            <p className="font-body text-text-primary text-[14px] leading-relaxed">
+            <p className="font-body text-text-primary text-[16px] leading-relaxed">
               If that email is registered, a reset link is on the way.
             </p>
-            <p className="font-body text-text-secondary text-[12px] leading-relaxed">
+            <p className="font-body text-text-secondary text-[14px] leading-relaxed">
               The link is good for one hour. Check spam if it does not arrive within a few minutes.
             </p>
             <Link
               href="/login"
-              className="inline-block mt-6 font-body text-amber-sun text-[12px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
+              className="inline-block mt-6 font-body text-amber-sun text-[14px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
             >
               Back to login
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="font-body text-text-secondary text-[13px] leading-relaxed text-center mb-4">
+            <p className="font-body text-text-secondary text-[15px] leading-relaxed text-center mb-4">
               Enter your email. We&rsquo;ll send a link to set a new password.
             </p>
 
