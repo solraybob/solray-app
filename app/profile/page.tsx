@@ -144,11 +144,18 @@ function parseProfile(blueprint: any): ProfileData {
   const moonSign = natal?.planets?.Moon?.sign ?? "";
   const risingSign = natal?.ascendant?.sign ?? "";
 
-  let lifesWork = { gate: 64, gift: "Imagination", shadow: "Confusion" };
-  let evolution = { gate: 63, gift: "Inquiry", shadow: "Doubt" };
+  // Honest defaults: zero gate, empty gift/shadow when data is missing.
+  // Previous version hardcoded { gate: 64, gift: "Imagination", shadow:
+  // "Confusion" } and { gate: 63, gift: "Inquiry", shadow: "Doubt" } as
+  // initial values, which would render to the user as if those were
+  // their actual Gene Keys whenever the blueprint failed to load. The
+  // user pays for personalised data, so any unknown field stays empty
+  // and the UI hides what it cannot honestly fill.
+  let lifesWork: { gate: number; gift: string; shadow: string } = { gate: 0, gift: "", shadow: "" };
+  let evolution: { gate: number; gift: string; shadow: string } = { gate: 0, gift: "", shadow: "" };
 
   if (gk.lifes_work) {
-    lifesWork = { gate: gk.lifes_work.gate ?? 64, gift: gk.lifes_work.gift ?? "", shadow: gk.lifes_work.shadow ?? "" };
+    lifesWork = { gate: gk.lifes_work.gate ?? 0, gift: gk.lifes_work.gift ?? "", shadow: gk.lifes_work.shadow ?? "" };
   } else if (gk.natal_gene_keys) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const vals = Object.values(gk.natal_gene_keys as Record<string, any>).sort((a: any, b: any) => a.gate - b.gate);
@@ -156,12 +163,17 @@ function parseProfile(blueprint: any): ProfileData {
     if (vals[1]) evolution = { gate: vals[1].gate, gift: vals[1].gift ?? "", shadow: vals[1].shadow ?? "" };
   }
   if (gk.evolution) {
-    evolution = { gate: gk.evolution.gate ?? 63, gift: gk.evolution.gift ?? "", shadow: gk.evolution.shadow ?? "" };
+    evolution = { gate: gk.evolution.gate ?? 0, gift: gk.evolution.gift ?? "", shadow: gk.evolution.shadow ?? "" };
   }
 
   const crossLabel = hd?.incarnation_cross?.name ?? hd?.incarnation_cross?.label ?? hd?.incarnation_cross ?? "";
-  const name = _cachedName || user?.name || blueprint?.name || "Your Name";
-  const handle = _cachedUsername || user?.handle || blueprint?.handle || user?.email?.split("@")[0] || "you";
+  // Honest empty when name/handle is missing. UI is responsible for
+  // hiding or placeholdering empty strings. Previous defaults of
+  // "Your Name" and "you" rendered prominently as if they were the
+  // user's actual identity when the blueprint or profile failed to
+  // load.
+  const name = _cachedName || user?.name || blueprint?.name || "";
+  const handle = _cachedUsername || user?.handle || blueprint?.handle || user?.email?.split("@")[0] || "";
 
   // Parse natal aspects with orb filtering
   const MAJOR_ASPECTS = new Set(["trine", "sextile", "conjunction", "opposition", "square"]);
@@ -1108,7 +1120,13 @@ export default function ProfilePage() {
                       className="font-heading text-text-primary leading-tight text-center"
                       style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "-0.01em" }}
                     >
-                      {profile?.name || "Your Name"}
+                      {profile?.name ? (
+                        profile.name
+                      ) : (
+                        <span className="text-text-secondary opacity-60 italic" style={{ fontWeight: 300 }}>
+                          Add your name
+                        </span>
+                      )}
                     </h1>
                   )}
 
@@ -1378,16 +1396,24 @@ function parseBlueprintForChart(blueprint: any) {
     const natalGK = gk.natal_gene_keys as Record<string, any>;
     const cc = hd?.conscious_chart || {};
     const uc = hd?.unconscious_chart || {};
-    const profileMap = [
-      { name: "Life's Work", gateKey: String(cc.Sun?.gate || 64) },
-      { name: "Evolution", gateKey: String(cc.Earth?.gate || 63) },
-      { name: "Radiance",   gateKey: String(uc.Sun?.gate       || 35) },
-      { name: "Purpose",    gateKey: String(uc.Earth?.gate     || 5)  },
-      { name: "Attraction", gateKey: String(cc.Venus?.gate     || 32) },
-      { name: "IQ",         gateKey: String(cc.SouthNode?.gate || 29) },
-      { name: "EQ",         gateKey: String(cc.Moon?.gate      || 28) },
+    // If a chart point is missing, gateKey is null and the entry is
+    // skipped. The previous version fell back to hardcoded gate
+    // numbers (64, 63, 35, 5, 32, 29, 28) which, combined with the
+    // natal_gene_keys lookup, would surface the wrong Gene Key as
+    // the user's "Life's Work" or other sphere whenever the
+    // conscious/unconscious chart had not loaded. Honest skip beats
+    // fictional content.
+    const profileMap: Array<{ name: string; gateKey: string | null }> = [
+      { name: "Life's Work", gateKey: cc.Sun?.gate       != null ? String(cc.Sun.gate)       : null },
+      { name: "Evolution",   gateKey: cc.Earth?.gate     != null ? String(cc.Earth.gate)     : null },
+      { name: "Radiance",    gateKey: uc.Sun?.gate       != null ? String(uc.Sun.gate)       : null },
+      { name: "Purpose",     gateKey: uc.Earth?.gate     != null ? String(uc.Earth.gate)     : null },
+      { name: "Attraction",  gateKey: cc.Venus?.gate     != null ? String(cc.Venus.gate)     : null },
+      { name: "IQ",          gateKey: cc.SouthNode?.gate != null ? String(cc.SouthNode.gate) : null },
+      { name: "EQ",          gateKey: cc.Moon?.gate      != null ? String(cc.Moon.gate)      : null },
     ];
     profileMap.forEach(({ name, gateKey }) => {
+      if (!gateKey) return;
       const entry = natalGK[gateKey];
       if (entry) {
         const key = name.toLowerCase().replace(/[' ]/g, '_');
