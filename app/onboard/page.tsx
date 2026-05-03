@@ -224,7 +224,11 @@ export default function OnboardPage() {
       // Show magical blueprint loading screen for at least 3.5 seconds
       setCalculatingBlueprint(true);
       await new Promise((resolve) => setTimeout(resolve, 3500));
-      router.push("/today");
+      // Send the user to the First Mirror before Today: three lines
+      // that prove Solray understood them. The mirror page itself
+      // routes to /today on Continue or on error, so this never
+      // strands the user. Codex UX hook 1.
+      router.push("/first-mirror");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : "Something went wrong. Please try again.";
       setError(msg);
