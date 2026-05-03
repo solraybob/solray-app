@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * lib/analytics.ts — privacy-respecting analytics client.
+ * lib/analytics.ts, privacy-respecting analytics client.
  *
  * What this DOES track:
  *   - Funnel events (signup steps, subscribe taps, etc.)
@@ -21,7 +21,7 @@
  *      client sends an event, the server drops it when the user has
  *      opted out. Defense in depth.
  *   3. No event is fired without an authenticated token. Anonymous
- *      events are out of scope for v1 — keeps the threat model tight.
+ *      events are out of scope for v1, keeps the threat model tight.
  *
  * Reliability:
  *   - track() is fire-and-forget. The user flow is never blocked by an
@@ -35,7 +35,7 @@
 import { apiFetch } from "./api";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Session id — sessionStorage-backed, regenerated on tab close.
+// Session id, sessionStorage-backed, regenerated on tab close.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = "solray_analytics_session";
@@ -70,7 +70,7 @@ function getSessionId(): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Opt-out helpers — exported so the settings page can wire the toggle.
+// Opt-out helpers, exported so the settings page can wire the toggle.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function isAnalyticsOptedOut(): boolean {
@@ -91,7 +91,7 @@ export function setAnalyticsOptedOut(value: boolean): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Track — the only function the rest of the app calls.
+// Track, the only function the rest of the app calls.
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TrackProps {
@@ -111,7 +111,7 @@ export async function track(
   if (isAnalyticsOptedOut()) return;
 
   // Strict event-name format: snake_case ASCII. Mirrors the server's
-  // Pydantic regex — keeps the schema clean and prevents PII-via-event-name.
+  // Pydantic regex, keeps the schema clean and prevents PII-via-event-name.
   if (!/^[a-z0-9_]+$/.test(eventName) || eventName.length > 64) {
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[analytics] skipping invalid event name: ${eventName}`);
@@ -138,7 +138,7 @@ export async function track(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// trackOnce — for events that should fire only once per browser, ever.
+// trackOnce, for events that should fire only once per browser, ever.
 // e.g. today_first_view: fire the first time a user reaches /today, then
 // never again. We use localStorage so it's truly per-device-per-user.
 // ─────────────────────────────────────────────────────────────────────────────

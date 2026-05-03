@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /reset-password/[token] — set a new password using the link from email.
+ * /reset-password/[token], set a new password using the link from email.
  *
  * Posts {token, new_password} to /users/reset-password. On success the
  * backend returns a fresh JWT and we log the user in immediately so
@@ -63,7 +63,7 @@ export default function ResetPasswordPage() {
         });
         router.replace("/today");
       } else {
-        // Backend returned ok but no token — fall back to login.
+        // Backend returned ok but no token, fall back to login.
         router.replace("/login");
       }
     } catch (e: unknown) {

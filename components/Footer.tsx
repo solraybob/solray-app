@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export default function Footer() {
   const pathname = usePathname();
   
-  // Only show footer on legal page — nowhere else in the app
+  // Only show footer on legal page, nowhere else in the app
   const showFooter = pathname === "/legal";
   
   if (!showFooter) return null;

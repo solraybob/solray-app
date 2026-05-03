@@ -123,7 +123,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
   const progress = calcProgress(cycle.started, cycle.peak, cycle.ends);
   const peakPos = calcPeakPos(cycle.started, cycle.peak, cycle.ends);
 
-  const duration = `${fmtDate(cycle.started)} — ${fmtDate(cycle.ends)}`;
+  const duration = `${fmtDate(cycle.started)}, ${fmtDate(cycle.ends)}`;
   const summary = cycle.summary || "";
   const [firstSentence, rest] = splitFirstSentence(summary);
 
@@ -133,7 +133,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
       style={{ border: "1px solid rgba(26,48,32,0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
-      {/* Photo header — locked height, never grows */}
+      {/* Photo header, locked height, never grows */}
       <div className="relative" style={{ minHeight: "160px" }}>
         <Image
           src={getCycleImage(cycle.transit_planet)}
@@ -187,7 +187,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
         </div>
       </div>
 
-      {/* Expanded reading — forest green panel below photo */}
+      {/* Expanded reading, forest green panel below photo */}
       {expanded && rest && (
         <div style={{ background: "rgb(var(--rgb-card))", padding: "16px 20px", borderTop: "1px solid rgb(var(--rgb-border) / 0.8)" }}>
           <p className="text-text-secondary/80 text-[15px] font-body leading-relaxed">{rest}</p>

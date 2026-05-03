@@ -10,7 +10,7 @@ const navItems = [
   {
     href: "/today",
     label: "Today",
-    color: "#f39230", // amber-sun — hero
+    color: "var(--amber)", // amber-sun, hero
 
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -29,7 +29,7 @@ const navItems = [
   {
     href: "/chat",
     label: "Chat",
-    color: "#9b86a0", // wisteria
+    color: "var(--wisteria)", // wisteria
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -52,7 +52,7 @@ const navItems = [
   {
     href: "/profile",
     label: "Profile",
-    color: "#8a9e66", // moss
+    color: "var(--moss)", // moss
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>

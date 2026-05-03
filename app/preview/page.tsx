@@ -426,7 +426,7 @@ export default function PreviewPage() {
                 {/* HD Type */}
                 <div
                   className="border-t pt-6 text-center"
-                  style={{ borderColor: "#1a3020" }}
+                  style={{ borderColor: "var(--border)" }}
                 >
                   <p className="text-xs uppercase tracking-widest text-text-secondary font-body mb-2">
                     Human Design Type

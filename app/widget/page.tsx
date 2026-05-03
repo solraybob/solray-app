@@ -121,7 +121,7 @@ export default function WidgetPage() {
     return (
       <div
         className="flex items-center justify-center min-h-screen"
-        style={{ backgroundColor: "#050f08" }}
+        style={{ backgroundColor: "var(--bg-deep)" }}
       >
         <p className="text-text-secondary text-xs text-center px-4">
           Unable to load forecast. Please check your connection.
@@ -133,7 +133,7 @@ export default function WidgetPage() {
   return (
     <div
       className="min-h-screen flex flex-col justify-between p-4"
-      style={{ backgroundColor: "#050f08", fontFamily: '"Cormorant Garamond", serif' }}
+      style={{ backgroundColor: "var(--bg-deep)", fontFamily: '"Cormorant Garamond", serif' }}
     >
       {loading ? (
         <div className="flex-1 flex items-center justify-center">

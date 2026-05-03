@@ -209,7 +209,7 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
     lon: s.lon,
     city: s.city,
     lines: s.nearLines.map(l => `${l.planet} ${l.type}`),
-    description: `${s.nearLines.map(l => l.symbol).join("")} — ${s.nearLines.map(l => l.planet).join(" & ")} energies are strong here`,
+    description: `${s.nearLines.map(l => l.symbol).join("")}, ${s.nearLines.map(l => l.planet).join(" & ")} energies are strong here`,
   }));
 }
 
@@ -896,7 +896,7 @@ function WorldMap() {
       {WORLD_PATHS.map((d, i) => (
         <path key={i} d={d} />
       ))}
-      {/* Iceland — not in 110m dataset, added manually */}
+      {/* Iceland, not in 110m dataset, added manually */}
       <path d="M 351.1 52.2 L 368.9 54.4 L 368.9 57.8 L 360.0 59.1 L 351.1 58.9 L 346.7 56.7 L 346.7 54.4 Z" />
       {/* UK & Ireland */}
       <path d="M 355 68 L 366 66 L 370 72 L 364 76 L 356 74 Z" />

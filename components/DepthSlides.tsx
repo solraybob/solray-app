@@ -20,8 +20,8 @@ const SLIDES = [
   {
     key: "astrology" as const,
     label: "The Sky",
-    color: "#f39230",
-    // Warm candlelight amber — golden glow matching the color
+    color: "var(--amber)",
+    // Warm candlelight amber, golden glow matching the color
     image: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -36,8 +36,8 @@ const SLIDES = [
   {
     key: "human_design" as const,
     label: "Your Design",
-    color: "#9babb9", // mist — mental blueprint, cool geometric
-    // Earth from space — the cosmic blueprint of a body
+    color: "var(--mist)", // mist, mental blueprint, cool geometric
+    // Earth from space, the cosmic blueprint of a body
     image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -49,8 +49,8 @@ const SLIDES = [
   {
     key: "gene_keys" as const,
     label: "Your Keys",
-    color: "#9b86a0", // wisteria — mystical keys, transformative
-    // Moon — the inner world, mystery, threshold
+    color: "var(--wisteria)", // wisteria, mystical keys, transformative
+    // Moon, the inner world, mystery, threshold
     image: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -117,7 +117,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   overflow: "hidden",
                 }}
               >
-                {/* Photo header — absolute Image fill, guaranteed full coverage */}
+                {/* Photo header, absolute Image fill, guaranteed full coverage */}
                 <div style={{ position: "relative", minHeight: "110px" }}>
                   <Image
                     src={image}
@@ -149,13 +149,13 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                       </span>
                     </div>
                     {/* Headline */}
-                    <p className="font-body text-[15px] font-medium leading-relaxed" style={{ color: "#f2ecd8" }}>
+                    <p className="font-body text-[15px] font-medium leading-relaxed" style={{ color: "var(--text-primary)" }}>
                       {headline}
                     </p>
                   </div>
                 </div>
 
-                {/* Expanded reading — forest green panel below photo */}
+                {/* Expanded reading, forest green panel below photo */}
                 {isOpen && (
                   <div style={{ background: "rgb(var(--rgb-card))", padding: "16px", borderTop: `1px solid ${color}25` }}>
                     <p

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /profile/[id] — view a soul connection's profile.
+ * /profile/[id], view a soul connection's profile.
  *
  * Two states the backend can return:
  *
@@ -223,7 +223,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
         </div>
       )}
 
-      {/* Birth details — only when truly public */}
+      {/* Birth details, only when truly public */}
       {(profile.birth_date || profile.birth_city) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
           <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Birth</p>

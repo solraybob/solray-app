@@ -19,12 +19,12 @@ import TrialBanner from "./TrialBanner";
  *      copy for every post-trial state.
  *
  * Subscribe-pages bypass the access gate. Both /subscribe and
- * /subscribe/welcome are reachable for users without active access —
+ * /subscribe/welcome are reachable for users without active access , 
  * if we redirected those, an expired user trying to rejoin would hit
  * an infinite loop (gate → /subscribe → gate → /subscribe ...).
  *
  * Backend endpoints (forecast, chat, blueprint reads) all enforce
- * `require_premium` independently — this gate is the UX layer on top of
+ * `require_premium` independently, this gate is the UX layer on top of
  * that, so an expired user gets cleanly redirected instead of seeing a
  * page chrome that then errors on every data fetch.
  *
@@ -54,7 +54,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!token) return;
     if (isSubscribeRoute) {
-      // Bypass the access check entirely on subscribe routes — the
+      // Bypass the access check entirely on subscribe routes, the
       // page renders for every status state and contains its own CTAs.
       setAccessChecked(true);
       return;
@@ -71,7 +71,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       })
       .catch(() => {
         // Network or backend error: don't strand the user on a spinner.
-        // Backend endpoints still gate independently — the page's own
+        // Backend endpoints still gate independently, the page's own
         // calls will surface a real error if the user truly lacks access.
         if (!cancelled) setAccessChecked(true);
       });

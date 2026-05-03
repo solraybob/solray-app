@@ -29,7 +29,7 @@ export default function ShareableChartCard({
 
       // Generate canvas from the card div
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: "#050f08",
+        backgroundColor: "var(--bg-deep)",
         scale: 2,
         logging: false,
         useCORS: true,

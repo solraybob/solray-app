@@ -8,7 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 const TOTAL_STEPS = 6;
 
-// Atmospheric image per step — fades in behind the question
+// Atmospheric image per step, fades in behind the question
 const STEP_IMAGES = [
   "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=60", // 1 name: warm candlelight
   "https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=60", // 2 sex: soft silhouette
@@ -220,7 +220,7 @@ export default function OnboardPage() {
       try {
         const { track } = await import("@/lib/analytics");
         await track("register_success", undefined, newToken);
-      } catch { /* ignore — analytics is best-effort */ }
+      } catch { /* ignore, analytics is best-effort */ }
       // Show magical blueprint loading screen for at least 3.5 seconds
       setCalculatingBlueprint(true);
       await new Promise((resolve) => setTimeout(resolve, 3500));
@@ -236,7 +236,7 @@ export default function OnboardPage() {
 
   return (
     <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
-      {/* Atmospheric step images — transition on step change */}
+      {/* Atmospheric step images, transition on step change */}
       {STEP_IMAGES.map((src, i) => (
         <img
           key={src}
@@ -328,7 +328,7 @@ export default function OnboardPage() {
                       onClick={() => setSex(opt)}
                       className="sex-card"
                       style={{
-                        borderColor: active ? "#f39230" : "#1a3020",
+                        borderColor: active ? "#f39230" : "var(--border)",
                         background: active ? "rgba(243,146,48,0.08)" : "transparent",
                         color: active ? "#f2ecd8" : "#8a9e8d",
                       }}

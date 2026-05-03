@@ -139,17 +139,17 @@ function getEnergyNote(label: string, value: number): string {
   return bucket[2];
 }
 
-// Extended palette — aged pigments. Label stays in text.secondary;
+// Extended palette, aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
   Mental:    "#9babb9", // mist
-  Emotional: "#d47a52", // ember
+  Emotional: "var(--ember)", // ember
   Physical:  "#8a9e66", // moss
-  Intuitive: "#9b86a0", // wisteria
+  Intuitive: "var(--wisteria)", // wisteria
 };
 
 // Prompts seeded into chat when a bar is tapped. Phrased as the user
-// asking their Higher Self — keeps the question in first-person voice.
+// asking their Higher Self, keeps the question in first-person voice.
 const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
   Mental:    (p) => `My mental energy is at ${p}% today. What's shaping it, and how should I work with it?`,
   Emotional: (p) => `My emotional energy is at ${p}% today. What's underneath this, and what does it need from me?`,
@@ -158,7 +158,7 @@ const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
 };
 
 // Display-layer transform: remap raw 0-10 readings onto a 50-95 visual range.
-// The backend's scale is relative, not absolute — a "4 out of 10" is a quiet
+// The backend's scale is relative, not absolute, a "4 out of 10" is a quiet
 // day, not a broken one, so the visual floor sits at 50% not 0%. Relative
 // differences are preserved (a 9 is still visibly higher than a 4). When the
 // forecast engine gets recalibrated we just delete this function.
@@ -202,7 +202,7 @@ function EnergyBar({
       aria-label={`Ask your Higher Self about your ${label.toLowerCase()} energy at ${pct} percent`}
       className="group block w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-sun/40 rounded-sm"
     >
-      {/* Label row — fades in as a unit, no per-row stagger here. */}
+      {/* Label row, fades in as a unit, no per-row stagger here. */}
       <div
         className="flex items-baseline justify-between mb-2"
         style={{
@@ -220,7 +220,7 @@ function EnergyBar({
         </span>
       </div>
 
-      {/* Track — matches MoonCycleBar grammar (h-1.5, rounded-full). No dot;
+      {/* Track, matches MoonCycleBar grammar (h-1.5, rounded-full). No dot;
           the user asked for the line alone. The fill is width-sized via a
           CSS variable so the keyframe can animate from 0 → --pct. */}
       <div className="relative w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
@@ -249,19 +249,19 @@ function EnergyBar({
 //   Mercury       → pearl       (quick, luminous, mercurial)
 //   Venus ~ Neptune → wisteria  (love, dreams, mysticism)
 //   Mars  ~ Pluto   → ember     (warrior fire, transformation heat)
-//      wait — Pluto is paired with Saturn below, not Mars. See below.
+//      wait, Pluto is paired with Saturn below, not Mars. See below.
 //   Jupiter       → moss        (expansion, growth, abundance)
 //   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
-  Sun:     "#f39230",  // amber-sun — hero
+  Sun:     "#f39230",  // amber-sun, hero
   Moon:    "#9babb9",  // mist
-  Mercury: "#ece4cf",  // pearl
+  Mercury: "var(--pearl)",  // pearl
   Venus:   "#9b86a0",  // wisteria
   Mars:    "#d47a52",  // ember
-  Jupiter: "#8a9e66",  // moss
+  Jupiter: "var(--moss)",  // moss
   Saturn:  "#6a8692",  // indigo
   Uranus:  "#9babb9",  // mist (paired with Moon)
-  Neptune: "#9b86a0",  // wisteria (paired with Venus)
+  Neptune: "var(--wisteria)",  // wisteria (paired with Venus)
   Pluto:   "#6a8692",  // indigo (paired with Saturn)
 };
 
@@ -295,7 +295,7 @@ function PlanetCard({ planet }: { planet: Planet }) {
 function SkeletonToday() {
   return (
     <div>
-      {/* Hero skeleton — matches real hero: padded, rounded-2xl, 160px */}
+      {/* Hero skeleton, matches real hero: padded, rounded-2xl, 160px */}
       <div className="max-w-lg mx-auto px-5 pt-3">
         <div className="w-full h-[160px] bg-forest-card skeleton-shimmer rounded-2xl" />
       </div>
@@ -319,7 +319,7 @@ function SkeletonToday() {
         {/* Divider */}
         <div className="border-t border-forest-border/40 mb-8" />
 
-        {/* Reading skeleton — 4 lines */}
+        {/* Reading skeleton, 4 lines */}
         <div className="pb-8 space-y-3">
           <div className="skeleton-shimmer h-4 w-full rounded" />
           <div className="skeleton-shimmer h-4 w-full rounded" />
@@ -382,7 +382,7 @@ function HeroImageCard({
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
           <h1
             className="font-heading text-[26px] leading-[1.22] text-center"
-            style={{ color: "#f2ecd8", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,0.85), 0 1px 5px rgba(0,0,0,0.95)" }}
+            style={{ color: "var(--text-primary)", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,0.85), 0 1px 5px rgba(0,0,0,0.95)" }}
           >
             {dayTitle}
           </h1>
@@ -558,7 +558,7 @@ export default function TodayPage() {
         JSON.stringify({ topic: `${label} energy`, question })
       );
     } catch (_) {
-      // ignore — navigation still works, just without the seeded prompt
+      // ignore, navigation still works, just without the seeded prompt
     }
     router.push("/chat");
   };
@@ -629,7 +629,7 @@ export default function TodayPage() {
           setForecast(parsed);
         }
       } catch (err) {
-        // If we've already left /today, do nothing — let whichever
+        // If we've already left /today, do nothing, let whichever
         // page the user is now on handle its own auth/access state.
         if (cancelled) return;
 
@@ -679,7 +679,7 @@ export default function TodayPage() {
       // ignore parse errors
     }
 
-    // No cache — fetch and show skeleton while loading
+    // No cache, fetch and show skeleton while loading
     fetchAndUpdate(false);
     return () => { cancelled = true; };
   }, [token]);
@@ -699,10 +699,10 @@ export default function TodayPage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
       >
-        {/* Header — tag on top row, title + date on row below. Prevents overlap on small screens. */}
+        {/* Header, tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#f39230" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
               Living By Design
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -728,7 +728,7 @@ export default function TodayPage() {
           <PendingTodayState planets={forecast.planets} />
         ) : forecast ? (
           <>
-            {/* HERO IMAGE CARD — card style, with padding like CurrentCycles */}
+            {/* HERO IMAGE CARD, card style, with padding like CurrentCycles */}
             <div
               className="max-w-lg mx-auto px-5 pt-3 transition-all duration-700"
               style={{
@@ -742,7 +742,7 @@ export default function TodayPage() {
               />
             </div>
 
-            {/* MOON CYCLE BAR — below hero */}
+            {/* MOON CYCLE BAR, below hero */}
             <div className="max-w-lg mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
             </div>
@@ -756,7 +756,7 @@ export default function TodayPage() {
                 </div>
               )}
 
-              {/* ENERGY BARS — the daily ritual. Hairline ink-lines,
+              {/* ENERGY BARS, the daily ritual. Hairline ink-lines,
                   each row fades in on its own clock at 80ms stagger. */}
               <div className="mt-14 mb-12">
                 {/* Parallel label to "Today's Weather" on the hero card */}
@@ -824,7 +824,7 @@ export default function TodayPage() {
                 <CurrentCycles token={token} />
               </div>
 
-              {/* PLANET STRIP — live cosmic ticker */}
+              {/* PLANET STRIP, live cosmic ticker */}
               <div
                 className="mb-6 transition-all duration-700"
                 style={{

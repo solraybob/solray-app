@@ -79,7 +79,7 @@ const CENTER_COLOR: Record<CenterKey, string> = {
   Heart:       "#d47a52", // ember
   Sacral:      "#d47a52", // ember
   Spleen:      "#8a9e66", // moss
-  SolarPlexus: "#9b86a0", // wisteria
+  SolarPlexus: "var(--wisteria)", // wisteria
   Root:        "#6a8692", // slate
 };
 

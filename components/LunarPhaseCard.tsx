@@ -32,7 +32,7 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
     );
   }
 
-  // New Moon — crescent
+  // New Moon, crescent
   return (
     <svg
       width="28"
@@ -93,9 +93,9 @@ function generateExpandedText(event: LunarEvent): string {
   const houseTheme = HOUSE_THEMES[event.house] || event.house_meaning || "your life";
 
   if (event.type === "Full Moon") {
-    return `This lunation completes a chapter around ${houseTheme}. Something you have been building, saying, or working toward finally reaches its full expression — the harvest is here. This is a moment for illumination and release, not new beginnings. Let what no longer serves you go with the tide.`;
+    return `This lunation completes a chapter around ${houseTheme}. Something you have been building, saying, or working toward finally reaches its full expression, the harvest is here. This is a moment for illumination and release, not new beginnings. Let what no longer serves you go with the tide.`;
   } else {
-    return `This lunation opens a fresh chapter around ${houseTheme}. The slate is clean and the soil is ready — intentions planted now carry unusual power. What you begin under this sky has the full blessing of a genuine fresh start. Set your vision clearly and take one small, deliberate step.`;
+    return `This lunation opens a fresh chapter around ${houseTheme}. The slate is clean and the soil is ready, intentions planted now carry unusual power. What you begin under this sky has the full blessing of a genuine fresh start. Set your vision clearly and take one small, deliberate step.`;
   }
 }
 
@@ -134,7 +134,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="font-heading text-base leading-tight"
-              style={{ color: "#ece4cf", fontWeight: 400, letterSpacing: "0.01em" }}
+              style={{ color: "var(--pearl)", fontWeight: 400, letterSpacing: "0.01em" }}
             >
               {event.type} in {event.sign}
             </span>

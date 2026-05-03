@@ -713,7 +713,7 @@ function ActionButton({
       className="w-full py-4 px-8 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110"
       style={{
         background: color,
-        color: "#050f08",
+        color: "var(--bg-deep)",
         boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(243,146,48,0.12)",
       }}
     >

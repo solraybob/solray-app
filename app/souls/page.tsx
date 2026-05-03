@@ -45,7 +45,7 @@ interface ConnectedSoul {
   connected_since: string;
 }
 
-// Person saved locally without an account — birth data + cached profile
+// Person saved locally without an account, birth data + cached profile
 // + the FULL blueprint we computed from their birth data when they were
 // added. We keep the full blueprint so the Oracle has every system to
 // read against (astro, numerology, astrocartography, human design,
@@ -92,7 +92,7 @@ function writeSavedPeople(people: SavedPerson[]) {
   try {
     localStorage.setItem(SAVED_PEOPLE_KEY, JSON.stringify(people));
   } catch {
-    // quota etc — fail quiet
+    // quota etc, fail quiet
   }
 }
 
@@ -282,10 +282,10 @@ export default function SoulsPage() {
   const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
   const [activeSoul, setActiveSoul] = useState<ConnectedSoul | null>(null);
   const [groupSession, setGroupSession] = useState<{ soul: ConnectedSoul; code: string } | null>(null);
-  // Inline error surface — softer than alert(), matches Japanese-way quiet
+  // Inline error surface, softer than alert(), matches Japanese-way quiet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Quick Bond state — hybrid local-chart flow
+  // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
   const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
   const [bondLens, setBondLens] = useState<BondLens>("family");
@@ -330,7 +330,7 @@ export default function SoulsPage() {
     load();
   }, [token]);
 
-  // Debounced search — avoid firing /users/search on every keystroke
+  // Debounced search, avoid firing /users/search on every keystroke
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
@@ -402,7 +402,7 @@ export default function SoulsPage() {
   const openSoloReading = async (soul: ConnectedSoul) => {
     setActiveSoul(null);
     setErrorMessage(null);
-    // Fetch their full blueprint for the chat — proceed even if it fails,
+    // Fetch their full blueprint for the chat, proceed even if it fails,
     // the chat still works from the summary chart data
     let soulBlueprint = null;
     try {
@@ -410,7 +410,7 @@ export default function SoulsPage() {
       soulBlueprint = data?.blueprint || null;
     } catch {
       // Non-blocking: surface a quiet note but continue
-      setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+      setErrorMessage("Couldn't pull their full chart, reading from the basics.");
     }
 
     const chartSummary = [
@@ -474,7 +474,7 @@ export default function SoulsPage() {
     setBondPartners(prev => prev.filter(p => !(p.kind === "saved" && p.person.id === id)));
   };
 
-  // Fire the Bond reading — route to /chat?compat=1 with context
+  // Fire the Bond reading, route to /chat?compat=1 with context
   const readTheBond = async () => {
     if (bondPartners.length === 0) return;
     setReadingBond(true);
@@ -564,7 +564,7 @@ export default function SoulsPage() {
         const data = await apiFetch(`/souls/${bondPartner.connection.connection_id}/blueprint`, {}, token);
         soulBlueprint = data?.blueprint || null;
       } catch {
-        setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+        setErrorMessage("Couldn't pull their full chart, reading from the basics.");
       }
     } else {
       const saved = bondPartner.person;
@@ -573,7 +573,7 @@ export default function SoulsPage() {
       } else {
         // Back-compat: people saved before we cached the full blueprint.
         // Recompute on the fly. Slow (~2-3s) but only happens once per
-        // legacy person — we re-store the blueprint after.
+        // legacy person, we re-store the blueprint after.
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
           const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
@@ -600,7 +600,7 @@ export default function SoulsPage() {
             }
           }
         } catch {
-          setErrorMessage("Couldn't pull their full chart — reading from the basics.");
+          setErrorMessage("Couldn't pull their full chart, reading from the basics.");
         }
       }
     }
@@ -680,7 +680,7 @@ export default function SoulsPage() {
             reading={readingBond}
           />
 
-          {/* Search — for deeper two-way connections with Solray users */}
+          {/* Search, for deeper two-way connections with Solray users */}
           <div>
             <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">Find a Soul</p>
             <div className="relative">
@@ -745,14 +745,14 @@ export default function SoulsPage() {
             )}
           </div>
 
-          {/* Quiet inline error surface — replaces alert() popups */}
+          {/* Quiet inline error surface, replaces alert() popups */}
           {errorMessage && (
             <div
               className="rounded-xl px-4 py-3 font-body text-[14px] transition-opacity"
               style={{
                 background: "rgba(196, 98, 58, 0.08)",
                 border: "1px solid rgba(196, 98, 58, 0.25)",
-                color: "#d47a52",
+                color: "var(--ember)",
               }}
               role="status"
               aria-live="polite"
@@ -907,7 +907,7 @@ export default function SoulsPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Bond entry card — hero on the Souls page
+// Bond entry card, hero on the Souls page
 // ---------------------------------------------------------------------------
 
 interface BondCardProps {
@@ -954,7 +954,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
       {/* You + partner(s) pills */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
 
-        {/* You — always fixed */}
+        {/* You, always fixed */}
         <div
           className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0"
           style={{ background: "rgba(242,236,216,0.04)", border: "1px solid rgba(242,236,216,0.12)" }}
@@ -997,7 +997,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           </div>
         ))}
 
-        {/* Add button — always shown when no partners, or in family mode with room */}
+        {/* Add button, always shown when no partners, or in family mode with room */}
         {(partners.length === 0 || canAddMore) && (
           <button
             type="button"
@@ -1020,7 +1020,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         )}
       </div>
 
-      {/* Chart whisper — only for single partner on non-family lenses */}
+      {/* Chart whisper, only for single partner on non-family lenses */}
       {!isFamily && partner && chart && (chart.sun_sign || chart.hd_type) && (
         <p className="font-body text-[13px] text-text-secondary mb-5 -mt-2 pl-1">
           {chart.sun_sign && <>☉ {chart.sun_sign}</>}
@@ -1064,7 +1064,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
           background: "linear-gradient(135deg, #6a8692, #5a7582)",
-          color: "#f2ecd8",
+          color: "var(--text-primary)",
         }}
       >
         {reading ? <LoadingSpinner size="sm" /> : isFamily && partners.length > 1 ? "Read the Family →" : "Read the Dynamic →"}
@@ -1074,7 +1074,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 }
 
 // ---------------------------------------------------------------------------
-// Partner picker — choose from saved people, connections, or add new
+// Partner picker, choose from saved people, connections, or add new
 // ---------------------------------------------------------------------------
 
 interface PartnerPickerProps {
@@ -1191,7 +1191,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 }
 
 // ---------------------------------------------------------------------------
-// Add-person sheet — collects birth data, calls /souls/calculate-blueprint
+// Add-person sheet, collects birth data, calls /souls/calculate-blueprint
 // ---------------------------------------------------------------------------
 
 interface AddPersonSheetProps {
@@ -1317,7 +1317,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         // Persist the FULL blueprint the backend just computed. Without
         // this, the Oracle reads this person from a 3-field summary and
         // ends up asking the user for moon sign, defined centres, etc.
-        // We already had the data — we were just throwing it away.
+        // We already had the data, we were just throwing it away.
         blueprint: data?.blueprint ?? undefined,
         created_at: Date.now(),
       };
@@ -1473,7 +1473,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
             className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
             style={{
               background: "linear-gradient(135deg, #6a8692, #5a7582)",
-              color: "#f2ecd8",
+              color: "var(--text-primary)",
             }}
           >
             {submitting ? <LoadingSpinner size="sm" /> : "Read their chart"}

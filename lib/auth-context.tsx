@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");
-      } catch {/* ignore — storage may be unavailable entirely */}
+      } catch {/* ignore, storage may be unavailable entirely */}
       setTokenState(null);
       setUser(null);
     }

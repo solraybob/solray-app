@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AstroGlyphs — zodiac sign and planet glyphs.
+ * AstroGlyphs, zodiac sign and planet glyphs.
  *
  * The wheel (and the profile planet lists) render typographic Unicode glyphs
  * in Cormorant Garamond. Each glyph is paired with U+FE0E (VARIATION
@@ -21,7 +21,7 @@
 import React from "react";
 
 // ---------------------------------------------------------------------------
-// Typographic glyph constants (primary path — used by NatalWheel and profile)
+// Typographic glyph constants (primary path, used by NatalWheel and profile)
 // ---------------------------------------------------------------------------
 
 // U+FE0E, VARIATION SELECTOR-15. Forces the preceding Unicode glyph to render
@@ -87,7 +87,7 @@ export const GLYPH_FONT_FAMILY = "'Cormorant Garamond', Georgia, serif";
 // Zodiac sign paths (index 0 = Aries … 11 = Pisces)
 // ---------------------------------------------------------------------------
 const SIGN_PATHS: Record<number, React.ReactElement> = {
-  // Aries ♈ — two horn arcs sweeping up from a shared center, meeting at a Y
+  // Aries ♈, two horn arcs sweeping up from a shared center, meeting at a Y
   0: (
     <>
       <path d="M 12 17 C 7 16 4 10 6 5 C 7 2 10 2 12 6" fill="none" />
@@ -95,7 +95,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Taurus ♉ — circle with wide arching horns above
+  // Taurus ♉, circle with wide arching horns above
   1: (
     <>
       <circle cx={12} cy={15} r={5} fill="none" />
@@ -103,7 +103,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Gemini ♊ — twin pillars with gently curved top and bottom rails
+  // Gemini ♊, twin pillars with gently curved top and bottom rails
   2: (
     <>
       <path d="M 5 4 Q 12 2 19 4" fill="none" />
@@ -113,7 +113,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Cancer ♋ — interlocking 6-9: two offset circles with curling tails
+  // Cancer ♋, interlocking 6-9: two offset circles with curling tails
   3: (
     <>
       <circle cx={9.5} cy={9.5} r={3.5} fill="none" />
@@ -123,7 +123,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Leo ♌ — circle with a spiral curling tail
+  // Leo ♌, circle with a spiral curling tail
   4: (
     <>
       <circle cx={9} cy={11} r={5} fill="none" />
@@ -131,7 +131,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Virgo ♍ — three arch-tops, last right leg closes into a loop
+  // Virgo ♍, three arch-tops, last right leg closes into a loop
   5: (
     <>
       <path d="M 4 7 V 19" fill="none" />
@@ -140,7 +140,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Libra ♎ — dome arc resting on two horizon lines
+  // Libra ♎, dome arc resting on two horizon lines
   6: (
     <>
       <path d="M 7 13 C 7 6 17 6 17 13" fill="none" />
@@ -149,7 +149,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Scorpio ♏ — three arched humps, tail sweeps into a downward arrow
+  // Scorpio ♏, three arched humps, tail sweeps into a downward arrow
   7: (
     <>
       <path d="M 3 15 V 7 C 3 3 8 3 8 7 C 8 3 13 3 13 7 V 12" fill="none" />
@@ -158,7 +158,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Sagittarius ♐ — diagonal arrow pointing upper-right with clean arrowhead
+  // Sagittarius ♐, diagonal arrow pointing upper-right with clean arrowhead
   8: (
     <>
       <path d="M 5 19 L 19 5" fill="none" />
@@ -166,7 +166,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Capricorn ♑ — V left leg descends, right horn curves into a fish tail
+  // Capricorn ♑, V left leg descends, right horn curves into a fish tail
   9: (
     <>
       <path d="M 4 5 L 11 17" fill="none" />
@@ -175,7 +175,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Aquarius ♒ — two parallel wave-lines
+  // Aquarius ♒, two parallel wave-lines
   10: (
     <>
       <path d="M 3 9 Q 6 5 9 9 Q 12 13 15 9 Q 18 5 21 9" fill="none" />
@@ -183,7 +183,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
     </>
   ),
 
-  // Pisces ♓ — two opposing arcs connected by a center bar
+  // Pisces ♓, two opposing arcs connected by a center bar
   11: (
     <>
       <path d="M 7 3 C 3 7 3 17 7 21" fill="none" />
@@ -197,7 +197,7 @@ const SIGN_PATHS: Record<number, React.ReactElement> = {
 // Planet paths keyed by backend name
 // ---------------------------------------------------------------------------
 const PLANET_PATHS: Record<string, React.ReactElement> = {
-  // ASC — ascending arrow rising from a horizontal base
+  // ASC, ascending arrow rising from a horizontal base
   ASC: (
     <>
       <path d="M 4 20 H 20" fill="none" />
@@ -206,7 +206,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Sun ☉ — circle with filled center dot
+  // Sun ☉, circle with filled center dot
   Sun: (
     <>
       <circle cx={12} cy={12} r={8} fill="none" />
@@ -214,14 +214,14 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Moon ☽ — waxing crescent (large arc eclipsed by smaller)
+  // Moon ☽, waxing crescent (large arc eclipsed by smaller)
   Moon: (
     <>
       <path d="M 16 4 A 9 9 0 1 0 16 20 A 6 6 0 1 1 16 4 Z" fill="none" />
     </>
   ),
 
-  // Mercury ☿ — horned arc above a circle, cross below
+  // Mercury ☿, horned arc above a circle, cross below
   Mercury: (
     <>
       <path d="M 7 4 A 5 5 0 0 0 17 4" fill="none" />
@@ -230,7 +230,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Venus ♀ — circle above a cross
+  // Venus ♀, circle above a cross
   Venus: (
     <>
       <circle cx={12} cy={8} r={5} fill="none" />
@@ -238,7 +238,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Mars ♂ — circle with upper-right arrow
+  // Mars ♂, circle with upper-right arrow
   Mars: (
     <>
       <circle cx={10} cy={14} r={5} fill="none" />
@@ -247,7 +247,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Jupiter ♃ — curved left arm crossing a vertical stroke at a horizontal bar
+  // Jupiter ♃, curved left arm crossing a vertical stroke at a horizontal bar
   Jupiter: (
     <>
       <path d="M 15 3 V 21" fill="none" />
@@ -256,7 +256,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Saturn ♄ — vertical stroke with a cross-arm near top and hook at bottom-right
+  // Saturn ♄, vertical stroke with a cross-arm near top and hook at bottom-right
   Saturn: (
     <>
       <path d="M 10 3 V 21 M 6 8 H 14" fill="none" />
@@ -264,7 +264,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Uranus ♅ — H-frame with a small circle beneath the crossbar
+  // Uranus ♅, H-frame with a small circle beneath the crossbar
   Uranus: (
     <>
       <path d="M 6 3 V 12 M 18 3 V 12 M 6 12 H 18 M 12 12 V 17" fill="none" />
@@ -272,7 +272,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Neptune ♆ — trident: upward fork on a cross with a base
+  // Neptune ♆, trident: upward fork on a cross with a base
   Neptune: (
     <>
       <path d="M 12 3 V 21 M 8 19 H 16" fill="none" />
@@ -282,7 +282,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Pluto ♇ — dome over a circle over a cross
+  // Pluto ♇, dome over a circle over a cross
   Pluto: (
     <>
       <path d="M 7 9 A 5 5 0 0 1 17 9" fill="none" />
@@ -291,7 +291,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // NorthNode — upward horseshoe with base circles
+  // NorthNode, upward horseshoe with base circles
   NorthNode: (
     <>
       <path d="M 5 16 V 10 A 7 7 0 0 1 19 10 V 16" fill="none" />
@@ -300,7 +300,7 @@ const PLANET_PATHS: Record<string, React.ReactElement> = {
     </>
   ),
 
-  // Chiron — key-like: vertical line with a K-shaped curve
+  // Chiron, key-like: vertical line with a K-shaped curve
   Chiron: (
     <>
       <path d="M 8 3 V 21" fill="none" />

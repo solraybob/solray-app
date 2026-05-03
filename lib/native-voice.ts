@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * lib/native-voice.ts — voice recording bridge.
+ * lib/native-voice.ts, voice recording bridge.
  *
  * Inside the Capacitor native shell on iOS or Android, uses the
  * native microphone API via the capacitor-voice-recorder plugin.
@@ -9,7 +9,7 @@
  * from accessing getUserMedia, and gives us proper system mic
  * permission UX (the iOS permission sheet).
  *
- * On the web, this module is a no-op shell — the chat page detects
+ * On the web, this module is a no-op shell, the chat page detects
  * isRunningInCapacitor() and falls back to its existing MediaRecorder
  * + getUserMedia path.
  *
@@ -27,7 +27,7 @@ export interface NativeVoiceResult {
 }
 
 /**
- * Request mic permission. Idempotent — returns true if already granted.
+ * Request mic permission. Idempotent, returns true if already granted.
  * On iOS this triggers the system permission sheet the FIRST time.
  * Subsequent calls reuse the cached grant. If the user denies, the
  * caller should surface a Settings → Privacy → Microphone hint.
@@ -105,7 +105,7 @@ export async function cancelNativeRecording(): Promise<void> {
     const { VoiceRecorder } = await import("capacitor-voice-recorder");
     // The plugin doesn't expose a true cancel; stopping and discarding
     // the result is equivalent. We still call stop so the underlying
-    // audio session releases the mic — otherwise the iOS recording
+    // audio session releases the mic, otherwise the iOS recording
     // indicator would stay lit.
     await VoiceRecorder.stopRecording().catch(() => null);
   } catch { /* ignore */ }

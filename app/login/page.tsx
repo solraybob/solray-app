@@ -50,7 +50,7 @@ export default function LoginPage() {
             }
           })
           .catch(() => {
-            // prefetch failure is silent — doesn't block login
+            // prefetch failure is silent, doesn't block login
           });
       }
       router.push("/today");

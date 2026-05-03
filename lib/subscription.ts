@@ -1,5 +1,5 @@
 /**
- * lib/subscription.ts — Subscription API helpers + status hook
+ * lib/subscription.ts, Subscription API helpers + status hook
  *
  * Wraps all /subscribe/* endpoints and provides a React hook
  * for checking access throughout the app.

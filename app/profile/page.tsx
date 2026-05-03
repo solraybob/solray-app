@@ -45,8 +45,8 @@ interface ProfileData {
   evolutionGate: number;
   evolutionGift: string;
   evolutionShadow: string;
-  radar: RadarValues;        // proportional percentages — for bar legend
-  radarDisplay: RadarValues; // max-normalized per group — for spider shape
+  radar: RadarValues;        // proportional percentages, for bar legend
+  radarDisplay: RadarValues; // max-normalized per group, for spider shape
   aspects: NatalAspect[];
 }
 
@@ -113,7 +113,7 @@ function computeRadar(blueprint: any): RadarValues {
   };
 }
 
-// Max-normalized radar values — used only for the spider chart shape.
+// Max-normalized radar values, used only for the spider chart shape.
 // Within each group (elements, modalities) the dominant axis reaches 100%,
 // giving the polygon a full, readable shape regardless of how balanced the chart is.
 function computeRadarDisplay(proportional: RadarValues): RadarValues {
@@ -232,7 +232,7 @@ function IconStar({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-// Soul Map Radar — 7 axes, heptagonal polygon
+// Soul Map Radar, 7 axes, heptagonal polygon
 
 const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "cardinal", "fixed", "mutable"];
 const SOUL_AXIS_LABELS = ["Fire", "Earth", "Air", "Water", "Cardinal", "Fixed", "Mutable"] as const;
@@ -285,8 +285,8 @@ function useAnimatedProgress(delay: number): number {
 }
 
 interface SoulMapRadarChartProps {
-  radar: RadarValues;        // proportional % — drives bar legend
-  radarDisplay: RadarValues; // max-normalized — drives spider shape
+  radar: RadarValues;        // proportional %, drives bar legend
+  radarDisplay: RadarValues; // max-normalized, drives spider shape
 }
 
 // Element color mapping for Soul Map
@@ -295,7 +295,7 @@ const ELEMENT_COLORS: Record<string, string> = {
   Earth:    "#8a9e66", // moss
   Air:      "#9babb9", // mist
   Water:    "#6a8692", // slate
-  Cardinal: "#f39230", // ember (initiating, outward)
+  Cardinal: "var(--amber)", // ember (initiating, outward)
   Fixed:    "#9b86a0", // wisteria (holding, inward)
   Mutable:  "#8a9e8d", // sage (adapting, fluid)
 };
@@ -386,7 +386,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
         strokeOpacity={progress}
       />
 
-      {/* Vertex dots — positioned by display values (max-normalized) */}
+      {/* Vertex dots, positioned by display values (max-normalized) */}
       {SOUL_AXIS_KEYS.map((key, i) => {
         const r = (radarDisplay[key] / 100) * OUTER * progress;
         const [x, y] = getPoint7(cx, cy, r, i);
@@ -417,7 +417,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       {/* Center dot */}
       <circle cx={cx} cy={cy} r={2} fill="#f39230" opacity={0.3} />
 
-      {/* Axis labels — colored by element/modality */}
+      {/* Axis labels, colored by element/modality */}
       {SOUL_AXIS_LABELS.map((label, i) => {
         const [lx, ly] = getPoint7(cx, cy, OUTER + 32, i);
         const color = ELEMENT_COLORS[label] || "#8a9e8d";
@@ -447,15 +447,15 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
 const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
   trine:          { symbol: "△",  label: "Trine",          color: "#2a9d8f", major: true },
   sextile:        { symbol: "⚹",  label: "Sextile",        color: "#8a9e8d", major: true },
-  conjunction:    { symbol: "☌",  label: "Conjunction",    color: "#f39230", major: true },
+  conjunction:    { symbol: "☌",  label: "Conjunction",    color: "var(--amber)", major: true },
   opposition:     { symbol: "☍",  label: "Opposition",     color: "#e05c5c", major: true },
   square:         { symbol: "□",  label: "Square",         color: "#d4813a", major: true },
   quincunx:       { symbol: "⚻",  label: "Quincunx",      color: "#7c6fcd", major: true },
   semi_sextile:   { symbol: "⚺",  label: "Semi-Sextile",  color: "#7a9e80", major: false },
-  semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "#a8b8ab", major: false },
-  sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "#a8b8ab", major: false },
-  quintile:       { symbol: "Q",  label: "Quintile",       color: "#a8b8ab", major: false },
-  bi_quintile:    { symbol: "bQ", label: "Bi-Quintile",    color: "#a8b8ab", major: false },
+  semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "var(--text-secondary)", major: false },
+  sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "var(--text-secondary)", major: false },
+  quintile:       { symbol: "Q",  label: "Quintile",       color: "var(--text-secondary)", major: false },
+  bi_quintile:    { symbol: "bQ", label: "Bi-Quintile",    color: "var(--text-secondary)", major: false },
 };
 
 const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
@@ -482,7 +482,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   };
 
   const renderPlanetPairs = (key: string, list: NatalAspect[]) => {
-    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", color: "#a8b8ab" };
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", color: "var(--text-secondary)" };
     return (
       <div className="mt-1 pl-6 space-y-1">
         {list.map((a, i) => (
@@ -502,7 +502,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
   };
 
   const renderAspectRow = (key: string, list: NatalAspect[]) => {
-    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", label: key, color: "#a8b8ab", major: false };
+    const cfg = ASPECT_CONFIG[key] ?? { symbol: "·", label: key, color: "var(--text-secondary)", major: false };
     const isOpen = openAspects[key] ?? false;
     return (
       <div key={key}>
@@ -600,7 +600,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 // Section accent colors, mapped to the Solray extended palette
 const SECTION_ACCENTS: Record<string, string> = {
   "Natal Chart":     "#f39230", // ember
-  "Astrocartography": "#9babb9", // mist
+  "Astrocartography": "var(--mist)", // mist
   "Human Design":    "#8a9e66", // moss
   "Numerology":      "#9b86a0", // wisteria
   "Gene Keys":       "#6a8692", // slate
@@ -674,7 +674,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "#9babb9", borderColor: "rgba(155,171,185,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--mist)", borderColor: "rgba(155,171,185,0.6)" }}>
       {children}
     </span>
   );
@@ -682,7 +682,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "#9b86a0", borderColor: "rgba(155,134,160,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--wisteria)", borderColor: "rgba(155,134,160,0.6)" }}>
       {children}
     </span>
   );
@@ -779,7 +779,7 @@ export default function ProfilePage() {
       }
     }
 
-    // Try cache first — cheap path (no network call)
+    // Try cache first, cheap path (no network call)
     try {
       const cached = localStorage.getItem(BP_CACHE_KEY);
       if (cached) {
@@ -808,7 +808,7 @@ export default function ProfilePage() {
       }
     } catch (_) {}
 
-    // No cache — fetch full blueprint (first load or after cache bust)
+    // No cache, fetch full blueprint (first load or after cache bust)
     apiFetch("/users/me", {}, token)
       .then((data) => {
         if (data.blueprint) {
@@ -890,7 +890,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Handle avatar selection — resize to max 400px, save to server + localStorage
+  // Handle avatar selection, resize to max 400px, save to server + localStorage
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -924,7 +924,7 @@ export default function ProfilePage() {
           }
         } catch (_) {}
 
-        // Persist to server — read token fresh from localStorage to avoid stale closure
+        // Persist to server, read token fresh from localStorage to avoid stale closure
         const liveToken = token || (typeof localStorage !== "undefined" ? localStorage.getItem("solray_token") : null);
         if (liveToken) {
           setAvatarSaving("saving");
@@ -939,7 +939,7 @@ export default function ProfilePage() {
               setTimeout(() => setAvatarSaving("idle"), 6000);
             });
         } else {
-          console.warn("[avatar upload] no token available — photo saved locally only");
+          console.warn("[avatar upload] no token available, photo saved locally only");
           setAvatarSaving("error");
           setTimeout(() => setAvatarSaving("idle"), 6000);
         }
@@ -958,7 +958,7 @@ export default function ProfilePage() {
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#8a9e66" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--moss)" }}>
               Profile
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -1001,21 +1001,21 @@ export default function ProfilePage() {
                 {profile?.sunSign && (() => {
                   const sunSignPlanetImages: Record<string, string> = {
                     // Fire signs
-                    Aries:       "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=60", // Mars — thunderhead
-                    Leo:         "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=60", // Sun — warm light
-                    Sagittarius: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=60", // Jupiter — storm clouds
+                    Aries:       "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=60", // Mars, thunderhead
+                    Leo:         "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=60", // Sun, warm light
+                    Sagittarius: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=60", // Jupiter, storm clouds
                     // Earth signs
-                    Taurus:      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus — ocean
-                    Virgo:       "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury — silver haze
-                    Capricorn:   "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?w=800&q=60", // Saturn — cold stars
+                    Taurus:      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus, ocean
+                    Virgo:       "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury, silver haze
+                    Capricorn:   "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?w=800&q=60", // Saturn, cold stars
                     // Air signs
                     Gemini:      "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury
                     Libra:       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus
-                    Aquarius:    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // Uranus — deep space
+                    Aquarius:    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // Uranus, deep space
                     // Water signs
                     Cancer:      "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // Moon
-                    Scorpio:     "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=800&q=60", // Pluto — dark cosmos
-                    Pisces:      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=60", // Neptune — misty sea
+                    Scorpio:     "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=800&q=60", // Pluto, dark cosmos
+                    Pisces:      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=60", // Neptune, misty sea
                   };
                   const imgSrc = sunSignPlanetImages[profile.sunSign];
                   if (!imgSrc) return null;
@@ -1048,7 +1048,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center border border-forest-border"
-                    style={{ background: "#0a1f12", color: "#8a9e8d" }}
+                    style={{ background: "var(--card)", color: "#8a9e8d" }}
                     title="Change profile picture"
                   >
                     <IconCamera />
@@ -1072,7 +1072,7 @@ export default function ProfilePage() {
                   <p className="font-body text-[13px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>photo not saved. check connection.</p>
                 )}
 
-                {/* Handle (username) — with relative z positioning for gradient overlay */}
+                {/* Handle (username), with relative z positioning for gradient overlay */}
                 <div className="relative z-10">
                 {editingHandle ? (
                   <div className="flex items-center gap-2">
@@ -1157,7 +1157,7 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "#8a9e66" }}>
+                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "var(--moss)" }}>
                   Soul Map
                 </p>
 
@@ -1174,7 +1174,7 @@ export default function ProfilePage() {
                         The dashed ring is balance
                       </p>
 
-                      {/* Mini bar legend — all 7 dimensions with values and colored bars */}
+                      {/* Mini bar legend, all 7 dimensions with values and colored bars */}
                       <div className="mt-4 space-y-2 px-1">
                         {SOUL_AXIS_KEYS.map((key, i) => {
                           const val = profile.radar[key];
@@ -1212,7 +1212,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Full Blueprint — merged from chart page */}
+              {/* Full Blueprint, merged from chart page */}
               {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
 
               {/* Subscription + Sign Out moved into /profile/settings (the gear
@@ -1459,7 +1459,7 @@ function parseBlueprintForChart(blueprint: any) {
   };
 }
 
-// Ask button — opens chat with a pre-set question about a profile element.
+// Ask button, opens chat with a pre-set question about a profile element.
 // Uses router.push so React state and auth context are preserved (avoids the
 // full page reload that window.location.href would cause).
 function AskButton({ topic, question }: { topic: string; question: string }) {
@@ -1517,7 +1517,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
   }, [token]);
 
   if (!chartReady) {
-    // Quiet placeholder — better than blank
+    // Quiet placeholder, better than blank
     return (
       <div className="space-y-3 mb-4">
         {[0, 1, 2, 3].map((i) => (
@@ -1580,7 +1580,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                       height: 32,
                       fontFamily: GLYPH_FONT_FAMILY,
                       fontSize: 26,
-                      color: "#f2ecd8",
+                      color: "var(--text-primary)",
                       opacity: 0.9,
                       lineHeight: 1,
                     }}
@@ -1622,7 +1622,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                       height: 22,
                       fontFamily: GLYPH_FONT_FAMILY,
                       fontSize: 18,
-                      color: "#f2ecd8",
+                      color: "var(--text-primary)",
                       opacity: 0.8,
                       lineHeight: 1,
                     }}
@@ -1640,7 +1640,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             </div>
           )}
 
-          {/* Natal Aspects — inside Natal Chart */}
+          {/* Natal Aspects, inside Natal Chart */}
           {aspects.length > 0 && (
             <div className="mt-4 pt-4 border-t border-forest-border/40">
               <NatalAspects aspects={aspects} />
@@ -1666,7 +1666,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase">Type</p>
                 <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
               </div>
-              <p className="font-heading leading-tight" style={{ color: "#8a9e66", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
+              <p className="font-heading leading-tight" style={{ color: "var(--moss)", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
               {HD_TYPE_MEANINGS[chart.human_design.type] && (
                 <p className="text-text-secondary/60 text-[14px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
               )}
@@ -1697,7 +1697,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 <span
                   key={c}
                   className="px-2.5 py-1 rounded-full text-[13px] font-body tracking-[0.05em]"
-                  style={{ color: "#8a9e66", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
+                  style={{ color: "var(--moss)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
                 >
                   {c}
                 </span>
@@ -1734,14 +1734,14 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "#9babb9" }}>{gk!.name}</span>
+                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "var(--mist)" }}>{gk!.name}</span>
                   <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
                 </div>
                 <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
-                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "#9babb9" }} />
+                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "var(--mist)" }} />
                 <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #9b86a0, #9babb9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
@@ -1802,7 +1802,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                         style={{
                           fontSize: value >= 10 ? "2.8rem" : "3.5rem",
                           fontWeight: 300,
-                          color: "#9b86a0",
+                          color: "var(--wisteria)",
                           letterSpacing: "-0.02em",
                           textShadow: "0 0 24px rgba(155,134,160,0.35)",
                         }}
@@ -1813,7 +1813,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
 
                     {/* Label + meaning */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "#9b86a0" }}>
+                      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-0.5" style={{ color: "var(--wisteria)" }}>
                         {label}
                       </p>
                       <p className="font-body text-text-secondary/50 text-[12px] tracking-[0.12em] uppercase mb-2">

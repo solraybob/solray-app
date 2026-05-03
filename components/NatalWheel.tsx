@@ -57,11 +57,11 @@ interface NatalWheelProps {
 }
 
 const ASPECT_LINE: Record<string, { color: string; opacity: number; dash?: string }> = {
-  conjunction: { color: "#f39230", opacity: 0.62 },
+  conjunction: { color: "var(--amber)", opacity: 0.62 },
   opposition:  { color: "#6a8692", opacity: 0.62, dash: "6 3" },
-  trine:       { color: "#8a9e66", opacity: 0.62 },
-  square:      { color: "#d47a52", opacity: 0.62, dash: "3 3" },
-  sextile:     { color: "#9babb9", opacity: 0.62 },
+  trine:       { color: "var(--moss)", opacity: 0.62 },
+  square:      { color: "var(--ember)", opacity: 0.62, dash: "3 3" },
+  sextile:     { color: "var(--mist)", opacity: 0.62 },
 };
 const MAJOR_ASPECTS = new Set(Object.keys(ASPECT_LINE));
 

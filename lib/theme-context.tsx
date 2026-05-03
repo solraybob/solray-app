@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 /**
  * ThemeProvider
  *
- * Two themes — "dark" (default forest) and "light" (pearl ground). The
+ * Two themes, "dark" (default forest) and "light" (pearl ground). The
  * active theme is written to <html data-theme="..."> so app/globals.css
  * can flip every CSS variable in one place.
  *
@@ -38,7 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem("solray-theme", next);
     } catch {
-      // localStorage can fail (private mode, quota) — non-fatal
+      // localStorage can fail (private mode, quota), non-fatal
     }
   }, []);
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /subscribe/welcome — post-payment confirmation.
+ * /subscribe/welcome, post-payment confirmation.
  *
  * Lands here after Teya/SecurePay completes successfully and the card
  * has been attached on the backend (which flips the subscription to
@@ -9,14 +9,14 @@
  *
  * Trapping rule: this page MUST always have a visible escape hatch.
  * A previous incarnation of the post-payment flow stranded a paying
- * subscriber — they paid, landed on a confirmation, and had no way
+ * subscriber, they paid, landed on a confirmation, and had no way
  * back into the app. So:
  *   - The header has a permanent "Skip" link to /today.
  *   - The body's primary CTA also goes to /today.
  *   - We never redirect this page unless the user has NO token at all
  *     (meaning auth itself failed). We never bounce them to /subscribe
  *     just because the status check is mid-flight or returns something
- *     unexpected — let them self-navigate.
+ *     unexpected, let them self-navigate.
  */
 
 import { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export default function SubscribeWelcome() {
       .finally(() => setStatusLoading(false));
   }, [token, authLoading, router]);
 
-  // Always render the page — even when status hasn't loaded yet — so the
+  // Always render the page, even when status hasn't loaded yet, so the
   // exit links are tappable from the very first paint. Status data is
   // garnish, not gating.
   const renews = sub?.current_period_end
@@ -54,7 +54,7 @@ export default function SubscribeWelcome() {
   return (
     <div className="min-h-[100dvh] bg-forest-deep">
 
-      {/* Permanent header exit. No back button — back goes to Teya. The
+      {/* Permanent header exit. No back button, back goes to Teya. The
           Skip link IS the way home. Always-visible, always-tappable. */}
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
@@ -72,7 +72,7 @@ export default function SubscribeWelcome() {
 
       <div className="max-w-lg mx-auto px-6 pt-12 pb-24 page-enter">
 
-        {/* Quiet celebration mark — sun glyph, not a checkmark. Solray's
+        {/* Quiet celebration mark, sun glyph, not a checkmark. Solray's
             vocabulary is solar, not transactional. */}
         <div className="flex justify-center mb-8">
           <div
@@ -113,7 +113,7 @@ export default function SubscribeWelcome() {
           and your daily forecasts will keep arriving each morning.
         </p>
 
-        {/* Primary CTA — large, above the fold on every phone, can't miss */}
+        {/* Primary CTA, large, above the fold on every phone, can't miss */}
         <button
           onClick={() => router.push("/today")}
           className="w-full font-body text-[14px] tracking-[0.22em] uppercase py-3.5 rounded-full transition-colors mb-3"
@@ -131,7 +131,7 @@ export default function SubscribeWelcome() {
           Manage subscription
         </button>
 
-        {/* Quiet receipt — only shown if status loaded with details. We
+        {/* Quiet receipt, only shown if status loaded with details. We
             never block the page on this; the user can leave any time. */}
         {!statusLoading && sub && (sub.card_brand || sub.price || renews) && (
           <div className="rounded-2xl border border-forest-border/60 bg-forest-card/40 px-5 py-5 mb-10">
@@ -158,7 +158,7 @@ export default function SubscribeWelcome() {
           </div>
         )}
 
-        {/* What's unlocked — three quiet bullets, no marketing tone */}
+        {/* What's unlocked, three quiet bullets, no marketing tone */}
         <div>
           <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
             What&rsquo;s open to you
@@ -166,7 +166,7 @@ export default function SubscribeWelcome() {
           <ul className="space-y-3 font-body text-[15px] text-text-primary leading-relaxed">
             <UnlockRow>Daily personalised forecast and energy reading.</UnlockRow>
             <UnlockRow>Higher Self chat with full chart context and persistent memory.</UnlockRow>
-            <UnlockRow>Souls — connect with others and read your dynamics together.</UnlockRow>
+            <UnlockRow>Souls, connect with others and read your dynamics together.</UnlockRow>
           </ul>
         </div>
 

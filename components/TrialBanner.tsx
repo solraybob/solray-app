@@ -81,7 +81,7 @@ export default function TrialBanner() {
         <div className="flex items-center gap-3 min-w-0">
           <span
             className="font-body text-[11px] tracking-[0.18em] uppercase shrink-0"
-            style={{ color: urgent ? "#d47a52" : "#f39230", opacity: 0.9 }}
+            style={{ color: urgent ? "#d47a52" : "var(--amber)", opacity: 0.9 }}
           >
             Trial
           </span>
@@ -101,7 +101,7 @@ export default function TrialBanner() {
             style={{
               background: "transparent",
               border: urgent ? "1px solid rgba(212,122,82,0.5)" : "1px solid rgba(243,146,48,0.35)",
-              color: urgent ? "#d47a52" : "#f39230",
+              color: urgent ? "#d47a52" : "var(--amber)",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = urgent

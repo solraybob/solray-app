@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * /profile/settings — the gear-icon home for everything personal.
+ * /profile/settings, the gear-icon home for everything personal.
  *
  * Sections, top → bottom:
- *   1. Avatar       — upload + replace your photo (PATCH /users/photo)
- *   2. Identity     — name, @username             (PATCH /users/profile)
- *   3. Visibility   — public/private toggle       (PATCH /users/profile is_public)
- *   4. Theme        — dark/light mode             (localStorage + ThemeProvider)
- *   5. Birth        — date, time, city            (PATCH /users/birth, regenerates blueprint)
- *   6. Subscription — link to /subscribe
+ *   1. Avatar, upload + replace your photo (PATCH /users/photo)
+ *   2. Identity, name, @username             (PATCH /users/profile)
+ *   3. Visibility, public/private toggle       (PATCH /users/profile is_public)
+ *   4. Theme, dark/light mode             (localStorage + ThemeProvider)
+ *   5. Birth, date, time, city            (PATCH /users/birth, regenerates blueprint)
+ *   6. Subscription, link to /subscribe
  *   7. Sign out
  *
  * The page deliberately uses one column of generous-spaced rows rather
@@ -86,7 +86,7 @@ export default function SettingsPage() {
         setBirthLat(p.birth_lat ?? null);
         setBirthLon(p.birth_lon ?? null);
       })
-      .catch(() => {/* silently — error UI is per-section */})
+      .catch(() => {/* silently, error UI is per-section */})
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -123,7 +123,7 @@ export default function SettingsPage() {
         setCitySuggestions(suggestions);
         setShowCitySuggestions(suggestions.length > 0);
       } catch {
-        // silently — let the user submit anyway, backend will geocode
+        // silently, let the user submit anyway, backend will geocode
       } finally {
         setCityLoading(false);
       }
@@ -197,7 +197,7 @@ export default function SettingsPage() {
   const onPhotoSelected = async (file: File) => {
     if (!token) return;
     setPhotoStatus("saving");
-    // Resize to 384x384 JPEG ~80q before upload — matches the existing
+    // Resize to 384x384 JPEG ~80q before upload, matches the existing
     // /users/photo size budget (under 2MB) and keeps avatars crisp on retina.
     const reader = new FileReader();
     reader.onload = () => {
@@ -273,15 +273,15 @@ export default function SettingsPage() {
       if (birthLon != null) body.birth_lon = birthLon;
       const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
       // Refresh the local blueprint cache from authoritative server data.
-      // We DO NOT inject local React state (name/username/photo) here —
+      // We DO NOT inject local React state (name/username/photo) here , 
       // an earlier draft did, and it could overwrite the cached identity
       // fields with unsaved form input.
       //
       // Order of preference for the identity fields:
-      //   1. Fresh /users/me response (best — known committed values)
+      //   1. Fresh /users/me response (best, known committed values)
       //   2. Whatever was in the previous cache (preserves last-known-good
       //      when /users/me fails on a network blip)
-      //   3. Empty (only when there's no cache and no network response —
+      //   3. Empty (only when there's no cache and no network response , 
       //      effectively the "first save ever" path)
       //
       // The blueprint payload itself ALWAYS gets written; that's the whole
@@ -327,7 +327,7 @@ export default function SettingsPage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
       >
-        {/* Header — back arrow on left, SETTINGS centered */}
+        {/* Header, back arrow on left, SETTINGS centered */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-moss))" }}>
@@ -619,7 +619,7 @@ export default function SettingsPage() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Local presentational helpers — kept in-file because they have zero re-use
+// Local presentational helpers, kept in-file because they have zero re-use
 // outside this page and exporting them would just be ceremony.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -601,7 +601,7 @@ function ChatPageInner() {
   // of the model's reply. This was the "it takes me down to follow" bug.
   const isProgrammaticScroll = useRef(false);
 
-  // Native imperative scroll listener — works reliably on iOS Safari
+  // Native imperative scroll listener, works reliably on iOS Safari
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -890,7 +890,7 @@ function ChatPageInner() {
 
       // Cancel any active native recording. Fire-and-forget; we are on
       // the unmount path and cannot await. The plugin call is
-      // idempotent — calling cancel when nothing is recording is a
+      // idempotent, calling cancel when nothing is recording is a
       // no-op.
       if (nativeRecordingRef.current) {
         nativeRecordingRef.current = false;
@@ -1088,7 +1088,7 @@ function ChatPageInner() {
         query: (d: { name: PermissionName }) => Promise<PermissionStatus>;
       })?.query?.({ name: "microphone" as PermissionName });
       if (res?.state) permissionState = res.state;
-    } catch { /* ignore — fall through to getUserMedia */ }
+    } catch { /* ignore, fall through to getUserMedia */ }
 
     // Diagnostic dump: anytime mic prep happens, log a single object
     // with everything we know. Open DevTools → Console and tap mic to
@@ -1138,7 +1138,7 @@ function ChatPageInner() {
         } else if (isChrome && permissionState === "granted") {
           // Chrome thinks the site has permission, but the browser
           // got NotAllowedError anyway. That means the OS layer is
-          // blocking — macOS Privacy & Security or Windows mic
+          // blocking, macOS Privacy & Security or Windows mic
           // privacy. The user has to flip a system toggle, no
           // browser-side fix.
           setVoiceError(
@@ -1146,13 +1146,13 @@ function ChatPageInner() {
           );
         } else if (isChrome && permissionState === "denied") {
           // Chrome's per-site permission says blocked. The fix is
-          // the lock icon — toggling Chrome's general mic setting
+          // the lock icon, toggling Chrome's general mic setting
           // does not override a per-site block.
           setVoiceError(
             "Chrome blocked the microphone for this site. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
           );
         } else if (isChrome) {
-          // Chrome with unknown permission state — most likely a
+          // Chrome with unknown permission state, most likely a
           // first-time block-popup answer. Same fix as denied.
           setVoiceError(
             "Microphone access was denied. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
@@ -1255,7 +1255,7 @@ function ChatPageInner() {
   return (
     <ProtectedRoute>
       <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-        {/* Subtle space background — fixed so it doesn't scroll with messages */}
+        {/* Subtle space background, fixed so it doesn't scroll with messages */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1200&q=60"
@@ -1271,7 +1271,7 @@ function ChatPageInner() {
             zIndex: 0,
           }}
         />
-        {/* Header — Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
+        {/* Header, Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
         <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
           <div className="absolute inset-0 pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1279,7 +1279,7 @@ function ChatPageInner() {
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
           </div>
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#9b86a0" }}>
+            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--wisteria)" }}>
               Your Higher Self
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
@@ -1313,7 +1313,7 @@ function ChatPageInner() {
           </div>
         </div>
 
-        {/* Scroll to bottom button — shows when user has scrolled up */}
+        {/* Scroll to bottom button, shows when user has scrolled up */}
         {!autoScroll && (
           <button
             onClick={() => {
@@ -1335,7 +1335,7 @@ function ChatPageInner() {
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
           <div className="max-w-lg mx-auto space-y-4">
 
-            {/* Empty / loading state — visible for the brief moment before
+            {/* Empty / loading state, visible for the brief moment before
                 the greeting arrives. A centered wisteria glow with the
                 logo pulsing says "I am here" without words. */}
             {messages.length === 0 && (
@@ -1362,13 +1362,13 @@ function ChatPageInner() {
                 ? msg.content.slice(0, streamedLength)
                 : msg.content;
 
-              // ── Greeting message — rendered as a centered invocation,
+              // ── Greeting message, rendered as a centered invocation,
               //    not a chat bubble. This is the first thing a user sees
               //    when they open chat: a full-width poetic moment, not UI.
               if (msg.id === "greeting") {
                 return (
                   <div key={msg.id} className="flex flex-col items-center text-center pt-4 pb-4 animate-fade-in">
-                    {/* The greeting text — Cormorant Garamond, italic, large */}
+                    {/* The greeting text, Cormorant Garamond, italic, large */}
                     <p
                       className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
                       style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
@@ -1509,7 +1509,7 @@ function ChatPageInner() {
                 // window.open to open in a new tab.
                 try {
                   window.location.href = "x-safari-" + target;
-                } catch { /* ignore — fall through */ }
+                } catch { /* ignore, fall through */ }
                 setTimeout(() => {
                   // If the deep link didn't move us off the page within
                   // 300ms, the OS didn't recognise the scheme. Open in
@@ -1572,7 +1572,7 @@ function ChatPageInner() {
                     border: isRecording
                       ? "1px solid rgba(200,162,122,0.6)"
                       : "1px solid rgba(106,134,146,0.35)",
-                    color: isRecording ? "#f2ecd8" : "#9babb9",
+                    color: isRecording ? "#f2ecd8" : "var(--mist)",
                     boxShadow: isRecording ? "0 0 16px rgba(200,162,122,0.35)" : undefined,
                   }}
                 >
@@ -1653,7 +1653,7 @@ function ChatPageInner() {
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="font-body text-[12px]" style={{ color: "#9b86a0" }}
+                              className="font-body text-[12px]" style={{ color: "var(--wisteria)" }}
                             >
                               Save
                             </button>

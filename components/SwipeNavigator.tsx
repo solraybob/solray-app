@@ -5,14 +5,14 @@ import { useRef, useEffect } from "react";
 
 const NAV_ORDER = ["/today", "/chat", "/souls", "/profile"];
 
-// Drag tracks 1:1 for valid swipes — finger position = page position.
+// Drag tracks 1:1 for valid swipes, finger position = page position.
 // Only edges (no page to go to) get heavy rubber-band resistance.
 const EDGE_RESISTANCE   = 0.10;
 
 // Commit triggers if the page has traveled this far (px) OR the finger
 // is moving fast enough (px/ms). Whichever comes first wins.
 const COMMIT_PX         = 48;
-const COMMIT_VELOCITY   = 0.28; // px/ms — roughly a light flick
+const COMMIT_VELOCITY   = 0.28; // px/ms, roughly a light flick
 
 // How far off-screen the new page starts on entrance.
 // 18% feels native (tight), 28% feels like a web app.
@@ -48,7 +48,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
 
     if (dir) {
       // Page starts at a small offset in the incoming direction, fully opaque.
-      // A tight easeOutExpo (0.22,1,0.36,1) snaps to rest quickly — feels
+      // A tight easeOutExpo (0.22,1,0.36,1) snaps to rest quickly, feels
       // like native iOS: fast initial deceleration, almost no overshoot.
       const from = dir === "forward" ? ENTRANCE_OFFSET : `-${ENTRANCE_OFFSET}`;
       el.style.transition = "none";
@@ -123,7 +123,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
       const dt  = now - prevT.current;
       if (dt > 0) {
         const instant = (t.clientX - prevX.current) / dt;
-        // 0.65 old / 0.35 new — enough lag to kill jitter, enough freshness
+        // 0.65 old / 0.35 new, enough lag to kill jitter, enough freshness
         // to catch flicks
         velocity.current = velocity.current * 0.65 + instant * 0.35;
       }
@@ -141,7 +141,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
       // Take over native scroll once we own a horizontal gesture
       e.preventDefault();
 
-      // 1:1 tracking for valid directions — page follows finger exactly.
+      // 1:1 tracking for valid directions, page follows finger exactly.
       // Heavy rubber band only at the edges where there's nowhere to go.
       const atEdge  = (dx > 0 && !canPrev) || (dx < 0 && !canNext);
       const factor  = atEdge ? EDGE_RESISTANCE : 1.0;
@@ -170,7 +170,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
         if (target >= 0 && target < NAV_ORDER.length) {
           committed.current = true;
 
-          // Continue the motion from where the page already is — no jump.
+          // Continue the motion from where the page already is, no jump.
           // Use a short, sharp ease-in so it feels like the finger threw it.
           const flyTo = goForward ? "-58%" : "58%";
           el.style.transition =
@@ -184,7 +184,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
         }
       }
 
-      // Below threshold — spring back with a gentle overshoot.
+      // Below threshold, spring back with a gentle overshoot.
       // cubic-bezier(0.34, 1.3, 0.64, 1) gives a small, satisfying bounce.
       el.style.transition =
         "transform 0.46s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.22s ease";
@@ -215,7 +215,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
         willChange: "transform, opacity",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        // Promote to its own compositor layer — eliminates repaint lag
+        // Promote to its own compositor layer, eliminates repaint lag
         transform: "translateZ(0)",
       }}
     >

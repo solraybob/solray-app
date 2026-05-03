@@ -149,7 +149,7 @@ export default function PullToRefresh() {
           style={{
             marginTop: 8,
             fontSize: "14px",
-            color: "#f39230",
+            color: "var(--amber)",
             textAlign: "center",
             whiteSpace: "nowrap",
             opacity: (percentage - 80) / 20,

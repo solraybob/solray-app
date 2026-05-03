@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /forgot-password — request a reset link.
+ * /forgot-password, request a reset link.
  *
  * Posts the email to /users/forgot-password. The backend always returns
  * the same success payload regardless of whether the email is registered

@@ -60,7 +60,7 @@ export default function VerifyEmailBanner({
             className="text-xs px-3 py-1 rounded-sm transition-opacity"
             style={{
               background: "var(--amber, #f39230)",
-              color: "#050f08",
+              color: "var(--bg-deep)",
               opacity: sending ? 0.5 : 1,
             }}
           >

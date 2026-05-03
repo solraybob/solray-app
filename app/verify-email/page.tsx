@@ -97,7 +97,7 @@ function VerifyEmailInner() {
             <button
               onClick={() => router.push("/today")}
               className="px-6 py-2.5 rounded-sm text-sm"
-              style={{ background: "var(--amber, #f39230)", color: "#050f08" }}
+              style={{ background: "var(--amber, #f39230)", color: "var(--bg-deep)" }}
             >
               Go to App
             </button>

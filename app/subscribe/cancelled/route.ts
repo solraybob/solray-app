@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * /subscribe/cancelled — Borgun SecurePay cancel redirect handler
+ * /subscribe/cancelled, Borgun SecurePay cancel redirect handler
  *
  * Borgun may redirect here via GET or POST when the user cancels
  * on the hosted card-entry page. Either way, bounce back to /subscribe
