@@ -406,12 +406,21 @@ function HeroImageCard({
 
   return (
     <div
-      className="rounded-2xl overflow-hidden cursor-pointer"
+      className="rounded-2xl overflow-hidden relative"
       style={{ border: "1px solid rgba(26,48,32,0.6)" }}
-      onClick={() => setOpen(v => !v)}
     >
-      {/* Image section */}
-      <div className="relative w-full h-[160px]">
+      {/* Image + toggle area. The onClick toggles open/close on the
+          hero. The share button below is a SIBLING of this div, not a
+          descendant, so its click cannot bubble up to the toggle. The
+          previous version had the button nested inside this div and
+          relied on e.stopPropagation, which was unreliable across
+          touch environments because the streaming-tick rate could
+          interfere and iOS sometimes fires both touchend and click
+          on different elements. Sibling structure removes the race. */}
+      <div
+        className="relative w-full h-[160px] cursor-pointer"
+        onClick={() => setOpen(v => !v)}
+      >
         <Image
           src={imageSrc}
           alt={dayTitle}
@@ -422,39 +431,8 @@ function HeroImageCard({
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.78) 100%)" }} />
 
-        {/* Share button, top-right corner. Renders the off-screen
-            ShareCard via html2canvas and hands it to the OS share
-            sheet (or downloads as PNG fallback). Codex UX hook 6:
-            highest-ceiling organic growth lever, organic Instagram
-            Story shares from users who like their daily reading. */}
-        <button
-          onClick={handleShare}
-          aria-label="Share today"
-          disabled={sharing}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-          style={{
-            background: "rgba(5,15,8,0.55)",
-            border: "1px solid rgba(243,146,48,0.35)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
-        >
-          {sharing ? (
-            <span
-              className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
-              style={{ borderColor: "rgba(243,146,48,0.35)", borderTopColor: "var(--amber)" }}
-            />
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
-              <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-          )}
-        </button>
-
         {/* Day title centered */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-none">
           <h1
             className="font-heading text-[26px] leading-[1.22] text-center"
             style={{ color: "var(--text-primary)", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,0.85), 0 1px 5px rgba(0,0,0,0.95)" }}
@@ -464,7 +442,7 @@ function HeroImageCard({
         </div>
 
         {/* Today's Weather label + arrow */}
-        <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1">
+        <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1 pointer-events-none">
           <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
             Today&apos;s Weather
           </p>
@@ -480,6 +458,37 @@ function HeroImageCard({
           </svg>
         </div>
       </div>
+
+      {/* Share button. Sibling of the click-toggling div, absolutely
+          positioned over the hero's top-right corner. The outer card
+          wrapper is now `position: relative` so this absolute lands
+          where it should. Cannot bubble to a parent onClick because
+          there is no parent onClick. Codex UX hook 6. */}
+      <button
+        onClick={handleShare}
+        aria-label="Share today"
+        disabled={sharing}
+        className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
+        style={{
+          background: "rgba(5,15,8,0.55)",
+          border: "1px solid rgba(243,146,48,0.35)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      >
+        {sharing ? (
+          <span
+            className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
+            style={{ borderColor: "rgba(243,146,48,0.35)", borderTopColor: "var(--amber)" }}
+          />
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
+            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
+          </svg>
+        )}
+      </button>
 
       {/* Off-screen share-card render target. Ships only the DOM
           when the parent hero is mounted; html2canvas captures it
