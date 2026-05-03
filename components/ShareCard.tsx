@@ -178,6 +178,26 @@ export function ShareCardOffscreen({
   containerRef: RefObject<HTMLDivElement | null>;
 }) {
   return (
+    <ShareOffscreenWrapper containerRef={containerRef}>
+      <ShareCard data={data} />
+    </ShareOffscreenWrapper>
+  );
+}
+
+/**
+ * Generic off-screen wrapper for any 1080x1920 share card variant.
+ * Lets multiple surfaces (hero, energy bars, future chart minimal,
+ * future Souls invite) share the same capture pipeline without each
+ * surface re-implementing the off-screen positioning logic.
+ */
+export function ShareOffscreenWrapper({
+  children,
+  containerRef,
+}: {
+  children: React.ReactNode;
+  containerRef: RefObject<HTMLDivElement | null>;
+}) {
+  return (
     <div
       ref={containerRef as RefObject<HTMLDivElement>}
       style={{
@@ -191,7 +211,223 @@ export function ShareCardOffscreen({
       }}
       aria-hidden
     >
-      <ShareCard data={data} />
+      {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// EnergyBarsCard
+// ---------------------------------------------------------------------------
+
+export interface EnergyBarsCardData {
+  dateLabel: string;
+  energy: { mental: number; emotional: number; physical: number; intuitive: number };
+}
+
+const ENERGY_COLORS_FOR_CARD = {
+  Mental:    "#9babb9", // mist
+  Emotional: "#d47a52", // ember
+  Physical:  "#8a9e66", // moss
+  Intuitive: "#9b86a0", // wisteria
+} as const;
+
+/**
+ * Spotify-Wrapped style daily energy share. Four bars with the
+ * user's mental / emotional / physical / intuitive scores out of 10.
+ *
+ * Privacy: energy values are derived from transit math, not personal
+ * birth details. No identifying information on the card. The bars
+ * + the date + Solray branding are all that ships.
+ */
+export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
+  // Same display-pct mapping as the live energy bars so the share
+  // card matches what the user just looked at on /today.
+  const toDisplayPct = (v: number) => 50 + (Math.max(0, Math.min(10, v)) / 10) * 45;
+
+  const rows: { label: keyof typeof ENERGY_COLORS_FOR_CARD; value: number }[] = [
+    { label: "Mental",    value: data.energy.mental },
+    { label: "Emotional", value: data.energy.emotional },
+    { label: "Physical",  value: data.energy.physical },
+    { label: "Intuitive", value: data.energy.intuitive },
+  ];
+
+  return (
+    <div
+      style={{
+        width: "1080px",
+        height: "1920px",
+        background: "#050f08",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+      }}
+    >
+      {/* Date eyebrow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "120px",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          fontSize: "26px",
+          letterSpacing: "0.34em",
+          textTransform: "uppercase",
+          color: "rgba(243, 146, 48, 0.85)",
+        }}
+      >
+        {data.dateLabel}
+      </div>
+
+      {/* Title */}
+      <div
+        style={{
+          position: "absolute",
+          top: "240px",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: "78px",
+          fontWeight: 300,
+          fontStyle: "italic",
+          letterSpacing: "-0.01em",
+          color: "#f2ecd8",
+        }}
+      >
+        Today&apos;s Vibe
+      </div>
+
+      {/* Bars block, centered vertically in the lower half */}
+      <div
+        style={{
+          position: "absolute",
+          top: "470px",
+          left: "120px",
+          right: "120px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "60px",
+        }}
+      >
+        {rows.map(({ label, value }) => {
+          const pct = toDisplayPct(value);
+          const color = ENERGY_COLORS_FOR_CARD[label];
+          return (
+            <div key={label}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: "22px",
+                  fontFamily: "'Inter', system-ui, sans-serif",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "30px",
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    color: "#a8b8ab",
+                    fontWeight: 400,
+                  }}
+                >
+                  {label}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: "60px",
+                    fontWeight: 300,
+                    color: "#f2ecd8",
+                    lineHeight: 1,
+                  }}
+                >
+                  {value}
+                  <span
+                    style={{
+                      fontSize: "30px",
+                      color: "#a8b8ab",
+                      opacity: 0.6,
+                      marginLeft: "6px",
+                    }}
+                  >
+                    /10
+                  </span>
+                </span>
+              </div>
+              {/* Bar track */}
+              <div
+                style={{
+                  width: "100%",
+                  height: "8px",
+                  background: "rgba(168, 184, 171, 0.10)",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${pct}%`,
+                    height: "100%",
+                    background: color,
+                    borderRadius: "999px",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hairline accent + brand */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "210px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "60px",
+          height: "1px",
+          background: "rgba(243, 146, 48, 0.35)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "120px",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: "60px",
+            fontWeight: 300,
+            letterSpacing: "0.18em",
+            color: "#f2ecd8",
+            marginBottom: "14px",
+          }}
+        >
+          SOLRAY
+        </div>
+        <div
+          style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: "24px",
+            letterSpacing: "0.25em",
+            color: "rgba(168, 184, 171, 0.7)",
+            textTransform: "lowercase",
+          }}
+        >
+          solray.ai
+        </div>
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
-import { ShareCardOffscreen } from "@/components/ShareCard";
+import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -624,6 +624,39 @@ export default function TodayPage() {
   const router = useRouter();
   const backgroundFetchDone = useRef(false);
 
+  // Refs and state for the Energy Bars share card. The card itself
+  // renders into a hidden off-screen container via
+  // ShareOffscreenWrapper at the bottom of this page; html2canvas
+  // captures it on demand when the user taps the share icon next to
+  // "Today's Vibe."
+  const energyShareRef = useRef<HTMLDivElement | null>(null);
+  const [energySharing, setEnergySharing] = useState(false);
+
+  const todayDateLabel = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  const handleEnergyShare = async () => {
+    if (energySharing) return;
+    if (!energyShareRef.current) return;
+    setEnergySharing(true);
+    try {
+      const { shareOrDownloadCard } = await import("@/lib/share-card");
+      await shareOrDownloadCard({
+        node: energyShareRef.current,
+        filename: `solray-vibe-${todayDateLabel.replace(/[, ]+/g, "-").toLowerCase()}.png`,
+        title: "Solray, Today's Vibe",
+        text: "Today's energy",
+      });
+    } catch (err) {
+      console.warn("[share] energy bars failed", err);
+    } finally {
+      setEnergySharing(false);
+    }
+  };
+
   // Funnel event: fires the first time a user reaches /today after signup.
   // Powers the "registration → first today view" conversion measurement.
   // trackOnce uses localStorage so this is per-device-per-user, fired
@@ -852,13 +885,41 @@ export default function TodayPage() {
               {/* ENERGY BARS, the daily ritual. Hairline ink-lines,
                   each row fades in on its own clock at 80ms stagger. */}
               <div className="mt-14 mb-12">
-                {/* Parallel label to "Today's Weather" on the hero card */}
-                <p
-                  className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-7 transition-opacity duration-700"
+                {/* Parallel label to "Today's Weather" on the hero card,
+                    with a quiet share icon at the right edge so the
+                    energy reading is shareable as a Spotify-Wrapped
+                    style card. */}
+                <div
+                  className="flex items-center justify-between mb-7 transition-opacity duration-700"
                   style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
                 >
-                  Today&apos;s Vibe
-                </p>
+                  <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
+                    Today&apos;s Vibe
+                  </p>
+                  <button
+                    onClick={handleEnergyShare}
+                    aria-label="Share today's vibe"
+                    disabled={energySharing}
+                    className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid rgba(243,146,48,0.30)",
+                    }}
+                  >
+                    {energySharing ? (
+                      <span
+                        className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
+                        style={{ borderColor: "rgba(243,146,48,0.30)", borderTopColor: "var(--amber)" }}
+                      />
+                    ) : (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)", opacity: 0.85 }}>
+                        <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
+                        <polyline points="16 6 12 2 8 6" />
+                        <line x1="12" y1="2" x2="12" y2="15" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 <div className="space-y-[22px]">
                   <EnergyBar
                     label="Mental"
@@ -967,6 +1028,21 @@ export default function TodayPage() {
         )}
 
       </div>
+
+      {/* Off-screen render of the Energy Bars share card. Mounts only
+          when forecast data is loaded; html2canvas captures it on
+          demand when the share button on the "Today's Vibe" header is
+          tapped. Sibling of the page chrome so refs land cleanly. */}
+      {forecast && forecast._pending !== true && (
+        <ShareOffscreenWrapper containerRef={energyShareRef}>
+          <EnergyBarsCard
+            data={{
+              dateLabel: todayDateLabel,
+              energy: (forecast as ForecastData).energy,
+            }}
+          />
+        </ShareOffscreenWrapper>
+      )}
     </ProtectedRoute>
   );
 }
