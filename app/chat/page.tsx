@@ -244,8 +244,11 @@ function ChatPageInner() {
   }, [streamingId, streamedLength, messages]);
 
   // ── Build a greeting message ──────────────────────────────────────────────
+  // Returns null when the forecast endpoint fails, so the caller can
+  // skip rendering a fake first line rather than ship invented Oracle
+  // copy. The user starts the conversation plainly in that case.
   const buildGreeting = useCallback(
-    async (forToken: string | null): Promise<Message> => {
+    async (forToken: string | null): Promise<Message | null> => {
       let content = "";
 
       try {
@@ -334,29 +337,16 @@ function ChatPageInner() {
         }
 
       } catch {
-        // Forecast API failed — try to build something personal from the user profile
-        try {
-          const user = await apiFetch("/users/me", {}, forToken);
-          const natalSun =
-            (user?.natal_chart as { sun?: { sign?: string } })?.sun?.sign ||
-            (user as { sun_sign?: string })?.sun_sign ||
-            "";
-          const natalMoon =
-            (user?.natal_chart as { moon?: { sign?: string } })?.moon?.sign ||
-            (user as { moon_sign?: string })?.moon_sign ||
-            "";
-
-          if (natalSun || natalMoon) {
-            const parts = [natalSun && `${natalSun} Sun`, natalMoon && `${natalMoon} Moon`]
-              .filter(Boolean)
-              .join(", ");
-            content = `${parts}. The morning is yours. What needs clarity today?`;
-          } else {
-            content = "The morning is yours. What needs clarity today?";
-          }
-        } catch {
-          content = "The morning is yours. What needs clarity today?";
-        }
+        // Forecast API failed. The previous version of this branch
+        // composed a synthetic Oracle greeting from cached profile
+        // data ("Virgo Sun, Pisces Moon. The morning is yours. What
+        // needs clarity today?"). That is invented Oracle copy
+        // produced specifically because the live sky failed, which
+        // violates the "fail honestly, never fictionally" rule. We
+        // now skip the greeting entirely on forecast failure and let
+        // the user start the conversation plainly. No fake first
+        // line. Caught by Codex audit P1.2.
+        return null;
       }
 
       return {
@@ -390,32 +380,68 @@ function ChatPageInner() {
             content: ctx.question,
             timestamp: new Date().toISOString(),
           };
+          // greeting may be null when /forecast/today fails; in that
+          // case skip the synthetic first line and let the user's
+          // prompt be the opening message.
+          const seed = greeting ? [greeting, userMsg] : [userMsg];
           const newSession: StoredSession = {
             sessionId: sid,
             date: todayLabel(),
             customName: ctx.topic,
-            messages: [greeting, userMsg],
+            messages: seed,
           };
           saveSession(newSession);
-          setMessages([greeting, userMsg]);
+          setMessages(seed);
           setSending(true);
           try {
             const data = await apiFetch("/chat", {
               method: "POST",
               body: JSON.stringify({ message: ctx.question, conversation_history: [] }),
             }, token);
+            // Honest empty-response handling, parallel to sendMessage.
+            // The previous version of this branch fell back to "I
+            // hear you." which is invented Oracle copy. Caught by
+            // Codex audit P2.4.
+            const content = data.response || data.message;
+            if (!content) {
+              const errMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: "assistant",
+                content: "The Oracle didn't return a response this time. Try asking again.",
+                timestamp: new Date().toISOString(),
+                isError: true,
+              };
+              const next = [...seed, errMsg];
+              setMessages(next);
+              saveSession({ ...newSession, messages: next });
+              return;
+            }
             const reply: Message = {
               id: (Date.now() + 1).toString(),
               role: "assistant",
-              content: data.response || data.message || "I hear you.",
+              content,
               timestamp: new Date().toISOString(),
             };
-            setMessages([greeting, userMsg, reply]);
+            const next = [...seed, reply];
+            setMessages(next);
             setStreamedLength(0);
             setStreamingId(reply.id);
-            saveSession({ ...newSession, messages: [greeting, userMsg, reply] });
+            saveSession({ ...newSession, messages: next });
           } catch {
-            // fail silently, user can re-ask
+            // Surface the failure as a visible error message rather
+            // than silently swallowing it. Previous version left the
+            // user with their seeded question and no honest signal
+            // that anything failed.
+            const errMsg: Message = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: "The Oracle couldn't be reached just now. Check your connection and try again.",
+              timestamp: new Date().toISOString(),
+              isError: true,
+            };
+            const next = [...seed, errMsg];
+            setMessages(next);
+            saveSession({ ...newSession, messages: next });
           } finally {
             setSending(false);
           }
@@ -494,15 +520,22 @@ function ChatPageInner() {
               setStreamingId(reply.id);
               saveSession({ ...newSession, messages: [...newSession.messages, reply] });
             } catch {
-              const reply: Message = {
+              // The previous version of this branch shipped an
+              // Oracle-flavored fallback string for the souls compat
+              // flow that asserted vague mirror-energy-grow content
+              // about the user and the connection. Especially
+              // dangerous in Souls because users trust compat
+              // readings as chart-grounded. Now surfaces a visible
+              // error message in the same isError style as the main
+              // chat path. Caught by Codex audit P1.1.
+              const errMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: `I feel the thread between you and ${ctx.soulName}. Your energies hold a particular kind of mirror for each other, one that invites both recognition and growth.`,
+                content: `The Oracle couldn't open the reading between you and ${ctx.soulName} just now. Try again in a moment.`,
                 timestamp: new Date().toISOString(),
+                isError: true,
               };
-              setMessages((prev) => [...prev, reply]);
-              setStreamedLength(0);
-              setStreamingId(reply.id);
+              setMessages((prev) => [...prev, errMsg]);
             }
             return;
           }
@@ -522,13 +555,17 @@ function ChatPageInner() {
         const sid = generateSessionId();
         setSessionId(sid);
         const greeting = await buildGreeting(token);
+        // greeting may be null when /forecast/today fails. In that
+        // case start with an empty thread so the user sees the input
+        // box ready, no fake first line.
+        const seed: Message[] = greeting ? [greeting] : [];
         const newSession: StoredSession = {
           sessionId: sid,
           date: todayLabel(),
-          messages: [greeting],
+          messages: seed,
         };
         saveSession(newSession);
-        setMessages([greeting]);
+        setMessages(seed);
       }
     }
 
@@ -621,13 +658,16 @@ function ChatPageInner() {
     const sid = generateSessionId();
     setSessionId(sid);
     const greeting = await buildGreeting(token);
+    // greeting may be null when /forecast/today fails. Start empty in
+    // that case rather than ship invented Oracle copy.
+    const seed: Message[] = greeting ? [greeting] : [];
     const newSession: StoredSession = {
       sessionId: sid,
       date: todayLabel(),
-      messages: [greeting],
+      messages: seed,
     };
     saveSession(newSession);
-    setMessages([greeting]);
+    setMessages(seed);
     setShowHistory(false);
   }, [token, buildGreeting, triggerSessionSynthesis]);
 
@@ -830,7 +870,11 @@ function ChatPageInner() {
   }, []);
 
   // Tear down recorder + mic stream on unmount so the iOS mic indicator
-  // doesn't linger after the user navigates away mid-recording.
+  // doesn't linger after the user navigates away mid-recording. Covers
+  // both the web MediaRecorder path AND the native Capacitor
+  // VoiceRecorder path; previously only the web path was cleaned up,
+  // so a native recording session could keep the mic indicator alive
+  // after leaving chat. Caught by Codex audit P2.6.
   useEffect(() => {
     return () => {
       try {
@@ -843,6 +887,17 @@ function ChatPageInner() {
       mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
       mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
+
+      // Cancel any active native recording. Fire-and-forget; we are on
+      // the unmount path and cannot await. The plugin call is
+      // idempotent — calling cancel when nothing is recording is a
+      // no-op.
+      if (nativeRecordingRef.current) {
+        nativeRecordingRef.current = false;
+        void import("@/lib/native-voice").then(({ cancelNativeRecording }) => {
+          cancelNativeRecording().catch(() => {});
+        }).catch(() => {});
+      }
     };
   }, []);
 
@@ -1039,7 +1094,17 @@ function ChatPageInner() {
     // with everything we know. Open DevTools → Console and tap mic to
     // capture this. Helps differentiate "site permission blocked",
     // "OS permission blocked", "iOS PWA cage", and "hardware muted".
-    if (process.env.NODE_ENV !== "production" || true) {
+    // Mic preflight diagnostics. Gated behind the dev environment OR
+    // an explicit ?mic_debug=1 query param so a power user (or
+    // OpenClaw debugging on the Mac) can flip them on without a
+    // rebuild. Previously gated with "|| true" which meant every
+    // single mic attempt logged user-agent + permission state in
+    // production, fine for a one-week debug window but not for a
+    // polished paid app. Caught by Codex audit P3.8.
+    const micDebug =
+      process.env.NODE_ENV !== "production" ||
+      (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mic_debug") === "1");
+    if (micDebug) {
       // eslint-disable-next-line no-console
       console.log("[solray-mic] preflight", {
         userAgent: ua,

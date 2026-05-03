@@ -481,17 +481,12 @@ function NativeMembershipView() {
         </p>
 
         <div className="space-y-3">
-          <button
-            onClick={() => router.push("/today")}
-            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
-            style={{
-              color: "var(--bg-deep, #050f08)",
-              background: "var(--amber, #f39230)",
-            }}
-          >
-            Continue to app
-          </button>
-
+          {/* Continue to app removed: ProtectedRoute will bounce an
+              unsubscribed user straight back to /subscribe, so the
+              button promised an escape that did not exist. Native
+              users without a membership only see Sign out here.
+              They subscribe on solray.ai in a browser and then sign
+              in. Caught by Codex audit P2.7. */}
           <button
             onClick={logout}
             className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"

@@ -67,12 +67,14 @@ export async function registerNativePush(token: string): Promise<void> {
       return;
     }
 
-    // 2. Register. This triggers APNs/FCM, which fires `registration`
-    //    once the device token is back.
-    await PushNotifications.register();
-
-    // 3. Wait for the registration event with a timeout. If APNs/FCM
-    //    take longer than 10s, give up — we'll retry next launch.
+    // 2. Attach the registration listeners FIRST, then call register().
+    //    The previous version of this function awaited register() before
+    //    adding listeners, but Capacitor's `registration` event can fire
+    //    immediately on platforms where the OS already has the APNs/FCM
+    //    token cached. If the listener is registered after that fires,
+    //    the event is missed, the promise waits the full 10s timeout,
+    //    and the backend never receives the device token. Caught by
+    //    Codex audit P2.5.
     const deviceToken = await new Promise<string | null>((resolve) => {
       const timeout = setTimeout(() => resolve(null), 10000);
 
@@ -82,6 +84,13 @@ export async function registerNativePush(token: string): Promise<void> {
       });
 
       PushNotifications.addListener("registrationError", () => {
+        clearTimeout(timeout);
+        resolve(null);
+      });
+
+      // Now trigger APNs/FCM. The listeners above will catch whichever
+      // event fires, even if it fires synchronously inside register().
+      PushNotifications.register().catch(() => {
         clearTimeout(timeout);
         resolve(null);
       });
