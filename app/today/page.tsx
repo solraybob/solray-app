@@ -295,6 +295,20 @@ function PlanetCard({ planet }: { planet: Planet }) {
 function SkeletonToday() {
   return (
     <div>
+      {/* Honest loading copy. Each label is true: the planets ARE
+          actually being read, the chart IS being matched, the reading
+          IS being written. Replaces a silent skeleton with a small
+          breath of intention so waiting feels considered, not blank.
+          Codex UX hook 8. */}
+      <div className="max-w-lg mx-auto px-5 pt-6 pb-1 text-center">
+        <p
+          className="font-body text-[12px] tracking-[0.3em] uppercase"
+          style={{ color: "var(--amber)", opacity: 0.7 }}
+        >
+          Reading today&apos;s sky
+        </p>
+      </div>
+
       {/* Hero skeleton, matches real hero: padded, rounded-2xl, 160px */}
       <div className="max-w-lg mx-auto px-5 pt-3">
         <div className="w-full h-[160px] bg-forest-card skeleton-shimmer rounded-2xl" />

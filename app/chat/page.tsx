@@ -137,6 +137,21 @@ function ChatPageInner() {
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
 
+  // Three tappable prompts seeded from today's cached forecast.
+  // Empty array when no forecast is cached, in which case the chat
+  // shows just the greeting + input. Computed once on mount.
+  const [todayPrompts, setTodayPrompts] = useState<Array<{ topic: string; question: string }>>([]);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { buildTodayPrompts, readCachedForecast } = await import("@/lib/today-prompts");
+        setTodayPrompts(buildTodayPrompts(readCachedForecast()));
+      } catch {
+        setTodayPrompts([]);
+      }
+    })();
+  }, []);
+
   // Streaming state
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [streamedLength, setStreamedLength] = useState(0);
@@ -741,8 +756,12 @@ function ChatPageInner() {
   );
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const sendMessage = async () => {
-    if (!input.trim() || sending) return;
+  const sendMessage = async (overrideText?: string) => {
+    // overrideText lets a tappable prompt or auto-send path bypass the
+    // input state without waiting for setInput to flush. Falls back to
+    // the live input value.
+    const text = (overrideText ?? input).trim();
+    if (!text || sending) return;
 
     // If voice is active, stop it so the final transcript commits before send.
     try {
@@ -755,7 +774,7 @@ function ChatPageInner() {
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: text,
       timestamp: new Date().toISOString(),
     };
 
@@ -1444,6 +1463,34 @@ function ChatPageInner() {
               );
             })}
 
+            {/* First-session tappable prompts. Computed from today's
+                cached forecast, so each chip is specific to this user's
+                actual chart and today's actual sky. Shown only when the
+                user has not sent any message yet, the greeting may have
+                arrived already but no user turn has happened. Tap fills
+                input and auto-sends, removing typing friction on the
+                first interaction. Hidden as soon as the user types or
+                taps one. Codex UX hook 2. */}
+            {todayPrompts.length > 0 &&
+              !messages.some((m) => m.role === "user") &&
+              !sending && (
+                <div className="flex flex-col gap-2 items-center pt-2 pb-1 animate-fade-in">
+                  {todayPrompts.map((p) => (
+                    <button
+                      key={p.question}
+                      onClick={() => sendMessage(p.question)}
+                      className="font-body text-[13px] leading-snug text-text-primary text-left max-w-[300px] px-4 py-2.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+                      style={{
+                        background: "rgba(155,134,160,0.06)",
+                        border: "1px solid rgba(155,134,160,0.22)",
+                      }}
+                    >
+                      {p.question}
+                    </button>
+                  ))}
+                </div>
+              )}
+
             {sending && (
               <div className="flex justify-start animate-fade-in pl-2">
                 <img
@@ -1595,7 +1642,7 @@ function ChatPageInner() {
                 </button>
               )}
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!input.trim() || sending}
                 className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
               >
