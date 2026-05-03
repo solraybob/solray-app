@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
+import { ShareCardOffscreen } from "@/components/ShareCard";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -373,6 +374,35 @@ function HeroImageCard({
   reading?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
+
+  // Build the date label once per render: "Saturday, 3 May"
+  const dateLabel = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // don't toggle the open/close on share tap
+    if (sharing) return;
+    if (!shareCardRef.current) return;
+    setSharing(true);
+    try {
+      const { shareOrDownloadCard } = await import("@/lib/share-card");
+      await shareOrDownloadCard({
+        node: shareCardRef.current,
+        filename: `solray-${dateLabel.replace(/[, ]+/g, "-").toLowerCase()}.png`,
+        title: "Solray",
+        text: dayTitle,
+      });
+    } catch (err) {
+      console.warn("[share] failed", err);
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div
@@ -391,6 +421,37 @@ function HeroImageCard({
           unoptimized
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.78) 100%)" }} />
+
+        {/* Share button, top-right corner. Renders the off-screen
+            ShareCard via html2canvas and hands it to the OS share
+            sheet (or downloads as PNG fallback). Codex UX hook 6:
+            highest-ceiling organic growth lever, organic Instagram
+            Story shares from users who like their daily reading. */}
+        <button
+          onClick={handleShare}
+          aria-label="Share today"
+          disabled={sharing}
+          className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+          style={{
+            background: "rgba(5,15,8,0.55)",
+            border: "1px solid rgba(243,146,48,0.35)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        >
+          {sharing ? (
+            <span
+              className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
+              style={{ borderColor: "rgba(243,146,48,0.35)", borderTopColor: "var(--amber)" }}
+            />
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
+              <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          )}
+        </button>
 
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
@@ -419,6 +480,15 @@ function HeroImageCard({
           </svg>
         </div>
       </div>
+
+      {/* Off-screen share-card render target. Ships only the DOM
+          when the parent hero is mounted; html2canvas captures it
+          on demand. Position fixed at -99999px keeps it invisible
+          but renders so html2canvas can measure. */}
+      <ShareCardOffscreen
+        data={{ dayTitle, imageSrc, dateLabel }}
+        containerRef={shareCardRef}
+      />
 
       {/* Expandable reading */}
       {open && reading && (
