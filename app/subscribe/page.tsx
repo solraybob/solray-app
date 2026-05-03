@@ -75,48 +75,33 @@ function SubscribeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Handle SecurePay callback (token comes back as URL param). Skipped
-  // entirely on the native shell so the app never touches a Teya token,
-  // even if a stray URL is opened deep-linked into the WebView.
+  // SecurePay callback flow: client-side activation REMOVED.
+  //
+  // The previous version of this effect read the Teya token from URL
+  // params and POSTed it to /subscribe/card, which the backend used
+  // to flip the subscription to active. That endpoint had no Teya
+  // verification and was a revenue-leak hole (any authenticated user
+  // could call it with a fake token). Codex P0.1 trust audit, May
+  // 2026.
+  //
+  // The legitimate activation path is now exclusively server-to-
+  // server: Teya redirects directly to backend /subscribe/teya-return,
+  // backend verifies the checkhash + the order_id session_created
+  // event, activates the subscription, then 302s to /subscribe/welcome.
+  // The frontend never touches a Teya token.
+  //
+  // If we ever land on /subscribe with a stray ?token=... param (e.g.
+  // a user shared the URL), strip it from the bar and refetch
+  // subscription status to reflect whatever the backend actually did.
   useEffect(() => {
     if (isNative) return;
     const params = new URLSearchParams(window.location.search);
-
-    // Borgun param casing varies between test and live environments.
-    // Build a lowercase lookup so we catch token/Token/TOKEN etc.
-    const lc: Record<string, string> = {};
-    params.forEach((v, k) => { lc[k.toLowerCase()] = v; });
-
-    const teyaToken = lc["token"];
-    const rawPan = lc["pan"] || lc["maskedpan"] || "";
-    const lastFour = lc["last_four"] || (rawPan ? rawPan.slice(-4) : "");
-    const brand = lc["card_type"] || lc["cardtype"] || "Card";
-
-    if (teyaToken && token) {
-      setActionLoading(true);
-      // Strip the token-bearing URL immediately so a refresh / share /
-      // history-back doesn't re-trigger the attach with a stale token.
+    const hasStaleToken = params.has("token") || params.has("Token") || params.has("TOKEN");
+    if (hasStaleToken) {
       window.history.replaceState({}, "", "/subscribe");
-      import("@/lib/subscription").then(({ attachCard }) =>
-        attachCard(token, {
-          teya_token: teyaToken,
-          card_last_four: lastFour || "****",
-          card_brand: brand,
-        })
-          .then(() => {
-            // Backend's /subscribe/card flips status to 'active' atomically
-            // when SecurePay returns successfully. Redirect to the welcome
-            // confirmation page; it pulls fresh status on mount and double-
-            // checks before celebrating.
-            router.replace("/subscribe/welcome");
-          })
-          .catch((e) => {
-            setError(e.message);
-            setActionLoading(false);
-          })
-      );
+      void refresh();
     }
-  }, [token, router]);
+  }, [isNative, refresh]);
 
   // ------------------------------------------------------------------
   // Actions
