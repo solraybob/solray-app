@@ -13,6 +13,12 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: string; // ISO string for serialisation
+  // When true, this message represents a transport-level error rather
+  // than an Oracle reply. Renders with distinct styling (no Cormorant
+  // serif, no Higher-Self framing) so the user is never misled into
+  // thinking error fallback copy came from the Oracle. Replaces the
+  // earlier mockReplies fortune-cookie fallback.
+  isError?: boolean;
 }
 
 interface StoredSession {
@@ -744,10 +750,27 @@ function ChatPageInner() {
         token
       );
 
+      // Honest empty-response handling. If the backend returned 200 but
+      // both response and message fields are empty, surface that as an
+      // error rather than inventing Oracle copy ("I hear you." was the
+      // previous fallback string here, which is fictional content
+      // presented as the Oracle's reply).
+      const content = data.response || data.message;
+      if (!content) {
+        const errMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "The Oracle didn't return a response this time. Try asking again.",
+          timestamp: new Date().toISOString(),
+          isError: true,
+        };
+        setMessages((prev) => [...prev, errMsg]);
+        return;
+      }
       const reply: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.response || data.message || "I hear you.",
+        content,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, reply]);
@@ -758,7 +781,7 @@ function ChatPageInner() {
       // If the user has already navigated away from /chat by the time the
       // response lands, do nothing. Whichever page they're on now will
       // handle its own auth/access state. Specifically, never call
-      // router.replace from a stale chat handler — it yanks the user off
+      // router.replace from a stale chat handler, it yanks the user off
       // the new page they're trying to use.
       if (!isMountedRef.current) return;
       if (err instanceof ApiError && err.status === 403) {
@@ -769,22 +792,22 @@ function ChatPageInner() {
         router.replace("/login");
         return;
       }
-      const mockReplies = [
-        "The pattern you're sensing is real. Trust that recognition. Your intuition rarely lies at this depth.",
-        "There is wisdom in what you're sitting with. Let it breathe a little longer before you act.",
-        "I see the tension you're holding. What would it feel like to release just one layer of it today?",
-        "This is the question beneath the question. What does your body tell you when you sit quietly with it?",
-        "You already know. The knowing lives in a place quieter than thought.",
-      ];
-      const reply: Message = {
+      // Transport / server error. The previous version of this branch
+      // shipped a hardcoded array of five "Oracle-flavored" fortune
+      // cookie strings and picked one at random to display as if the
+      // Oracle had actually said it. That is fictional content
+      // presented as the user's personalised reply, which is exactly
+      // the failure mode this product cannot ship. We now surface a
+      // visible error message in the thread, marked as an error so it
+      // renders distinctly from genuine Oracle replies.
+      const errMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: mockReplies[Math.floor(Math.random() * mockReplies.length)],
+        content: "The Oracle couldn't be reached just now. Check your connection and try again.",
         timestamp: new Date().toISOString(),
+        isError: true,
       };
-      setMessages((prev) => [...prev, reply]);
-      setStreamedLength(0);
-      setStreamingId(reply.id);
+      setMessages((prev) => [...prev, errMsg]);
     } finally {
       if (isMountedRef.current) setSending(false);
     }
@@ -1289,6 +1312,41 @@ function ChatPageInner() {
                       {isStreaming && <span className="inline-block w-0.5 h-4 bg-wisteria/60 ml-0.5 animate-pulse" />}
                     </p>
                     <div className="mt-5 w-12 h-px bg-forest-border/60" />
+                  </div>
+                );
+              }
+
+              // Error messages render with distinct styling so the user
+              // is never misled into thinking transport-level error copy
+              // came from the Oracle. Non-italic, ember-tinted, smaller,
+              // labelled. Replaces the previous mockReplies fallback that
+              // styled fortune-cookie strings as if the Oracle had said
+              // them.
+              if (msg.isError) {
+                return (
+                  <div key={msg.id} className="flex justify-start animate-fade-in">
+                    <div className="max-w-[80%]">
+                      <div
+                        className="rounded-2xl px-4 py-3 rounded-bl-sm"
+                        style={{
+                          background: "rgba(212, 122, 82, 0.08)",
+                          border: "1px solid rgba(212, 122, 82, 0.30)",
+                        }}
+                      >
+                        <p
+                          className="font-body text-[11px] tracking-[0.22em] uppercase mb-1"
+                          style={{ color: "var(--ember, #d47a52)", opacity: 0.85 }}
+                        >
+                          Connection
+                        </p>
+                        <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                          {msg.content}
+                        </p>
+                      </div>
+                      <span className="font-body text-text-secondary text-[12px] mt-1 px-1">
+                        {formatTime(msg.timestamp)}
+                      </span>
+                    </div>
                   </div>
                 );
               }

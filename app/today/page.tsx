@@ -72,37 +72,23 @@ interface ForecastData {
   planets: Planet[];
   morning_greeting?: string;
   lunar_event?: LunarEvent;
+  _pending?: false;
 }
 
-const MOCK_FORECAST: ForecastData = {
-  day_title: "Let the wave pass before you decide",
-  reading:
-    "The cosmos invites a softening today. You are not behind. You are being prepared. There is momentum building beneath the surface, and your awareness of it is the catalyst. Trust the timing that arrives without forcing. What unfolds in stillness carries far more weight than what is seized in urgency.",
-  tags: {
-    astrology: "Venus trine Neptune",
-    human_design: "Gate 57. Intuition",
-    gene_keys: "Gift of Clarity",
-  },
-  energy: {
-    mental: 6,
-    emotional: 8,
-    physical: 5,
-    intuitive: 9,
-  },
-  planets: [
-    { name: "Sun", symbol: "☉", sign: "Pisces", degree: "29°", retrograde: false },
-    { name: "Moon", symbol: "☽", sign: "Scorpio", degree: "14°", retrograde: false },
-    { name: "Mercury", symbol: "☿", sign: "Aries", degree: "3°", retrograde: false },
-    { name: "Venus", symbol: "♀", sign: "Aquarius", degree: "22°", retrograde: false },
-    { name: "Mars", symbol: "♂", sign: "Cancer", degree: "7°", retrograde: false },
-    { name: "Jupiter", symbol: "♃", sign: "Gemini", degree: "18°", retrograde: false },
-    { name: "Saturn", symbol: "♄", sign: "Pisces", degree: "13°", retrograde: false },
-    { name: "Uranus", symbol: "♅", sign: "Taurus", degree: "24°", retrograde: false },
-    { name: "Neptune", symbol: "♆", sign: "Pisces", degree: "27°", retrograde: false },
-    { name: "Pluto", symbol: "♇", sign: "Aquarius", degree: "1°", retrograde: false },
-  ],
-  morning_greeting: "Good morning. The day opens gently. I am here.",
-};
+// Discriminated union for the "AI not ready yet but transits ARE live"
+// case. The previous version of this file shipped a hardcoded
+// MOCK_FORECAST and showed it whenever the AI fields were missing or
+// the network failed. That is fictional content presented as a real
+// reading. Removed in May 2026 after a cross-agent review surfaced it.
+// The honest pattern is: when AI is pending, show the live planet
+// data with explicit "your reading is being written" copy; when the
+// network fails entirely, show an error state, never invented copy.
+interface PreparingForecast {
+  _pending: true;
+  planets: Planet[];
+}
+
+type ForecastView = ForecastData | PreparingForecast;
 
 // Extract dominant planet from astrology tag string
 function getDominantPlanet(astrologyTag: string): string {
@@ -441,67 +427,103 @@ function HeroImageCard({
   );
 }
 
-// Parse raw forecast API response into ForecastData
-function parseForecastData(data: any): ForecastData {
+// Symbol lookup, shared between the two extraction paths.
+const PLANET_SYMBOLS: Record<string, string> = {
+  Sun: "☉",
+  Moon: "☽",
+  Mercury: "☿",
+  Venus: "♀",
+  Mars: "♂",
+  Jupiter: "♃",
+  Saturn: "♄",
+  Uranus: "♅",
+  Neptune: "♆",
+  Pluto: "♇",
+};
+
+// Honest "your daily reading is being prepared" state. Renders the
+// live sky (real planet positions) plus a quiet card explaining the
+// reading is still being written. Never shows invented tags, energy,
+// or a fake day title. Replaces the previous MOCK_FORECAST fallback.
+function PendingTodayState({ planets }: { planets: Planet[] }) {
+  return (
+    <div className="max-w-lg mx-auto px-5 pt-12">
+      <div
+        className="rounded-sm p-7 mb-8"
+        style={{
+          background: "rgba(10, 31, 18, 0.6)",
+          border: "1px solid rgba(243, 146, 48, 0.14)",
+        }}
+      >
+        <p
+          className="font-body text-[12px] tracking-[0.3em] uppercase mb-5"
+          style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
+        >
+          Your reading
+        </p>
+        <p
+          className="font-heading text-text-primary mb-3"
+          style={{ fontWeight: 300, fontSize: "1.4rem", lineHeight: 1.3 }}
+        >
+          Today&apos;s reading is being written.
+        </p>
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed">
+          The sky below is live. Your personalised reading from the Higher Self will appear here in a few moments. Pull to refresh, or check back shortly.
+        </p>
+      </div>
+
+      <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
+        Sky Now
+      </p>
+      <div
+        className="-mx-5 px-5 overflow-x-auto"
+        style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+      >
+        <div className="flex gap-2.5 pb-3" style={{ width: "max-content" }}>
+          {planets.map((planet) => (
+            <PlanetCard key={planet.name} planet={planet} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function extractPlanets(data: any): Planet[] {
+  if (data.planets && Array.isArray(data.planets)) {
+    return data.planets;
+  }
+  return Object.entries(data.transits || {})
+    .slice(0, 10)
+    .map(([name, p]: [string, any]) => ({
+      name,
+      symbol: PLANET_SYMBOLS[name] || "✦",
+      sign: p.sign,
+      degree: `${Math.floor(p.degree)}°`,
+      retrograde: p.retrograde,
+    }));
+}
+
+// Parse raw forecast API response. Returns the full ForecastData when
+// the AI fields are ready; returns a PreparingForecast (live planets
+// only, no AI commentary) when the daily reading has not been generated
+// yet. Never returns invented content under any circumstance.
+function parseForecastData(data: any): ForecastView {
+  const planets = extractPlanets(data);
   if (data.day_title && data.reading && data.tags && data.energy) {
-    const planets: Planet[] =
-      data.planets ||
-      Object.entries(data.transits || {}).map(([name, p]: [string, any]) => ({
-        name,
-        symbol: {
-          Sun: "☉",
-          Moon: "☽",
-          Mercury: "☿",
-          Venus: "♀",
-          Mars: "♂",
-          Jupiter: "♃",
-          Saturn: "♄",
-          Uranus: "♅",
-          Neptune: "♆",
-          Pluto: "♇",
-        }[name] || "✦",
-        sign: p.sign,
-        degree: `${Math.floor(p.degree)}°`,
-        retrograde: p.retrograde,
-      }));
-    // Explicitly pass through optional fields so cache round-trips preserve them
     return {
       ...data,
       planets,
       tag_details: data.tag_details ?? undefined,
       lunar_event: data.lunar_event ?? undefined,
-    };
-  } else {
-    // AI not ready yet, show mock with real planet positions
-    const planets: Planet[] = Object.entries(data.transits || {})
-      .slice(0, 10)
-      .map(([name, p]: [string, any]) => ({
-        name,
-        symbol: {
-          Sun: "☉",
-          Moon: "☽",
-          Mercury: "☿",
-          Venus: "♀",
-          Mars: "♂",
-          Jupiter: "♃",
-          Saturn: "♄",
-          Uranus: "♅",
-          Neptune: "♆",
-          Pluto: "♇",
-        }[name] || "✦",
-        sign: p.sign,
-        degree: `${Math.floor(p.degree)}°`,
-        retrograde: p.retrograde,
-      }));
-    return {
-      ...MOCK_FORECAST,
-      planets: planets.length > 0 ? planets : MOCK_FORECAST.planets,
+      _pending: false,
     };
   }
+  return { _pending: true, planets };
 }
 
 export default function TodayPage() {
-  const [forecast, setForecast] = useState<ForecastData | null>(null);
+  const [forecast, setForecast] = useState<ForecastView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [visibleSections, setVisibleSections] = useState(0);
@@ -625,8 +647,15 @@ export default function TodayPage() {
           return;
         }
         if (!isBackground) {
-          setForecast(MOCK_FORECAST);
-          setError("Reading from memory. Reconnect when ready to see the live sky.");
+          // Honest failure state. The previous version of this code path
+          // set forecast to a hardcoded MOCK_FORECAST containing invented
+          // tags, energy levels, and a generic-Solray "reading." That is
+          // exactly the kind of fictional content this product cannot
+          // ship, since the user is paying for a personalised reading
+          // grounded in their chart. On total fetch failure we now show
+          // a real error and let the user retry.
+          setForecast(null);
+          setError("Couldn't reach the sky right now. Check your connection and try again.");
           setLoading(false);
         }
       }
@@ -691,6 +720,12 @@ export default function TodayPage() {
         {loading ? (
           // Beautiful skeleton instead of spinner
           <SkeletonToday />
+        ) : forecast && forecast._pending === true ? (
+          // AI reading not yet generated for today, but the live sky IS
+          // available. Honest "your reading is being written" state with
+          // the real planet positions visible. Never shows invented
+          // tags, energy, or reading copy.
+          <PendingTodayState planets={forecast.planets} />
         ) : forecast ? (
           <>
             {/* HERO IMAGE CARD — card style, with padding like CurrentCycles */}
@@ -815,10 +850,26 @@ export default function TodayPage() {
             </div>
           </>
         ) : (
+          // Total fetch failure with no cache. Honest error state, no
+          // invented forecast content. Refresh button kicks the user
+          // back into the load path so they can retry without leaving.
           <div className="max-w-lg mx-auto px-5 pt-24 text-center">
-            <p className="text-text-secondary font-body text-sm leading-relaxed">
-              Unable to load today&apos;s forecast. Please check your connection and refresh.
+            <p className="font-heading text-text-primary text-2xl mb-4" style={{ fontWeight: 300 }}>
+              The sky is quiet.
             </p>
+            <p className="text-text-secondary font-body text-[15px] leading-relaxed mb-8">
+              {error || "We couldn't reach the daily reading. Check your connection and try again."}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-block px-8 py-3 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all"
+              style={{
+                background: "var(--amber, #f39230)",
+                color: "var(--bg-deep, #050f08)",
+              }}
+            >
+              Try again
+            </button>
           </div>
         )}
 
