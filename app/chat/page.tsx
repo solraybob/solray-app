@@ -1323,7 +1323,7 @@ function ChatPageInner() {
           <div className="absolute inset-0 pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,15,8,0.5) 0%, rgba(5,15,8,0.85) 100%)" }} />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(var(--rgb-bg-deep) / 0.5) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
           </div>
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--wisteria)" }}>

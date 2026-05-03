@@ -1023,7 +1023,7 @@ export default function ProfilePage() {
                     <div className="absolute inset-x-0 -top-6 h-48 pointer-events-none">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imgSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.06 }} />
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,1) 100%)" }} />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgb(var(--rgb-bg-deep) / 0.55) 0%, rgb(var(--rgb-bg-deep) / 1) 100%)" }} />
                     </div>
                   );
                 })()}

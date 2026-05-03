@@ -272,7 +272,7 @@ function SubscribeContent() {
         <div
           className="rounded-sm p-7 mb-10"
           style={{
-            background: "rgba(10, 31, 18, 0.6)",
+            background: "rgb(var(--rgb-card) / 0.6)",
             border: "1px solid rgba(243, 146, 48, 0.14)",
           }}
         >
@@ -563,7 +563,7 @@ function TrialOffer({
         <div
           className="text-left rounded-sm p-7 mb-10"
           style={{
-            background: "rgba(10, 31, 18, 0.6)",
+            background: "rgb(var(--rgb-card) / 0.6)",
             border: "1px solid rgba(243, 146, 48, 0.14)",
           }}
         >

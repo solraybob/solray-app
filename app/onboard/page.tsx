@@ -328,9 +328,9 @@ export default function OnboardPage() {
                       onClick={() => setSex(opt)}
                       className="sex-card"
                       style={{
-                        borderColor: active ? "#f39230" : "var(--border)",
+                        borderColor: active ? "var(--amber)" : "var(--border)",
                         background: active ? "rgba(243,146,48,0.08)" : "transparent",
-                        color: active ? "#f2ecd8" : "#8a9e8d",
+                        color: active ? "var(--text-primary)" : "var(--text-muted)",
                       }}
                     >
                       <span className="font-heading text-2xl" style={{ fontWeight: 300, fontStyle: "italic" }}>

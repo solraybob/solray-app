@@ -1112,9 +1112,9 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
                 onClick={() => onChangeLens(l.key)}
                 className="flex-1 py-2 rounded-xl transition-all"
                 style={{
-                  background: active ? "rgba(106,134,146,0.15)" : "rgba(242,236,216,0.03)",
-                  border: active ? "1px solid rgba(106,134,146,0.55)" : "1px solid rgba(242,236,216,0.08)",
-                  color: active ? "#f2ecd8" : "#8a9e8d",
+                  background: active ? "rgb(var(--rgb-indigo) / 0.15)" : "rgb(var(--rgb-card) / 0.6)",
+                  border: active ? "1px solid rgb(var(--rgb-indigo) / 0.55)" : "1px solid rgb(var(--rgb-border))",
+                  color: active ? "var(--text-primary)" : "var(--text-muted)",
                 }}
                 title={l.hint}
               >
@@ -1432,7 +1432,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     style={{
                       background: active ? "rgba(106,134,146,0.10)" : "transparent",
                       border: active ? "1px solid rgba(106,134,146,0.55)" : "1px solid rgba(242,236,216,0.12)",
-                      color: active ? "#f2ecd8" : "#8a9e8d",
+                      color: active ? "var(--text-primary)" : "var(--text-muted)",
                     }}
                   >
                     {opt === "female" ? "Female" : "Male"}

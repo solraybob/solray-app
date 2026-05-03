@@ -143,7 +143,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           sizes="(max-width: 768px) 100vw, 512px"
           unoptimized
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.65) 0%, rgba(5,15,8,0.85) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgb(var(--rgb-bg-deep) / 0.65) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
 
         {/* Content over image */}
         <div className="relative z-10 p-5">
@@ -217,7 +217,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
   return (
     <div
       className="border border-forest-border/40 rounded-xl px-4 py-4 cursor-pointer transition-all duration-200 hover:border-amber-sun/20 active:scale-[0.99]"
-      style={{ background: "rgba(15, 28, 18, 0.6)" }}
+      style={{ background: "rgb(var(--rgb-card) / 0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
       <div className="flex items-start justify-between gap-2">
