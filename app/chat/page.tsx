@@ -616,26 +616,54 @@ function ChatPageInner() {
   // of the model's reply. This was the "it takes me down to follow" bug.
   const isProgrammaticScroll = useRef(false);
 
-  // Native imperative scroll listener, works reliably on iOS Safari
+  // Two-listener strategy:
+  //   1. touchstart / wheel / mousedown disable autoScroll the instant
+  //      the user starts scrolling. These events come from the user, not
+  //      from our auto-scroll code, so they are unambiguous signal.
+  //   2. The scroll listener handles RE-enabling autoScroll when the
+  //      user scrolls back to the bottom.
+  //
+  // The previous version relied entirely on the scroll listener with an
+  // isProgrammaticScroll guard, but the streaming tick fires at 5-10ms
+  // per character, faster than the 50ms guard window can clear. The
+  // guard was set to true ~80% of the time during streaming, so the
+  // user's scroll events were almost always ignored. Listening to user
+  // input events directly bypasses that race entirely.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
+
+    // User-input listeners: any of these means the user is taking control.
+    // Disable autoScroll immediately so the next streaming tick does not
+    // override their scroll position.
+    const onUserIntent = () => setAutoScroll(false);
+    el.addEventListener("touchstart", onUserIntent, { passive: true });
+    el.addEventListener("wheel",      onUserIntent, { passive: true });
+    el.addEventListener("mousedown",  onUserIntent, { passive: true });
+
+    // Scroll listener: only used to re-enable autoScroll once the user
+    // scrolls back near the bottom. Still ignores programmatic scrolls
+    // so that auto-scroll snapping the view to bottom doesn't itself
+    // re-enable the feature in a feedback loop.
     const onScroll = () => {
-      // Ignore scroll events that came from our own auto-scroll.
-      // Otherwise the user's read-up gets undone every render frame.
       if (isProgrammaticScroll.current) return;
       const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      // Hysteresis: enable auto-follow only when truly at the bottom
-      // (within 30px), disable as soon as the user has moved more than
-      // ~200px up. The gap prevents jitter from flipping the state.
       if (dist < 30) {
         setAutoScroll(true);
-      } else if (dist > 200) {
-        setAutoScroll(false);
       }
+      // Note: no longer need a "disable" branch here because user-intent
+      // listeners above handle it instantly. Keeping a single re-enable
+      // branch makes the logic linear: user input always disables, only
+      // returning-to-bottom re-enables.
     };
     el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+
+    return () => {
+      el.removeEventListener("touchstart", onUserIntent);
+      el.removeEventListener("wheel",      onUserIntent);
+      el.removeEventListener("mousedown",  onUserIntent);
+      el.removeEventListener("scroll",     onScroll);
+    };
   }, []); // attach once after mount
 
   // Auto-scroll when new content arrives, only when near the bottom
