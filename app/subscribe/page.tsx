@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { useSubscription } from "@/lib/subscription-context";
 import { isRunningInCapacitor } from "@/lib/native-push";
 import {
-  getSubscriptionStatus,
   startTrial,
   createSecurePaySession,
   activateSubscription,
   cancelSubscription,
-  type SubscriptionStatus,
 } from "@/lib/subscription";
 
 // ---------------------------------------------------------------------------
@@ -28,11 +27,15 @@ export default function SubscribePage() {
 
 function SubscribeContent() {
   const { token } = useAuth();
+  const { sub, loading: subLoading, refresh } = useSubscription();
   const router = useRouter();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  // Show the spinner only on a true cold load (no cached sub yet);
+  // every subsequent visit renders instantly because the provider
+  // already has state. This is the user-visible part of the speed
+  // win from the SubscriptionProvider refactor.
+  const loading = subLoading && !sub;
 
   // App Store Guideline 3.1.1 / 3.1.3 compliance: when running inside the
   // Capacitor native shell (iOS or Android), every payment-launching CTA
@@ -47,13 +50,17 @@ function SubscribeContent() {
     setIsNative(isRunningInCapacitor());
   }, []);
 
-  // Fetch status on mount
+  // Subscription state now comes from the shared SubscriptionProvider
+  // (sub + subLoading destructured above). The provider already warms
+  // the cache on app mount, so /subscribe routes typically render
+  // instantly with no network call. Force a refresh on mount to catch
+  // post-payment state changes that may have happened on the Teya
+  // hosted page (the SecurePay callback effect below does the same on
+  // its own, but we cover the case where the user navigated here
+  // without going through Teya).
   useEffect(() => {
     if (!token) return;
-    getSubscriptionStatus(token)
-      .then(setSub)
-      .catch(() => setSub(null))
-      .finally(() => setLoading(false));
+    void refresh();
     // Funnel event: every /subscribe view. The canary uses this to
     // detect users stuck on /subscribe without tapping anything (which
     // suggests the page is misbehaving).
@@ -63,6 +70,9 @@ function SubscribeContent() {
         await track("subscribe_view", undefined, token);
       } catch { /* ignore */ }
     })();
+    // refresh is stable across renders (useCallback with [token]),
+    // listing token alone is enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Handle SecurePay callback (token comes back as URL param). Skipped
@@ -118,8 +128,8 @@ function SubscribeContent() {
     setError("");
     try {
       await startTrial(token);
-      const updated = await getSubscriptionStatus(token);
-      setSub(updated);
+      // Provider refresh below pulls fresh authoritative state
+      await refresh();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -158,8 +168,8 @@ function SubscribeContent() {
     setError("");
     try {
       await activateSubscription(token);
-      const updated = await getSubscriptionStatus(token);
-      setSub(updated);
+      // Provider refresh below pulls fresh authoritative state
+      await refresh();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -173,8 +183,8 @@ function SubscribeContent() {
     setError("");
     try {
       await cancelSubscription(token);
-      const updated = await getSubscriptionStatus(token);
-      setSub(updated);
+      // Provider refresh below pulls fresh authoritative state
+      await refresh();
     } catch (e: any) {
       setError(e.message);
     } finally {

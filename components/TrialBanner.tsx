@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useSubscription } from "@/lib/subscription-context";
 import { isRunningInCapacitor } from "@/lib/native-push";
-import { getSubscriptionStatus, type SubscriptionStatus } from "@/lib/subscription";
 
 /**
  * TrialBanner
@@ -13,12 +13,19 @@ import { getSubscriptionStatus, type SubscriptionStatus } from "@/lib/subscripti
  * Sits at the top of every protected page, below the page header.
  * Matches the app's dark forest aesthetic: no garish alerts, just quiet information.
  * Dismissable per session. Hidden on /subscribe.
+ *
+ * Subscription state comes from the shared SubscriptionProvider, NOT
+ * a separate getSubscriptionStatus call. Earlier this component fired
+ * its own /subscribe/status request on every mount, which on a typical
+ * Today, Chat, Souls, Profile cycle was a redundant round trip per
+ * page on top of the one ProtectedRoute already made. Now zero extra
+ * fetches.
  */
 export default function TrialBanner() {
   const { token } = useAuth();
+  const { sub } = useSubscription();
   const pathname = usePathname();
   const router = useRouter();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -33,9 +40,7 @@ export default function TrialBanner() {
     }
     if (sessionStorage.getItem("solray_trial_banner_dismissed") === "1") {
       setDismissed(true);
-      return;
     }
-    getSubscriptionStatus(token).then(setSub).catch(() => {});
   }, [token]);
 
   const handleDismiss = () => {

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { SubscriptionProvider } from "@/lib/subscription-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import VersionCheck from "@/components/VersionCheck";
@@ -55,12 +56,14 @@ export default function RootLayout({
         <PullToRefresh />
         <ThemeProvider>
           <AuthProvider>
-            <NativePushBootstrap />
-            <SwipeNavigator>
-              {children}
-            </SwipeNavigator>
-            <BottomNav />
-            <Footer />
+            <SubscriptionProvider>
+              <NativePushBootstrap />
+              <SwipeNavigator>
+                {children}
+              </SwipeNavigator>
+              <BottomNav />
+              <Footer />
+            </SubscriptionProvider>
           </AuthProvider>
         </ThemeProvider>
         <ServiceWorkerRegistration />

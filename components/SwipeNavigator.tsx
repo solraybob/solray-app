@@ -38,6 +38,20 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
   const canNext = idx !== -1 && idx < NAV_ORDER.length - 1;
   const canPrev = idx !== -1 && idx > 0;
 
+  // Prefetch every NAV_ORDER route on mount so the first swipe doesn't
+  // pay route-load latency on top of the entrance animation. Next's
+  // router.prefetch warms the route's JS chunks; subsequent navigations
+  // become near-instant. Cheap to call repeatedly.
+  useEffect(() => {
+    NAV_ORDER.forEach((route) => {
+      try {
+        router.prefetch(route);
+      } catch {
+        // ignore: prefetch is best-effort
+      }
+    });
+  }, [router]);
+
   // ── Entrance animation on every route change ────────────────────────────────
   useEffect(() => {
     const el = wrapRef.current;
@@ -179,7 +193,15 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
           el.style.opacity   = "0.5";
 
           sessionStorage.setItem("swipe_dir", goForward ? "forward" : "back");
-          setTimeout(() => router.push(NAV_ORDER[target]), 175);
+          // Start the navigation IMMEDIATELY rather than waiting 175ms
+          // for the outgoing animation to finish. Next.js will start
+          // loading the next route in parallel with the visual exit;
+          // the entrance animation in the next page's mount effect
+          // takes over once it renders. The previous setTimeout(.., 175)
+          // added a fixed delay before Next even started loading,
+          // which made every successful swipe feel slower than the
+          // hardware demands. Caught by Codex speed audit P1.3.
+          router.push(NAV_ORDER[target]);
           return;
         }
       }
