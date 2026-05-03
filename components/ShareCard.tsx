@@ -431,3 +431,167 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
     </div>
   );
 }
+
+
+// ---------------------------------------------------------------------------
+// SoulsInviteCard
+// ---------------------------------------------------------------------------
+
+export interface SoulsInviteCardData {
+  inviterName: string;
+}
+
+/**
+ * Souls invite share card. The viral lever Codex's UX memo named as
+ * the highest-ceiling growth surface in the product.
+ *
+ * Use case: Bob wants to invite a friend (who is NOT yet on Solray)
+ * to connect with him in the Souls feature. He generates this card,
+ * sends it via Instagram DM or Messages, friend sees a beautiful
+ * Solray asset that says "Bob invited you to read the dynamic
+ * between you," friend taps through to solray.ai, signs up, connects.
+ *
+ * Design intent: feels personal, never spammy. Single line of copy,
+ * inviter's name as the emotional anchor, "between you" as the hook.
+ * No charts, no astrology language on the card itself, the framework
+ * lives behind the link.
+ *
+ * Privacy: only the inviter's first name on the card. The inviter
+ * consents by tapping share. No recipient data, no birth data.
+ */
+export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
+  // Use first name only, even if the user has a longer display name.
+  // "Bob invited you" lands warmer than "Sol-Ray Bob invited you."
+  const firstName = (data.inviterName || "").trim().split(/\s+/)[0] || "Someone";
+
+  return (
+    <div
+      style={{
+        width: "1080px",
+        height: "1920px",
+        background: "#050f08",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+      }}
+    >
+      {/* Soft ambient glow center, warmer than the hero card to
+          signal intimacy, not a generic broadcast. */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(circle at 50% 42%, rgba(243,146,48,0.10) 0%, rgba(243,146,48,0) 55%)",
+        }}
+      />
+
+      {/* Eyebrow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "180px",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          fontSize: "26px",
+          letterSpacing: "0.34em",
+          textTransform: "uppercase",
+          color: "rgba(243, 146, 48, 0.85)",
+        }}
+      >
+        Invitation
+      </div>
+
+      {/* Inviter name, oversized italic Cormorant, the emotional anchor */}
+      <div
+        style={{
+          position: "absolute",
+          top: "44%",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          padding: "0 80px",
+          color: "#f2ecd8",
+          fontStyle: "italic",
+          fontWeight: 300,
+          fontSize: "168px",
+          lineHeight: 1.0,
+          letterSpacing: "-0.02em",
+          transform: "translateY(-50%)",
+          textShadow: "0 2px 24px rgba(0,0,0,0.5)",
+        }}
+      >
+        {firstName}
+      </div>
+
+      {/* The line of copy */}
+      <div
+        style={{
+          position: "absolute",
+          top: "60%",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          padding: "0 100px",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: "52px",
+          fontWeight: 300,
+          lineHeight: 1.35,
+          color: "rgba(242, 236, 216, 0.78)",
+        }}
+      >
+        invited you to read
+        <br />
+        the dynamic between you.
+      </div>
+
+      {/* Hairline accent + brand */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "210px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "60px",
+          height: "1px",
+          background: "rgba(243, 146, 48, 0.35)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "120px",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: "60px",
+            fontWeight: 300,
+            letterSpacing: "0.18em",
+            color: "#f2ecd8",
+            marginBottom: "14px",
+          }}
+        >
+          SOLRAY
+        </div>
+        <div
+          style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: "24px",
+            letterSpacing: "0.25em",
+            color: "rgba(168, 184, 171, 0.7)",
+            textTransform: "lowercase",
+          }}
+        >
+          solray.ai
+        </div>
+      </div>
+    </div>
+  );
+}

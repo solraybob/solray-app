@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
+import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch } from "@/lib/api";
 
 // Types
@@ -266,11 +267,41 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
 
 // Main page
 export default function SoulsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
 
   const [myUsername, setMyUsername] = useState<string | null>(null);
   const [myAvatar, setMyAvatar] = useState<string | null>(null);
+
+  // Souls invite share card refs and state. The card is rendered into
+  // an off-screen container at the bottom of the page; html2canvas
+  // captures it on demand when the user taps the invite share icon
+  // in the SOULS header. Codex UX hook 4: highest-leverage viral
+  // surface in the product, every invite is free CAC because the
+  // recipient is a warm contact of the inviter.
+  const inviteShareRef = useRef<HTMLDivElement | null>(null);
+  const [inviteSharing, setInviteSharing] = useState(false);
+
+  const handleInviteShare = async () => {
+    if (inviteSharing) return;
+    if (!inviteShareRef.current) return;
+    setInviteSharing(true);
+    try {
+      const { shareOrDownloadCard } = await import("@/lib/share-card");
+      const inviterName = user?.name || myUsername || "Someone";
+      const firstName = inviterName.trim().split(/\s+/)[0] || "Someone";
+      await shareOrDownloadCard({
+        node: inviteShareRef.current,
+        filename: `solray-invite-from-${firstName.toLowerCase()}.png`,
+        title: `${firstName} invited you on Solray`,
+        text: `${firstName} invited you to read the dynamic between you on Solray. solray.ai`,
+      });
+    } catch (err) {
+      console.warn("[share] souls invite failed", err);
+    } finally {
+      setInviteSharing(false);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -632,13 +663,41 @@ export default function SoulsPage() {
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6a8692" }}>
               Your Field
             </p>
-            <div className="relative flex items-center" style={{ height: "26px" }}>
+            <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
                 SOULS
               </h1>
+              {/* Invite share button. Generates a beautiful 1080x1920
+                  card the user can DM to a friend who isn't on Solray
+                  yet, "[Inviter] invited you to read the dynamic
+                  between you." Codex UX hook 4: highest-ceiling viral
+                  surface in the app. */}
+              <button
+                onClick={handleInviteShare}
+                aria-label="Share an invitation"
+                disabled={inviteSharing}
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(243,146,48,0.30)",
+                }}
+              >
+                {inviteSharing ? (
+                  <span
+                    className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
+                    style={{ borderColor: "rgba(243,146,48,0.30)", borderTopColor: "var(--amber)" }}
+                  />
+                ) : (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)", opacity: 0.85 }}>
+                    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -902,6 +961,15 @@ export default function SoulsPage() {
         )}
 
       </div>
+
+      {/* Off-screen Souls invite share card. Captured by html2canvas
+          when the user taps the share icon in the SOULS header. The
+          inviter name resolves to the auth context name first, then
+          username as fallback, then a neutral "Someone" so the card
+          never renders blank. */}
+      <ShareOffscreenWrapper containerRef={inviteShareRef}>
+        <SoulsInviteCard data={{ inviterName: user?.name || myUsername || "Someone" }} />
+      </ShareOffscreenWrapper>
     </ProtectedRoute>
   );
 }
