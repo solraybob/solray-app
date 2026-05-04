@@ -1,21 +1,31 @@
 "use client";
 
+import { useState } from "react";
+
 /**
  * Brand guide. Static. The single source of truth for the Solray voice
  * and visual system. Anyone making a post, an ad, or a piece of copy
  * comes here first. The rules are short, opinionated, and absolute.
  */
 
-const PALETTE: Array<{ name: string; cssVar: string; hint: string }> = [
-  { name: "Forest deep",     cssVar: "var(--bg-deep)",       hint: "Background, the night under the trees." },
-  { name: "Forest card",     cssVar: "var(--forest-card)",   hint: "Cards, panels, surfaces sitting above background." },
-  { name: "Amber sun",       cssVar: "var(--amber)",         hint: "Primary action, single warmth in the frame." },
-  { name: "Pearl",           cssVar: "var(--pearl)",         hint: "Highlight, careful — never decorative." },
-  { name: "Ember",           cssVar: "var(--ember)",         hint: "Mars, Aries, fire, danger states." },
-  { name: "Moss",            cssVar: "var(--moss)",          hint: "Earth signs, growth, sustained presence." },
-  { name: "Mist",            cssVar: "var(--mist)",          hint: "Air signs, communication, lift." },
-  { name: "Indigo",          cssVar: "var(--indigo)",        hint: "Water signs, depth, after dusk." },
-  { name: "Wisteria",        cssVar: "var(--wisteria)",      hint: "Venus, soul-connection, the relational frequency." },
+interface PaletteEntry {
+  name: string;
+  cssVar: string;
+  dark: string;
+  light: string;
+  hint: string;
+}
+
+const PALETTE: PaletteEntry[] = [
+  { name: "Forest deep",  cssVar: "rgb(var(--rgb-bg-deep))", dark: "#050f08", light: "#ece4cf", hint: "Background, the night under the trees." },
+  { name: "Forest card",  cssVar: "rgb(var(--rgb-card))",    dark: "#0a1f12", light: "#f5efde", hint: "Cards, panels, surfaces sitting above background." },
+  { name: "Amber sun",    cssVar: "rgb(var(--rgb-amber))",   dark: "#f39230", light: "#d06e14", hint: "Primary action, single warmth in the frame." },
+  { name: "Pearl",        cssVar: "rgb(var(--rgb-pearl))",   dark: "#ece4cf", light: "#f5efde", hint: "Highlight, careful, never decorative." },
+  { name: "Ember",        cssVar: "rgb(var(--rgb-ember))",   dark: "#d47a52", light: "#b45a38", hint: "Mars, Aries, fire, danger states." },
+  { name: "Moss",         cssVar: "rgb(var(--rgb-moss))",    dark: "#8a9e66", light: "#5a6e40", hint: "Earth signs, growth, sustained presence." },
+  { name: "Mist",         cssVar: "rgb(var(--rgb-mist))",    dark: "#9babb9", light: "#647a90", hint: "Air signs, communication, lift." },
+  { name: "Indigo",       cssVar: "rgb(var(--rgb-indigo))",  dark: "#6a8692", light: "#3c5c6e", hint: "Water signs, depth, after dusk." },
+  { name: "Wisteria",     cssVar: "rgb(var(--rgb-wisteria))",dark: "#9b86a0", light: "#82648a", hint: "Venus, soul-connection, the relational frequency." },
 ];
 
 const VOICE_RULES = [
@@ -87,17 +97,11 @@ export default function BrandSection() {
 
       <Section title="Palette">
         <p className="font-body text-text-secondary text-[13px] leading-relaxed mb-4 max-w-2xl">
-          Aged-pigment system. Categorical coding for sign elements and planets, all desaturated to harmonize with the forest + amber base. Use one warmth (amber) per frame; let the rest stay quiet.
+          Aged-pigment system. Categorical coding for sign elements and planets, all desaturated to harmonize with the forest + amber base. Use one warmth (amber) per frame; let the rest stay quiet. Each swatch carries the hex for both modes; the live preview is always the current mode.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {PALETTE.map((c) => (
-            <div key={c.name} className="rounded-xl bg-forest-card/30 border border-forest-border/40 overflow-hidden">
-              <div style={{ background: c.cssVar, height: 72 }} />
-              <div className="px-3 py-3">
-                <p className="font-heading text-text-primary text-[14px]" style={{ fontWeight: 400 }}>{c.name}</p>
-                <p className="font-body text-text-secondary text-[11px] mt-1 leading-snug">{c.hint}</p>
-              </div>
-            </div>
+            <Swatch key={c.name} entry={c} />
           ))}
         </div>
       </Section>
@@ -179,5 +183,51 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </h2>
       {children}
     </section>
+  );
+}
+
+function Swatch({ entry }: { entry: PaletteEntry }) {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copy = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(value);
+      setTimeout(() => setCopied((c) => (c === value ? null : c)), 1100);
+    } catch {
+      // Clipboard refused (insecure context, permission). Fail quiet,
+      // the visible hex is still the source of truth.
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-forest-card/30 border border-forest-border/40 overflow-hidden">
+      <div style={{ background: entry.cssVar, height: 72 }} />
+      <div className="px-3 py-3">
+        <div className="flex items-baseline justify-between gap-2 mb-1">
+          <p className="font-heading text-text-primary text-[14px]" style={{ fontWeight: 400 }}>{entry.name}</p>
+        </div>
+        <p className="font-body text-text-secondary text-[11px] leading-snug mb-2">{entry.hint}</p>
+        <div className="flex flex-col gap-1">
+          <HexRow label="Dark"  value={entry.dark}  copied={copied === entry.dark}  onCopy={() => copy(entry.dark)} />
+          <HexRow label="Light" value={entry.light} copied={copied === entry.light} onCopy={() => copy(entry.light)} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HexRow({ label, value, copied, onCopy }: { label: string; value: string; copied: boolean; onCopy: () => void }) {
+  return (
+    <button
+      onClick={onCopy}
+      className="flex items-center justify-between gap-2 px-2 py-1 rounded font-mono text-[11px] hover:bg-forest-card/60 transition-colors text-left"
+      title="Click to copy"
+    >
+      <span className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase">{label}</span>
+      <span className="text-text-primary tabular-nums">
+        {copied ? "Copied" : value}
+      </span>
+    </button>
   );
 }
