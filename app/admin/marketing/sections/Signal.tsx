@@ -53,6 +53,26 @@ export default function SignalSection({ token }: { token: string | null }) {
   const [error,   setError]   = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [pendingAngles, setPendingAngles] = useState<string | null>(null);
+  const [seedingSky, setSeedingSky] = useState(false);
+  const [seedReport, setSeedReport] = useState<string | null>(null);
+
+  const seedFromSky = async () => {
+    if (!token || seedingSky) return;
+    setSeedingSky(true);
+    setSeedReport(null);
+    try {
+      const res = await apiFetch("/admin/marketing/seed-from-sky?days=60", { method: "POST" }, token);
+      const r = res as { sky_events_seen: number; signals_inserted: number; signals_skipped: number };
+      setSeedReport(
+        `Pulled ${r.sky_events_seen} sky events. Added ${r.signals_inserted} new signals; skipped ${r.signals_skipped} already on file.`
+      );
+      load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Sky seed failed");
+    } finally {
+      setSeedingSky(false);
+    }
+  };
 
   const load = () => {
     if (!token) return;
@@ -120,13 +140,28 @@ export default function SignalSection({ token }: { token: string | null }) {
             Living conversations Solray could speak to today. Higher score, higher relevance. Tap Generate Angles for AI-drafted Solray-shaped responses across platforms; tap an angle to send it to the calendar.
           </p>
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all"
-        >
-          + Add signal
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={seedFromSky}
+            disabled={seedingSky}
+            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/60 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 transition-all"
+          >
+            {seedingSky ? "Pulling sky" : "Pull 60 days of sky"}
+          </button>
+          <button
+            onClick={() => setCreating(true)}
+            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all"
+          >
+            + Add signal
+          </button>
+        </div>
       </div>
+
+      {seedReport && (
+        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--moss)", color: "var(--moss)" }}>
+          {seedReport}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
