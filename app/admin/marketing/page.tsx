@@ -45,18 +45,28 @@ export default function MarketingPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Diagnostic: log every render so we can see in the browser console if
+  // something is redirecting away. Remove once the path stabilises.
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.log("[admin/marketing] render", { token: !!token, pathname: window.location.pathname });
+  }
+
   // Probe /admin/metrics on mount to verify admin status. The endpoint
   // 403s for non-admins, so this is the cleanest "am I allowed in" check.
+  // Do NOT auto-redirect on 401; if the user was bumped here without a
+  // token, ProtectedRoute already handles the auth-gate routing.
   useEffect(() => {
     if (!token) return;
     apiFetch("/admin/metrics", {}, token).catch((e: unknown) => {
       if (e instanceof ApiError && e.status === 403) {
         setAuthError("This area is for Solray operators only.");
-      } else if (e instanceof ApiError && e.status === 401) {
-        router.push("/login");
       }
+      // No 401 redirect: ProtectedRoute owns auth routing. A second
+      // router.push from here can race with ProtectedRoute and bounce
+      // the user through /login -> /today instead of staying put.
     });
-  }, [token, router]);
+  }, [token]);
 
   return (
     <ProtectedRoute>
