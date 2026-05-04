@@ -27,11 +27,15 @@ import OverviewSection   from "./sections/Overview";
 import BrandSection      from "./sections/Brand";
 import CalendarSection   from "./sections/Calendar";
 import IntegrationsSection from "./sections/Integrations";
+import SignalSection     from "./sections/Signal";
+import VoiceSection      from "./sections/Voice";
 
-type Tab = "overview" | "brand" | "calendar" | "social" | "ads" | "analytics";
+type Tab = "overview" | "signal" | "voice" | "brand" | "calendar" | "social" | "ads" | "analytics";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview",  label: "Overview"  },
+  { id: "signal",    label: "Signal"    },
+  { id: "voice",     label: "Voice"     },
   { id: "brand",     label: "Brand"     },
   { id: "calendar",  label: "Calendar"  },
   { id: "social",    label: "Social"    },
@@ -93,6 +97,8 @@ export default function MarketingPage() {
             <Tabs current={tab} onChange={setTab} />
             <div className="max-w-6xl mx-auto px-5 pt-6">
               {tab === "overview"  && <OverviewSection token={token} />}
+              {tab === "signal"    && <SignalSection token={token} />}
+              {tab === "voice"     && <VoiceSection token={token} />}
               {tab === "brand"     && <BrandSection />}
               {tab === "calendar"  && <CalendarSection token={token} />}
               {tab === "social"    && <IntegrationsSection token={token} category="social"    title="Social channels" subtitle="Connect each platform once and the same UI becomes live." />}

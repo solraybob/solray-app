@@ -15,6 +15,13 @@ interface Event {
   updated_at?: string;
 }
 
+interface AstroEvent {
+  kind: string;
+  label: string;
+  happens_at: string;
+  body?: string;
+}
+
 const CHANNELS = ["x", "instagram", "tiktok", "linkedin", "meta_ads", "email", "blog", "launch"];
 const STATUSES: Array<{ id: string; label: string; color: string }> = [
   { id: "idea",      label: "Idea",      color: "var(--mist)" },
@@ -25,6 +32,7 @@ const STATUSES: Array<{ id: string; label: string; color: string }> = [
 
 export default function CalendarSection({ token }: { token: string | null }) {
   const [events, setEvents]   = useState<Event[]>([]);
+  const [astro,  setAstro]    = useState<AstroEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
@@ -33,8 +41,14 @@ export default function CalendarSection({ token }: { token: string | null }) {
   const load = () => {
     if (!token) return;
     setLoading(true);
-    apiFetch("/admin/marketing/events", {}, token)
-      .then((d) => setEvents(((d as { events: Event[] }).events || [])))
+    Promise.all([
+      apiFetch("/admin/marketing/events", {}, token),
+      apiFetch("/admin/marketing/astro-events?days=60", {}, token).catch(() => ({ events: [] })),
+    ])
+      .then(([eventsRes, astroRes]) => {
+        setEvents((eventsRes as { events: Event[] }).events || []);
+        setAstro((astroRes as { events: AstroEvent[] }).events || []);
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Could not load events"))
       .finally(() => setLoading(false));
   };
@@ -70,13 +84,30 @@ export default function CalendarSection({ token }: { token: string | null }) {
             <div key={i} className="rounded-2xl bg-forest-card/30 border border-forest-border/30 h-20 skeleton-shimmer" />
           ))}
         </div>
-      ) : events.length === 0 ? (
+      ) : events.length === 0 && astro.length === 0 ? (
         <Empty />
       ) : (
-        <div className="space-y-2">
-          {events.map((e) => (
-            <EventRow key={e.id} event={e} onClick={() => setEditing(e)} />
-          ))}
+        <div className="space-y-4">
+          {astro.length > 0 && (
+            <div>
+              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">Sky next 60 days</p>
+              <div className="space-y-2">
+                {astro.map((a, i) => (
+                  <AstroRow key={i} event={a} />
+                ))}
+              </div>
+            </div>
+          )}
+          {events.length > 0 && (
+            <div>
+              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">Your queue</p>
+              <div className="space-y-2">
+                {events.map((e) => (
+                  <EventRow key={e.id} event={e} onClick={() => setEditing(e)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -127,6 +158,36 @@ function Empty() {
       <p className="font-body text-text-secondary text-[13px] max-w-md mx-auto leading-relaxed">
         Add your first event. A new post idea, a planned ad, a launch date. Calendar entries become the queue once channels are connected.
       </p>
+    </div>
+  );
+}
+
+function AstroRow({ event }: { event: AstroEvent }) {
+  const date = new Date(event.happens_at);
+  const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
+  // Color hint by kind: retrograde = ember, ingress = mist, lunar = wisteria.
+  const kindColor: Record<string, string> = {
+    station_retrograde: "var(--ember)",
+    station_direct:     "var(--moss)",
+    ingress:            "var(--mist)",
+    lunar_phase:        "var(--wisteria)",
+  };
+  const color = kindColor[event.kind] || "var(--text-secondary)";
+
+  return (
+    <div className="rounded-xl bg-forest-card/20 border border-forest-border/30 px-4 py-3 flex items-center gap-4">
+      <div className="text-center shrink-0" style={{ minWidth: 50 }}>
+        <p className="font-heading text-text-primary leading-none" style={{ fontSize: 16, fontWeight: 300 }}>{dateStr}</p>
+        <p className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase mt-0.5">{timeStr}</p>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-body text-text-primary text-[14px] leading-snug">{event.label}</p>
+        <p className="font-body text-[10px] tracking-[0.22em] uppercase mt-0.5" style={{ color }}>
+          {event.kind.replace("_", " ")}
+        </p>
+      </div>
     </div>
   );
 }
