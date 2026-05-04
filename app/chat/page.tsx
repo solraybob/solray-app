@@ -1379,7 +1379,7 @@ function ChatPageInner() {
         )}
 
         {/* Messages */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-32" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-48" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
           <div className="max-w-lg mx-auto space-y-4">
 
             {/* Empty / loading state, visible for the brief moment before
