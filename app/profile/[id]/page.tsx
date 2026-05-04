@@ -1,28 +1,30 @@
 "use client";
 
 /**
- * /profile/[id], view a soul connection's profile.
+ * /profile/[id] — view a soul connection's profile.
  *
- * Two states the backend can return:
- *
- *   1. is_public=true  → name, photo, birth city/date, full blueprint.
- *      We render a slim, read-only version of the owner's profile
- *      (header, identity card, sun sign, HD type, gene keys summary,
- *      birth details). No edit affordances.
- *
- *   2. is_public=false → name, photo, "private" indicator.
- *      We respect the choice. Their privacy is the feature, not a
- *      friction point we try to work around.
+ * When the connection has marked their profile public, render the same
+ * depth Bob sees on his own /profile: natal wheel, HD bodygraph, Gene
+ * Keys, numerology. When they haven't, respect the choice.
  *
  * 403 from the endpoint = not a connection. We surface a soft message
  * pointing back to /souls so the user can send an invite.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import NatalWheel from "@/components/NatalWheel";
+import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
+import {
+  parseBlueprintForChart,
+  HD_TYPE_MEANINGS,
+  HD_AUTHORITY_MEANINGS,
+  HD_PROFILE_MEANINGS,
+  type ParsedChart,
+} from "@/lib/blueprintParse";
 
 interface PublicProfile {
   id: string;
@@ -30,7 +32,6 @@ interface PublicProfile {
   name: string;
   profile_photo?: string | null;
   is_public: boolean;
-  // Only present when is_public=true:
   birth_date?: string;
   birth_time?: string;
   birth_city?: string;
@@ -101,7 +102,6 @@ export default function ConnectionProfilePage() {
         </div>
 
         <div className="max-w-lg mx-auto px-5 pt-8 page-enter">
-
           {loading && (
             <div className="text-center pt-12">
               <div className="h-1 w-32 mx-auto skeleton-shimmer rounded-full" />
@@ -193,37 +193,41 @@ function PrivateProfileNotice({ name }: { name: string }) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PublicProfileBody({ profile }: { profile: PublicProfile }) {
+  const chart: ParsedChart | null = useMemo(
+    () => (profile.blueprint ? parseBlueprintForChart(profile.blueprint) : null),
+    [profile.blueprint]
+  );
+
   const bp = profile.blueprint || {};
   const summary  = bp.summary || {};
   const planets  = bp.astrology?.natal?.planets || {};
-  const hd       = bp.human_design || {};
-  const sunSign  = summary.sun_sign  || planets.Sun?.sign || null;
+  const sunSign  = summary.sun_sign  || planets.Sun?.sign  || null;
   const moonSign = summary.moon_sign || planets.Moon?.sign || null;
-  const ascSign  = summary.asc_sign  || planets.ASC?.sign || null;
-  const hdType   = summary.hd_type   || hd.type || null;
-  const hdProf   = summary.hd_profile|| hd.profile || null;
-  const hdAuth   = summary.hd_authority || hd.authority || null;
+  const ascSign  = summary.asc_sign  || planets.ASC?.sign  || (chart?.natal.find((p) => p.planet === "ASC")?.sign ?? null);
+
+  const profileMatch = chart?.human_design.profile?.match(/^(\d\/\d)/)?.[1];
+  const profileMeaning = profileMatch ? HD_PROFILE_MEANINGS[profileMatch] : undefined;
 
   return (
-    <div className="space-y-3">
-
-      {/* Three-line essence line */}
-      {(sunSign || hdType) && (
+    <div className="space-y-4">
+      {/* Three-line essence */}
+      {(sunSign || chart?.human_design.type) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
           <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Essence</p>
           <div className="space-y-1.5 font-body text-[15px]">
             {sunSign  && <Row label="Sun"  value={sunSign}  />}
             {moonSign && <Row label="Moon" value={moonSign} />}
             {ascSign  && <Row label="Ascendant" value={ascSign} />}
-            {hdType   && <Row label="Human Design" value={`${hdType}${hdProf ? ` ${hdProf}` : ""}`} />}
-            {hdAuth   && <Row label="Authority" value={hdAuth} />}
+            {chart?.human_design.type && (
+              <Row label="Human Design" value={`${chart.human_design.type}${chart.human_design.profile ? ` ${chart.human_design.profile}` : ""}`} />
+            )}
+            {chart?.human_design.authority && <Row label="Authority" value={chart.human_design.authority} />}
           </div>
         </div>
       )}
 
-      {/* Birth details, only when truly public */}
+      {/* Birth details */}
       {(profile.birth_date || profile.birth_city) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
           <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Birth</p>
@@ -231,6 +235,104 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
             {profile.birth_date && <Row label="Date" value={profile.birth_date} />}
             {profile.birth_time && <Row label="Time" value={profile.birth_time} />}
             {profile.birth_city && <Row label="Place" value={profile.birth_city} />}
+          </div>
+        </div>
+      )}
+
+      {/* Natal Chart */}
+      {chart && chart.natal.length > 0 && (
+        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Natal Chart</p>
+          <div className="flex justify-center">
+            <NatalWheel
+              planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
+              ascLongitude={chart.ascLongitude}
+              houseCusps={chart.houseCusps}
+              size={300}
+              showLegend
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Human Design */}
+      {chart && chart.human_design.defined_centres.length > 0 && (
+        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Human Design</p>
+          <div className="flex justify-center mb-4">
+            <BodyGraph
+              definedCenters={chart.human_design.defined_centres}
+              definedChannels={chart.hd_channels}
+              size={260}
+            />
+          </div>
+          <div className="space-y-2 font-body text-[14px]">
+            {chart.human_design.type && (
+              <DepthRow
+                label="Type"
+                value={chart.human_design.type}
+                meaning={HD_TYPE_MEANINGS[chart.human_design.type]}
+              />
+            )}
+            {chart.human_design.strategy && (
+              <DepthRow label="Strategy" value={chart.human_design.strategy} />
+            )}
+            {chart.human_design.authority && (
+              <DepthRow
+                label="Authority"
+                value={chart.human_design.authority}
+                meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]}
+              />
+            )}
+            {chart.human_design.profile && (
+              <DepthRow
+                label="Profile"
+                value={chart.human_design.profile}
+                meaning={profileMeaning}
+              />
+            )}
+            {chart.human_design.incarnation_cross && (
+              <DepthRow label="Cross" value={chart.human_design.incarnation_cross} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Gene Keys */}
+      {chart && Object.keys(chart.gene_keys).length > 0 && (
+        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Gene Keys</p>
+          <div className="space-y-3">
+            {Object.entries(chart.gene_keys).map(([slot, gk]) => (
+              <div key={slot} className="border-b border-forest-border/30 last:border-0 pb-3 last:pb-0">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <span className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase">{gk.name}</span>
+                  <span className="font-heading text-amber-sun" style={{ fontSize: 18, fontWeight: 300 }}>Gate {gk.gate}</span>
+                </div>
+                {(gk.shadow || gk.gift) && (
+                  <p className="font-body text-text-secondary text-[13px] leading-snug">
+                    {gk.shadow && <>Shadow: {gk.shadow}</>}
+                    {gk.shadow && gk.gift && <>. </>}
+                    {gk.gift && <>Gift: {gk.gift}</>}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Numerology */}
+      {chart?.numerology && (chart.numerology.life_path || chart.numerology.expression) && (
+        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Numerology</p>
+          <div className="space-y-1.5 font-body text-[15px]">
+            {chart.numerology.life_path > 0 && <Row label="Life Path" value={String(chart.numerology.life_path)} />}
+            {chart.numerology.expression > 0 && <Row label="Expression" value={String(chart.numerology.expression)} />}
+            {chart.numerology.soul_urge > 0 && <Row label="Soul Urge" value={String(chart.numerology.soul_urge)} />}
+            {chart.numerology.personal_year > 0 && (
+              <Row label={`Personal Year ${chart.numerology.current_year}`} value={String(chart.numerology.personal_year)} />
+            )}
           </div>
         </div>
       )}
@@ -243,6 +345,18 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-3">
       <span className="text-text-secondary">{label}</span>
       <span className="text-text-primary text-right">{value}</span>
+    </div>
+  );
+}
+
+function DepthRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
+  return (
+    <div className="flex items-start gap-3 py-1">
+      <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
+      <div className="flex-1">
+        <span className="font-body text-text-primary text-[14px]">{value}</span>
+        {meaning && <p className="font-body text-text-secondary/60 text-[12px] leading-snug mt-0.5">{meaning}</p>}
+      </div>
     </div>
   );
 }
