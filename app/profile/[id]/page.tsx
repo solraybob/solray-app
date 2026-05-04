@@ -227,17 +227,11 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
         </div>
       )}
 
-      {/* Birth details */}
-      {(profile.birth_date || profile.birth_city) && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Birth</p>
-          <div className="space-y-1.5 font-body text-[15px]">
-            {profile.birth_date && <Row label="Date" value={profile.birth_date} />}
-            {profile.birth_time && <Row label="Time" value={profile.birth_time} />}
-            {profile.birth_city && <Row label="Place" value={profile.birth_city} />}
-          </div>
-        </div>
-      )}
+      {/* Birth details intentionally not shown for connections.
+          Birth date, time, and place are the most identifying pieces of a
+          chart and they belong to the person, not to anyone reading their
+          profile. The chart wheel below is enough to read who someone is
+          without surfacing the raw birth coordinates. */}
 
       {/* Natal Chart */}
       {chart && chart.natal.length > 0 && (
