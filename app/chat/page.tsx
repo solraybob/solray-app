@@ -1455,7 +1455,10 @@ function ChatPageInner() {
                   className="animate-slide-up"
                 >
                   <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
-                  <span className="font-body text-text-secondary text-[11px] mt-2 mb-2 block tracking-[0.22em] uppercase opacity-60">
+                  <span
+                    className="font-body text-[11px] mt-2 mb-2 block tracking-[0.22em] uppercase"
+                    style={{ color: "rgb(var(--rgb-wisteria) / 0.75)" }}
+                  >
                     {msg.role === "user" ? "You" : "Oracle"} · {formatTime(msg.timestamp)}
                   </span>
                 </div>
