@@ -76,26 +76,34 @@ function saveSession(session: StoredSession) {
 // ─── Text renderer ──────────────────────────────────────────────────────────
 
 function MessageContent({ content, showCursor, isUser }: { content: string; showCursor?: boolean; isUser?: boolean }) {
-  const textColor = isUser ? "#050f08" : undefined;
+  // Transcript style: no bubble, no border, no background. The user
+  // message reads as the question (italic, quieter); the Oracle's
+  // reply reads as the answer (full presence, primary color). Same
+  // font size on both so the page reads as a continuous conversation
+  // the way Claude.ai does, not a chat app.
+  const wrapClass = isUser
+    ? "font-body italic text-text-secondary leading-relaxed"
+    : "font-body text-text-primary leading-relaxed";
+
   return (
-    <div className="font-body text-sm leading-relaxed" style={textColor ? { color: textColor } : undefined}>
+    <div className={wrapClass} style={{ fontSize: 17 }}>
       <ReactMarkdown
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
           strong: ({ children }) => (
-            <strong className="font-semibold text-text-primary">{children}</strong>
+            <strong className="font-semibold">{children}</strong>
           ),
           h1: ({ children }) => (
-            <h1 className="font-heading text-xl text-text-primary mb-2 mt-3 first:mt-0">{children}</h1>
+            <h1 className="font-heading text-xl text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 400 }}>{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0">{children}</h2>
+            <h2 className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 400 }}>{children}</h2>
           ),
           h3: ({ children }) => (
             <h3 className="font-heading text-base text-amber-sun mb-1 mt-2 first:mt-0">{children}</h3>
           ),
           em: ({ children }) => (
-            <em className="italic text-text-secondary">{children}</em>
+            <em className="italic">{children}</em>
           ),
           ul: ({ children }) => (
             <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>
@@ -104,7 +112,7 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
             <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>
           ),
           li: ({ children }) => (
-            <li className="text-text-primary">{children}</li>
+            <li>{children}</li>
           ),
         }}
       >
@@ -602,59 +610,42 @@ function ChatPageInner() {
 
   // ── Auto-scroll (only if user hasn't scrolled up) ────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // The ref is the source of truth for the streaming tick. State is just
+  // for re-rendering the "Scroll to bottom" pill. Streaming fires every
+  // 5-10ms; React state updates are batched, so a state-only read can be
+  // stale by several ticks and yank the user back down. The ref updates
+  // synchronously inside the touchstart listener, so the very next
+  // streaming tick reads the new value and bails. State follows for UI.
+  const autoScrollRef = useRef(true);
   const [autoScroll, setAutoScroll] = useState(true);
-  // True for the brief moment we're programmatically scrolling to the
-  // bottom on new content. The scroll-event listener checks this flag
-  // and ignores its own scroll, so a programmatic auto-scroll cannot
-  // re-enable autoScroll behind the user's back.
-  //
-  // Without this guard, the previous behavior was: user scrolls up to
-  // read, content streams in, auto-scroll sets scrollTop = scrollHeight,
-  // that fires the scroll event with dist=0, the listener reads "near
-  // bottom" and sets autoScroll=true, the next streamed token triggers
-  // another auto-scroll, the user is dragged back down on every keystroke
-  // of the model's reply. This was the "it takes me down to follow" bug.
   const isProgrammaticScroll = useRef(false);
 
-  // Two-listener strategy:
-  //   1. touchstart / wheel / mousedown disable autoScroll the instant
-  //      the user starts scrolling. These events come from the user, not
-  //      from our auto-scroll code, so they are unambiguous signal.
-  //   2. The scroll listener handles RE-enabling autoScroll when the
-  //      user scrolls back to the bottom.
-  //
-  // The previous version relied entirely on the scroll listener with an
-  // isProgrammaticScroll guard, but the streaming tick fires at 5-10ms
-  // per character, faster than the 50ms guard window can clear. The
-  // guard was set to true ~80% of the time during streaming, so the
-  // user's scroll events were almost always ignored. Listening to user
-  // input events directly bypasses that race entirely.
+  const setAutoScrollBoth = useCallback((v: boolean) => {
+    autoScrollRef.current = v;
+    setAutoScroll(v);
+  }, []);
+
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    // User-input listeners: any of these means the user is taking control.
-    // Disable autoScroll immediately so the next streaming tick does not
-    // override their scroll position.
-    const onUserIntent = () => setAutoScroll(false);
+    const onUserIntent = () => {
+      // Sync write so the next streaming tick (which may fire within
+      // the same frame) sees this immediately. State follows.
+      autoScrollRef.current = false;
+      setAutoScroll(false);
+    };
     el.addEventListener("touchstart", onUserIntent, { passive: true });
     el.addEventListener("wheel",      onUserIntent, { passive: true });
     el.addEventListener("mousedown",  onUserIntent, { passive: true });
 
-    // Scroll listener: only used to re-enable autoScroll once the user
-    // scrolls back near the bottom. Still ignores programmatic scrolls
-    // so that auto-scroll snapping the view to bottom doesn't itself
-    // re-enable the feature in a feedback loop.
     const onScroll = () => {
       if (isProgrammaticScroll.current) return;
       const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
       if (dist < 30) {
+        autoScrollRef.current = true;
         setAutoScroll(true);
       }
-      // Note: no longer need a "disable" branch here because user-intent
-      // listeners above handle it instantly. Keeping a single re-enable
-      // branch makes the logic linear: user input always disables, only
-      // returning-to-bottom re-enables.
     };
     el.addEventListener("scroll", onScroll, { passive: true });
 
@@ -664,27 +655,22 @@ function ChatPageInner() {
       el.removeEventListener("mousedown",  onUserIntent);
       el.removeEventListener("scroll",     onScroll);
     };
-  }, []); // attach once after mount
+  }, []);
 
-  // Auto-scroll when new content arrives, only when near the bottom
   useEffect(() => {
-    if (!autoScroll) return;
+    // Read the REF, not the state. State may be stale by 1-N ticks.
+    if (!autoScrollRef.current) return;
     const el = scrollContainerRef.current;
     if (!el) return;
     isProgrammaticScroll.current = true;
     el.scrollTop = el.scrollHeight;
-    // Release the flag after the scroll event has had a chance to fire
-    // and be ignored. requestAnimationFrame is enough on modern browsers;
-    // a setTimeout 50 is the iOS-Safari-paranoid version.
     const t = setTimeout(() => { isProgrammaticScroll.current = false; }, 50);
     return () => clearTimeout(t);
-  }, [messages, streamedLength, autoScroll]);
+  }, [messages, streamedLength]);
 
-  // When user sends message, re-enable auto-scroll (they want to follow
-  // their own message landing).
   const resetScroll = useCallback(() => {
-    setAutoScroll(true);
-  }, []);
+    setAutoScrollBoth(true);
+  }, [setAutoScrollBoth]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
@@ -1366,7 +1352,7 @@ function ChatPageInner() {
             onClick={() => {
               const el = scrollContainerRef.current;
               if (el) el.scrollTop = el.scrollHeight;
-              setAutoScroll(true);
+              setAutoScrollBoth(true);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
             style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(155,134,160,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
@@ -1380,7 +1366,7 @@ function ChatPageInner() {
 
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-48" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
-          <div className="max-w-lg mx-auto space-y-4">
+          <div className="max-w-lg mx-auto space-y-6">
 
             {/* Empty / loading state, visible for the brief moment before
                 the greeting arrives. A centered wisteria glow with the
@@ -1466,27 +1452,12 @@ function ChatPageInner() {
               return (
                 <div
                   key={msg.id}
-                  className={`flex animate-slide-up ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className="animate-slide-up"
                 >
-                  <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        msg.role === "user"
-                          ? "text-text-primary rounded-br-sm"
-                          : "text-text-primary rounded-bl-sm"
-                      }`}
-                      style={
-                        msg.role === "user"
-                          ? { background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }
-                          : { background: "rgba(155,134,160,0.05)", border: "2px solid rgba(155,134,160,0.3)" }
-                      }
-                    >
-                      <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
-                    </div>
-                    <span className="font-body text-text-secondary text-[12px] mt-1 px-1">
-                      {formatTime(msg.timestamp)}
-                    </span>
-                  </div>
+                  <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
+                  <span className="font-body text-text-secondary text-[11px] mt-2 mb-2 block tracking-[0.22em] uppercase opacity-60">
+                    {msg.role === "user" ? "You" : "Oracle"} · {formatTime(msg.timestamp)}
+                  </span>
                 </div>
               );
             })}
