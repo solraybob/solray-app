@@ -400,9 +400,30 @@ interface CompatSignals {
   hd_types?: { self?: string; soul?: string; compatibility_note?: string };
 }
 
+interface ResonanceAxis {
+  score: number;
+  weight: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  detail: any;
+}
+
+interface ResonanceIndex {
+  overall: number;
+  axes: {
+    resonance: ResonanceAxis;
+    energetic_loop: ResonanceAxis;
+    type_pairing: ResonanceAxis;
+    astrological: ResonanceAxis;
+    gene_keys: ResonanceAxis;
+  };
+  weights: Record<string, number>;
+  version: number;
+}
+
 function CompatibilitySection({ token, soulId, soulName }: { token: string | null; soulId: string; soulName: string }) {
   const [reading, setReading] = useState<CompatReading | null>(null);
   const [signals, setSignals] = useState<CompatSignals | null>(null);
+  const [index,   setIndex]   = useState<ResonanceIndex | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paywall, setPaywall] = useState(false);
@@ -418,6 +439,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
           const parsed = JSON.parse(raw);
           setReading(parsed.reading || null);
           setSignals(parsed.signals || null);
+          setIndex(parsed.index || null);
           return;
         }
       } catch (_) {}
@@ -426,9 +448,10 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
     setError(null);
     apiFetch(`/souls/${soulId}/compatibility`, {}, token)
       .then((d) => {
-        const parsed = d as { reading: CompatReading; signals: CompatSignals };
+        const parsed = d as { reading: CompatReading; signals: CompatSignals; index: ResonanceIndex };
         setReading(parsed.reading || null);
         setSignals(parsed.signals || null);
+        setIndex(parsed.index || null);
         try { sessionStorage.setItem(cacheKey, JSON.stringify(parsed)); } catch (_) {}
       })
       .catch((e: unknown) => {
@@ -475,8 +498,10 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
         <div className="rounded-2xl bg-forest-card/30 border border-forest-border/30 h-48 skeleton-shimmer" />
       )}
 
+      {!paywall && index && <IndexCard index={index} soulName={soulName} />}
+
       {!paywall && reading && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-3">
           <Lens label="Where you amplify each other"  body={reading.amplify} />
           <Lens label="Where you misread each other"  body={reading.misread} />
           <Lens label="What each of you needs to feel safe" body={reading.safety} />
@@ -525,6 +550,95 @@ function Lens({ label, body }: { label: string; body?: string }) {
         {label}
       </p>
       <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 15 }}>{body}</p>
+    </div>
+  );
+}
+
+const AXIS_LABEL: Record<string, string> = {
+  resonance:      "Resonance",
+  energetic_loop: "Energetic loop",
+  type_pairing:   "Type pairing",
+  astrological:   "Astrological mirror",
+  gene_keys:      "Gene Keys",
+};
+
+const AXIS_HINT: Record<string, string> = {
+  resonance:      "Shared HD gates as a share of the unique gates between you.",
+  energetic_loop: "Channels you complete together that neither of you closes alone.",
+  type_pairing:   "How your Human Design types tend to fit (Generator with Projector, etc).",
+  astrological:   "Element-family overlap across Sun, Moon, Venus, Mars, Ascendant.",
+  gene_keys:      "Spheres where you both have the same gate (Life's Work, Radiance, etc).",
+};
+
+function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: string }) {
+  const overall = Math.round(index.overall);
+  const axes: Array<[string, ResonanceAxis]> = [
+    ["resonance",      index.axes.resonance],
+    ["energetic_loop", index.axes.energetic_loop],
+    ["type_pairing",   index.axes.type_pairing],
+    ["astrological",   index.axes.astrological],
+    ["gene_keys",      index.axes.gene_keys],
+  ];
+
+  return (
+    <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5">
+      <div className="flex items-center justify-between gap-4 mb-1">
+        <div>
+          <p className="font-body text-[11px] tracking-[0.22em] uppercase" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+            Resonance Index
+          </p>
+          <p className="font-body text-text-secondary text-[12px] mt-1">
+            with {soulName}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className="font-heading text-amber-sun" style={{ fontSize: 44, fontWeight: 300, lineHeight: 1 }}>
+            {overall}
+          </span>
+          <span className="font-heading text-text-secondary ml-1" style={{ fontSize: 16, fontWeight: 300 }}>
+            / 100
+          </span>
+        </div>
+      </div>
+
+      <p className="font-body text-text-secondary text-[12px] leading-relaxed mt-3 mb-4">
+        Overlap, not quality. Not a ranking. The shape of what is happening between you is described in the four lenses below.
+      </p>
+
+      <div className="space-y-3">
+        {axes.map(([key, axis]) => (
+          <AxisBar key={key} label={AXIS_LABEL[key]} hint={AXIS_HINT[key]} score={Math.round(axis.score)} weight={axis.weight} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AxisBar({ label, hint, score, weight }: { label: string; hint: string; score: number; weight: number }) {
+  const pct = Math.max(0, Math.min(100, score));
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 mb-1">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="font-body text-text-primary text-[13px] truncate">{label}</span>
+          <span className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase">{Math.round(weight * 100)}%</span>
+        </div>
+        <span className="font-mono text-text-primary text-[12px] tabular-nums">{score}</span>
+      </div>
+      <div
+        className="rounded-full overflow-hidden"
+        style={{ background: "rgb(var(--rgb-border) / 0.6)", height: 6 }}
+        title={hint}
+      >
+        <div
+          style={{
+            background: "rgb(var(--rgb-amber))",
+            width: `${pct}%`,
+            height: "100%",
+            transition: "width 600ms ease",
+          }}
+        />
+      </div>
     </div>
   );
 }
