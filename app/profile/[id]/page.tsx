@@ -170,6 +170,12 @@ export default function ConnectionProfilePage() {
               ) : (
                 <PrivateProfileNotice name={profile.name} />
               )}
+
+              {/* Compatibility section — visible whether the connection
+                  is public or private, because compat reads the SHAPE
+                  of the dynamic between two charts and only requires
+                  the accepted connection (not is_public). */}
+              <CompatibilitySection token={token} soulId={id} soulName={profile.name} />
             </>
           )}
         </div>
@@ -368,6 +374,157 @@ function EmptyState({
       >
         {actionLabel}
       </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compatibility section — the four-lens Oracle reading + structural signals.
+//
+// Cached per (self, soul) pair in sessionStorage so re-opening the profile
+// during one session does not re-spend Haiku tokens. Subscription-gated:
+// the backend returns 402 if the user is not a paying subscriber.
+
+interface CompatReading {
+  amplify?: string;
+  misread?: string;
+  safety?: string;
+  lesson?: string;
+}
+
+interface CompatSignals {
+  shared_gates?: number[];
+  shared_gates_count?: number;
+  shared_channels?: Array<[number, number]>;
+  shared_gene_keys?: Array<{ gate: number; gift?: string; shadow?: string }>;
+  hd_types?: { self?: string; soul?: string; compatibility_note?: string };
+}
+
+function CompatibilitySection({ token, soulId, soulName }: { token: string | null; soulId: string; soulName: string }) {
+  const [reading, setReading] = useState<CompatReading | null>(null);
+  const [signals, setSignals] = useState<CompatSignals | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paywall, setPaywall] = useState(false);
+
+  const cacheKey = `solray_compat_${soulId}`;
+
+  const load = (force = false) => {
+    if (!token || loading) return;
+    if (!force) {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setReading(parsed.reading || null);
+          setSignals(parsed.signals || null);
+          return;
+        }
+      } catch (_) {}
+    }
+    setLoading(true);
+    setError(null);
+    apiFetch(`/souls/${soulId}/compatibility`, {}, token)
+      .then((d) => {
+        const parsed = d as { reading: CompatReading; signals: CompatSignals };
+        setReading(parsed.reading || null);
+        setSignals(parsed.signals || null);
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(parsed)); } catch (_) {}
+      })
+      .catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 402) {
+          setPaywall(true);
+        } else if (e instanceof ApiError && e.status === 403) {
+          // Not in an accepted connection; should never happen on this page
+          // since the public-profile fetch above already 403'd.
+          setError("This reading is only available to accepted soul connections.");
+        } else {
+          setError(e instanceof Error ? e.message : "Could not load compatibility.");
+        }
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(false); /* try cache, then fetch */ // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soulId, token]);
+
+  return (
+    <div className="mt-8">
+      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-3" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+        Between you
+      </p>
+
+      {paywall && (
+        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5 text-center">
+          <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
+            Compatibility readings are part of the membership
+          </p>
+          <p className="font-body text-text-secondary text-[14px] leading-relaxed mb-4 max-w-md mx-auto">
+            Subscribers see the four-lens reading: where you amplify each other, where you misread, what each of you needs to feel safe, what the relationship is here to teach.
+          </p>
+        </div>
+      )}
+
+      {error && !paywall && (
+        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
+          {error}
+        </div>
+      )}
+
+      {!paywall && !error && (loading && !reading) && (
+        <div className="rounded-2xl bg-forest-card/30 border border-forest-border/30 h-48 skeleton-shimmer" />
+      )}
+
+      {!paywall && reading && (
+        <div className="space-y-3">
+          <Lens label="Where you amplify each other"  body={reading.amplify} />
+          <Lens label="Where you misread each other"  body={reading.misread} />
+          <Lens label="What each of you needs to feel safe" body={reading.safety} />
+          <Lens label="What the relationship is here to teach" body={reading.lesson} />
+        </div>
+      )}
+
+      {!paywall && signals && (signals.shared_gates_count ?? 0) > 0 && (
+        <div className="mt-4 rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+          <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">Structural signals</p>
+          <div className="space-y-1.5 font-body text-[14px]">
+            {signals.hd_types?.compatibility_note && (
+              <Row label="Types" value={signals.hd_types.compatibility_note} />
+            )}
+            {(signals.shared_gates_count ?? 0) > 0 && (
+              <Row label="Shared gates" value={`${signals.shared_gates_count}: ${(signals.shared_gates || []).slice(0, 12).join(", ")}`} />
+            )}
+            {(signals.shared_channels?.length ?? 0) > 0 && (
+              <Row
+                label="Shared channels"
+                value={(signals.shared_channels || []).map((c) => `${c[0]}-${c[1]}`).join(", ")}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {!paywall && reading && (
+        <button
+          onClick={() => { try { sessionStorage.removeItem(cacheKey); } catch (_) {} load(true); }}
+          className="mt-3 font-body text-[11px] tracking-[0.22em] uppercase text-amber-sun/70 hover:text-amber-sun transition-colors"
+          disabled={loading}
+        >
+          {loading ? "Refreshing" : "Re-read"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Lens({ label, body }: { label: string; body?: string }) {
+  if (!body) return null;
+  return (
+    <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
+      <p className="font-body text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+        {label}
+      </p>
+      <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 15 }}>{body}</p>
     </div>
   );
 }
