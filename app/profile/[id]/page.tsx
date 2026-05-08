@@ -570,6 +570,18 @@ const AXIS_HINT: Record<string, string> = {
   gene_keys:      "Spheres where you both have the same gate (Life's Work, Radiance, etc).",
 };
 
+// Per-axis colors map to the extended-palette tokens, the same grammar as
+// Today's energy bars. The headline (Resonance) takes the amber-sun, then
+// the four sub-axes spread across ember / moss / mist / wisteria so each
+// reads as its own frequency without the bars looking like a uniform set.
+const AXIS_COLOR: Record<string, string> = {
+  resonance:      "var(--amber)",
+  energetic_loop: "var(--ember)",
+  type_pairing:   "var(--moss)",
+  astrological:   "var(--mist)",
+  gene_keys:      "var(--wisteria)",
+};
+
 function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: string }) {
   const overall = Math.round(index.overall);
   const axes: Array<[string, ResonanceAxis]> = [
@@ -582,12 +594,13 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
 
   return (
     <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5">
+      {/* Header: same label-typography rhythm as Today's section labels */}
       <div className="flex items-center justify-between gap-4 mb-1">
         <div>
-          <p className="font-body text-[11px] tracking-[0.22em] uppercase" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+          <p className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
             Resonance Index
           </p>
-          <p className="font-body text-text-secondary text-[12px] mt-1">
+          <p className="font-body text-text-secondary/70 text-[12px] mt-1">
             with {soulName}
           </p>
         </div>
@@ -595,47 +608,84 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
           <span className="font-heading text-amber-sun" style={{ fontSize: 44, fontWeight: 300, lineHeight: 1 }}>
             {overall}
           </span>
-          <span className="font-heading text-text-secondary ml-1" style={{ fontSize: 16, fontWeight: 300 }}>
+          <span className="font-heading text-text-secondary/70 ml-1" style={{ fontSize: 16, fontWeight: 300 }}>
             / 100
           </span>
         </div>
       </div>
 
-      <p className="font-body text-text-secondary text-[12px] leading-relaxed mt-3 mb-4">
+      <p className="font-body text-text-secondary/70 text-[12px] leading-relaxed mt-3 mb-5">
         Overlap, not quality. Not a ranking. The shape of what is happening between you is described in the four lenses below.
       </p>
 
-      <div className="space-y-3">
-        {axes.map(([key, axis]) => (
-          <AxisBar key={key} label={AXIS_LABEL[key]} hint={AXIS_HINT[key]} score={Math.round(axis.score)} weight={axis.weight} />
+      {/* Axis bars use the same rhythm as Today's energy bars: label row
+          fades in as a unit, then each line ink-draws from left with a
+          per-row stagger. The fill is a left-to-transparent gradient so it
+          fades out into the track, matching the Today aesthetic. */}
+      <div className="space-y-4">
+        {axes.map(([key, axis], idx) => (
+          <AxisBar
+            key={key}
+            label={AXIS_LABEL[key]}
+            hint={AXIS_HINT[key]}
+            score={Math.round(axis.score)}
+            weight={axis.weight}
+            color={AXIS_COLOR[key] || "var(--amber)"}
+            delayMs={idx * 90}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function AxisBar({ label, hint, score, weight }: { label: string; hint: string; score: number; weight: number }) {
+function AxisBar({ label, hint, score, weight, color, delayMs }: {
+  label: string;
+  hint: string;
+  score: number;
+  weight: number;
+  color: string;
+  delayMs: number;
+}) {
   const pct = Math.max(0, Math.min(100, score));
+  // Same animation contract as Today's EnergyBar: label fades in first as a
+  // unit, then the fill ink-draws from left with a per-row stagger.
+  const labelFadeMs = 400;
+  const drawMs      = 900;
+  const drawDelay   = 300 + delayMs;
+
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 mb-1">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="font-body text-text-primary text-[13px] truncate">{label}</span>
-          <span className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase">{Math.round(weight * 100)}%</span>
-        </div>
-        <span className="font-mono text-text-primary text-[12px] tabular-nums">{score}</span>
-      </div>
+    <div title={hint}>
       <div
-        className="rounded-full overflow-hidden"
-        style={{ background: "rgb(var(--rgb-border) / 0.6)", height: 6 }}
-        title={hint}
+        className="flex items-baseline justify-between mb-2"
+        style={{
+          animation: `solrayLabelFade ${labelFadeMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) both`,
+        }}
       >
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary truncate">
+            {label}
+          </span>
+          <span className="font-body text-text-secondary/50 text-[10px] tracking-[0.22em] uppercase tabular-nums">
+            {Math.round(weight * 100)}%
+          </span>
+        </div>
+        <span
+          className="font-heading text-[17px] text-text-secondary/70 tabular-nums"
+          style={{ fontFeatureSettings: '"lnum"' }}
+        >
+          {pct}
+        </span>
+      </div>
+
+      <div className="relative w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
         <div
+          className="h-full rounded-full"
           style={{
-            background: "rgb(var(--rgb-amber))",
+            ["--pct" as never]: `${pct}%`,
             width: `${pct}%`,
-            height: "100%",
-            transition: "width 600ms ease",
+            background: `linear-gradient(to right, ${color}, transparent)`,
+            animation: `solrayInkDraw ${drawMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) ${drawDelay}ms both`,
           }}
         />
       </div>
