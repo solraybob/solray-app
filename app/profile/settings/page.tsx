@@ -538,13 +538,13 @@ export default function SettingsPage() {
               />
             </Section>
 
-            {/* ── 4c. Collective participation (Hive Mind) ─────────────── */}
+            {/* ── 4c. The Collective ───────────────────────────────────── */}
             <Section
-              label="Collective participation"
+              label="The Collective"
               status={hiveStatus}
               hint={hiveConsent
-                ? "On. Your chart joins Solray's collective field, anonymously. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle gets sharper for everyone, you included."
-                : "Off. Your chart is excluded from the collective. Existing signal data is removed. The Oracle reads only your chart and your sessions, not the wider field."}
+                ? "On. Your chart is part of the Collective, anonymously. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle grows sharper as the Collective grows."
+                : "Off. Your chart is excluded from the Collective. Existing signal data is removed. The Oracle reads only your chart and your sessions, not the wider field."}
             >
               <Toggle
                 label={hiveConsent ? "On" : "Off"}

@@ -106,6 +106,10 @@ export default function OnboardPage() {
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Hive consent: pre-checked, the user can uncheck before completing signup.
+  // Visible at step 6 with explainer copy. Sent in the register payload.
+  // Default true matches the existing-user behavior; opt-out is explicit.
+  const [hiveConsent, setHiveConsent] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [calculatingBlueprint, setCalculatingBlueprint] = useState(false);
@@ -206,6 +210,7 @@ export default function OnboardPage() {
           birth_city: birthPlace,
           email,
           password,
+          hive_consent: hiveConsent,
         }),
       });
       if (!res.ok) {
@@ -453,6 +458,19 @@ export default function OnboardPage() {
                 placeholder="Password (min 6 characters)"
                 className="onboard-input"
               />
+
+              {/* Hive consent. Pre-checked. Visible. Uncheckable. */}
+              <label className="flex items-start gap-3 mt-6 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hiveConsent}
+                  onChange={(e) => setHiveConsent(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-amber-sun cursor-pointer flex-shrink-0"
+                />
+                <span className="font-body text-[13px] leading-relaxed text-pearl/80">
+                  Add my chart to the Collective. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle grows sharper as the Collective grows. You can change this anytime in Settings.
+                </span>
+              </label>
             </StepWrapper>
           )}
 
