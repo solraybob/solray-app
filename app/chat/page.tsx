@@ -43,6 +43,12 @@ function todayLabel() {
   });
 }
 
+// localStorage is now the CACHE; the server is the source of truth.
+// On any signed-in load, we hydrate from the server and overwrite the
+// local cache. saveSession writes locally first (instant render) then
+// fires-and-forgets a PUT to /chat/sessions/{id} so the server stays
+// in sync. Devices that come online later read the server's copy.
+
 function getSessionIds(): string[] {
   try {
     return JSON.parse(localStorage.getItem("solray_chat_sessions") || "[]");
@@ -70,6 +76,94 @@ function saveSession(session: StoredSession) {
   if (!ids.includes(session.sessionId)) {
     ids.unshift(session.sessionId);
     saveSessionIds(ids);
+  }
+}
+
+// ─── Server sync ────────────────────────────────────────────────────────────
+// Push a session to the server. Best-effort: failures don't block local save.
+async function pushSessionToServer(session: StoredSession, token: string | null): Promise<void> {
+  if (!token) return;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  try {
+    await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        session_id: session.sessionId,
+        custom_name: session.customName || null,
+        date_label: session.date || null,
+        messages: session.messages || [],
+      }),
+    });
+  } catch {
+    // Local copy still saved; server sync will retry on next save.
+  }
+}
+
+// Pull all sessions from server, overwrite local cache, return ids in
+// recency order. Falls back to local cache on network failure.
+async function syncSessionsFromServer(token: string | null): Promise<string[]> {
+  if (!token) return getSessionIds();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  try {
+    // 1. Fetch the lightweight list
+    const listRes = await fetch(`${apiUrl}/chat/sessions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!listRes.ok) return getSessionIds();
+    const listJson = await listRes.json();
+    const remoteSessions: Array<{ session_id: string; custom_name: string | null; date_label: string | null; message_count: number; last_message_at: string | null }> =
+      listJson.sessions || [];
+
+    // 2. For each session not yet in local cache, fetch full and store.
+    //    Sessions already cached locally get refreshed on demand when opened,
+    //    not eagerly, so the sync is fast.
+    const localIds = new Set(getSessionIds());
+    const fetched: string[] = [];
+    for (const s of remoteSessions) {
+      fetched.push(s.session_id);
+      if (!localIds.has(s.session_id)) {
+        try {
+          const fullRes = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(s.session_id)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (fullRes.ok) {
+            const full = await fullRes.json();
+            const stored: StoredSession = {
+              sessionId: full.session_id,
+              date: full.date_label || "",
+              customName: full.custom_name || undefined,
+              messages: full.messages || [],
+            };
+            localStorage.setItem(`solray_chat_${stored.sessionId}`, JSON.stringify(stored));
+          }
+        } catch { /* skip; we'll retry on demand */ }
+      }
+    }
+
+    // 3. Migration: any local-only sessions push UP so they're not lost.
+    //    Runs once-ish, only sessions the server doesn't know about.
+    const remoteIds = new Set(remoteSessions.map((s) => s.session_id));
+    const localIdArr = Array.from(localIds);
+    for (const localId of localIdArr) {
+      if (!remoteIds.has(localId)) {
+        const local = loadSession(localId);
+        if (local) {
+          await pushSessionToServer(local, token);
+          fetched.push(localId);
+        }
+      }
+    }
+
+    // 4. Save the unified id list.
+    const allIds = Array.from(new Set(fetched));
+    saveSessionIds(allIds);
+    return allIds;
+  } catch {
+    return getSessionIds();
   }
 }
 
@@ -201,6 +295,24 @@ function ChatPageInner() {
   // without stale closures
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { tokenRef.current = token; }, [token]);
+
+  // Cross-device chat sync. localStorage stays as the cache for instant
+  // reads; the server is the source of truth. On mount (or whenever a
+  // fresh token arrives), pull the user's sessions from the server and
+  // migrate any local-only sessions up. Runs once per token change.
+  useEffect(() => {
+    if (!token) return;
+    void syncSessionsFromServer(token);
+  }, [token]);
+
+  // persistSession: local first (instant render), server second (cross-device).
+  // Use this everywhere in the component instead of saveSession() so the
+  // session log syncs to the server. Server failure is non-fatal; local
+  // copy is always saved so the user never loses a message.
+  const persistSession = (session: StoredSession) => {
+    saveSession(session);
+    void pushSessionToServer(session, token);
+  };
 
   // ── Session-close synthesis ───────────────────────────────────────────────
   // Fires when the user navigates away or closes the tab. Uses fetch with
@@ -413,7 +525,7 @@ function ChatPageInner() {
             customName: ctx.topic,
             messages: seed,
           };
-          saveSession(newSession);
+          persistSession(newSession);
           setMessages(seed);
           setSending(true);
           try {
@@ -436,7 +548,7 @@ function ChatPageInner() {
               };
               const next = [...seed, errMsg];
               setMessages(next);
-              saveSession({ ...newSession, messages: next });
+              persistSession({ ...newSession, messages: next });
               return;
             }
             const reply: Message = {
@@ -449,7 +561,7 @@ function ChatPageInner() {
             setMessages(next);
             setStreamedLength(0);
             setStreamingId(reply.id);
-            saveSession({ ...newSession, messages: next });
+            persistSession({ ...newSession, messages: next });
           } catch {
             // Surface the failure as a visible error message rather
             // than silently swallowing it. Previous version left the
@@ -464,7 +576,7 @@ function ChatPageInner() {
             };
             const next = [...seed, errMsg];
             setMessages(next);
-            saveSession({ ...newSession, messages: next });
+            persistSession({ ...newSession, messages: next });
           } finally {
             setSending(false);
           }
@@ -515,7 +627,7 @@ function ChatPageInner() {
               customName: `You & ${ctx.soulName}`,
               messages: [greeting, userMsg],
             };
-            saveSession(newSession);
+            persistSession(newSession);
             setMessages([greeting, userMsg]);
 
             // Auto-send the compatibility message
@@ -541,7 +653,7 @@ function ChatPageInner() {
               setMessages((prev) => [...prev, reply]);
               setStreamedLength(0);
               setStreamingId(reply.id);
-              saveSession({ ...newSession, messages: [...newSession.messages, reply] });
+              persistSession({ ...newSession, messages: [...newSession.messages, reply] });
             } catch {
               // The previous version of this branch shipped an
               // Oracle-flavored fallback string for the souls compat
@@ -587,7 +699,7 @@ function ChatPageInner() {
           date: todayLabel(),
           messages: seed,
         };
-        saveSession(newSession);
+        persistSession(newSession);
         setMessages(seed);
       }
     }
@@ -600,7 +712,7 @@ function ChatPageInner() {
   useEffect(() => {
     if (!sessionId || messages.length === 0) return;
     const existing = loadSession(sessionId);
-    saveSession({
+    persistSession({
       sessionId,
       date: todayLabel(),
       customName: existing?.customName,
@@ -695,7 +807,7 @@ function ChatPageInner() {
       date: todayLabel(),
       messages: seed,
     };
-    saveSession(newSession);
+    persistSession(newSession);
     setMessages(seed);
     setShowHistory(false);
   }, [token, buildGreeting, triggerSessionSynthesis]);
@@ -744,7 +856,7 @@ function ChatPageInner() {
         ...session,
         customName: newName || undefined,
       };
-      saveSession(updated);
+      persistSession(updated);
       setPastSessions((prev) =>
         prev.map((s) => (s.sessionId === sid ? updated : s))
       );
@@ -757,16 +869,25 @@ function ChatPageInner() {
   const deleteSession = useCallback(
     (e: React.MouseEvent, sid: string) => {
       e.stopPropagation();
+      // Local removal first (instant UX), then propagate to server so the
+      // session doesn't reappear on the next sync from another device.
       localStorage.removeItem(`solray_chat_${sid}`);
       const ids = getSessionIds().filter((id) => id !== sid);
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
+      if (token) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        void fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(sid)}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => { /* network failure: server retains; will re-sync on next pull */ });
+      }
       // If we just deleted the active session, start fresh
       if (sid === sessionId) {
         startNewChat();
       }
     },
-    [sessionId, startNewChat]
+    [sessionId, startNewChat, token]
   );
 
   // ── Send message ──────────────────────────────────────────────────────────
