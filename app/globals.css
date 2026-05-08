@@ -104,6 +104,30 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Desktop layout: clear the fixed top nav (4rem tall). Mobile is unaffected
+   since BottomNav is at the bottom and pages are not pushed by a fixed top.
+   Also: convert vertical mouse-wheel into horizontal scroll on horizontal
+   ticker strips (.overflow-x-auto with content wider than container) so
+   desktop mouse users can navigate them without holding shift. */
+@media (min-width: 1024px) {
+  body {
+    padding-top: 4rem;
+  }
+  /* Subtle vignette so the wide desktop margins around the centered content
+     column feel intentional rather than empty. Stays under the content via
+     fixed positioning. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(243, 146, 48, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(155, 134, 160, 0.03) 0%, transparent 60%);
+  }
+}
+
 h1, h2, h3 {
   font-family: 'Cormorant Garamond', Georgia, serif;
 }

@@ -659,7 +659,7 @@ export default function SoulsPage() {
       >
         {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6a8692" }}>
               Your Field
             </p>
@@ -702,7 +702,7 @@ export default function SoulsPage() {
           </div>
         </div>
 
-        <div className="max-w-lg mx-auto px-5 pt-5 space-y-6 animate-fade-in">
+        <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-5 space-y-6 animate-fade-in">
           {/* Page intro: exact same style as the chat greeting */}
           <div className="flex flex-col items-center text-center pt-2 pb-2">
             <p

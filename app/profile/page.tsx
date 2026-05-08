@@ -692,7 +692,7 @@ function ProfileTag({ children }: { children: React.ReactNode }) {
 
 function ProfileSkeleton() {
   return (
-    <div className="max-w-lg mx-auto px-5 animate-pulse">
+    <div className="max-w-lg lg:max-w-3xl mx-auto px-5 animate-pulse">
       <div className="pt-10 pb-8 flex flex-col items-center gap-3">
         <div className="w-20 h-20 rounded-full bg-forest-border/60" />
         <div className="h-3 w-24 bg-forest-border/60 rounded" />
@@ -957,7 +957,7 @@ export default function ProfilePage() {
       >
         {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--moss)" }}>
               Profile
             </p>
@@ -994,7 +994,7 @@ export default function ProfilePage() {
               transform: visible ? "translateY(0)" : "translateY(16px)",
             }}
           >
-            <div className="max-w-lg mx-auto px-5">
+            <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
               {/* Avatar + Identity */}
               <div className="pt-6 pb-5 flex flex-col items-center gap-2 relative overflow-hidden">
                 {/* Contextual sun-sign planet image: very subtle ambient wash behind the avatar */}

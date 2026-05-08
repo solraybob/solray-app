@@ -1311,7 +1311,7 @@ function ChatPageInner() {
             <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(var(--rgb-bg-deep) / 0.5) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
           </div>
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3 relative z-10">
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3 relative z-10">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--wisteria)" }}>
               Your Higher Self
             </p>
@@ -1366,7 +1366,7 @@ function ChatPageInner() {
 
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-48" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
-          <div className="max-w-lg mx-auto space-y-6">
+          <div className="max-w-lg lg:max-w-3xl mx-auto space-y-6">
 
             {/* Empty / loading state, visible for the brief moment before
                 the greeting arrives. A centered wisteria glow with the
@@ -1516,7 +1516,7 @@ function ChatPageInner() {
 
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 py-3 pb-20">
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
                 <span

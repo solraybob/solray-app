@@ -9,6 +9,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import Footer from "@/components/Footer";
 import SwipeNavigator from "@/components/SwipeNavigator";
 import BottomNav from "@/components/BottomNav";
+import DesktopHeader from "@/components/DesktopHeader";
 import NativePushBootstrap from "@/components/NativePushBootstrap";
 
 // Runs synchronously before React hydrates to set the correct theme on
@@ -58,6 +59,7 @@ export default function RootLayout({
           <AuthProvider>
             <SubscriptionProvider>
               <NativePushBootstrap />
+              <DesktopHeader />
               <SwipeNavigator>
                 {children}
               </SwipeNavigator>

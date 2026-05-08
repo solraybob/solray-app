@@ -301,7 +301,7 @@ function SkeletonToday() {
           IS being written. Replaces a silent skeleton with a small
           breath of intention so waiting feels considered, not blank.
           Codex UX hook 8. */}
-      <div className="max-w-lg mx-auto px-5 pt-6 pb-1 text-center">
+      <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-6 pb-1 text-center">
         <p
           className="font-body text-[12px] tracking-[0.3em] uppercase"
           style={{ color: "var(--amber)", opacity: 0.7 }}
@@ -311,11 +311,11 @@ function SkeletonToday() {
       </div>
 
       {/* Hero skeleton, matches real hero: padded, rounded-2xl, 160px */}
-      <div className="max-w-lg mx-auto px-5 pt-3">
+      <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
         <div className="w-full h-[160px] bg-forest-card skeleton-shimmer rounded-2xl" />
       </div>
 
-      <div className="max-w-lg mx-auto px-5">
+      <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
         {/* Energy bars skeleton */}
         <div className="mb-8 mt-8 space-y-4">
           {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
@@ -540,7 +540,7 @@ const PLANET_SYMBOLS: Record<string, string> = {
 // or a fake day title. Replaces the previous MOCK_FORECAST fallback.
 function PendingTodayState({ planets }: { planets: Planet[] }) {
   return (
-    <div className="max-w-lg mx-auto px-5 pt-12">
+    <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-12">
       <div
         className="rounded-sm p-7 mb-8"
         style={{
@@ -571,6 +571,20 @@ function PendingTodayState({ planets }: { planets: Planet[] }) {
       <div
         className="-mx-5 px-5 overflow-x-auto"
         style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        // Mouse-wheel users on desktop can't scroll horizontal strips by
+        // default. Convert vertical wheel deltas into horizontal scroll
+        // when the cursor is over this strip. Touch and trackpad pan
+        // gestures still work natively because deltaX is non-zero on
+        // those, and we only intercept when deltaX is zero.
+        onWheel={(e) => {
+          if (e.deltaY !== 0 && e.deltaX === 0) {
+            const el = e.currentTarget as HTMLDivElement;
+            // Only hijack if there's somewhere to scroll horizontally.
+            if (el.scrollWidth > el.clientWidth) {
+              el.scrollLeft += e.deltaY;
+            }
+          }
+        }}
       >
         <div className="flex gap-2.5 pb-3" style={{ width: "max-content" }}>
           {planets.map((planet) => (
@@ -827,7 +841,7 @@ export default function TodayPage() {
       >
         {/* Header, tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
               Living By Design
             </p>
@@ -856,7 +870,7 @@ export default function TodayPage() {
           <>
             {/* HERO IMAGE CARD, card style, with padding like CurrentCycles */}
             <div
-              className="max-w-lg mx-auto px-5 pt-3 transition-all duration-700"
+              className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 transition-all duration-700"
               style={{
                 opacity: visibleSections >= 1 ? 1 : 0,
               }}
@@ -869,12 +883,12 @@ export default function TodayPage() {
             </div>
 
             {/* MOON CYCLE BAR, below hero */}
-            <div className="max-w-lg mx-auto px-5 mt-4">
+            <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
             </div>
 
             {/* Below fold content */}
-            <div className="max-w-lg mx-auto px-5">
+            <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
               {/* Subtle offline/error notice */}
               {error && (
                 <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
@@ -1007,7 +1021,7 @@ export default function TodayPage() {
           // Total fetch failure with no cache. Honest error state, no
           // invented forecast content. Refresh button kicks the user
           // back into the load path so they can retry without leaving.
-          <div className="max-w-lg mx-auto px-5 pt-24 text-center">
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-24 text-center">
             <p className="font-heading text-text-primary text-2xl mb-4" style={{ fontWeight: 300 }}>
               The sky is quiet.
             </p>
