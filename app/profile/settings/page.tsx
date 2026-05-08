@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [name, setName]         = useState("");
   const [username, setUsername] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+  const [hiveConsent, setHiveConsent] = useState(true);
   const [photo, setPhoto]       = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
@@ -56,6 +57,7 @@ export default function SettingsPage() {
   const [identityStatus, setIdentityStatus] = useState<SaveStatus>("idle");
   const [identityError,  setIdentityError]  = useState<string | null>(null);
   const [visibilityStatus, setVisibilityStatus] = useState<SaveStatus>("idle");
+  const [hiveStatus, setHiveStatus] = useState<SaveStatus>("idle");
   const [photoStatus,    setPhotoStatus]    = useState<SaveStatus>("idle");
   const [birthStatus,    setBirthStatus]    = useState<SaveStatus>("idle");
   const [birthError,     setBirthError]     = useState<string | null>(null);
@@ -79,6 +81,10 @@ export default function SettingsPage() {
         setName(p.name || "");
         setUsername(p.username || "");
         setIsPublic(Boolean(p.is_public));
+        // Hive consent defaults to true server-side; coerce undefined to true
+        // so the toggle shows the participating state for users who pre-date
+        // the field.
+        setHiveConsent(p.hive_consent === undefined ? true : Boolean(p.hive_consent));
         setPhoto(p.profile_photo || null);
         setBirthDate(p.birth_date || "");
         setBirthTime(p.birth_time || "");
@@ -173,6 +179,24 @@ export default function SettingsPage() {
       const msg = e instanceof Error ? e.message : "Could not save";
       setIdentityError(msg);
       setIdentityStatus("error");
+    }
+  };
+
+  const toggleHiveConsent = async (next: boolean) => {
+    if (!token) return;
+    setHiveConsent(next); // optimistic
+    setHiveStatus("saving");
+    try {
+      await apiFetch("/users/profile", {
+        method: "PATCH",
+        body: JSON.stringify({ hive_consent: next }),
+      }, token);
+      setHiveStatus("saved");
+      setTimeout(() => setHiveStatus("idle"), 1500);
+    } catch {
+      setHiveConsent(!next); // revert
+      setHiveStatus("error");
+      setTimeout(() => setHiveStatus("idle"), 2200);
     }
   };
 
@@ -511,6 +535,21 @@ export default function SettingsPage() {
                     }
                   }
                 }}
+              />
+            </Section>
+
+            {/* ── 4c. Collective participation (Hive Mind) ─────────────── */}
+            <Section
+              label="Collective participation"
+              status={hiveStatus}
+              hint={hiveConsent
+                ? "On. Your chart joins Solray's collective field, anonymously. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle gets sharper for everyone, you included."
+                : "Off. Your chart is excluded from the collective. Existing signal data is removed. The Oracle reads only your chart and your sessions, not the wider field."}
+            >
+              <Toggle
+                label={hiveConsent ? "On" : "Off"}
+                checked={hiveConsent}
+                onChange={toggleHiveConsent}
               />
             </Section>
 
