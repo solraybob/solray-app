@@ -1,4 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Trim defensively. The Vercel env var got saved with a trailing newline,
+// which made fetches fail with "Failed to fetch" because the resulting URL
+// had a literal \n inside it. trim() strips any whitespace.
+const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
 
 export class ApiError extends Error {
   status: number;

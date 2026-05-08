@@ -100,9 +100,10 @@ export default function PreviewPage() {
     setLoading(true);
     setStep(2);
 
-    const apiUrl =
+    const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL ||
-      "https://solray-backend-production.up.railway.app";
+      "https://solray-backend-production.up.railway.app"
+    ).trim();
 
     try {
       const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {

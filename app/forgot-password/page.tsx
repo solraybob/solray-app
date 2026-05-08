@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     try {
       const res = await fetch(`${apiUrl}/users/forgot-password`, {
         method: "POST",

@@ -197,7 +197,7 @@ export default function OnboardPage() {
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     try {
       const res = await fetch(`${apiUrl}/users/register`, {
         method: "POST",

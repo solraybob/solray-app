@@ -85,7 +85,7 @@ function saveSession(session: StoredSession) {
 // the next sync compares like-with-like.
 async function pushSessionToServer(session: StoredSession, token: string | null): Promise<void> {
   if (!token) return;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
   try {
     const res = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
       method: "PUT",
@@ -141,7 +141,7 @@ const MIGRATION_FLAG = "solray_chat_migrated_v1";
 // the unified id list. Falls back to local on network failure.
 async function syncSessionsFromServer(token: string | null): Promise<string[]> {
   if (!token) return getSessionIds();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
   try {
     // 1. Fetch the lightweight list (includes last_message_at).
     const listRes = await fetch(`${apiUrl}/chat/sessions`, {
@@ -387,7 +387,7 @@ function ChatPageInner() {
     // Match the backend threshold: any 2+ turn exchange is worth synthesizing
     if (userCount < 2) return;
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     fetch(`${API_URL}/chat/synthesize`, {
       method: "POST",
       headers: {
@@ -934,7 +934,7 @@ function ChatPageInner() {
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
       if (token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
         void fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(sid)}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -1138,7 +1138,7 @@ function ChatPageInner() {
       setTranscribing(false);
       return;
     }
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     const ext = mime.includes("mp4") || mime.includes("aac") ? "m4a" : "webm";
     const form = new FormData();
     form.append("file", blob, `voice.${ext}`);

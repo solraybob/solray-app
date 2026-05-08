@@ -606,7 +606,7 @@ export default function SoulsPage() {
         // Recompute on the fly. Slow (~2-3s) but only happens once per
         // legacy person, we re-store the blueprint after.
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
           const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1350,7 +1350,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     try {
       const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
         method: "POST",

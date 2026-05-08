@@ -90,7 +90,7 @@ function HiveDashboardInner() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
 
   const load = async () => {
     if (!token) return;

@@ -29,7 +29,7 @@ export default function LoginPage() {
       // so Chart screen is instant on first visit
       const storedToken = localStorage.getItem("solray_token");
       if (storedToken) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
         fetch(`${apiUrl}/users/me`, {
           headers: {
             "Content-Type": "application/json",
