@@ -92,23 +92,35 @@ function HiveDashboardInner() {
 
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
 
+  const [debug, setDebug] = useState<string | null>(null);
+
   const load = async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
+    setDebug(null);
+    const fullUrl = `${apiUrl}/admin/hive/graph`;
+    // Capture the actual URL bytes so we can see if there's whitespace
+    // sneaking in. JSON.stringify reveals \n / \r / non-printable chars.
+    const urlDebug = JSON.stringify(fullUrl);
+    const tokenLen = (token || "").length;
     try {
-      const res = await fetch(`${apiUrl}/admin/hive/graph`, {
+      const res = await fetch(fullUrl, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401 || res.status === 403) {
         setError("This area is for Solray operators only.");
+        setDebug(`URL: ${urlDebug} · token length: ${tokenLen} · response: ${res.status}`);
         setLoading(false);
         return;
       }
       const data = await res.json();
       setGraph(data);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      const name = e instanceof Error ? e.name : "Error";
+      const msg  = e instanceof Error ? e.message : String(e);
+      setError(`${name}: ${msg}`);
+      setDebug(`URL: ${urlDebug} · token length: ${tokenLen} · UA: ${typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : "?"}`);
     } finally {
       setLoading(false);
     }
@@ -168,6 +180,11 @@ function HiveDashboardInner() {
         {error && (
           <div className="mb-6 px-4 py-3 rounded-lg border border-red-700/40 text-[13px]">
             {error}
+            {debug && (
+              <div className="font-mono text-[11px] text-text-secondary mt-2 break-all">
+                {debug}
+              </div>
+            )}
           </div>
         )}
 
