@@ -24,7 +24,35 @@
 
 import { apiFetch } from "./api";
 
-const NATIVE_PUSH_REGISTERED_KEY = "solray_native_push_registered";
+// User-scoped key. Codex audit P1.4: the previous global flag meant a
+// second user signing in on the same device skipped registration entirely
+// because the first user's "registered=1" flag was still in localStorage,
+// so they never got pushes. Scope the flag by user id (we'll hash the
+// auth token at the call site so we don't store anything user-identifying).
+const NATIVE_PUSH_REGISTERED_KEY_BASE = "solray_native_push_registered";
+
+function pushKey(userIdHash: string): string {
+  return `${NATIVE_PUSH_REGISTERED_KEY_BASE}:${userIdHash}`;
+}
+
+/**
+ * Clear the registered-flag for ALL users on this device. Called on logout
+ * so the next signed-in user actually re-registers their device against
+ * APNs and the backend records THEIR token, not the previous user's.
+ */
+export function clearNativePushRegistration(): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Sweep every key matching our prefix; cheap because we have under
+    // a handful of keys.
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(NATIVE_PUSH_REGISTERED_KEY_BASE)) toRemove.push(k);
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch { /* localStorage may be unavailable */ }
+}
 
 interface CapacitorWindow {
   Capacitor?: {
@@ -40,6 +68,17 @@ export function isRunningInCapacitor(): boolean {
 }
 
 /**
+ * Lightweight, non-cryptographic hash. Used only to scope a localStorage
+ * key per token so we don't write the raw token into storage. Collisions
+ * are acceptable here; this is a registration-flag, not authentication.
+ */
+function shortHash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
+
+/**
  * Idempotent: safe to call multiple times. Once a token has been
  * registered for this device + user pair, we skip re-registration to
  * avoid spamming the backend on every app launch.
@@ -48,9 +87,12 @@ export async function registerNativePush(token: string): Promise<void> {
   if (!isRunningInCapacitor()) return;
   if (typeof window === "undefined") return;
 
-  // Already registered this session? Skip the round trip.
+  // Already registered this user on this device? Skip the round trip.
+  // Per-user scoping prevents the second user on a shared iPhone from
+  // silently failing because the first user's flag was still set.
+  const userKey = pushKey(shortHash(token));
   try {
-    if (localStorage.getItem(NATIVE_PUSH_REGISTERED_KEY) === "1") return;
+    if (localStorage.getItem(userKey) === "1") return;
   } catch { /* localStorage may be unavailable */ }
 
   try {
@@ -117,7 +159,7 @@ export async function registerNativePush(token: string): Promise<void> {
     );
 
     try {
-      localStorage.setItem(NATIVE_PUSH_REGISTERED_KEY, "1");
+      localStorage.setItem(userKey, "1");
     } catch { /* ignore */ }
   } catch (err) {
     // Don't crash the app if the push setup hits an edge case (missing

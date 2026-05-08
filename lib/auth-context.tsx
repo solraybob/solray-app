@@ -76,6 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem("solray_token");
     localStorage.removeItem("solray_user");
+    // Clear the native-push "registered" flags so the next user signing
+    // in on the same device actually re-registers their device against
+    // APNs and the backend records THEIR token. Codex audit P1.4.
+    try {
+      // Lazy import to keep this file SSR-safe; the helper itself is
+      // a no-op on web.
+      import("./native-push").then(({ clearNativePushRegistration }) => {
+        clearNativePushRegistration();
+      });
+    } catch { /* ignore */ }
     setTokenState(null);
     setUser(null);
   };

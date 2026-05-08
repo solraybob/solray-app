@@ -69,30 +69,34 @@ export default function TrialBanner() {
       ? "One day left in your trial."
       : `${daysLeft} days left in your trial.`;
 
+  // Restored prominence per Bob's pre-App-Store memory. Codex confirmed the
+  // original (commit 59a77b7) was significantly larger and more visible.
+  // Increases: bigger padding, amber-tinted bg gradient instead of flat dark,
+  // bigger label + message, fuller-weight CTA button, thicker progress bar.
   return (
     <div
       style={{
-        // Theme-aware: rgb(var(--rgb-bg-dark)) gives the forest header
-        // strip in dark mode, the warm cream strip in light mode.
-        background: "rgb(var(--rgb-bg-dark))",
+        background: urgent
+          ? "linear-gradient(180deg, rgba(212,122,82,0.10) 0%, rgb(var(--rgb-bg-dark)) 100%)"
+          : "linear-gradient(180deg, rgba(243,146,48,0.08) 0%, rgb(var(--rgb-bg-dark)) 100%)",
         borderBottom: "1px solid rgb(var(--rgb-border))",
         borderTop: urgent
-          ? "1px solid rgba(212,122,82,0.35)"
-          : "1px solid rgba(243,146,48,0.20)",
+          ? "2px solid rgba(212,122,82,0.55)"
+          : "2px solid rgba(243,146,48,0.35)",
       }}
     >
-      <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center justify-between gap-4">
+      <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between gap-4">
         {/* Left: label + message */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-4 min-w-0">
           <span
-            className="font-body text-[11px] tracking-[0.18em] uppercase shrink-0"
-            style={{ color: urgent ? "#d47a52" : "var(--amber)", opacity: 0.9 }}
+            className="font-body text-[12px] tracking-[0.22em] uppercase shrink-0"
+            style={{ color: urgent ? "#d47a52" : "var(--amber)", opacity: 1, fontWeight: 500 }}
           >
             Trial
           </span>
           <p
-            className="font-heading text-text-secondary truncate"
-            style={{ fontSize: "0.95rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+            className="font-heading text-text-primary truncate"
+            style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "0.01em" }}
           >
             {message}
           </p>
@@ -102,42 +106,45 @@ export default function TrialBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => router.push("/subscribe")}
-            className="font-body text-[12px] tracking-widest uppercase px-3 py-1 rounded-lg transition-colors"
+            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg transition-colors"
             style={{
-              background: "transparent",
-              border: urgent ? "1px solid rgba(212,122,82,0.5)" : "1px solid rgba(243,146,48,0.35)",
+              background: urgent ? "rgba(212,122,82,0.15)" : "rgba(243,146,48,0.12)",
+              border: urgent ? "1px solid rgba(212,122,82,0.6)" : "1px solid rgba(243,146,48,0.5)",
               color: urgent ? "#d47a52" : "var(--amber)",
+              fontWeight: 500,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(212,122,82,0.10)"
-                : "rgba(243,146,48,0.08)";
+                ? "rgba(212,122,82,0.22)"
+                : "rgba(243,146,48,0.18)";
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = "transparent";
+              (e.currentTarget as HTMLElement).style.background = urgent
+                ? "rgba(212,122,82,0.15)"
+                : "rgba(243,146,48,0.12)";
             }}
           >
             Add card
           </button>
           <button
             onClick={handleDismiss}
-            className="w-6 h-6 flex items-center justify-center text-text-secondary opacity-40 hover:opacity-70 transition-opacity"
+            className="w-7 h-7 flex items-center justify-center text-text-secondary opacity-50 hover:opacity-80 transition-opacity"
             aria-label="Dismiss"
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Progress bar: days consumed out of 5 */}
-      <div style={{ height: "1px", background: "rgb(var(--rgb-border))" }}>
+      {/* Progress bar: days consumed out of 5. Thicker than before. */}
+      <div style={{ height: "2px", background: "rgb(var(--rgb-border))" }}>
         <div
           style={{
             height: "100%",
             width: `${progress * 100}%`,
-            background: urgent ? "rgba(212,122,82,0.60)" : "rgba(243,146,48,0.45)",
+            background: urgent ? "rgba(212,122,82,0.75)" : "rgba(243,146,48,0.6)",
             transition: "width 0.6s ease",
           }}
         />

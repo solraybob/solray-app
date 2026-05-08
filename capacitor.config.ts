@@ -44,7 +44,12 @@ const config: CapacitorConfig = {
     // works without CORS surprises in WKWebView.
     allowNavigation: [
       'app.solray.ai',
-      'solray.ai',
+      // 'solray.ai' was previously in this list; removed per Codex pre-ship
+      // audit. The marketing site is where /subscribe routes for card
+      // entry, so allowing it inside the WebView could be read by App
+      // Review as a path toward external-payment funneling under
+      // Guideline 3.1.3. The landing page opens in the system browser
+      // (or not at all) for native users.
       'solray-backend-production.up.railway.app',
       // Teya / SecurePay domains are deliberately NOT in this list. App
       // Store Guideline 3.1.1 / 3.1.3 forbid digital subscriptions taken

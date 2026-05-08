@@ -471,8 +471,8 @@ function NativeMembershipView() {
             fontWeight: 300,
           }}
         >
-          Solray memberships are managed on the web. Once you are a member,
-          you can sign in here and access everything.
+          This account does not have an active membership. Sign in with a
+          membership-bearing account to continue.
         </p>
 
         <div className="space-y-3">

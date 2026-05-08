@@ -420,6 +420,16 @@ interface ResonanceIndex {
   version: number;
 }
 
+// Lightweight non-cryptographic hash. Used only to scope a sessionStorage
+// cache key per viewer so a shared device doesn't leak cached compatibility
+// readings between users. Collision risk for two real users on the same
+// browser hitting the same soul is negligible for this use.
+function simpleHash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
+
 function CompatibilitySection({ token, soulId, soulName }: { token: string | null; soulId: string; soulName: string }) {
   const [reading, setReading] = useState<CompatReading | null>(null);
   const [signals, setSignals] = useState<CompatSignals | null>(null);
@@ -428,7 +438,16 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
   const [error, setError] = useState<string | null>(null);
   const [paywall, setPaywall] = useState(false);
 
-  const cacheKey = `solray_compat_${soulId}`;
+  // Cache key includes the current viewer's token-derived id, not just the
+  // soul id. Without this scoping, a shared device (two users signing in
+  // sequentially in the same browser) would surface User A's cached
+  // compatibility reading to User B because the cache key collided.
+  // Codex audit P1.6. shortHash is non-cryptographic; collisions across
+  // users on the same device are acceptable because a collision plus a
+  // soul-id match plus session-storage being the same browser instance
+  // is vanishingly unlikely for this product.
+  const _viewerHash = token ? simpleHash(token) : "anon";
+  const cacheKey = `solray_compat_${_viewerHash}_${soulId}`;
 
   const load = (force = false) => {
     if (!token || loading) return;
@@ -583,13 +602,20 @@ const AXIS_COLOR: Record<string, string> = {
 };
 
 function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: string }) {
-  const overall = Math.round(index.overall);
+  // Defensive guards: a partial backend payload (missing axes object or
+  // missing individual axis) was rendering throw -> white screen on
+  // /profile/[id]. Codex flagged this as a P1 crash risk before App Store
+  // submission. Now any missing axis falls back to a 0/0 placeholder so
+  // the page still renders, just with a 'not yet calculated' bar.
+  const overall = Math.round(Number(index?.overall) || 0);
+  const safeAxes = (index && index.axes) || ({} as ResonanceIndex["axes"]);
+  const fallback: ResonanceAxis = { score: 0, weight: 0, detail: null };
   const axes: Array<[string, ResonanceAxis]> = [
-    ["resonance",      index.axes.resonance],
-    ["energetic_loop", index.axes.energetic_loop],
-    ["type_pairing",   index.axes.type_pairing],
-    ["astrological",   index.axes.astrological],
-    ["gene_keys",      index.axes.gene_keys],
+    ["resonance",      safeAxes.resonance      || fallback],
+    ["energetic_loop", safeAxes.energetic_loop || fallback],
+    ["type_pairing",   safeAxes.type_pairing   || fallback],
+    ["astrological",   safeAxes.astrological   || fallback],
+    ["gene_keys",      safeAxes.gene_keys      || fallback],
   ];
 
   return (
