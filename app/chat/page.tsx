@@ -81,11 +81,13 @@ function saveSession(session: StoredSession) {
 
 // ─── Server sync ────────────────────────────────────────────────────────────
 // Push a session to the server. Best-effort: failures don't block local save.
+// On success we record the server's last_message_at into the local meta so
+// the next sync compares like-with-like.
 async function pushSessionToServer(session: StoredSession, token: string | null): Promise<void> {
   if (!token) return;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   try {
-    await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
+    const res = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -98,18 +100,50 @@ async function pushSessionToServer(session: StoredSession, token: string | null)
         messages: session.messages || [],
       }),
     });
+    if (res.ok) {
+      const out = await res.json().catch(() => ({} as Record<string, string>));
+      if (out && typeof out.last_message_at === "string") {
+        setSessionLocalMeta(session.sessionId, out.last_message_at);
+      }
+    }
   } catch {
     // Local copy still saved; server sync will retry on next save.
   }
 }
 
-// Pull all sessions from server, overwrite local cache, return ids in
-// recency order. Falls back to local cache on network failure.
+// Track per-session last_message_at locally so we can compare with remote
+// on sync. Without this, a stale local copy (laptop after a week) would
+// overwrite a fresh server copy (phone wrote yesterday) when the user
+// opens the local one and the persist-on-message effect fires. Codex
+// audit P0 (the blocker before TestFlight).
+const SESSION_META_KEY = "solray_chat_session_meta";
+type LocalMeta = Record<string, { last_message_at: string }>;
+
+function getLocalMeta(): LocalMeta {
+  try { return JSON.parse(localStorage.getItem(SESSION_META_KEY) || "{}") as LocalMeta; } catch { return {}; }
+}
+function setLocalMeta(meta: LocalMeta) {
+  try { localStorage.setItem(SESSION_META_KEY, JSON.stringify(meta)); } catch { /* ignore quota */ }
+}
+function setSessionLocalMeta(sessionId: string, last_message_at: string) {
+  const meta = getLocalMeta();
+  meta[sessionId] = { last_message_at };
+  setLocalMeta(meta);
+}
+
+// One-time migration flag: after the first sync where local-only sessions
+// are pushed to the server, mark this device as migrated. Subsequent syncs
+// treat local-only sessions as "deleted on another device" and remove them
+// from the local cache, so cross-device deletes propagate cleanly.
+const MIGRATION_FLAG = "solray_chat_migrated_v1";
+
+// Pull all sessions from server, reconcile against local cache, return
+// the unified id list. Falls back to local on network failure.
 async function syncSessionsFromServer(token: string | null): Promise<string[]> {
   if (!token) return getSessionIds();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   try {
-    // 1. Fetch the lightweight list
+    // 1. Fetch the lightweight list (includes last_message_at).
     const listRes = await fetch(`${apiUrl}/chat/sessions`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -118,14 +152,18 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
     const remoteSessions: Array<{ session_id: string; custom_name: string | null; date_label: string | null; message_count: number; last_message_at: string | null }> =
       listJson.sessions || [];
 
-    // 2. For each session not yet in local cache, fetch full and store.
-    //    Sessions already cached locally get refreshed on demand when opened,
-    //    not eagerly, so the sync is fast.
     const localIds = new Set(getSessionIds());
+    const localMeta = getLocalMeta();
     const fetched: string[] = [];
+
+    // 2. Reconcile each remote session: pull from server when remote is
+    //    newer than local OR local doesn't have it.
     for (const s of remoteSessions) {
       fetched.push(s.session_id);
-      if (!localIds.has(s.session_id)) {
+      const remoteAt = s.last_message_at || "";
+      const localAt = localMeta[s.session_id]?.last_message_at || "";
+      const needPull = !localIds.has(s.session_id) || (remoteAt && remoteAt > localAt);
+      if (needPull) {
         try {
           const fullRes = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(s.session_id)}`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -139,26 +177,46 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
               messages: full.messages || [],
             };
             localStorage.setItem(`solray_chat_${stored.sessionId}`, JSON.stringify(stored));
+            if (full.last_message_at) {
+              setSessionLocalMeta(stored.sessionId, full.last_message_at);
+            }
           }
-        } catch { /* skip; we'll retry on demand */ }
+        } catch { /* skip; will retry on next sync */ }
       }
     }
 
-    // 3. Migration: any local-only sessions push UP so they're not lost.
-    //    Runs once-ish, only sessions the server doesn't know about.
+    // 3. Local-only reconciliation. Two paths:
+    //    a) FIRST migration on this device: push local-only sessions UP.
+    //       This is the existing-user case where localStorage holds real
+    //       history that's never been to the server.
+    //    b) After migration: local-only means deleted on another device,
+    //       so remove from local cache. Otherwise a delete on phone
+    //       resurrects on desktop forever.
     const remoteIds = new Set(remoteSessions.map((s) => s.session_id));
     const localIdArr = Array.from(localIds);
+    const migrated = localStorage.getItem(MIGRATION_FLAG) === "1";
     for (const localId of localIdArr) {
-      if (!remoteIds.has(localId)) {
+      if (remoteIds.has(localId)) continue;
+      if (!migrated) {
         const local = loadSession(localId);
         if (local) {
           await pushSessionToServer(local, token);
+          if (local.messages?.length) {
+            setSessionLocalMeta(localId, new Date().toISOString());
+          }
           fetched.push(localId);
         }
+      } else {
+        // Treat as deleted on another device: drop from local cache.
+        localStorage.removeItem(`solray_chat_${localId}`);
+        const meta = getLocalMeta();
+        delete meta[localId];
+        setLocalMeta(meta);
       }
     }
+    if (!migrated) localStorage.setItem(MIGRATION_FLAG, "1");
 
-    // 4. Save the unified id list.
+    // 4. Save unified id list, server-order takes precedence.
     const allIds = Array.from(new Set(fetched));
     saveSessionIds(allIds);
     return allIds;
