@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solray-v36';
+const CACHE_NAME = 'solray-v37';
 
 // Only cache static assets, NOT HTML pages
 const urlsToCache = [
@@ -24,17 +24,24 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always fetch fresh from network — Next.js uses content-addressed hashes so
-  // there is no benefit to caching JS/CSS here, and stale cache causes update issues.
+  // ONLY intercept same-origin GET requests for our pre-cached static
+  // assets. Anything else (cross-origin to the API, page HTML, JS chunks
+  // not in our short urlsToCache list) is left alone for the browser to
+  // handle natively. Codex audit caught the prior version intercepting
+  // every GET, which made cross-origin admin fetches throw 'Failed to
+  // fetch' even when the actual network request would have succeeded.
   if (event.request.method !== 'GET') return;
+  let url;
+  try {
+    url = new URL(event.request.url);
+  } catch (_) {
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+  if (!urlsToCache.includes(url.pathname)) return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      // Only serve from cache for pre-cached static icons/images
-      if (cached && urlsToCache.some(u => event.request.url.endsWith(u))) {
-        return cached;
-      }
-      return fetch(event.request);
-    })
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
 

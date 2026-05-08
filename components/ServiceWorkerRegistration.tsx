@@ -6,7 +6,11 @@ import { useEffect } from "react";
 // v16: ships the new auto-update machinery (NEXT_PUBLIC_BUILD_ID + /api/build-id
 // polling in VersionCheck). Existing users get one last forced wipe so they
 // start from a clean state under the new system.
-const APP_VERSION = "v16";
+// v17: kills the prior service worker that was wrapping every fetch with
+// event.respondWith, including cross-origin /admin/hive/graph fetches that
+// then threw 'Failed to fetch'. New SW only intercepts same-origin assets
+// in the urlsToCache list. Forces existing clients off the bad worker.
+const APP_VERSION = "v17";
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
