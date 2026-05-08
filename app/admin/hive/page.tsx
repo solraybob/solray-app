@@ -319,6 +319,9 @@ function ActionButton({ label, onClick, pending }: { label: string; onClick: () 
 function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tick, setTick] = useState(0);
+  // hovering = pause physics so the user can read names. Stored in a ref
+  // so the RAF loop sees the latest value without re-binding every frame.
+  const hoveringRef = useRef(false);
 
   // Physics state, preserved across renders so the simulation continues.
   const physRef = useRef<{
@@ -372,15 +375,28 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
   useEffect(() => {
     let running = true;
     let frame = 0;
+    // Keep the original lively dance — Bob explicitly likes the movement.
+    // The hive is alive, not a static diagram.
     const REPULSION = 1800;
     const LINK_K = 0.018;
     const LINK_REST = 110;
     const CORE_K = 0.012;
     const CORE_REST = 180;
     const DAMPING = 0.86;
+    // Tiny per-frame noise so the hive keeps drifting even after the
+    // initial dance settles. Light enough that it never reads as jitter,
+    // strong enough that nodes never freeze in place.
+    const BREATH = 0.06;
 
     const step = () => {
       if (!running) return;
+      // Pause on hover. We still RAF so the loop resumes the moment the
+      // mouse leaves, but we skip integration so positions stay frozen
+      // and the user can read the labels.
+      if (hoveringRef.current) {
+        requestAnimationFrame(step);
+        return;
+      }
       const phys = physRef.current;
       const ns = phys.nodes;
       const cx = phys.cx;
@@ -438,20 +454,33 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       }
 
       // Integrate + damping + bounds
+      let totalSpeed = 0;
       for (const n of ns) {
         n.vx *= DAMPING;
         n.vy *= DAMPING;
         n.x += n.vx;
         n.y += n.vy;
+        totalSpeed += Math.abs(n.vx) + Math.abs(n.vy);
         if (n.x < 30) n.x = 30;
         if (n.x > phys.width - 30) n.x = phys.width - 30;
         if (n.y < 30) n.y = 30;
         if (n.y > phys.height - 30) n.y = phys.height - 30;
       }
 
+      // Always inject a small noise so the hive stays alive. Strength
+      // scales up slightly when motion is low so the graph never settles
+      // into stillness, but never overpowers the natural physics either.
+      const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
+      const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
+      for (const n of ns) {
+        n.vx += (Math.random() - 0.5) * BREATH * breathScale;
+        n.vy += (Math.random() - 0.5) * BREATH * breathScale;
+      }
+
       frame += 1;
-      // Re-render every other frame; physics still runs at ~60fps.
-      if (frame % 2 === 0) setTick((t) => (t + 1) % 1_000_000);
+      // Re-render every third frame to keep CPU light without making the
+      // motion look choppy.
+      if (frame % 3 === 0) setTick((t) => (t + 1) % 1_000_000);
       requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
@@ -477,8 +506,10 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       viewBox={`0 0 ${W} ${H}`}
       className="w-full h-[540px]"
       role="img"
-      aria-label="Hive Mind: each node is a soul; lines connect souls who share chart components."
+      aria-label="Hive Mind: each node is a soul; lines connect souls who share chart components. Hover to pause the simulation."
       data-tick={tick}
+      onMouseEnter={() => { hoveringRef.current = true; setTick((t) => (t + 1) % 1_000_000); }}
+      onMouseLeave={() => { hoveringRef.current = false; }}
     >
       <defs>
         <radialGradient id="core-glow" cx="50%" cy="50%" r="50%">
