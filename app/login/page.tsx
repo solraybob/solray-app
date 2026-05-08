@@ -64,10 +64,26 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm animate-fade-in">
-        {/* Logo */}
+        {/* Logo — same sun as the landing hero, transparent PNG with the
+            amber drop-shadow halo. No circle clip; the silhouette IS the
+            shape, which avoids the iOS Safari square-halo bug we hit on
+            solray.ai. */}
         <div className="flex flex-col items-center mb-12">
-          <div className="w-8 h-8 rounded-full overflow-hidden mb-4">
-            <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
+          <div
+            className="w-24 h-24 mb-5"
+            style={{
+              filter:
+                "drop-shadow(0 0 32px rgba(243, 146, 48, 0.42)) drop-shadow(0 0 80px rgba(243, 146, 48, 0.18))",
+            }}
+          >
+            <Image
+              src="/solray-sun.png"
+              alt="Solray"
+              width={96}
+              height={96}
+              priority
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
           <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em]" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</p>
