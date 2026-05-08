@@ -473,7 +473,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
 
   return (
     <div className="mt-8">
-      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-3" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-3" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
         Between you
       </p>
 
@@ -546,7 +546,7 @@ function Lens({ label, body }: { label: string; body?: string }) {
   if (!body) return null;
   return (
     <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-      <p className="font-body text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: "rgb(var(--rgb-wisteria) / 0.85)" }}>
+      <p className="font-body text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
         {label}
       </p>
       <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 15 }}>{body}</p>
