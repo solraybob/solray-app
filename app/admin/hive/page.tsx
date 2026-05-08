@@ -220,6 +220,11 @@ function HiveDashboardInner() {
               <Panel title="Run a phase">
                 <div className="grid grid-cols-1 gap-2">
                   <ActionButton
+                    label="Backfill signals"
+                    pending={actionPending === "Backfill signals"}
+                    onClick={() => void fireAction("/admin/hive/backfill", "Backfill signals")}
+                  />
+                  <ActionButton
                     label="Discover cohorts"
                     pending={actionPending === "Discover cohorts"}
                     onClick={() => void fireAction("/admin/hive/discover", "Discover cohorts")}
