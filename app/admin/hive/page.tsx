@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 
 type GraphNode = {
@@ -75,8 +75,15 @@ interface PhysicsNode {
 }
 
 export default function HiveDashboardPage() {
+  return (
+    <ProtectedRoute>
+      <HiveDashboardInner />
+    </ProtectedRoute>
+  );
+}
+
+function HiveDashboardInner() {
   const { token } = useAuth();
-  const router = useRouter();
   const [graph, setGraph] = useState<GraphData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +101,7 @@ export default function HiveDashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401 || res.status === 403) {
-        setError("Not authorized.");
+        setError("This area is for Solray operators only.");
         setLoading(false);
         return;
       }
@@ -107,11 +114,11 @@ export default function HiveDashboardPage() {
     }
   };
 
+  // No /login redirect here. ProtectedRoute (wrapping this component)
+  // owns auth routing. A racing router.replace from this effect would
+  // bounce the user through /login then back to /today.
   useEffect(() => {
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+    if (!token) return;
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
@@ -136,7 +143,7 @@ export default function HiveDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep text-text-primary">
+    <div className="min-h-[100dvh] bg-forest-deep text-text-primary" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
         <header className="mb-8 flex items-center justify-between gap-4">
           <div>
