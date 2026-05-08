@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch, ApiError } from "@/lib/api";
 
 type GraphNode = {
   id: string;
@@ -90,7 +91,9 @@ function HiveDashboardInner() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
 
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+  // No local apiUrl needed; apiFetch reads it from lib/api.ts (centrally
+  // .trim()ed). Keeping page-level URL out of this file matches the
+  // working /admin/marketing pattern.
 
   const [debug, setDebug] = useState<string | null>(null);
 
@@ -99,28 +102,27 @@ function HiveDashboardInner() {
     setLoading(true);
     setError(null);
     setDebug(null);
-    const fullUrl = `${apiUrl}/admin/hive/graph`;
-    // Capture the actual URL bytes so we can see if there's whitespace
-    // sneaking in. JSON.stringify reveals \n / \r / non-printable chars.
-    const urlDebug = JSON.stringify(fullUrl);
     const tokenLen = (token || "").length;
     try {
-      const res = await fetch(fullUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401 || res.status === 403) {
+      // Use apiFetch (the same path /admin/marketing uses successfully).
+      // Eliminates raw fetch as a variable. apiFetch reads API_URL from
+      // lib/api.ts which is .trim()ed, sets Content-Type+Authorization,
+      // and throws ApiError on non-2xx. If THIS still fails on the hive
+      // route but works on /admin/metrics, the route itself is the bug.
+      const data = await apiFetch("/admin/hive/graph", {}, token);
+      setGraph(data);
+    } catch (e: unknown) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
         setError("This area is for Solray operators only.");
-        setDebug(`URL: ${urlDebug} · token length: ${tokenLen} · response: ${res.status}`);
+        setDebug(`apiFetch · status: ${e.status} · token length: ${tokenLen}`);
         setLoading(false);
         return;
       }
-      const data = await res.json();
-      setGraph(data);
-    } catch (e: unknown) {
       const name = e instanceof Error ? e.name : "Error";
       const msg  = e instanceof Error ? e.message : String(e);
+      const status = e instanceof ApiError ? e.status : "n/a";
       setError(`${name}: ${msg}`);
-      setDebug(`URL: ${urlDebug} · token length: ${tokenLen} · UA: ${typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : "?"}`);
+      setDebug(`apiFetch · status: ${status} · token length: ${tokenLen} · UA: ${typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : "?"}`);
     } finally {
       setLoading(false);
     }
@@ -140,11 +142,7 @@ function HiveDashboardInner() {
     setActionPending(label);
     setActionMsg(null);
     try {
-      const res = await fetch(`${apiUrl}${path}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const out = await res.json().catch(() => ({}));
+      const out = await apiFetch(path, { method: "POST" }, token);
       setActionMsg(`${label}: ${JSON.stringify(out)}`);
       void load();
     } catch (e: unknown) {
