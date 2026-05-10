@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Solray</string>
+    <string name="title_activity_main">Solray</string>
+    <string name="package_name">ai.solray.app</string>
+    <string name="custom_url_scheme">ai.solray.app</string>
+</resources>
