@@ -46,6 +46,36 @@ type GraphData = {
   top_cohorts: Array<{ name: string; member_count: number; confidence: number }>;
 };
 
+// Voice-audit data shapes that mirror /admin/oracle-audit/summary + /lowest.
+// Kept in this file rather than a shared types module because they're
+// used only here; if a second consumer ever shows up we'll lift.
+type AuditSummary = {
+  total_audited: number;
+  avg_score: number | null;
+  median_score: number | null;
+  score_buckets: Record<"0-39" | "40-59" | "60-79" | "80-99" | "100", number>;
+  top_violations: Array<{ tag: string; count: number }>;
+  by_day: Array<{ date: string; count: number; avg_score: number }>;
+  by_prompt_version: Record<string, { count: number; avg_score: number }>;
+  window_days: number;
+};
+
+type AuditLowest = {
+  items: Array<{
+    id: number;
+    created_at: string;
+    user_id: string | null;
+    score: number;
+    violations: string[];
+    notes: string | null;
+    user_message_excerpt: string | null;
+    reply_excerpt: string;
+    model_used: string;
+    oracle_prompt_version: string;
+  }>;
+  count: number;
+};
+
 // Sun-sign element families → colour. Aligns with the extended palette so
 // the graph reads as Solray, not as a generic D3 demo.
 const ELEMENT_COLOR: Record<string, string> = {
@@ -90,6 +120,11 @@ function HiveDashboardInner() {
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
+  const [audit, setAudit] = useState<AuditSummary | null>(null);
+  const [auditLowest, setAuditLowest] = useState<AuditLowest | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+  const [showLowest, setShowLowest] = useState(false);
 
   // No local apiUrl needed; apiFetch reads it from lib/api.ts (centrally
   // .trim()ed). Keeping page-level URL out of this file matches the
@@ -128,12 +163,36 @@ function HiveDashboardInner() {
     }
   };
 
+  const loadAudit = async () => {
+    if (!token) return;
+    setAuditLoading(true);
+    setAuditError(null);
+    try {
+      const [summary, lowest] = await Promise.all([
+        apiFetch("/admin/oracle-audit/summary", {}, token) as Promise<AuditSummary>,
+        apiFetch("/admin/oracle-audit/lowest?limit=10", {}, token) as Promise<AuditLowest>,
+      ]);
+      setAudit(summary);
+      setAuditLowest(lowest);
+    } catch (e: unknown) {
+      // Non-fatal: the rest of the dashboard still renders. The audit
+      // section just shows an error block. Keeping audit failures from
+      // breaking the hive view is intentional. The hive itself is the
+      // primary value here, and audit is supplementary.
+      const msg = e instanceof Error ? e.message : String(e);
+      setAuditError(msg);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
   // No /login redirect here. ProtectedRoute (wrapping this component)
   // owns auth routing. A racing router.replace from this effect would
   // bounce the user through /login then back to /today.
   useEffect(() => {
     if (!token) return;
     void load();
+    void loadAudit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -189,6 +248,16 @@ function HiveDashboardInner() {
         {graph && <CountsRow counts={graph.counts} />}
 
         {graph && (
+          <>
+          <OracleVoiceHealthSection
+            audit={audit}
+            lowest={auditLowest}
+            loading={auditLoading}
+            error={auditError}
+            showLowest={showLowest}
+            onToggleLowest={() => setShowLowest((v) => !v)}
+            onRefresh={() => void loadAudit()}
+          />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
             <div className="lg:col-span-2 rounded-2xl border border-forest-border bg-forest-card/30 overflow-hidden">
               <HiveGraph nodes={graph.nodes} edges={graph.edges} />
@@ -258,6 +327,7 @@ function HiveDashboardInner() {
               </Panel>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>
@@ -306,6 +376,221 @@ function ActionButton({ label, onClick, pending }: { label: string; onClick: () 
     >
       {pending ? "Running…" : label}
     </button>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Oracle Voice Health: the silent QA layer rendered as a section.
+// GPT-4o reads each Oracle reply against the voice rules; this is where
+// the rolling 7-day picture lives. Score distribution + top recurring
+// violations + tap-through into the actual lowest-scoring chats.
+// ───────────────────────────────────────────────────────────────────────────
+
+function OracleVoiceHealthSection({
+  audit,
+  lowest,
+  loading,
+  error,
+  showLowest,
+  onToggleLowest,
+  onRefresh,
+}: {
+  audit: AuditSummary | null;
+  lowest: AuditLowest | null;
+  loading: boolean;
+  error: string | null;
+  showLowest: boolean;
+  onToggleLowest: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <section className="mt-12 rounded-2xl border border-forest-border bg-forest-card/30 px-6 py-6">
+      <header className="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <p className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun mb-1">
+            Behind the voice
+          </p>
+          <h2 className="font-heading text-xl text-text-primary" style={{ fontWeight: 300 }}>
+            Oracle Voice Health
+          </h2>
+          <p className="font-body text-text-secondary text-[13px] mt-1">
+            A second pair of eyes on every reply. Rolling {audit?.window_days ?? 7} days, scored against the voice rules.
+          </p>
+        </div>
+        <button
+          onClick={onRefresh}
+          className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
+        >
+          {loading ? "Reading…" : "Refresh"}
+        </button>
+      </header>
+
+      {error && (
+        <p className="font-mono text-[11px] text-text-secondary break-all leading-relaxed">
+          Audit unavailable: {error}
+        </p>
+      )}
+
+      {!error && audit && audit.total_audited === 0 && (
+        <p className="font-body text-text-secondary text-[13px]">
+          No audited replies yet in the last 7 days. Once the Oracle responds to
+          someone with OPENAI_API_KEY set in production, the first row will land
+          within a few seconds.
+        </p>
+      )}
+
+      {!error && audit && audit.total_audited > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Score summary tiles */}
+          <div className="space-y-3">
+            <ScoreTile label="Avg score" value={audit.avg_score?.toFixed(1) ?? "?"} />
+            <ScoreTile label="Median" value={String(audit.median_score ?? "?")} />
+            <ScoreTile label="Audited" value={String(audit.total_audited)} sub="replies, last 7 days" />
+          </div>
+
+          {/* Score distribution histogram */}
+          <div className="lg:col-span-2 space-y-5">
+            <div>
+              <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-3">
+                Score distribution
+              </p>
+              <ScoreHistogram buckets={audit.score_buckets} total={audit.total_audited} />
+            </div>
+
+            {/* Top violations */}
+            <div>
+              <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-3">
+                Top recurring violations
+              </p>
+              {audit.top_violations.length === 0 ? (
+                <p className="font-body text-text-secondary text-[12px]">
+                  Clean. No flagged violations in this window.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {audit.top_violations.slice(0, 8).map((v) => (
+                    <li key={v.tag} className="text-[12px] font-body flex items-center justify-between gap-3">
+                      <span className="text-text-primary font-mono">{v.tag}</span>
+                      <span className="text-text-secondary tabular-nums">{v.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lowest-scoring drill-down */}
+      {!error && lowest && lowest.count > 0 && (
+        <div className="mt-6 pt-6 border-t border-forest-border">
+          <button
+            onClick={onToggleLowest}
+            className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun hover:opacity-80 transition-opacity"
+          >
+            {showLowest ? "Hide" : "Show"} {lowest.count} lowest-scoring replies
+          </button>
+          {showLowest && (
+            <ul className="mt-5 space-y-5">
+              {lowest.items.map((item) => (
+                <li key={item.id} className="rounded-xl border border-forest-border bg-forest-deep/40 px-4 py-4">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="font-heading text-text-primary tabular-nums" style={{ fontSize: 18 }}>
+                      {item.score}
+                    </span>
+                    <span className="font-mono text-[10px] text-text-secondary">
+                      {new Date(item.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  {item.violations.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {item.violations.map((v) => (
+                        <span
+                          key={v}
+                          className="inline-block font-mono text-[10px] px-2 py-0.5 rounded border border-forest-border text-text-secondary"
+                        >
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {item.notes && (
+                    <p className="font-body italic text-text-secondary text-[12px] mb-3">
+                      {item.notes}
+                    </p>
+                  )}
+                  {item.user_message_excerpt && (
+                    <p className="font-body text-[12px] text-text-secondary mb-2">
+                      <span className="text-text-tertiary mr-2">user</span>
+                      {item.user_message_excerpt}
+                    </p>
+                  )}
+                  <p className="font-body text-[12px] text-text-primary whitespace-pre-wrap">
+                    <span className="text-text-tertiary mr-2">oracle</span>
+                    {item.reply_excerpt}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ScoreTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-forest-border bg-forest-deep/40 px-4 py-4">
+      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-text-secondary">{label}</p>
+      <p className="font-heading text-text-primary mt-1 tabular-nums" style={{ fontSize: 28, fontWeight: 300 }}>
+        {value}
+      </p>
+      {sub && <p className="font-body text-[11px] text-text-secondary mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function ScoreHistogram({
+  buckets,
+  total,
+}: {
+  buckets: Record<"0-39" | "40-59" | "60-79" | "80-99" | "100", number>;
+  total: number;
+}) {
+  // Color the buckets by health: low scores get a warmer hue from the
+  // extended palette (ember = something to attend to), high scores stay
+  // quiet (mist = neutral) and 100 gets amber so a clean sweep is the
+  // visual reward. Same palette as the rest of Solray; nothing standalone.
+  const order: Array<"0-39" | "40-59" | "60-79" | "80-99" | "100"> = [
+    "0-39", "40-59", "60-79", "80-99", "100",
+  ];
+  const colorFor = (b: string) => {
+    if (b === "0-39") return "#d47a52";   // ember
+    if (b === "40-59") return "#d49a52";  // ember-warm
+    if (b === "60-79") return "#a09a72";  // moss-faded
+    if (b === "80-99") return "#9babb9";  // mist
+    return "#f39230";                     // amber-sun for 100
+  };
+  return (
+    <div className="space-y-2">
+      {order.map((b) => {
+        const count = buckets[b] || 0;
+        const pct = total > 0 ? (count / total) * 100 : 0;
+        return (
+          <div key={b} className="flex items-center gap-3">
+            <span className="font-mono text-[11px] text-text-secondary w-12 text-right">{b}</span>
+            <div className="flex-1 h-3 rounded-full bg-forest-deep/60 overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.max(pct, count > 0 ? 1.5 : 0)}%`, backgroundColor: colorFor(b) }}
+              />
+            </div>
+            <span className="font-mono text-[11px] text-text-secondary tabular-nums w-12">{count}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
