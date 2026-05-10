@@ -220,7 +220,7 @@ function HiveDashboardInner() {
               The Collective
             </p>
             <h1 className="font-heading text-2xl lg:text-3xl text-text-primary" style={{ fontWeight: 300 }}>
-              Hive Mind
+              Akashic Record
             </h1>
             <p className="font-body text-text-secondary text-[13px] mt-1">
               Each soul is a node. Lines connect souls who share chart frequencies.
@@ -791,7 +791,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       viewBox={`0 0 ${W} ${H}`}
       className="w-full h-[540px]"
       role="img"
-      aria-label="Hive Mind: each node is a soul; lines connect souls who share chart components. Hover to pause the simulation."
+      aria-label="Akashic Record: each node is a soul; lines connect souls who share chart components. Hover to pause the simulation."
       data-tick={tick}
       onMouseEnter={() => { hoveringRef.current = true; setTick((t) => (t + 1) % 1_000_000); }}
       onMouseLeave={() => { hoveringRef.current = false; }}
