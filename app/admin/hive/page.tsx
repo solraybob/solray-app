@@ -266,7 +266,7 @@ function HiveDashboardInner() {
               <Panel title="Cohorts emerging">
                 {graph.top_cohorts.length === 0 ? (
                   <p className="font-body text-text-secondary text-[12px]">
-                    No cohorts yet. The hive needs at least 10 people sharing one
+                    No cohorts yet. The Akashic Record needs at least 10 people sharing one
                     chart trait before a cohort can form. Hit Discover Cohorts
                     once the user count grows.
                   </p>
