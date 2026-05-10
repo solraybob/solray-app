@@ -491,51 +491,110 @@ function OracleVoiceHealthSection({
             {showLowest ? "Hide" : "Show"} {lowest.count} lowest-scoring replies
           </button>
           {showLowest && (
-            <ul className="mt-5 space-y-5">
+            <>
+            <p className="font-body italic text-text-secondary text-[11px] mt-3 mb-4 leading-relaxed">
+              Privacy posture: scores, violation tags, and the auditor&apos;s notes
+              are visible by default because they describe Oracle behavior, not
+              user content. The actual user message and Oracle reply text stay
+              hidden behind an explicit reveal per row, since chats with the
+              Oracle are intimate by design and admin access alone is not a
+              consent surface.
+            </p>
+            <ul className="space-y-5">
               {lowest.items.map((item) => (
-                <li key={item.id} className="rounded-xl border border-forest-border bg-forest-deep/40 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <span className="font-heading text-text-primary tabular-nums" style={{ fontSize: 18 }}>
-                      {item.score}
-                    </span>
-                    <span className="font-mono text-[10px] text-text-secondary">
-                      {new Date(item.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  {item.violations.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {item.violations.map((v) => (
-                        <span
-                          key={v}
-                          className="inline-block font-mono text-[10px] px-2 py-0.5 rounded border border-forest-border text-text-secondary"
-                        >
-                          {v}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {item.notes && (
-                    <p className="font-body italic text-text-secondary text-[12px] mb-3">
-                      {item.notes}
-                    </p>
-                  )}
-                  {item.user_message_excerpt && (
-                    <p className="font-body text-[12px] text-text-secondary mb-2">
-                      <span className="text-text-tertiary mr-2">user</span>
-                      {item.user_message_excerpt}
-                    </p>
-                  )}
-                  <p className="font-body text-[12px] text-text-primary whitespace-pre-wrap">
-                    <span className="text-text-tertiary mr-2">oracle</span>
-                    {item.reply_excerpt}
-                  </p>
-                </li>
+                <AuditRow key={item.id} item={item} />
               ))}
             </ul>
+            </>
           )}
         </div>
       )}
     </section>
+  );
+}
+
+function AuditRow({
+  item,
+}: {
+  item: AuditLowest["items"][number];
+}) {
+  // Per-row reveal state. Default: text is hidden. Click reveals only this
+  // row's user message + reply, in-place. We deliberately do NOT show user_id
+  // or any other identifying handle in the rendered card; the reveal only
+  // exposes the chat content itself, with the caller's awareness that this
+  // is a privileged voice-debugging action.
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <li className="rounded-xl border border-forest-border bg-forest-deep/40 px-4 py-4">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="font-heading text-text-primary tabular-nums" style={{ fontSize: 18 }}>
+          {item.score}
+        </span>
+        <span className="font-mono text-[10px] text-text-secondary">
+          {new Date(item.created_at).toLocaleString()}
+        </span>
+      </div>
+      {item.violations.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {item.violations.map((v) => (
+            <span
+              key={v}
+              className="inline-block font-mono text-[10px] px-2 py-0.5 rounded border border-forest-border text-text-secondary"
+            >
+              {v}
+            </span>
+          ))}
+        </div>
+      )}
+      {item.notes && (
+        <p className="font-body italic text-text-secondary text-[12px] mb-3">
+          {item.notes}
+        </p>
+      )}
+
+      {!revealed && (
+        <button
+          onClick={() => {
+            const ok = typeof window !== "undefined"
+              ? window.confirm(
+                  "Reveal the actual user message and Oracle reply for this row?\n\n"
+                  + "This is privileged voice-debugging access. The text you are "
+                  + "about to read is private chat content the user shared with "
+                  + "the Oracle, not material they consented to share with admins."
+                )
+              : true;
+            if (ok) setRevealed(true);
+          }}
+          className="font-body text-[11px] tracking-[0.18em] uppercase text-amber-sun hover:opacity-80 transition-opacity"
+        >
+          Reveal text (voice debugging)
+        </button>
+      )}
+
+      {revealed && (
+        <div className="mt-2 rounded-lg border border-amber-sun/30 bg-amber-sun/5 px-3 py-3">
+          <p className="font-body text-[10px] tracking-[0.18em] uppercase text-amber-sun mb-2">
+            Revealed for voice debugging
+          </p>
+          {item.user_message_excerpt && (
+            <p className="font-body text-[12px] text-text-secondary mb-2">
+              <span className="text-text-tertiary mr-2">user</span>
+              {item.user_message_excerpt}
+            </p>
+          )}
+          <p className="font-body text-[12px] text-text-primary whitespace-pre-wrap">
+            <span className="text-text-tertiary mr-2">oracle</span>
+            {item.reply_excerpt}
+          </p>
+          <button
+            onClick={() => setRevealed(false)}
+            className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary hover:opacity-80 transition-opacity mt-3"
+          >
+            Hide again
+          </button>
+        </div>
+      )}
+    </li>
   );
 }
 
