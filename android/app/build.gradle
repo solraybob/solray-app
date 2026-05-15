@@ -16,10 +16,27 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // Solray release signing. Keystore lives outside the repo at
+            // ~/.solray-keys/solray-release.keystore. Password read from
+            // SOLRAY_KEYSTORE_PASSWORD env var so it never lands in the repo.
+            // Generated 2026-05-14, 27-year validity. Alias: solray.
+            // SHA-1: E2:C3:73:37:E9:E8:84:C6:D2:09:B9:80:C0:2E:A7:BD:82:5D:51:F9
+            def keystoreFile = System.getenv("SOLRAY_KEYSTORE") ?:
+                "${System.getProperty('user.home')}/.solray-keys/solray-release.keystore"
+            def keystorePass = System.getenv("SOLRAY_KEYSTORE_PASSWORD") ?: ""
+            storeFile file(keystoreFile)
+            storePassword keystorePass
+            keyAlias "solray"
+            keyPassword keystorePass
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
