@@ -428,10 +428,25 @@ function ChatPageInner() {
       return;
     }
 
-    const charDelay = msg.content.length > 600 ? 5 : 10;
+    // Reveal speed tuned to feel like fluent reading, not a typewriter.
+    // Long messages reveal a handful of characters per tick so a 1500-char
+    // response finishes in under 4 seconds instead of 15.
+    const len = msg.content.length;
+    let charsPerTick: number;
+    let tickDelay: number;
+    if (len > 1200) {
+      charsPerTick = 5;
+      tickDelay = 12;
+    } else if (len > 600) {
+      charsPerTick = 3;
+      tickDelay = 12;
+    } else {
+      charsPerTick = 1;
+      tickDelay = 10;
+    }
     const timer = setTimeout(() => {
-      setStreamedLength((l) => l + 1);
-    }, charDelay);
+      setStreamedLength((l) => Math.min(l + charsPerTick, len));
+    }, tickDelay);
 
     return () => clearTimeout(timer);
   }, [streamingId, streamedLength, messages]);
@@ -811,8 +826,16 @@ function ChatPageInner() {
 
     const onScroll = () => {
       if (isProgrammaticScroll.current) return;
+      // Re-enable auto-scroll only when the user has explicitly scrolled
+      // all the way back to the bottom themselves. Earlier this used a
+      // 30px threshold, which snapped the user back down whenever their
+      // momentum scroll briefly crossed near-bottom mid-drag, making
+      // scroll-up during streaming feel broken. With a 4px floor (and
+      // the explicit "jump to bottom" button still available below)
+      // they stay in control of their position the moment they touch
+      // the screen.
       const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (dist < 30) {
+      if (dist <= 4) {
         autoScrollRef.current = true;
         setAutoScroll(true);
       }
