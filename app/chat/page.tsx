@@ -1696,21 +1696,7 @@ function ChatPageInner() {
               )}
 
             {sending && (
-              <div className="flex justify-start animate-fade-in pl-2">
-                <img
-                  src="/logo.jpg"
-                  alt="thinking"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    animation: "spin 1.2s linear infinite",
-                    objectFit: "cover",
-                    boxShadow: "0 0 24px rgba(155,134,160,0.45)",
-                    filter: "drop-shadow(0 0 12px rgba(155,134,160,0.35))",
-                  }}
-                />
-              </div>
+              <ThinkingIndicator />
             )}
 
           </div>
@@ -1968,6 +1954,62 @@ function ChatPageInner() {
 
       </div>
     </ProtectedRoute>
+  );
+}
+
+// Rotating presence copy shown beneath the spinning sun while the Oracle
+// is forming its reply. The first phrase appears immediately so the user
+// always sees presence. Subsequent phrases fade in only if the wait runs
+// long, so a fast reply never flashes through three pieces of copy.
+// Lines are written in the Oracle's voice: quiet, present, never busy.
+const THINKING_PHRASES = [
+  "Listening.",
+  "Reading your chart against today.",
+  "Letting it settle before I speak.",
+];
+
+function ThinkingIndicator() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    // Step to the next phrase every 2.6 seconds, capped at the last one
+    // so we don't loop through copy if the API is genuinely slow.
+    const t1 = setTimeout(() => setIdx(1), 2600);
+    const t2 = setTimeout(() => setIdx(2), 5400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-start gap-3 animate-fade-in pl-2">
+      <img
+        src="/logo.jpg"
+        alt="thinking"
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          animation: "spin 1.2s linear infinite",
+          objectFit: "cover",
+          boxShadow: "0 0 24px rgba(155,134,160,0.45)",
+          filter: "drop-shadow(0 0 12px rgba(155,134,160,0.35))",
+        }}
+      />
+      <p
+        key={idx}
+        className="animate-fade-in"
+        style={{
+          fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+          fontStyle: "italic",
+          fontWeight: 400,
+          fontSize: "1rem",
+          color: "var(--text-secondary, #8a9e8d)",
+          opacity: 0.82,
+          letterSpacing: "0.01em",
+          marginLeft: 4,
+        }}
+      >
+        {THINKING_PHRASES[idx]}
+      </p>
+    </div>
   );
 }
 
