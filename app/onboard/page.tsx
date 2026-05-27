@@ -198,6 +198,18 @@ export default function OnboardPage() {
     setError("");
     setLoading(true);
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+    // Capture invite code from the URL (?invite=CODE) and the saved
+    // language preference, both optional. Backend defaults handle their
+    // absence cleanly: no inviter attribution, English locale.
+    let inviteCode: string | null = null;
+    let language: string | null = null;
+    try {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        inviteCode = params.get("invite") || params.get("ref") || null;
+        language = localStorage.getItem("solray_language");
+      }
+    } catch { /* ignore */ }
     try {
       const res = await fetch(`${apiUrl}/users/register`, {
         method: "POST",
@@ -211,6 +223,8 @@ export default function OnboardPage() {
           email,
           password,
           hive_consent: hiveConsent,
+          invite_code: inviteCode || undefined,
+          language: language || undefined,
         }),
       });
       if (!res.ok) {
