@@ -6,6 +6,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  language?: string;
 }
 
 interface AuthContextType {
@@ -70,7 +71,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await res.json();
     const userObj = data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email };
-    setToken(data.token || data.access_token, { id: userObj.id || data.user_id, email: userObj.email || email, name: userObj.name || email });
+    const lang = userObj.language || data.language;
+    // Mirror the server's saved language preference onto the localStorage
+    // slot LanguageProvider reads. If absent, the provider falls back to
+    // browser locale / 'en' on its own.
+    if (lang) {
+      try {
+        localStorage.setItem("solray_language", lang);
+        // Notify the LanguageProvider in the same tab so the UI flips
+        // immediately without waiting for a navigation/mount cycle.
+        window.dispatchEvent(new CustomEvent("solray:language-sync", { detail: lang }));
+      } catch { /* ignore */ }
+    }
+    setToken(
+      data.token || data.access_token,
+      {
+        id:       userObj.id || data.user_id,
+        email:    userObj.email || email,
+        name:     userObj.name || email,
+        language: lang,
+      },
+    );
   };
 
   const logout = () => {

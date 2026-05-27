@@ -1,0 +1,55 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "continue": "Continue",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error_generic": "Something went wrong. Try again.",
+    "settings": "Settings",
+    "sign_out": "Sign out"
+  },
+  "language": {
+    "picker_title": "Choose your language",
+    "picker_subtitle": "Solray speaks with you in your language. You can change this later in Settings.",
+    "label_en": "English",
+    "label_es": "Spanish (Latin America)",
+    "saved": "Language saved"
+  },
+  "onboard": {
+    "welcome": "Welcome to Solray",
+    "tagline": "Living by design.",
+    "begin": "Begin"
+  },
+  "today": {
+    "title": "Today",
+    "energy_levels": "Energy levels",
+    "ask_oracle": "Ask the Oracle",
+    "mental": "Mental",
+    "emotional": "Emotional",
+    "physical": "Physical",
+    "intuitive": "Intuitive"
+  },
+  "chat": {
+    "placeholder": "Speak from where you are.",
+    "send": "Send",
+    "recording": "Recording...",
+    "thinking_listening": "Listening.",
+    "thinking_reading": "Reading your chart against today.",
+    "thinking_settle": "Letting it settle before I speak."
+  },
+  "nav": {
+    "today": "Today",
+    "chat": "Oracle",
+    "chart": "Chart",
+    "souls": "Souls"
+  },
+  "settings": {
+    "title": "Settings",
+    "language_section": "Language",
+    "account_section": "Account",
+    "privacy_section": "Privacy"
+  }
+}

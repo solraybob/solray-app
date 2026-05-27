@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import LanguagePicker from "@/components/LanguagePicker";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -62,7 +63,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6 relative">
+      {/* Quiet language switcher in the corner. Users who arrived in
+          Spanish (browser locale or chosen on a previous visit) see the
+          page in Spanish already; this lets the rest opt in before they
+          even create an account. */}
+      <div className="absolute top-4 right-4">
+        <LanguagePicker layout="inline" />
+      </div>
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo — same sun as the landing hero, transparent PNG with the
             amber drop-shadow halo. No circle clip; the silhouette IS the

@@ -24,6 +24,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { apiFetch } from "@/lib/api";
+import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 
 interface CitySuggestion { display: string; lat: number; lon: number; }
@@ -504,6 +505,14 @@ export default function SettingsPage() {
                 <ThemeButton active={theme === "dark"}  onClick={() => setTheme("dark")}  label="Dark"  />
                 <ThemeButton active={theme === "light"} onClick={() => setTheme("light")} label="Light" />
               </div>
+            </Section>
+
+            {/* ── 4a. Language ─────────────────────────────────────────── */}
+            <Section
+              label="Language"
+              hint="The Oracle responds in your chosen language. Switch any time."
+            >
+              <LanguagePicker layout="list" />
             </Section>
 
             {/* ── 4b. Analytics privacy ────────────────────────────────── */}

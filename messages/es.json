@@ -1,0 +1,55 @@
+{
+  "common": {
+    "next": "Siguiente",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "error_generic": "Algo salió mal. Inténtalo de nuevo.",
+    "settings": "Ajustes",
+    "sign_out": "Cerrar sesión"
+  },
+  "language": {
+    "picker_title": "Elige tu idioma",
+    "picker_subtitle": "Solray te habla en tu idioma. Puedes cambiarlo más tarde en Ajustes.",
+    "label_en": "Inglés",
+    "label_es": "Español (Latinoamérica)",
+    "saved": "Idioma guardado"
+  },
+  "onboard": {
+    "welcome": "Bienvenido a Solray",
+    "tagline": "Vivir por diseño.",
+    "begin": "Empezar"
+  },
+  "today": {
+    "title": "Hoy",
+    "energy_levels": "Niveles de energía",
+    "ask_oracle": "Pregunta al Oráculo",
+    "mental": "Mental",
+    "emotional": "Emocional",
+    "physical": "Físico",
+    "intuitive": "Intuitivo"
+  },
+  "chat": {
+    "placeholder": "Habla desde donde estás.",
+    "send": "Enviar",
+    "recording": "Grabando...",
+    "thinking_listening": "Escuchando.",
+    "thinking_reading": "Leyendo tu carta contra el día de hoy.",
+    "thinking_settle": "Dejando que asiente antes de hablar."
+  },
+  "nav": {
+    "today": "Hoy",
+    "chat": "Oráculo",
+    "chart": "Carta",
+    "souls": "Almas"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "language_section": "Idioma",
+    "account_section": "Cuenta",
+    "privacy_section": "Privacidad"
+  }
+}
