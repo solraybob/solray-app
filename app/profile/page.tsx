@@ -955,7 +955,7 @@ export default function ProfilePage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
       >
-        {/* Header: Souls reference pattern. Tag left, SKYWALKER center, edit right. */}
+        {/* Header: Souls reference pattern. Tag left, SOLRAY center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--moss)" }}>
@@ -966,7 +966,7 @@ export default function ProfilePage() {
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
-                SKYWALKER
+                SOLRAY
               </h1>
               <button
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"

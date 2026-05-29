@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+/* Fonts are now self-hosted via next/font (see app/layout.tsx), which sets
+   --font-heading (Cormorant Garamond) and --font-body (Inter). The old
+   render-blocking Google Fonts @import was removed from here. */
 
 @tailwind base;
 @tailwind components;
@@ -99,7 +101,7 @@
 html, body {
   background-color: rgb(var(--rgb-bg-deep));
   color: rgb(var(--rgb-text-primary));
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -129,7 +131,7 @@ html, body {
 }
 
 h1, h2, h3 {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-heading), 'Cormorant Garamond', Georgia, serif;
 }
 
 /* Scrollbar styling */

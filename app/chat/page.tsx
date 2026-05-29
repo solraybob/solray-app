@@ -237,6 +237,19 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
     ? "font-body italic text-text-secondary leading-relaxed"
     : "font-body text-text-primary leading-relaxed";
 
+  // While streaming, render plain text. react-markdown re-parses the entire
+  // string on every reveal tick, which is a re-parse storm on long replies
+  // and the main source of jank in chat. Plain text during the stream is
+  // cheap; markdown is parsed exactly once when the message finalizes.
+  if (showCursor) {
+    return (
+      <div className={wrapClass} style={{ fontSize: 17 }}>
+        <span className="whitespace-pre-wrap">{content}</span>
+        <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle" />
+      </div>
+    );
+  }
+
   return (
     <div className={wrapClass} style={{ fontSize: 17 }}>
       <ReactMarkdown

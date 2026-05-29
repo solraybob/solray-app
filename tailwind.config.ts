@@ -41,8 +41,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ["Cormorant Garamond", "Georgia", "serif"],
-        body: ["Inter", "system-ui", "sans-serif"],
+        heading: ["var(--font-heading)", "Cormorant Garamond", "Georgia", "serif"],
+        body: ["var(--font-body)", "Inter", "system-ui", "sans-serif"],
       },
       // Type-scale bump for readability. Default Tailwind sizes
       // (xs=12px, sm=14px, base=16px) read as cramped on this app's

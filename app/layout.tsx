@@ -1,5 +1,25 @@
 import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+
+// Self-hosted, preloaded, swap-display fonts. Replaces the render-blocking
+// Google Fonts @import that used to sit at the top of globals.css (a chained
+// third-party round trip on every cold load). next/font inlines these
+// same-origin and pins metrics so there is no FOUT flash or layout shift.
+// The CSS variables below feed --font-heading / --font-body, which both
+// globals.css and inline styles already reference.
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-heading",
+  display: "swap",
+});
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
 import { AuthProvider } from "@/lib/auth-context";
 import { SubscriptionProvider } from "@/lib/subscription-context";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -35,7 +55,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale: pinch-zoom must stay available (accessibility). iOS
+  // Safari ignores a lock anyway; locking it only hurts Android + a11y.
   themeColor: "var(--bg-deep)",
 };
 
@@ -49,7 +70,7 @@ export default function RootLayout({
     // mutates <html data-theme="..."> before React hydrates. Without it,
     // React would log a hydration mismatch on every cold load for users
     // who chose the non-default theme on a previous visit.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
       </head>

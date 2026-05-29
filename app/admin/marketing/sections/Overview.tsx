@@ -92,11 +92,11 @@ function Banner({ kind, text }: { kind: "error" | "info"; text: string }) {
 }
 
 function fmt(n: number | null): string {
-  if (n === null || n === undefined) return "—";
+  if (n === null || n === undefined) return "-";
   return n.toLocaleString();
 }
 
 function fmtUsd(n: number | null): string {
-  if (n === null || n === undefined) return "—";
+  if (n === null || n === undefined) return "-";
   return "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }

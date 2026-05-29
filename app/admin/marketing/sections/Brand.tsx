@@ -43,7 +43,7 @@ const VOICE_RULES = [
   },
   {
     rule: "Never reference the books in public copy",
-    body: "The six philosophy books are internal framework context. Landing pages, app copy, social posts, the Higher Self — none of them surface the books explicitly.",
+    body: "The six philosophy books are internal framework context. Landing pages, app copy, social posts, the Higher Self: none of them surface the books explicitly.",
   },
   {
     rule: "Specific over universal",

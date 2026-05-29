@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solray-v37';
+const CACHE_NAME = 'solray-v38';
 
 // Only cache static assets, NOT HTML pages
 const urlsToCache = [
@@ -38,6 +38,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+
+  // Build assets under /_next/static/ are content-hashed and immutable: the
+  // filename changes whenever the bytes change, so a cached entry can NEVER
+  // be stale. Cache-first here makes PWA relaunch fast (JS, CSS, and the
+  // self-hosted next/font files load from cache) with zero stale-JS risk.
+  // Old builds' chunks are evicted when CACHE_NAME bumps on the next deploy.
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((resp) => {
+            if (resp && resp.status === 200) cache.put(event.request, resp.clone());
+            return resp;
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  // Pre-cached static assets (icons/logo). Everything else (HTML, the API,
+  // cross-origin) is left to the browser, preserving the earlier fix that
+  // stopped the SW from breaking cross-origin fetches.
   if (!urlsToCache.includes(url.pathname)) return;
 
   event.respondWith(

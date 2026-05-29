@@ -12,6 +12,10 @@ import {
   activateSubscription,
   cancelSubscription,
 } from "@/lib/subscription";
+import {
+  launchNativePurchase,
+  setPurchaseListener,
+} from "@/lib/play-billing";
 
 // ---------------------------------------------------------------------------
 // Subscribe / Manage Subscription Page
@@ -437,8 +441,40 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  * close the app and visit solray.ai on their own.
  */
 function NativeMembershipView() {
-  const router = useRouter();
   const { logout } = useAuth();
+  const { refresh } = useSubscription();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Wire the store callback once: when the backend confirms a verified
+  // purchase, refresh entitlement so the page re-renders into the
+  // membership view. A failure surfaces inline.
+  useEffect(() => {
+    setPurchaseListener((outcome) => {
+      if (outcome.ok) {
+        void refresh();
+        setLoading(false);
+        setError("");
+      } else {
+        setLoading(false);
+        setError(outcome.error || "Purchase could not be completed.");
+      }
+    });
+    return () => setPurchaseListener(null);
+  }, [refresh]);
+
+  const handleSubscribe = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      // Opens the native store sheet. The approved -> verify -> finish flow
+      // runs in play-billing.ts; the listener above flips state on success.
+      await launchNativePurchase();
+    } catch (e) {
+      setLoading(false);
+      setError(e instanceof Error ? e.message : "Purchase could not be started.");
+    }
+  };
 
   return (
     <div className="min-h-screen px-6 pt-20 pb-32">
@@ -447,7 +483,7 @@ function NativeMembershipView() {
           className="text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Membership
+          Living by design
         </p>
 
         <h1
@@ -459,7 +495,7 @@ function NativeMembershipView() {
             color: "var(--text-primary, #f2ecd8)",
           }}
         >
-          Your Solray account.
+          Your chart, spoken to.
         </h1>
 
         <p
@@ -471,17 +507,25 @@ function NativeMembershipView() {
             fontWeight: 300,
           }}
         >
-          This account does not have an active membership. Sign in with a
-          membership-bearing account to continue.
+          Five days free, then 23 dollars a month. Your exact birth moment, read
+          against today&apos;s sky, every morning. Cancel anytime in your
+          device&apos;s subscription settings.
         </p>
 
         <div className="space-y-3">
-          {/* Continue to app removed: ProtectedRoute will bounce an
-              unsubscribed user straight back to /subscribe, so the
-              button promised an escape that did not exist. Native
-              users without a membership only see Sign out here.
-              They subscribe on solray.ai in a browser and then sign
-              in. Caught by Codex audit P2.7. */}
+          <button
+            onClick={handleSubscribe}
+            disabled={loading}
+            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
+            style={{
+              color: "var(--bg-deep, #0f1f17)",
+              background: "var(--amber, #f39230)",
+              border: "1px solid var(--amber, #f39230)",
+            }}
+          >
+            {loading ? "Opening..." : "Start free trial"}
+          </button>
+
           <button
             onClick={logout}
             className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
@@ -493,6 +537,12 @@ function NativeMembershipView() {
           >
             Sign out
           </button>
+
+          {error && (
+            <p className="text-sm pt-2" style={{ color: "var(--ember, #c4684a)" }}>
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>

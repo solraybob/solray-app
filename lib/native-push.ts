@@ -68,6 +68,16 @@ export function isRunningInCapacitor(): boolean {
 }
 
 /**
+ * Returns the Capacitor platform: "ios", "android", or "web".
+ * Used by Play Billing / IAP wiring to gate the right CTA per platform.
+ */
+export function getNativePlatform(): "web" | "ios" | "android" {
+  if (typeof window === "undefined") return "web";
+  const w = window as unknown as CapacitorWindow;
+  return w.Capacitor?.getPlatform?.() ?? "web";
+}
+
+/**
  * Lightweight, non-cryptographic hash. Used only to scope a localStorage
  * key per token so we don't write the raw token into storage. Collisions
  * are acceptable here; this is a registration-flag, not authentication.
