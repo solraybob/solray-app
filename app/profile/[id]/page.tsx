@@ -322,20 +322,6 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
         </div>
       )}
 
-      {/* Numerology */}
-      {chart?.numerology && (chart.numerology.life_path || chart.numerology.expression) && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Numerology</p>
-          <div className="space-y-1.5 font-body text-[15px]">
-            {chart.numerology.life_path > 0 && <Row label="Life Path" value={String(chart.numerology.life_path)} />}
-            {chart.numerology.expression > 0 && <Row label="Expression" value={String(chart.numerology.expression)} />}
-            {chart.numerology.soul_urge > 0 && <Row label="Soul Urge" value={String(chart.numerology.soul_urge)} />}
-            {chart.numerology.personal_year > 0 && (
-              <Row label={`Personal Year ${chart.numerology.current_year}`} value={String(chart.numerology.personal_year)} />
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
