@@ -816,6 +816,11 @@ function ChatPageInner() {
   // streaming tick reads the new value and bails. State follows for UI.
   const autoScrollRef = useRef(true);
   const [autoScroll, setAutoScroll] = useState(true);
+  // Jump-to-bottom pill visibility, driven by ACTUAL scroll position (not the
+  // autoScroll flag, which a stray tap flips, making the pill appear while
+  // you're already at the bottom). Kept separate so the streaming-pin logic
+  // below stays untouched.
+  const [showJumpButton, setShowJumpButton] = useState(false);
   const isProgrammaticScroll = useRef(false);
 
   const setAutoScrollBoth = useCallback((v: boolean) => {
@@ -851,6 +856,11 @@ function ChatPageInner() {
       if (dist <= 4) {
         autoScrollRef.current = true;
         setAutoScroll(true);
+        setShowJumpButton(false);
+      } else if (dist > 80) {
+        // Genuinely scrolled away: show the pill. Hysteresis (show >80,
+        // hide <=4) prevents flicker mid-drag.
+        setShowJumpButton(true);
       }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
@@ -876,6 +886,7 @@ function ChatPageInner() {
 
   const resetScroll = useCallback(() => {
     setAutoScrollBoth(true);
+    setShowJumpButton(false);
   }, [setAutoScrollBoth]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
@@ -1562,15 +1573,16 @@ function ChatPageInner() {
         </div>
 
         {/* Scroll to bottom button, shows when user has scrolled up */}
-        {!autoScroll && (
+        {showJumpButton && (
           <button
             onClick={() => {
               const el = scrollContainerRef.current;
               if (el) el.scrollTop = el.scrollHeight;
               setAutoScrollBoth(true);
+              setShowJumpButton(false);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
-            style={{ bottom: "120px", left: "50%", transform: "translateX(-50%)", background: "rgba(155,134,160,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ bottom: "120px", left: "50%", marginLeft: "-18px", background: "rgba(155,134,160,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
             aria-label="Scroll to bottom"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#050f08" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
