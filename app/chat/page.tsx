@@ -1514,27 +1514,24 @@ function ChatPageInner() {
   return (
     <ProtectedRoute>
       <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-        {/* Subtle space background, fixed so it doesn't scroll with messages */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1200&q=60"
-          alt=""
+        {/* Calm ambient background: a soft amber glow over forest, drawn with
+            CSS instead of a 1200px remote image so opening the Oracle never
+            waits on a decorative download on the critical path. */}
+        <div
           aria-hidden="true"
           style={{
             position: "fixed",
             top: 0, left: 0, right: 0, bottom: 0,
-            width: "100%", height: "100%",
-            objectFit: "cover",
-            opacity: 0.06,
             pointerEvents: "none",
             zIndex: 0,
+            background: "radial-gradient(120% 55% at 50% 0%, rgba(216,162,74,0.07), transparent 60%)",
           }}
         />
         {/* Header, Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
         <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
           <div className="absolute inset-0 pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
+            <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(var(--rgb-bg-deep) / 0.5) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
           </div>
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3 relative z-10">
@@ -1595,23 +1592,27 @@ function ChatPageInner() {
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-48" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto space-y-6">
 
-            {/* Empty / loading state, visible for the brief moment before
-                the greeting arrives. A centered wisteria glow with the
-                logo pulsing says "I am here" without words. */}
+            {/* Empty / loading anchor, visible while the greeting loads and as
+                the honest fallback when no greeting could be built (slow or
+                failed forecast). A single quiet in-voice line orients a new
+                user and asserts nothing about their chart, so it is never a
+                blank screen and never a fabrication. */}
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center pt-20 pb-10 animate-fade-in">
-                <div
-                  className="w-16 h-16 rounded-full overflow-hidden mb-6"
+              <div className="flex flex-col items-center justify-center text-center pt-24 pb-10 animate-fade-in">
+                <span
+                  className="rounded-full mb-7"
                   style={{
-                    boxShadow: "0 0 40px rgba(155,134,160,0.30), 0 0 80px rgba(155,134,160,0.12)",
+                    width: "8px", height: "8px",
+                    background: "var(--wisteria)",
+                    boxShadow: "0 0 16px rgba(155,134,160,0.5)",
                     animation: "pulse 2.4s ease-in-out infinite",
                   }}
+                />
+                <p
+                  className="font-heading italic text-text-primary/75 leading-relaxed max-w-[300px]"
+                  style={{ fontSize: "1.35rem", fontWeight: 300, letterSpacing: "0.01em" }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.jpg" alt="Solray" className="w-full h-full object-cover" />
-                </div>
-                <p className="font-heading text-text-secondary/30 text-sm tracking-[0.18em] uppercase" style={{ fontWeight: 300 }}>
-                  listening…
+                  Ask anything. I read you, and how today moves through you.
                 </p>
               </div>
             )}
@@ -1728,7 +1729,7 @@ function ChatPageInner() {
         </div>
 
         {/* Input */}
-        <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 py-3 pb-20">
+        <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
@@ -2040,7 +2041,7 @@ function ThinkingIndicator() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-forest-deep flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-forest-deep flex items-center justify-center"><span className="rounded-full" style={{ width: "8px", height: "8px", background: "var(--wisteria)", boxShadow: "0 0 16px rgba(155,134,160,0.5)", animation: "pulse 2.4s ease-in-out infinite" }} /></div>}>
       <ChatPageInner />
     </Suspense>
   );
