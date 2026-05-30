@@ -1506,6 +1506,33 @@ function ChatPageInner() {
     });
   };
 
+  // Per-message actions: copy the reply, and a quiet "this landed" resonance
+  // mark that feeds the Akashic loop with an explicit, clean signal (the
+  // positive twin of the implicit affirmation detection). Both are subtle and
+  // sit only under finalized Oracle replies.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [resonatedIds, setResonatedIds] = useState<Set<string>>(new Set());
+
+  const copyMessage = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1800);
+    } catch { /* clipboard blocked; no-op */ }
+  };
+
+  const markResonance = async (id: string, text: string) => {
+    if (resonatedIds.has(id)) return;
+    setResonatedIds((prev) => new Set(prev).add(id));
+    try {
+      await apiFetch(
+        "/chat/feedback",
+        { method: "POST", body: JSON.stringify({ oracle_text: text, direction: "landed" }) },
+        token,
+      );
+    } catch { /* best-effort; the mark stays for the user regardless */ }
+  };
+
   return (
     <ProtectedRoute>
       <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
@@ -1685,6 +1712,32 @@ function ChatPageInner() {
                   >
                     {msg.role === "user" ? "You" : "Oracle"} · {formatTime(msg.timestamp)}
                   </span>
+                  {msg.role !== "user" && msg.id !== "greeting" && !isStreaming && !msg.isError && (msg.content || "").trim() && (
+                    <div className="flex items-center gap-5 mb-4 -mt-1">
+                      <button
+                        onClick={() => copyMessage(msg.id, msg.content)}
+                        aria-label="Copy reply"
+                        className="flex items-center gap-1.5 text-text-secondary/60 hover:text-text-secondary transition-colors"
+                      >
+                        {copiedId === msg.id ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+                        )}
+                        <span className="font-body text-[10px] tracking-[0.18em] uppercase">{copiedId === msg.id ? "Copied" : "Copy"}</span>
+                      </button>
+                      <button
+                        onClick={() => markResonance(msg.id, msg.content)}
+                        disabled={resonatedIds.has(msg.id)}
+                        aria-label="This landed"
+                        className="flex items-center gap-1.5 transition-colors"
+                        style={{ color: resonatedIds.has(msg.id) ? "rgb(var(--rgb-wisteria))" : undefined }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={resonatedIds.has(msg.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" /></svg>
+                        <span className={`font-body text-[10px] tracking-[0.18em] uppercase ${resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}`}>{resonatedIds.has(msg.id) ? "Landed" : "This landed"}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
