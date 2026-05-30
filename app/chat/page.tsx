@@ -1610,18 +1610,6 @@ function ChatPageInner() {
                 >
                   Ask anything. I read you, and how today moves through you.
                 </p>
-                <div className="flex flex-col items-center gap-2 mt-7">
-                  <span className="font-body text-text-secondary/70 text-[12px]">try</span>
-                  <button
-                    onClick={() => setInput("Why do I keep stalling?")}
-                    className="font-heading text-text-secondary text-[15px] rounded-full px-4 py-1.5 transition-colors"
-                    style={{ border: "1px solid rgba(236,231,221,0.14)" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(155,134,160,0.5)"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(236,231,221,0.14)"}
-                  >
-                    Why do I keep stalling?
-                  </button>
-                </div>
               </div>
             )}
 
