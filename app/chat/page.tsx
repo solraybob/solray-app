@@ -1549,11 +1549,14 @@ function ChatPageInner() {
                 <button
                   onClick={openHistory}
                   title="Previous chats"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-forest-card transition-colors"
+                  className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors flex items-center gap-1.5"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
                   </svg>
+                  Past
                 </button>
                 <button
                   onClick={startNewChat}
@@ -1579,10 +1582,10 @@ function ChatPageInner() {
               setShowJumpButton(false);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
-            style={{ bottom: "120px", left: "50%", marginLeft: "-18px", background: "rgba(155,134,160,0.92)", backdropFilter: "blur(16px)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 32px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ bottom: "120px", left: "50%", marginLeft: "-16px", background: "rgba(18,22,21,0.72)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.28)", border: "1px solid rgba(155,134,160,0.45)" }}
             aria-label="Scroll to bottom"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#050f08" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(236,231,221,0.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
@@ -1925,17 +1928,17 @@ function ChatPageInner() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => loadPastSession(s.sessionId)}
-                              className={`flex-1 text-left px-4 py-3 rounded-xl border transition-colors ${
+                              className={`flex-1 min-w-0 text-left px-4 py-3 rounded-xl border transition-colors ${
                                 s.sessionId === sessionId
                                   ? "bg-forest-card text-text-primary"
                                   : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
                               }`}
                               style={s.sessionId === sessionId ? { border: "1px solid #9b86a0" } : undefined}
                             >
-                              <p className="font-body text-text-secondary text-[12px] tracking-widest mb-1">
+                              <p className="font-body text-text-primary text-[15px] truncate mb-0.5">
                                 {s.customName || s.date}
                               </p>
-                              <p className="font-body text-text-primary text-[15px] truncate">
+                              <p className="font-body text-text-secondary text-[13px] truncate">
                                 {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
                               </p>
                             </button>
