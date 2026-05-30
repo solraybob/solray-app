@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solray-v47';
+const CACHE_NAME = 'solray-v48';
 
 // Only cache static assets, NOT HTML pages
 const urlsToCache = [
