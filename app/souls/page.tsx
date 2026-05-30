@@ -715,11 +715,6 @@ export default function SoulsPage() {
             <div className="mt-5 w-12 h-px bg-forest-border/60" />
           </div>
 
-          {/* Permanent invite link. Sits above the Bond card so users
-              see it the first time they open Souls. Each conversion
-              earns them +2 trial days. */}
-          <InviteCodeCard />
-
           {/* Hero: Read the Bond */}
           <BondCard
             myName={myUsername || null}
@@ -744,6 +739,10 @@ export default function SoulsPage() {
             onRead={readTheBond}
             reading={readingBond}
           />
+
+          {/* Bring someone in. Below the Bond card now: the primary reading
+              comes first, the invite nudge follows. Foldable, souls theme. */}
+          <InviteCodeCard />
 
           {/* Search, for deeper two-way connections with Solray users */}
           <div>

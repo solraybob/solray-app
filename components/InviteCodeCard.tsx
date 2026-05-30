@@ -26,6 +26,7 @@ export default function InviteCodeCard() {
   const [data, setData] = useState<InvitePayload | null>(null);
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -94,64 +95,75 @@ export default function InviteCodeCard() {
   }
 
   return (
-    <div
-      className="rounded-3xl p-6 relative overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(155deg, rgb(var(--rgb-amber-sun) / 0.08) 0%, rgb(var(--rgb-card) / 0.95) 60%, rgb(var(--rgb-card)) 100%)",
-        border: "1px solid rgba(243,146,48,0.20)",
-        boxShadow: "0 18px 60px -30px rgba(243,146,48,0.35)",
-      }}
-    >
-      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun/80 mb-1">
-        Bring someone in
-      </p>
-      <h3
-        className="font-heading text-xl text-text-primary leading-tight mb-3"
-        style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+    <div className="rounded-3xl border border-forest-border bg-forest-card overflow-hidden">
+      {/* Foldable header: shows the value prop even when collapsed. */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+        aria-expanded={open}
       >
-        Each friend who joins gives you {data.inviter_bonus_days} extra trial days.
-      </h3>
-      <p className="font-body text-[14px] text-text-secondary leading-relaxed mb-5">
-        Share your code. When they start their five days free and pick up a subscription, your next billing window pushes out by {data.inviter_bonus_days} days. They get the map. You get the time.
-      </p>
-
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          type="button"
-          onClick={() => copy(data.code, "code")}
-          className="flex-1 flex items-center justify-between px-4 py-3 rounded-2xl border border-amber-sun/30 hover:border-amber-sun/60 transition-colors"
-          aria-label={`Copy invite code ${data.code}`}
-        >
-          <span className="font-heading text-2xl tracking-[0.18em] text-amber-sun" style={{ fontWeight: 300 }}>
-            {data.code}
+        <span className="min-w-0">
+          <span className="block font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-0.5">
+            Bring someone in
           </span>
-          <span className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary">
-            {copied === "code" ? "Copied" : "Copy code"}
+          <span className="block font-body text-[13px] text-text-secondary leading-snug">
+            Each friend who joins gives you {data.inviter_bonus_days} extra trial days.
           </span>
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => copy(data.link, "link")}
-          className="flex-1 px-4 py-2.5 rounded-full border border-forest-border/50 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary hover:text-text-primary hover:border-forest-border/80 transition-colors"
+        </span>
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className="shrink-0 text-text-secondary transition-transform"
+          style={{ transform: open ? "rotate(180deg)" : "none" }}
+          aria-hidden="true"
         >
-          {copied === "link" ? "Link copied" : "Copy link"}
-        </button>
-        <button
-          type="button"
-          onClick={share}
-          className="flex-1 px-4 py-2.5 rounded-full bg-amber-sun/15 border border-amber-sun/40 font-body text-[12px] tracking-[0.18em] uppercase text-amber-sun hover:bg-amber-sun/25 transition-colors"
-        >
-          Share
-        </button>
-      </div>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
 
-      <p className="mt-4 font-body text-[11px] text-text-muted leading-relaxed break-all">
-        {data.link}
-      </p>
+      {open && (
+        <div className="px-5 pb-5 pt-1 animate-fade-in">
+          <p className="font-body text-[14px] text-text-secondary leading-relaxed mb-4">
+            Share your code. When they start their five days free and pick up a subscription, your next billing window pushes out by {data.inviter_bonus_days} days. They get the map. You get the time.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => copy(data.code, "code")}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-indigo/30 hover:border-indigo/60 transition-colors mb-3"
+            aria-label={`Copy invite code ${data.code}`}
+          >
+            <span className="font-heading text-2xl tracking-[0.18em] text-indigo" style={{ fontWeight: 300 }}>
+              {data.code}
+            </span>
+            <span className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary">
+              {copied === "code" ? "Copied" : "Copy code"}
+            </span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => copy(data.link, "link")}
+              className="flex-1 px-4 py-2.5 rounded-full border border-forest-border/60 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary hover:text-text-primary hover:border-forest-border transition-colors"
+            >
+              {copied === "link" ? "Link copied" : "Copy link"}
+            </button>
+            <button
+              type="button"
+              onClick={share}
+              className="flex-1 px-4 py-2.5 rounded-full border border-indigo/40 bg-indigo/10 font-body text-[12px] tracking-[0.18em] uppercase text-indigo hover:bg-indigo/20 transition-colors"
+            >
+              Share
+            </button>
+          </div>
+
+          <p className="mt-4 font-body text-[11px] text-text-muted leading-relaxed break-all">
+            {data.link}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
