@@ -20,6 +20,9 @@ interface InvitePayload {
   link: string;
   app_link: string;
   inviter_bonus_days: number;
+  // True only while the viewer is still on a free trial. Subscribers invite
+  // without a material reward, so the card shows different copy.
+  bonus_eligible?: boolean;
 }
 
 export default function InviteCodeCard() {
@@ -108,7 +111,9 @@ export default function InviteCodeCard() {
             Bring someone in
           </span>
           <span className="block font-body text-[13px] text-text-secondary leading-snug">
-            Each friend who joins gives you {data.inviter_bonus_days} extra trial days.
+            {data.bonus_eligible
+              ? `Each friend who joins gives you ${data.inviter_bonus_days} extra trial days.`
+              : "Share Solray with someone whose chart you'd want read."}
           </span>
         </span>
         <svg
@@ -125,7 +130,9 @@ export default function InviteCodeCard() {
       {open && (
         <div className="px-5 pb-5 pt-1 animate-fade-in">
           <p className="font-body text-[14px] text-text-secondary leading-relaxed mb-4">
-            Share your code. When they start their five days free and pick up a subscription, your next billing window pushes out by {data.inviter_bonus_days} days. They get the map. You get the time.
+            {data.bonus_eligible
+              ? `Share your code. When a friend starts their five days free and stays, your own trial extends by ${data.inviter_bonus_days} days. They get the map. You get more time on yours.`
+              : "You already live here. Pass your code to someone whose chart you'd want the Oracle to read. No reward, just the pleasure of bringing them in."}
           </p>
 
           <button
