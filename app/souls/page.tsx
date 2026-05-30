@@ -680,19 +680,16 @@ export default function SoulsPage() {
                 onClick={handleInviteShare}
                 aria-label="Share an invitation"
                 disabled={inviteSharing}
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                style={{
-                  background: "transparent",
-                  border: "1px solid rgba(243,146,48,0.30)",
-                }}
+                className="w-7 h-7 rounded-full flex items-center justify-center border border-indigo/30 text-indigo transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                style={{ background: "transparent" }}
               >
                 {inviteSharing ? (
                   <span
                     className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
-                    style={{ borderColor: "rgba(243,146,48,0.30)", borderTopColor: "var(--amber)" }}
+                    style={{ borderColor: "currentColor", borderTopColor: "transparent" }}
                   />
                 ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)", opacity: 0.85 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}>
                     <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
                     <polyline points="16 6 12 2 8 6" />
                     <line x1="12" y1="2" x2="12" y2="15" />
