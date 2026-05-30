@@ -282,6 +282,20 @@ export default function SoulsPage() {
   // recipient is a warm contact of the inviter.
   const inviteShareRef = useRef<HTMLDivElement | null>(null);
   const [inviteSharing, setInviteSharing] = useState(false);
+  const [inviteInfo, setInviteInfo] = useState<{ code: string; link: string } | null>(null);
+
+  // Load the user's permanent invite code/link once, so the share card can
+  // carry the code (attribution) and the share text the tappable link.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    apiFetch("/users/me/invite", undefined, token)
+      .then((json: { code: string; link: string }) => {
+        if (!cancelled) setInviteInfo({ code: json.code, link: json.link });
+      })
+      .catch(() => { /* card falls back to the brand-only version */ });
+    return () => { cancelled = true; };
+  }, [token]);
 
   const handleInviteShare = async () => {
     if (inviteSharing) return;
@@ -289,13 +303,12 @@ export default function SoulsPage() {
     setInviteSharing(true);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
-      const inviterName = user?.name || myUsername || "Someone";
-      const firstName = inviterName.trim().split(/\s+/)[0] || "Someone";
+      const link = inviteInfo?.link || "https://solray.ai";
       await shareOrDownloadCard({
         node: inviteShareRef.current,
-        filename: `solray-invite-from-${firstName.toLowerCase()}.png`,
-        title: `${firstName} invited you on Solray`,
-        text: `${firstName} invited you to read the dynamic between you on Solray. solray.ai`,
+        filename: "solray-invite.png",
+        title: "You're invited to Solray",
+        text: `Read your chart against today's sky, and the dynamics with the people in your life. Join me on Solray: ${link}`,
       });
     } catch (err) {
       console.warn("[share] souls invite failed", err);
@@ -970,7 +983,7 @@ export default function SoulsPage() {
           username as fallback, then a neutral "Someone" so the card
           never renders blank. */}
       <ShareOffscreenWrapper containerRef={inviteShareRef}>
-        <SoulsInviteCard data={{ inviterName: user?.name || myUsername || "Someone" }} />
+        <SoulsInviteCard data={{ code: inviteInfo?.code }} />
       </ShareOffscreenWrapper>
     </ProtectedRoute>
   );

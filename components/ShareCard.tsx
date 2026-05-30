@@ -438,7 +438,9 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
 // ---------------------------------------------------------------------------
 
 export interface SoulsInviteCardData {
-  inviterName: string;
+  // The inviter's permanent code, shown on the card so a friend who joins is
+  // attributed to them. No personal name appears anywhere on the card.
+  code?: string;
 }
 
 /**
@@ -460,9 +462,7 @@ export interface SoulsInviteCardData {
  * consents by tapping share. No recipient data, no birth data.
  */
 export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
-  // Use first name only, even if the user has a longer display name.
-  // "Bob invited you" lands warmer than "Sol-Ray Bob invited you."
-  const firstName = (data.inviterName || "").trim().split(/\s+/)[0] || "Someone";
+  const code = (data.code || "").trim();
 
   return (
     <div
@@ -475,14 +475,13 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         fontFamily: "'Cormorant Garamond', Georgia, serif",
       }}
     >
-      {/* Soft ambient glow center, warmer than the hero card to
-          signal intimacy, not a generic broadcast. */}
+      {/* Soft amber glow, the same warm light as the app. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 42%, rgba(243,146,48,0.10) 0%, rgba(243,146,48,0) 55%)",
+            "radial-gradient(circle at 50% 40%, rgba(243,146,48,0.10) 0%, rgba(243,146,48,0) 55%)",
         }}
       />
 
@@ -490,7 +489,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
       <div
         style={{
           position: "absolute",
-          top: "180px",
+          top: "300px",
           left: 0,
           right: 0,
           textAlign: "center",
@@ -501,89 +500,101 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           color: "rgba(243, 146, 48, 0.85)",
         }}
       >
-        Invitation
+        You are invited
       </div>
 
-      {/* Inviter name, oversized italic Cormorant, the emotional anchor */}
+      {/* Brand lockup, exactly the website: sun, SOLRAY, living by design. */}
       <div
         style={{
           position: "absolute",
-          top: "44%",
+          top: "50%",
           left: 0,
           right: 0,
-          textAlign: "center",
-          padding: "0 80px",
-          color: "#f2ecd8",
-          fontStyle: "italic",
-          fontWeight: 300,
-          fontSize: "168px",
-          lineHeight: 1.0,
-          letterSpacing: "-0.02em",
           transform: "translateY(-50%)",
-          textShadow: "0 2px 24px rgba(0,0,0,0.5)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        {firstName}
-      </div>
-
-      {/* The line of copy */}
-      <div
-        style={{
-          position: "absolute",
-          top: "60%",
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          padding: "0 100px",
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: "52px",
-          fontWeight: 300,
-          lineHeight: 1.35,
-          color: "rgba(242, 236, 216, 0.78)",
-        }}
-      >
-        invited you to read
-        <br />
-        the dynamic between you.
-      </div>
-
-      {/* Hairline accent + brand */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "210px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "60px",
-          height: "1px",
-          background: "rgba(243, 146, 48, 0.35)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "120px",
-          left: 0,
-          right: 0,
-          textAlign: "center",
-        }}
-      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/solray-sun.png"
+          alt="Solray"
+          width={300}
+          height={300}
+          style={{ width: "300px", height: "300px", objectFit: "contain", marginBottom: "44px" }}
+        />
         <div
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: "60px",
+            fontSize: "128px",
             fontWeight: 300,
-            letterSpacing: "0.18em",
+            letterSpacing: "0.15em",
             color: "#f2ecd8",
-            marginBottom: "14px",
+            lineHeight: 1,
           }}
         >
           SOLRAY
         </div>
         <div
           style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontStyle: "italic",
+            fontWeight: 300,
+            fontSize: "52px",
+            letterSpacing: "0.04em",
+            color: "rgba(242, 236, 216, 0.7)",
+            marginTop: "18px",
+          }}
+        >
+          living by design
+        </div>
+      </div>
+
+      {/* Subline, no name. */}
+      <div
+        style={{
+          position: "absolute",
+          top: "72%",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          padding: "0 120px",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: "50px",
+          fontWeight: 300,
+          lineHeight: 1.35,
+          color: "rgba(242, 236, 216, 0.78)",
+        }}
+      >
+        Read your chart against today,
+        <br />
+        and the people in your life.
+      </div>
+
+      {/* Invite code + url. */}
+      <div
+        style={{ position: "absolute", bottom: "140px", left: 0, right: 0, textAlign: "center" }}
+      >
+        {code ? (
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "44px",
+              fontWeight: 300,
+              letterSpacing: "0.12em",
+              color: "#f2ecd8",
+              marginBottom: "18px",
+            }}
+          >
+            join with code{" "}
+            <span style={{ color: "rgba(243,146,48,0.95)", letterSpacing: "0.18em" }}>{code}</span>
+          </div>
+        ) : null}
+        <div
+          style={{
             fontFamily: "'Inter', system-ui, sans-serif",
-            fontSize: "24px",
+            fontSize: "26px",
             letterSpacing: "0.25em",
             color: "rgba(168, 184, 171, 0.7)",
             textTransform: "lowercase",
