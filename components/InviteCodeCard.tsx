@@ -13,6 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 interface InvitePayload {
   code: string;
@@ -25,11 +26,17 @@ export default function InviteCodeCard() {
   const [data, setData] = useState<InvitePayload | null>(null);
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
+    // apiFetch attaches auth only when a token is passed and already returns
+    // PARSED json (not a Response). The old code passed no token (so the call
+    // 401'd) and then called res.json() on already-parsed data (which threw),
+    // both surfacing as "Could not load your invite code." Pass the token and
+    // use the returned object directly.
+    if (!token) return;
     let cancelled = false;
-    apiFetch("/users/me/invite")
-      .then((res) => res.json())
+    apiFetch("/users/me/invite", undefined, token)
       .then((json: InvitePayload) => {
         if (!cancelled) setData(json);
       })
@@ -39,7 +46,7 @@ export default function InviteCodeCard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   const copy = async (text: string, which: "link" | "code") => {
     try {
