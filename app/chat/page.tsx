@@ -775,18 +775,15 @@ function ChatPageInner() {
       } else {
         const sid = generateSessionId();
         setSessionId(sid);
-        const greeting = await buildGreeting(token);
-        // greeting may be null when /forecast/today fails. In that
-        // case start with an empty thread so the user sees the input
-        // box ready, no fake first line.
-        const seed: Message[] = greeting ? [greeting] : [];
+        // Open on the quiet anchor (the messages.length === 0 state), not an
+        // auto-generated greeting. The Oracle speaks once the person does.
         const newSession: StoredSession = {
           sessionId: sid,
           date: todayLabel(),
-          messages: seed,
+          messages: [],
         };
         persistSession(newSession);
-        setMessages(seed);
+        setMessages([]);
       }
     }
 
@@ -903,17 +900,15 @@ function ChatPageInner() {
     setSoulName(null);
     const sid = generateSessionId();
     setSessionId(sid);
-    const greeting = await buildGreeting(token);
-    // greeting may be null when /forecast/today fails. Start empty in
-    // that case rather than ship invented Oracle copy.
-    const seed: Message[] = greeting ? [greeting] : [];
+    // A new chat opens on the quiet anchor (the empty state); the Oracle
+    // speaks once the person does, no auto-generated greeting.
     const newSession: StoredSession = {
       sessionId: sid,
       date: todayLabel(),
-      messages: seed,
+      messages: [],
     };
     persistSession(newSession);
-    setMessages(seed);
+    setMessages([]);
     setShowHistory(false);
   }, [token, buildGreeting, triggerSessionSynthesis]);
 
@@ -1615,6 +1610,18 @@ function ChatPageInner() {
                 >
                   Ask anything. I read you, and how today moves through you.
                 </p>
+                <div className="flex flex-col items-center gap-2 mt-7">
+                  <span className="font-body text-text-secondary/70 text-[12px]">try</span>
+                  <button
+                    onClick={() => setInput("Why do I keep stalling?")}
+                    className="font-heading text-text-secondary text-[15px] rounded-full px-4 py-1.5 transition-colors"
+                    style={{ border: "1px solid rgba(236,231,221,0.14)" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(155,134,160,0.5)"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(236,231,221,0.14)"}
+                  >
+                    Why do I keep stalling?
+                  </button>
+                </div>
               </div>
             )}
 
