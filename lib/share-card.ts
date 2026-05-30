@@ -16,7 +16,7 @@
  */
 
 interface CaptureOptions {
-  /** Mounted DOM node containing the ShareCard, sized 1080x1920. */
+  /** Mounted DOM node containing the card to capture. */
   node: HTMLElement;
   /** Filename suggestion for the share sheet / download. */
   filename: string;
@@ -24,23 +24,33 @@ interface CaptureOptions {
   title?: string;
   /** Optional caption text. */
   text?: string;
+  /**
+   * When true, capture the node at its OWN rendered size (for sharing an
+   * in-app card exactly as it appears) instead of forcing the 1080x1920
+   * story format used by the dedicated off-screen cards.
+   */
+  naturalSize?: boolean;
+  /** Solid backdrop painted behind the node. Defaults to forest deep. */
+  background?: string;
 }
 
 /**
- * Capture the rendered ShareCard to a PNG blob.
+ * Capture the rendered card to a PNG blob. Either at the fixed 1080x1920
+ * story format (default, for the dedicated off-screen cards) or at the
+ * node's own size (naturalSize, for capturing an in-app card 1:1).
  */
-async function captureToBlob(node: HTMLElement): Promise<Blob> {
-  // html2canvas is a ~50KB lib; load it on demand so the Today route
-  // bundle does not ship it unless the user actually taps Share.
+async function captureToBlob(opts: CaptureOptions): Promise<Blob> {
+  // html2canvas is a ~50KB lib; load it on demand so the route bundle does
+  // not ship it unless the user actually taps Share.
   const html2canvas = (await import("html2canvas")).default;
-  const canvas = await html2canvas(node, {
-    width: 1080,
-    height: 1920,
-    scale: 1, // node is already 1080x1920 in CSS pixels
-    backgroundColor: "#050f08", // forest deep
-    useCORS: true, // allow Unsplash hero image to render into the canvas
+  const common = {
+    backgroundColor: opts.background || "#050f08", // forest deep
+    useCORS: true,
     logging: false,
-  });
+  } as const;
+  const canvas = opts.naturalSize
+    ? await html2canvas(opts.node, { ...common, scale: 2 }) // crisp 2x of the real card
+    : await html2canvas(opts.node, { ...common, width: 1080, height: 1920, scale: 1 });
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("Canvas toBlob returned null"))),
@@ -78,7 +88,7 @@ function canShareFiles(file: File): boolean {
  * error rather than silently fall through.
  */
 export async function shareOrDownloadCard(opts: CaptureOptions): Promise<"shared" | "downloaded"> {
-  const blob = await captureToBlob(opts.node);
+  const blob = await captureToBlob(opts);
   const file = new File([blob], opts.filename, { type: "image/png" });
 
   if (canShareFiles(file)) {

@@ -755,6 +755,28 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarSaving, setAvatarSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const soulMapRef = useRef<HTMLDivElement | null>(null);
+  const [soulMapSharing, setSoulMapSharing] = useState(false);
+
+  const handleSoulMapShare = async () => {
+    if (soulMapSharing || !soulMapRef.current) return;
+    setSoulMapSharing(true);
+    try {
+      const { shareOrDownloadCard } = await import("@/lib/share-card");
+      await shareOrDownloadCard({
+        node: soulMapRef.current,
+        filename: "solray-soul-map.png",
+        title: "My Soul Map, Solray",
+        text: "My Soul Map on Solray. solray.ai",
+        naturalSize: true,      // capture the card exactly as it appears, not a screen
+        background: "#0c1410",  // solid forest behind the translucent card
+      });
+    } catch (err) {
+      console.warn("[share] soul map failed", err);
+    } finally {
+      setSoulMapSharing(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -1159,12 +1181,33 @@ export default function ProfilePage() {
 
               {/* Soul Map */}
               <div className="mb-6">
-                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4 text-center" style={{ color: "var(--moss)" }}>
-                  Soul Map
-                </p>
+                <div className="relative mb-4">
+                  <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center" style={{ color: "var(--moss)" }}>
+                    Soul Map
+                  </p>
+                  {profile ? (
+                    <button
+                      onClick={handleSoulMapShare}
+                      disabled={soulMapSharing}
+                      aria-label="Share your Soul Map"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center border transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                      style={{ borderColor: "rgba(138,158,141,0.40)", color: "var(--moss)", background: "transparent" }}
+                    >
+                      {soulMapSharing ? (
+                        <span className="inline-block w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: "currentColor", borderTopColor: "transparent" }} />
+                      ) : (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.9 }}>
+                          <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
+                          <polyline points="16 6 12 2 8 6" />
+                          <line x1="12" y1="2" x2="12" y2="15" />
+                        </svg>
+                      )}
+                    </button>
+                  ) : null}
+                </div>
 
                 {profile ? (
-                  <div className="relative rounded-2xl overflow-hidden mb-4">
+                  <div ref={soulMapRef} className="relative rounded-2xl overflow-hidden mb-4">
                     {/* Glow background layer */}
                     <div className="absolute inset-0 bg-forest-card/40" style={{ background: "radial-gradient(ellipse at center, rgba(122, 138, 154,0.12) 0%, rgba(125, 102, 128,0.06) 40%, transparent 70%)" }} />
                     {/* Content */}
