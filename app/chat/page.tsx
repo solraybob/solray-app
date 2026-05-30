@@ -1594,13 +1594,13 @@ function ChatPageInner() {
                 user and asserts nothing about their chart, so it is never a
                 blank screen and never a fabrication. */}
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center pt-24 pb-10 animate-fade-in">
+              <div className="flex flex-col items-center text-center pt-4 pb-10 animate-fade-in">
                 <span
-                  className="rounded-full mb-7"
+                  className="rounded-full mb-8"
                   style={{
-                    width: "8px", height: "8px",
+                    width: "10px", height: "10px",
                     background: "var(--wisteria)",
-                    boxShadow: "0 0 16px rgba(155,134,160,0.5)",
+                    boxShadow: "0 0 18px rgba(155,134,160,0.55)",
                     animation: "pulse 2.4s ease-in-out infinite",
                   }}
                 />
