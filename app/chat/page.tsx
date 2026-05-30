@@ -1605,8 +1605,8 @@ function ChatPageInner() {
                   }}
                 />
                 <p
-                  className="font-heading italic text-text-primary/75 leading-relaxed max-w-[300px]"
-                  style={{ fontSize: "1.35rem", fontWeight: 300, letterSpacing: "0.01em" }}
+                  className="font-heading italic text-text-primary/85 leading-relaxed max-w-[300px]"
+                  style={{ fontSize: "1.35rem", fontWeight: 700, letterSpacing: "0.01em" }}
                 >
                   Ask anything. I read you, and how today moves through you.
                 </p>
