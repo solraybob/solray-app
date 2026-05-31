@@ -226,12 +226,20 @@ function HiveDashboardInner() {
               Each soul is a node. Lines connect souls who share chart frequencies.
             </p>
           </div>
-          <button
-            onClick={() => void load()}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
-          >
-            {loading ? "Reading…" : "Refresh"}
-          </button>
+          <div className="flex items-center gap-3">
+            <a
+              href="/admin/training"
+              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors"
+            >
+              Training ground
+            </a>
+            <button
+              onClick={() => void load()}
+              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
+            >
+              {loading ? "Reading…" : "Refresh"}
+            </button>
+          </div>
         </header>
 
         {error && (
