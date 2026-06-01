@@ -762,7 +762,7 @@ export default function SoulsPage() {
                 type="text"
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
-                placeholder="@username or email"
+                placeholder="Name, @username, or email"
                 className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = "#6a8692";
