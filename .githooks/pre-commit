@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Solray pre-commit secret scanner (dependency-free, offline).
+#
+# Blocks a commit when a staged, ADDED line looks like a real credential:
+# API keys, tokens, private keys, or a DB URL with an inline password.
+# This is the guard that would have stopped the Anthropic key, the GitHub
+# PATs, and the Supabase password from ever reaching git.
+#
+# Activate in a fresh clone (once per machine):
+#     git config core.hooksPath .githooks
+#
+# False positive? Add this trailing comment to the line:
+#     pragma: allowlist secret
+# Or bypass a single commit (discouraged):
+#     SKIP_SECRET_SCAN=1 git commit ...
+#
+set -u
+
+[ "${SKIP_SECRET_SCAN:-0}" = "1" ] && exit 0
+
+# High-signal patterns. Each requires real secret structure, so redacted
+# placeholders like sk-ant-api03-... or postgres://... do not match.
+PAT='sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|ghs_[A-Za-z0-9]{36}|ghr_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[A-Za-z0-9-]{10,}|sk_live_[A-Za-z0-9]{16,}|rk_live_[A-Za-z0-9]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(postgres(ql)?|mysql|mongodb([+]srv)?|redis|amqp)://[^:@/ ]+:[^@/ ]+@'
+
+TMP="$(mktemp)"
+
+git diff --cached --name-only --diff-filter=ACM | while IFS= read -r f; do
+    # never scan the hook directory itself (it contains the patterns above)
+    case "$f" in .githooks/*) continue ;; esac
+    git diff --cached -U0 --no-color -- "$f" \
+        | grep -E '^\+' | grep -vE '^\+\+\+' \
+        | while IFS= read -r line; do
+            content="${line#+}"
+            case "$content" in *"pragma: allowlist secret"*) continue ;; esac
+            hit="$(printf '%s' "$content" | grep -oE "$PAT" | head -1)"
+            [ -z "$hit" ] && continue
+            case "$hit" in *EXAMPLE*|*example*|*REDACTED*|*XXXX*|*xxxx*) continue ;; esac
+            printf '  %s: %s…[redacted]\n' "$f" "$(printf '%s' "$hit" | cut -c1-8)" >> "$TMP"
+        done
+done
+
+if [ -s "$TMP" ]; then
+    echo ""
+    echo "COMMIT BLOCKED: a staged change looks like a real secret:"
+    cat "$TMP"
+    echo ""
+    echo "Move it to an environment variable or secret store, never commit it."
+    echo "False positive? add 'pragma: allowlist secret' to the line,"
+    echo "or bypass once with: SKIP_SECRET_SCAN=1 git commit ..."
+    rm -f "$TMP"
+    exit 1
+fi
+
+rm -f "$TMP"
+exit 0
