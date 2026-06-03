@@ -110,6 +110,21 @@ html, body {
   overscroll-behavior-y: contain;
 }
 
+/* Pull-to-refresh spinner (see components/PullToRefresh.tsx). */
+.solray-ptr-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 2px solid rgba(243, 146, 48, 0.25);
+  border-top-color: var(--amber);
+}
+.solray-ptr-spinner.is-refreshing {
+  animation: solray-ptr-spin 720ms linear infinite;
+}
+@keyframes solray-ptr-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Desktop layout: clear the fixed top nav (4rem tall). Mobile is unaffected
    since BottomNav is at the bottom and pages are not pushed by a fixed top.
    Also: convert vertical mouse-wheel into horizontal scroll on horizontal

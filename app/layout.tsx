@@ -76,16 +76,17 @@ export default function RootLayout({
       </head>
       <body className="bg-forest-deep min-h-screen text-text-primary">
         <VersionCheck />
-        <PullToRefresh />
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
               <SubscriptionProvider>
                 <NativePushBootstrap />
                 <DesktopHeader />
-                <SwipeNavigator>
-                  {children}
-                </SwipeNavigator>
+                <PullToRefresh>
+                  <SwipeNavigator>
+                    {children}
+                  </SwipeNavigator>
+                </PullToRefresh>
                 <BottomNav />
                 <Footer />
               </SubscriptionProvider>

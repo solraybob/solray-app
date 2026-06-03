@@ -842,6 +842,37 @@ export default function TodayPage() {
     return () => { cancelled = true; };
   }, [token]);
 
+  // Pull-to-refresh: refetch today's forecast in place. No loading skeleton,
+  // existing content stays visible until the new data replaces it (so the
+  // pull never blanks the screen), and we signal the gesture when settled.
+  useEffect(() => {
+    const onRefresh = (e: Event) => {
+      const done = (e as CustomEvent).detail?.done as (() => void) | undefined;
+      if (!token) { done?.(); return; }
+      const _d = new Date();
+      const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
+      const cacheKey = `solray_forecast_${dateKey}`;
+      (async () => {
+        try {
+          const data = await apiFetch("/forecast/today", {}, token);
+          const parsed = parseForecastData(data);
+          try {
+            if (parsed && parsed._pending !== true) localStorage.setItem(cacheKey, JSON.stringify(parsed));
+          } catch (_) { /* ignore storage */ }
+          setForecast(parsed);
+          setError("");
+          setLoading(false);
+        } catch (_) {
+          // Keep whatever is on screen; a refresh must never blank it.
+        } finally {
+          done?.();
+        }
+      })();
+    };
+    window.addEventListener("solray:refresh", onRefresh);
+    return () => window.removeEventListener("solray:refresh", onRefresh);
+  }, [token]);
+
   // Staggered section reveal
   useEffect(() => {
     if (!forecast) return;
