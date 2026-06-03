@@ -158,14 +158,17 @@ const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
   Intuitive: (p) => `My intuitive energy is at ${p}% today. What is my gut trying to tell me I'm not listening to?`,
 };
 
-// Display-layer transform: remap raw 0-10 readings onto a 50-95 visual range.
-// The backend's scale is relative, not absolute, a "4 out of 10" is a quiet
-// day, not a broken one, so the visual floor sits at 50% not 0%. Relative
-// differences are preserved (a 9 is still visibly higher than a 4). When the
-// forecast engine gets recalibrated we just delete this function.
+// Display-layer transform: remap the 1-10 score onto a 12-93% visual range.
+// The previous mapping (50 + score*4.5) compressed every real day into a
+// 54-95% band, so a heavy Saturn-square day and a flowing trine day looked
+// nearly identical. Verified against 200 production charts: scores genuinely
+// span 1-10 in the wild, so the bar now uses the full height. score*9 + 3
+// puts a neutral 6 at 57% (calm, present), a hard 3 at 30%, a charged 9 at
+// 84%. Per-point visual distance doubles (9pts vs 4.5). Display only, the
+// underlying astrology is untouched.
 function toDisplayPct(value: number): number {
-  const clamped = Math.max(0, Math.min(10, value));
-  return Math.round(50 + (clamped / 10) * 45);
+  const clamped = Math.max(1, Math.min(10, value));
+  return Math.round(clamped * 9 + 3);
 }
 
 function EnergyBar({

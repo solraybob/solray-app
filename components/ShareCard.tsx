@@ -243,7 +243,7 @@ const ENERGY_COLORS_FOR_CARD = {
 export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
   // Same display-pct mapping as the live energy bars so the share
   // card matches what the user just looked at on /today.
-  const toDisplayPct = (v: number) => 50 + (Math.max(0, Math.min(10, v)) / 10) * 45;
+  const toDisplayPct = (v: number) => Math.round(Math.max(1, Math.min(10, v)) * 9 + 3);
 
   const rows: { label: keyof typeof ENERGY_COLORS_FOR_CARD; value: number }[] = [
     { label: "Mental",    value: data.energy.mental },
