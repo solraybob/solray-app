@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * PullToRefresh
@@ -30,8 +31,16 @@ export default function PullToRefresh() {
   const [pullDistance, setPullDistance] = useState(0);
   const armedRef = useRef(false);
   const startYRef = useRef(0);
+  const pathname = usePathname();
+
+  // Pull-to-refresh hard-reloads the page. On the Oracle chat that wipes the
+  // live conversation the user is reading and flashes a full blank+spinner
+  // reload, which reads as a glitch. A chat does not need pull-to-refresh, so
+  // disable the gesture there entirely. Refresh stays on /today, /chart, etc.
+  const disabled = !!pathname && pathname.startsWith("/chat");
 
   useEffect(() => {
+    if (disabled) return;
     const isInsideScrollableWithRoomAbove = (target: EventTarget | null) => {
       let node: Element | null =
         target instanceof Element ? (target as Element) : null;
@@ -115,9 +124,9 @@ export default function PullToRefresh() {
       document.removeEventListener("touchend", handleTouchEnd);
       document.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [pulling, pullDistance]);
+  }, [pulling, pullDistance, disabled]);
 
-  if (!pulling || pullDistance === 0) return null;
+  if (disabled || !pulling || pullDistance === 0) return null;
 
   const percentage = (pullDistance / MAX_PULL) * 100;
   const rotation = (percentage / 100) * 360;

@@ -104,6 +104,10 @@ html, body {
   font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Stop the mobile browser's native pull-to-refresh and scroll-chaining.
+     An overscroll at the top rubber-bands instead of reloading the app, so a
+     pull-down never flashes a blank reload. */
+  overscroll-behavior-y: contain;
 }
 
 /* Desktop layout: clear the fixed top nav (4rem tall). Mobile is unaffected
