@@ -1,124 +1,107 @@
-const CACHE_NAME = 'solray-v57';
+// Solray service worker — v58 (self-healing).
+//
+// Background: earlier service workers cached page HTML and API responses.
+// After last week's backend outage, some devices got pinned to a stale,
+// broken /today served from that cache. This worker fixes those devices
+// AUTOMATICALLY, with zero user action: the browser always re-fetches this
+// script from the network on its own update check (even on a stuck device),
+// and the moment this worker activates it wipes every old cache and reloads
+// each open tab once from the network. The stale screen drops by itself.
+//
+// It never caches HTML or API responses again. It only serves immutable
+// /_next/static/ build assets from cache for speed (those are content-hashed,
+// so they can never go stale). Push notifications are preserved.
 
-// Only cache static assets, NOT HTML pages
-const urlsToCache = [
-  '/icons/icon-192.png',
-  '/logo.jpg',
-];
+const STATIC_CACHE = 'solray-v58';
+const META_CACHE = 'solray-meta';        // survives wipes; tracks the one-time heal
+const HEAL_KEY = '/__healed_v58';
 
-self.addEventListener('install', (event) => {
-  // Take control immediately without waiting
+self.addEventListener('install', () => {
+  // Activate immediately, do not wait for old worker to be released.
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
-  );
 });
 
 self.addEventListener('activate', (event) => {
-  // Clear ALL old caches immediately
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    // 1. Delete every cache from older workers (this is where stale HTML /
+    //    API responses lived). Keep only our meta + current static cache.
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((k) => k !== META_CACHE && k !== STATIC_CACHE).map((k) => caches.delete(k))
+    );
+    // 2. Take control of every open tab right now.
+    await self.clients.claim();
+    // 3. One-time heal: reload each open tab once so any stale cached shell
+    //    rendered by a previous worker is dropped and re-fetched from the
+    //    network. Guarded by a persistent flag so routine future updates do
+    //    NOT reload users mid-session.
+    try {
+      const meta = await caches.open(META_CACHE);
+      const already = await meta.match(HEAL_KEY);
+      if (!already) {
+        await meta.put(HEAL_KEY, new Response('1'));
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clients) {
+          try { await client.navigate(client.url); } catch (_) { /* ignore */ }
+        }
+      }
+    } catch (_) { /* healing is best-effort; never block activation */ }
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
-  // ONLY intercept same-origin GET requests for our pre-cached static
-  // assets. Anything else (cross-origin to the API, page HTML, JS chunks
-  // not in our short urlsToCache list) is left alone for the browser to
-  // handle natively. Codex audit caught the prior version intercepting
-  // every GET, which made cross-origin admin fetches throw 'Failed to
-  // fetch' even when the actual network request would have succeeded.
+  // Only ever touch same-origin GET requests for immutable build assets.
+  // Navigations (HTML), the API, and everything cross-origin go straight to
+  // the network, untouched, so a recovered backend can never be masked.
   if (event.request.method !== 'GET') return;
   let url;
-  try {
-    url = new URL(event.request.url);
-  } catch (_) {
-    return;
-  }
+  try { url = new URL(event.request.url); } catch (_) { return; }
   if (url.origin !== self.location.origin) return;
-
-  // Build assets under /_next/static/ are content-hashed and immutable: the
-  // filename changes whenever the bytes change, so a cached entry can NEVER
-  // be stale. Cache-first here makes PWA relaunch fast (JS, CSS, and the
-  // self-hosted next/font files load from cache) with zero stale-JS risk.
-  // Old builds' chunks are evicted when CACHE_NAME bumps on the next deploy.
-  if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(event.request).then((cached) => {
-          if (cached) return cached;
-          return fetch(event.request).then((resp) => {
-            if (resp && resp.status === 200) cache.put(event.request, resp.clone());
-            return resp;
-          });
-        })
-      )
-    );
-    return;
-  }
-
-  // Pre-cached static assets (icons/logo). Everything else (HTML, the API,
-  // cross-origin) is left to the browser, preserving the earlier fix that
-  // stopped the SW from breaking cross-origin fetches.
-  if (!urlsToCache.includes(url.pathname)) return;
-
+  if (!url.pathname.startsWith('/_next/static/')) return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.open(STATIC_CACHE).then((cache) =>
+      cache.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((resp) => {
+          if (resp && resp.status === 200) cache.put(event.request, resp.clone());
+          return resp;
+        });
+      })
+    )
   );
 });
 
-// Handle push notifications
+// --- Push notifications (preserved) ---
 self.addEventListener('push', (event) => {
-  if (!event.data) {
-    console.log('Push event received but no data');
-    return;
-  }
-
-  let notificationData = {
+  if (!event.data) return;
+  let data = {
     title: 'Transit Alert',
-    body: 'Check your today\'s forecast',
+    body: "Check your today's forecast",
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: 'solray-transit',
   };
-
-  try {
-    notificationData = { ...notificationData, ...event.data.json() };
-  } catch (_) {
-    // If data is not JSON, use the text as body
-    notificationData.body = event.data.text();
-  }
-
+  try { data = { ...data, ...event.data.json() }; }
+  catch (_) { data.body = event.data.text(); }
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, {
-      body: notificationData.body,
-      icon: notificationData.icon,
-      badge: notificationData.badge,
-      tag: notificationData.tag,
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      tag: data.tag,
       requireInteraction: false,
     })
   );
 });
 
-// Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  // Focus or open the app to the Today page
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url === '/' || client.url.includes('/today')) {
-          return client.focus();
-        }
+      for (const client of clientList) {
+        if (client.url === '/' || client.url.includes('/today')) return client.focus();
       }
-      // If app is not open, open it to the Today page
-      if (clients.openWindow) {
-        return clients.openWindow('/today');
-      }
+      if (clients.openWindow) return clients.openWindow('/today');
     })
   );
 });
