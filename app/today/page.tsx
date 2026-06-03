@@ -378,6 +378,7 @@ function HeroImageCard({
 }) {
   const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
 
   // Build the date label once per render: "Saturday, 3 May"
@@ -431,6 +432,14 @@ function HeroImageCard({
           className="object-cover"
           priority
           unoptimized
+          onLoad={() => setImgLoaded(true)}
+          style={{
+            // Gentle fade-in instead of a pop when the hero lands. The dark
+            // card and gradient are already in place, so the image breathes
+            // in over them.
+            opacity: imgLoaded ? 1 : 0,
+            transition: "opacity 0.45s ease",
+          }}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.78) 100%)" }} />
 
