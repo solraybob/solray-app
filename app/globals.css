@@ -96,6 +96,10 @@
 
 * {
   box-sizing: border-box;
+  /* Kill the grey/blue flash mobile browsers paint over a tapped element.
+     We provide our own :active feedback, so the native highlight only ever
+     looks like a glitch. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {

@@ -75,11 +75,26 @@ export default function BottomNav() {
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
+          const onTap = () => {
+            // Make a tab tap animate in the same direction as a swipe to that
+            // tab. SwipeNavigator plays its directional entrance whenever
+            // sessionStorage.swipe_dir is set on a route change; without this
+            // a tab tap swapped pages instantly while swipes glided, the one
+            // spot the navigation felt like a web app instead of native.
+            try {
+              const from = NAV_ROUTES.indexOf(pathname);
+              const to = NAV_ROUTES.indexOf(item.href);
+              if (from !== -1 && to !== -1 && from !== to) {
+                sessionStorage.setItem("swipe_dir", to > from ? "forward" : "back");
+              }
+            } catch { /* ignore */ }
+          };
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200"
+              onClick={onTap}
+              className="flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200 active:opacity-60"
               style={{ color: isActive ? item.color : "#6a8068" }}
             >
               {item.icon}
