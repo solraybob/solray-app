@@ -754,9 +754,16 @@ export default function TodayPage() {
 
         const parsed = parseForecastData(forecastData);
 
-        // Cache for next load
+        // Cache for next load, but ONLY a complete forecast. Caching a
+        // `_pending` / partial reading (e.g. during a backend outage) pins a
+        // broken Today that survives reloads and silent background-refresh
+        // failures. A pending state must always re-fetch fresh next time.
         try {
-          localStorage.setItem(cacheKey, JSON.stringify(parsed));
+          if (parsed && parsed._pending !== true) {
+            localStorage.setItem(cacheKey, JSON.stringify(parsed));
+          } else {
+            localStorage.removeItem(cacheKey);
+          }
         } catch (_) {
           // ignore storage errors
         }
@@ -801,19 +808,27 @@ export default function TodayPage() {
       }
     }
 
-    // Try localStorage cache first
+    // Try localStorage cache first, but only paint from it when the cached
+    // reading is COMPLETE. A cached `_pending` / partial entry must never be
+    // shown cache-first: fall through to a foreground fetch so a recovered
+    // backend immediately replaces a stale broken state instead of being
+    // masked by it.
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const parsed: ForecastData = JSON.parse(cached);
-        setForecast(parsed);
-        setLoading(false);
-        // Still fetch fresh in background
-        if (!backgroundFetchDone.current) {
-          backgroundFetchDone.current = true;
-          fetchAndUpdate(true);
+        const parsed = JSON.parse(cached) as ForecastView;
+        if (parsed && parsed._pending !== true) {
+          setForecast(parsed);
+          setLoading(false);
+          // Still fetch fresh in background
+          if (!backgroundFetchDone.current) {
+            backgroundFetchDone.current = true;
+            fetchAndUpdate(true);
+          }
+          return () => { cancelled = true; };
         }
-        return () => { cancelled = true; };
+        // Stale or pending cache: drop it and fetch fresh in foreground.
+        localStorage.removeItem(cacheKey);
       }
     } catch (_) {
       // ignore parse errors

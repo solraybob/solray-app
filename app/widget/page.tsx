@@ -83,14 +83,19 @@ export default function WidgetPage() {
         const dateKey = new Date().toISOString().split("T")[0];
         const cacheKey = `solray_forecast_${dateKey}`;
 
-        // Try cache first
+        // Try cache first, but only a COMPLETE reading. A pending/partial
+        // cached entry must not be shown: fall through to the network so a
+        // recovered backend replaces it instead of being masked by it.
         try {
           const cached = localStorage.getItem(cacheKey);
           if (cached) {
             const parsed: ForecastData = JSON.parse(cached);
-            setForecast(parsed);
-            setLoading(false);
-            return;
+            if (parsed && (parsed as { _pending?: boolean })._pending !== true) {
+              setForecast(parsed);
+              setLoading(false);
+              return;
+            }
+            localStorage.removeItem(cacheKey);
           }
         } catch (_) {
           // ignore cache errors
@@ -101,9 +106,11 @@ export default function WidgetPage() {
         setForecast(data);
         setLoading(false);
 
-        // Cache for next load
+        // Cache for next load, complete readings only.
         try {
-          localStorage.setItem(cacheKey, JSON.stringify(data));
+          if (data && (data as { _pending?: boolean })._pending !== true) {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+          }
         } catch (_) {
           // ignore storage errors
         }

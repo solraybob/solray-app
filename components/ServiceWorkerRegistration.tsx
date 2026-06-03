@@ -10,7 +10,11 @@ import { useEffect } from "react";
 // event.respondWith, including cross-origin /admin/hive/graph fetches that
 // then threw 'Failed to fetch'. New SW only intercepts same-origin assets
 // in the urlsToCache list. Forces existing clients off the bad worker.
-const APP_VERSION = "v17";
+// v18: incident heal. Some devices were stuck on the old cache-everything
+// worker showing a stale/broken Today from last week's backend outage. The
+// nuclear reset now ALSO purges the per-day forecast/blueprint localStorage
+// caches, so a pinned `_pending`/broken reading can't survive the wipe.
+const APP_VERSION = "v18";
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
@@ -29,6 +33,17 @@ export default function ServiceWorkerRegistration() {
           const regs = await navigator.serviceWorker.getRegistrations();
           await Promise.all(regs.map((r) => r.unregister()));
         }
+        // 2b. Purge the per-day forecast + blueprint localStorage caches.
+        // A pinned `_pending`/broken Today reading lives here, not in Cache
+        // Storage, so clearing caches alone left the stale screen behind.
+        try {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && (k.startsWith("solray_forecast") || k.startsWith("solray_blueprint"))) {
+              localStorage.removeItem(k);
+            }
+          }
+        } catch { /* ignore storage errors */ }
         // 3. Mark done so we don't loop
         localStorage.setItem(CLEARED_KEY, "1");
         // 4. Force a hard reload to get fresh assets
