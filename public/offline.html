@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Solray</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      margin: 0; height: 100%;
+      background: #050f08;
+      color: #f2ecd8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 32px calc(24px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-right));
+      box-sizing: border-box;
+    }
+    .sun { width: 76px; height: 76px; margin-bottom: 28px; }
+    h1 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 300; letter-spacing: 0.18em; font-size: 26px; margin: 0 0 14px;
+    }
+    p { color: rgba(242,236,216,0.62); font-size: 15px; line-height: 1.5; max-width: 300px; margin: 0 0 30px; }
+    button {
+      appearance: none; -webkit-appearance: none; border: none; cursor: pointer;
+      background: #e8913c; color: #050f08; font-weight: 600; font-size: 15px;
+      padding: 14px 40px; border-radius: 999px; letter-spacing: 0.02em;
+      transition: opacity 0.2s ease;
+    }
+    button:active { opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <svg class="sun" viewBox="0 0 100 100" aria-hidden="true">
+      <g fill="#e8913c">
+        <circle cx="50" cy="50" r="17" />
+        <!-- 12 rays -->
+        <g>
+          <rect x="48" y="6" width="4" height="14" rx="2" />
+          <rect x="48" y="80" width="4" height="14" rx="2" />
+          <rect x="6" y="48" width="14" height="4" rx="2" />
+          <rect x="80" y="48" width="14" height="4" rx="2" />
+          <rect x="20" y="20" width="4" height="13" rx="2" transform="rotate(-45 22 26)" />
+          <rect x="76" y="74" width="4" height="13" rx="2" transform="rotate(-45 78 80)" />
+          <rect x="76" y="20" width="4" height="13" rx="2" transform="rotate(45 78 26)" />
+          <rect x="20" y="74" width="4" height="13" rx="2" transform="rotate(45 22 80)" />
+        </g>
+      </g>
+    </svg>
+    <h1>SOLRAY</h1>
+    <p>The connection to the sky dropped for a moment. Check your network and try again.</p>
+    <button onclick="location.replace('https://app.solray.ai/')">Try again</button>
+  </div>
+  <script>
+    // If connectivity returns on its own, slip back to the app without a tap.
+    window.addEventListener('online', function () {
+      location.replace('https://app.solray.ai/');
+    });
+  </script>
+</body>
+</html>

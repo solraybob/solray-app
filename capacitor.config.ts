@@ -40,6 +40,10 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://app.solray.ai',
     cleartext: false,
+    // If the WebView's first load of app.solray.ai fails (no network, captive
+    // wifi, DNS/TLS hiccup), Capacitor loads this bundled page instead of
+    // leaving a blank white screen. It shows Solray branding + a Retry button.
+    errorPath: 'offline.html',
     // Allow our own origin + the backend so fetch() inside the WebView
     // works without CORS surprises in WKWebView.
     allowNavigation: [
@@ -66,6 +70,11 @@ const config: CapacitorConfig = {
     // Solray's default theme is dark forest. The app controls this at
     // runtime via the status-bar plugin when the user toggles light mode.
     contentInset: 'always',
+    // WKWebView background: forest-deep, not the OS default white. Prevents a
+    // white flash (or a permanent white screen on a failed load) from ever
+    // showing through. The launch screen and splash are the same color, so
+    // launch -> splash -> webview is one seamless dark surface.
+    backgroundColor: '#050f08',
   },
   android: {
     // Allow http for local dev; production traffic is HTTPS-only.
@@ -80,10 +89,16 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
-      // Brief splash while the WebView reaches app.solray.ai. We keep it
-      // tight (1.5s max) so the native shell never feels heavy.
-      launchAutoHide: false,             // we'll hide it manually after first paint
-      launchShowDuration: 1500,
+      // Brief splash while the WebView reaches app.solray.ai.
+      // launchAutoHide MUST be true: with it false the splash waited for a
+      // manual SplashScreen.hide() that the web app never called, so the
+      // splash never dismissed and the app froze on a blank screen on
+      // launch (App Review rejection 2.1a, June 2026). With autoHide true
+      // the splash always dismisses after launchShowDuration no matter what,
+      // and the web app ALSO calls hide() on first paint (see
+      // components/NativeBootstrap) to dismiss it the instant content is ready.
+      launchAutoHide: true,
+      launchShowDuration: 2000,
       backgroundColor: '#050f08',         // forest-deep
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
