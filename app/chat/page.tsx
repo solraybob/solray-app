@@ -7,6 +7,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
+import { useT } from "@/lib/i18n";
 
 interface Message {
   id: string;
@@ -293,6 +294,7 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 function ChatPageInner() {
+  const { t } = useT();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
   // Soul-compatibility chat state. When the user opens chat from a Souls
@@ -628,7 +630,7 @@ function ChatPageInner() {
               const errMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: "The Oracle didn't return a response this time. Try asking again.",
+                content: t("chat.error_no_response"),
                 timestamp: new Date().toISOString(),
                 isError: true,
               };
@@ -656,7 +658,7 @@ function ChatPageInner() {
             const errMsg: Message = {
               id: (Date.now() + 1).toString(),
               role: "assistant",
-              content: "The Oracle couldn't be reached just now. Check your connection and try again.",
+              content: t("chat.error_unreachable"),
               timestamp: new Date().toISOString(),
               isError: true,
             };
@@ -1054,7 +1056,7 @@ function ChatPageInner() {
         const errMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "The Oracle didn't return a response this time. Try asking again.",
+          content: t("chat.error_no_response"),
           timestamp: new Date().toISOString(),
           isError: true,
         };
@@ -1097,7 +1099,7 @@ function ChatPageInner() {
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "The Oracle couldn't be reached just now. Check your connection and try again.",
+        content: t("chat.error_unreachable"),
         timestamp: new Date().toISOString(),
         isError: true,
       };
@@ -1187,10 +1189,10 @@ function ChatPageInner() {
 
     setTranscribing(true);
     try {
-      const t = tokenRef.current || token;
+      const authToken = tokenRef.current || token;
       const res = await fetch(`${apiUrl}/chat/transcribe`, {
         method: "POST",
-        headers: t ? { Authorization: `Bearer ${t}` } : undefined,
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
         body: form,
       });
       if (!res.ok) {
@@ -1204,14 +1206,14 @@ function ChatPageInner() {
         // If the backend says transcription isn't configured, show a calm
         // user-facing line instead of the raw server string.
         if (res.status === 503 && /configured|GROQ|OPENAI/i.test(detail)) {
-          throw new Error("Voice input is warming up on our side. Type for now, it'll be on shortly.");
+          throw new Error(t("chat.voice_warming_up"));
         }
-        throw new Error(detail || `Transcription failed (${res.status})`);
+        throw new Error(detail || `${t("chat.voice_transcription_failed")} (${res.status})`);
       }
       const data = await res.json();
       const transcript = (data?.transcript || "").trim();
       if (!transcript) {
-        setVoiceError("Nothing heard. Try again, a little closer to the mic.");
+        setVoiceError(t("chat.voice_nothing_heard"));
         return;
       }
       setInput((prev) => {
@@ -1221,12 +1223,12 @@ function ChatPageInner() {
       // Focus so the user can edit before sending.
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Voice input failed. Try again.";
+      const msg = err instanceof Error ? err.message : t("chat.voice_failed");
       setVoiceError(msg);
     } finally {
       setTranscribing(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   // True while a native (Capacitor) voice recording is active. Distinct
   // from the MediaRecorder web flow because the stop/transcribe path
@@ -1246,12 +1248,12 @@ function ChatPageInner() {
         if (result) {
           await transcribeBlob(result.blob, result.mimeType);
         } else {
-          setVoiceError("Recording didn't capture any audio. Try again.");
+          setVoiceError(t("chat.voice_no_audio"));
         }
       } catch (err) {
         setIsRecording(false);
         console.warn("[chat] native stop failed", err);
-        setVoiceError("Couldn't stop the recording. Try again.");
+        setVoiceError(t("chat.voice_stop_failed"));
       }
       return;
     }
@@ -1290,9 +1292,7 @@ function ChatPageInner() {
           nativeRecordingRef.current = true;
           setIsRecording(true);
         } else {
-          setVoiceError(
-            "Microphone permission was denied. Open Settings → Solray → Microphone to enable it, then try again."
-          );
+          setVoiceError(t("chat.voice_perm_denied_native"));
         }
         return;
       }
@@ -1386,44 +1386,34 @@ function ChatPageInner() {
       if (name === "NotAllowedError" || name === "SecurityError") {
         if ((permissionState === "granted" || permissionState === "unknown") && isIOS && isStandalonePWA) {
           // iOS PWA WebKit cage. Offer the Safari fallback link.
-          setVoiceError(
-            "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
-          );
+          setVoiceError(t("chat.voice_ios_pwa"));
         } else if (isChrome && permissionState === "granted") {
           // Chrome thinks the site has permission, but the browser
           // got NotAllowedError anyway. That means the OS layer is
           // blocking, macOS Privacy & Security or Windows mic
           // privacy. The user has to flip a system toggle, no
           // browser-side fix.
-          setVoiceError(
-            "Chrome has the site permission but your operating system is blocking the microphone for Chrome. macOS: System Settings → Privacy & Security → Microphone → enable Google Chrome. Windows: Settings → Privacy → Microphone → allow Chrome. Then refresh this page."
-          );
+          setVoiceError(t("chat.voice_chrome_os_block"));
         } else if (isChrome && permissionState === "denied") {
           // Chrome's per-site permission says blocked. The fix is
           // the lock icon, toggling Chrome's general mic setting
           // does not override a per-site block.
-          setVoiceError(
-            "Chrome blocked the microphone for this site. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
-          );
+          setVoiceError(t("chat.voice_chrome_site_block"));
         } else if (isChrome) {
           // Chrome with unknown permission state, most likely a
           // first-time block-popup answer. Same fix as denied.
-          setVoiceError(
-            "Microphone access was denied. Click the lock icon next to the URL → Site settings → Microphone → Allow, then refresh."
-          );
+          setVoiceError(t("chat.voice_chrome_denied"));
         } else if (permissionState === "denied") {
-          setVoiceError("Microphone is denied in browser settings. Click the icon next to the URL to allow it.");
+          setVoiceError(t("chat.voice_denied_browser"));
         } else if (isIOS && isStandalonePWA) {
-          setVoiceError(
-            "Voice doesn't work in installed apps on iOS yet. {action}Use voice in Safari →{/action}"
-          );
+          setVoiceError(t("chat.voice_ios_pwa"));
         } else {
-          setVoiceError("Microphone access was blocked. Enable it in your browser settings.");
+          setVoiceError(t("chat.voice_blocked"));
         }
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
-        setVoiceError("No microphone found.");
+        setVoiceError(t("chat.voice_not_found"));
       } else {
-        setVoiceError("Couldn't open the microphone. Try again.");
+        setVoiceError(t("chat.voice_open_failed"));
       }
       return;
     }
@@ -1435,8 +1425,8 @@ function ChatPageInner() {
     try {
       recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
     } catch {
-      stream.getTracks().forEach((t) => t.stop());
-      setVoiceError("This browser can't record audio.");
+      stream.getTracks().forEach((track) => track.stop());
+      setVoiceError(t("chat.voice_cant_record"));
       return;
     }
 
@@ -1464,8 +1454,8 @@ function ChatPageInner() {
     };
 
     recorder.onerror = () => {
-      setVoiceError("Recording stopped unexpectedly.");
-      stream.getTracks().forEach((t) => t.stop());
+      setVoiceError(t("chat.voice_stopped_unexpectedly"));
+      stream.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
       setIsRecording(false);
@@ -1475,10 +1465,10 @@ function ChatPageInner() {
       recorder.start();
       setIsRecording(true);
     } catch {
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
-      setVoiceError("Couldn't start recording. Try again.");
+      setVoiceError(t("chat.voice_start_failed"));
     }
   }, [isRecording, pickRecorderMime, stopRecording, transcribeBlob]);
 
@@ -1558,12 +1548,12 @@ function ChatPageInner() {
           </div>
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3 relative z-10">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--wisteria)" }}>
-              Your Higher Self
+              {t("chat.higher_self")}
             </p>
             <div className="relative flex items-center justify-between" style={{ height: "26px" }}>
               <button
                 onClick={openHistory}
-                title="Previous chats"
+                title={t("chat.previous_chats")}
                 className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors flex items-center gap-1.5"
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
@@ -1571,7 +1561,7 @@ function ChatPageInner() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
                 </svg>
-                Past
+                {t("chat.past")}
               </button>
               <h1
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
@@ -1581,12 +1571,12 @@ function ChatPageInner() {
               </h1>
               <button
                 onClick={startNewChat}
-                title="New chat"
+                title={t("chat.new_chat")}
                 className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors"
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
               >
-                + New
+                {t("chat.new")}
               </button>
             </div>
           </div>
@@ -1603,7 +1593,7 @@ function ChatPageInner() {
             }}
             className="fixed z-50 active:scale-95 transition-transform"
             style={{ bottom: "120px", left: "50%", marginLeft: "-16px", background: "rgba(18,22,21,0.72)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.28)", border: "1px solid rgba(155,134,160,0.45)" }}
-            aria-label="Scroll to bottom"
+            aria-label={t("chat.scroll_to_bottom")}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(236,231,221,0.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"/>
@@ -1635,7 +1625,7 @@ function ChatPageInner() {
                   className="font-heading italic text-text-primary/75 leading-relaxed max-w-[300px]"
                   style={{ fontSize: "1.35rem", fontWeight: 300, letterSpacing: "0.01em" }}
                 >
-                  Ask anything. I read you, and how today moves through you.
+                  {t("chat.empty_invocation")}
                 </p>
               </div>
             )}
@@ -1686,7 +1676,7 @@ function ChatPageInner() {
                           className="font-body text-[11px] tracking-[0.22em] uppercase mb-1"
                           style={{ color: "var(--ember, #d47a52)", opacity: 0.85 }}
                         >
-                          Connection
+                          {t("chat.connection")}
                         </p>
                         <p className="font-body text-text-primary text-[15px] leading-relaxed">
                           {msg.content}
@@ -1710,13 +1700,13 @@ function ChatPageInner() {
                     className="font-body text-[11px] mt-2 mb-2 block tracking-[0.22em] uppercase"
                     style={{ color: "rgb(var(--rgb-wisteria) / 0.75)" }}
                   >
-                    {msg.role === "user" ? "You" : "Oracle"} · {formatTime(msg.timestamp)}
+                    {msg.role === "user" ? t("chat.you") : t("chat.oracle")} · {formatTime(msg.timestamp)}
                   </span>
                   {msg.role !== "user" && msg.id !== "greeting" && !isStreaming && !msg.isError && (msg.content || "").trim() && (
                     <div className="flex items-center gap-5 mb-4 -mt-1">
                       <button
                         onClick={() => copyMessage(msg.id, msg.content)}
-                        aria-label="Copy reply"
+                        aria-label={t("chat.copy_reply")}
                         className="flex items-center gap-1.5 text-text-secondary/60 hover:text-text-secondary transition-colors"
                       >
                         {copiedId === msg.id ? (
@@ -1724,17 +1714,17 @@ function ChatPageInner() {
                         ) : (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
                         )}
-                        <span className="font-body text-[10px] tracking-[0.18em] uppercase">{copiedId === msg.id ? "Copied" : "Copy"}</span>
+                        <span className="font-body text-[10px] tracking-[0.18em] uppercase">{copiedId === msg.id ? t("chat.copied") : t("chat.copy")}</span>
                       </button>
                       <button
                         onClick={() => markResonance(msg.id, msg.content)}
                         disabled={resonatedIds.has(msg.id)}
-                        aria-label="This landed"
+                        aria-label={t("chat.this_landed")}
                         className="flex items-center gap-1.5 transition-colors"
                         style={{ color: resonatedIds.has(msg.id) ? "rgb(var(--rgb-wisteria))" : undefined }}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill={resonatedIds.has(msg.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" /></svg>
-                        <span className={`font-body text-[10px] tracking-[0.18em] uppercase ${resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}`}>{resonatedIds.has(msg.id) ? "Landed" : "This landed"}</span>
+                        <span className={`font-body text-[10px] tracking-[0.18em] uppercase ${resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}`}>{resonatedIds.has(msg.id) ? t("chat.landed") : t("chat.this_landed")}</span>
                       </button>
                     </div>
                   )}
@@ -1786,13 +1776,13 @@ function ChatPageInner() {
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{ background: "#c8a27a", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
                 />
-                Recording. Tap the mic again to stop.
+                {t("chat.recording_tap_stop")}
               </div>
             )}
             {transcribing && !isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase text-text-secondary">
                 <LoadingSpinner size="sm" />
-                Transcribing…
+                {t("chat.transcribing")}
               </div>
             )}
             {voiceError && !isRecording && !transcribing && (() => {
@@ -1850,7 +1840,7 @@ function ChatPageInner() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Listening…" : "Speak freely…"}
+                placeholder={isRecording ? t("chat.listening_placeholder") : t("chat.speak_freely")}
                 className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
                 style={{
                   resize: "none",
@@ -1874,7 +1864,7 @@ function ChatPageInner() {
                 <button
                   onClick={toggleRecording}
                   disabled={sending || transcribing}
-                  aria-label={isRecording ? "Stop voice input" : "Start voice input"}
+                  aria-label={isRecording ? t("chat.stop_voice") : t("chat.start_voice")}
                   aria-pressed={isRecording}
                   className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-50 shrink-0 self-end"
                   style={{
@@ -1932,7 +1922,7 @@ function ChatPageInner() {
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
-                <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Previous Chats</h2>
+                <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("chat.previous_chats")}</h2>
                 <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -1942,7 +1932,7 @@ function ChatPageInner() {
               {/* Scrollable list */}
               <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
-                  <p className="font-body text-text-secondary text-[15px] text-center py-6">No previous chats yet.</p>
+                  <p className="font-body text-text-secondary text-[15px] text-center py-6">{t("chat.no_previous")}</p>
                 ) : (
                   <div className="space-y-2">
                     {pastSessions.map((s) => (
@@ -1967,7 +1957,7 @@ function ChatPageInner() {
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
                               className="font-body text-[12px]" style={{ color: "var(--wisteria)" }}
                             >
-                              Save
+                              {t("common.save")}
                             </button>
                           </div>
                         ) : (
@@ -1985,13 +1975,13 @@ function ChatPageInner() {
                                 {s.customName || s.date}
                               </p>
                               <p className="font-body text-text-secondary text-[13px] truncate">
-                                {s.messages.find((m) => m.role === "user")?.content || "No messages yet"}
+                                {s.messages.find((m) => m.role === "user")?.content || t("chat.no_messages")}
                               </p>
                             </button>
                             {/* Rename pencil */}
                             <button
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
-                              title="Rename chat"
+                              title={t("chat.rename_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#9b86a0"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
@@ -2004,7 +1994,7 @@ function ChatPageInner() {
                             {/* Delete trash */}
                             <button
                               onClick={(e) => deleteSession(e, s.sessionId)}
-                              title="Delete chat"
+                              title={t("chat.delete_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#d47a52"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
@@ -2037,13 +2027,15 @@ function ChatPageInner() {
 // always sees presence. Subsequent phrases fade in only if the wait runs
 // long, so a fast reply never flashes through three pieces of copy.
 // Lines are written in the Oracle's voice: quiet, present, never busy.
-const THINKING_PHRASES = [
-  "Listening.",
-  "Reading your chart against today.",
-  "Letting it settle before I speak.",
+const THINKING_PHRASE_KEYS = [
+  "chat.thinking_listening",
+  "chat.thinking_reading",
+  "chat.thinking_settle",
 ];
 
 function ThinkingIndicator() {
+  const { t } = useT();
+  const THINKING_PHRASES = THINKING_PHRASE_KEYS.map((k) => t(k));
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     // Step to the next phrase every 2.6 seconds, capped at the last one

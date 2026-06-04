@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 interface FirstMirrorData {
   pattern: string;
@@ -42,6 +43,7 @@ export default function FirstMirrorPage() {
 
 function FirstMirrorContent() {
   const { token } = useAuth();
+  const { t } = useT();
   const router = useRouter();
   const [mirror, setMirror] = useState<FirstMirrorData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ function FirstMirrorContent() {
           className="font-body text-[11px] tracking-[0.3em] uppercase"
           style={{ color: "var(--amber)", opacity: 0.7 }}
         >
-          Reading your design
+          {t("first_mirror.reading")}
         </div>
       </div>
     );
@@ -111,7 +113,7 @@ function FirstMirrorContent() {
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
           <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
-            The First Mirror
+            {t("first_mirror.title")}
           </p>
           <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
             <h1
@@ -127,9 +129,9 @@ function FirstMirrorContent() {
       {/* Body */}
       <div className="flex-1 flex flex-col justify-center px-6 pt-12 pb-32">
         <div className="max-w-md mx-auto w-full space-y-12">
-          <MirrorLine label="The pattern you lead with" body={mirror.pattern} visible={revealStage >= 1} />
-          <MirrorLine label="The place you hide your power" body={mirror.shadow} visible={revealStage >= 2} />
-          <MirrorLine label="The question your design keeps returning to" body={mirror.question} visible={revealStage >= 3} italic />
+          <MirrorLine label={t("first_mirror.line_pattern")} body={mirror.pattern} visible={revealStage >= 1} />
+          <MirrorLine label={t("first_mirror.line_shadow")} body={mirror.shadow} visible={revealStage >= 2} />
+          <MirrorLine label={t("first_mirror.line_question")} body={mirror.question} visible={revealStage >= 3} italic />
 
           {/* Continue CTA appears after all three lines have landed */}
           <div
@@ -147,10 +149,10 @@ function FirstMirrorContent() {
                 color: "var(--bg-deep)",
               }}
             >
-              Continue
+              {t("common.continue")}
             </button>
             <p className="text-center mt-4 font-body text-text-secondary text-[12px]" style={{ opacity: 0.7 }}>
-              The Oracle remembers.
+              {t("first_mirror.oracle_remembers")}
             </p>
           </div>
         </div>

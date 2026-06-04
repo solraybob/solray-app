@@ -26,12 +26,14 @@ import { useTheme } from "@/lib/theme-context";
 import { apiFetch } from "@/lib/api";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
+import { useT } from "@/lib/i18n";
 
 interface CitySuggestion { display: string; lat: number; lon: number; }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function SettingsPage() {
+  const { t } = useT();
   const router = useRouter();
   const { token, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -271,7 +273,7 @@ export default function SettingsPage() {
   const saveBirth = async () => {
     if (!token) return;
     if (!birthDate || !birthTime) {
-      setBirthError("Date and time are both required.");
+      setBirthError(t("settings.birth_date_time_required"));
       setBirthStatus("error");
       setTimeout(() => setBirthStatus("idle"), 2200);
       return;
@@ -281,7 +283,7 @@ export default function SettingsPage() {
     // because backend geocoding can be slow or fail and we'd rather
     // catch the ambiguity here than silently corrupt the chart.
     if (birthCity.trim() && (birthLat == null || birthLon == null)) {
-      setBirthError("Pick a city from the suggestions so we can geolocate it precisely.");
+      setBirthError(t("settings.birth_city_select_hint"));
       setBirthStatus("error");
       setTimeout(() => setBirthStatus("idle"), 3200);
       return;
@@ -356,12 +358,12 @@ export default function SettingsPage() {
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-moss))" }}>
-              Profile
+              {t("profile.section_label")}
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
               <button
                 onClick={() => router.push("/profile")}
-                aria-label="Back to profile"
+                aria-label={t("settings.back_to_profile")}
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
                 style={{ minWidth: "32px", minHeight: "32px", marginLeft: "-8px" }}
               >
@@ -388,9 +390,9 @@ export default function SettingsPage() {
 
             {/* ── 1. Avatar ──────────────────────────────────────────────── */}
             <Section
-              label="Profile photo"
+              label={t("settings.profile_photo")}
               status={photoStatus}
-              hint="Visible to anyone you connect with on Souls."
+              hint={t("settings.profile_photo_hint")}
             >
               <div className="flex items-center gap-4">
                 <button
@@ -429,7 +431,7 @@ export default function SettingsPage() {
                     onClick={() => photoInputRef.current?.click()}
                     className="font-body text-[14px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
                   >
-                    {photo ? "Replace photo" : "Upload photo"}
+                    {photo ? t("settings.replace_photo") : t("settings.upload_photo")}
                   </button>
                 </div>
                 <input
@@ -447,27 +449,27 @@ export default function SettingsPage() {
 
             {/* ── 2. Identity ───────────────────────────────────────────── */}
             <Section
-              label="Identity"
+              label={t("settings.identity")}
               status={identityStatus}
               error={identityError}
             >
               <div className="space-y-4">
-                <FieldRow label="Name">
+                <FieldRow label={t("common.name")}>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
-                    placeholder="Your name"
+                    placeholder={t("settings.name_placeholder")}
                   />
                 </FieldRow>
-                <FieldRow label="Username">
+                <FieldRow label={t("common.username")}>
                   <div className="flex items-baseline gap-1">
                     <span className="font-body text-[16px] text-text-secondary">@</span>
                     <input
                       value={username}
                       onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
                       className="flex-1 font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
-                      placeholder="yourusername"
+                      placeholder={t("settings.username_placeholder")}
                       autoCapitalize="none"
                       autoCorrect="off"
                     />
@@ -481,14 +483,14 @@ export default function SettingsPage() {
 
             {/* ── 3. Visibility ─────────────────────────────────────────── */}
             <Section
-              label="Profile visibility"
+              label={t("settings.profile_visibility")}
               status={visibilityStatus}
               hint={isPublic
-                ? "Your soul connections can view your full chart and blueprint."
-                : "Your chart is private. Soul connections can see your name and photo only."}
+                ? t("settings.visibility_public_hint")
+                : t("settings.visibility_private_hint")}
             >
               <Toggle
-                label={isPublic ? "Public" : "Private"}
+                label={isPublic ? t("common.public") : t("common.private")}
                 checked={isPublic}
                 onChange={toggleVisibility}
               />
@@ -496,34 +498,34 @@ export default function SettingsPage() {
 
             {/* ── 4. Theme ──────────────────────────────────────────────── */}
             <Section
-              label="Theme"
+              label={t("settings.theme")}
               hint={theme === "light"
-                ? "Pearl background, deep-forest ink. Best in daylight."
-                : "Forest deep with amber accents. Solray's resting state."}
+                ? t("settings.theme_light_hint")
+                : t("settings.theme_dark_hint")}
             >
               <div className="flex gap-2">
-                <ThemeButton active={theme === "dark"}  onClick={() => setTheme("dark")}  label="Dark"  />
-                <ThemeButton active={theme === "light"} onClick={() => setTheme("light")} label="Light" />
+                <ThemeButton active={theme === "dark"}  onClick={() => setTheme("dark")}  label={t("settings.theme_dark")}  />
+                <ThemeButton active={theme === "light"} onClick={() => setTheme("light")} label={t("settings.theme_light")} />
               </div>
             </Section>
 
             {/* ── 4a. Language ─────────────────────────────────────────── */}
             <Section
-              label="Language"
-              hint="The Oracle responds in your chosen language. Switch any time."
+              label={t("settings.language_section")}
+              hint={t("settings.language_hint")}
             >
               <LanguagePicker layout="list" />
             </Section>
 
             {/* ── 4b. Analytics privacy ────────────────────────────────── */}
             <Section
-              label="Anonymous analytics"
+              label={t("settings.analytics")}
               hint={analyticsOff
-                ? "Off. We won't record any usage events from this device."
-                : "On. Solray records anonymous usage events (which pages, which features) so we can fix what's broken and improve what's working. We never record chat content, birth data, or anything that identifies you beyond your account."}
+                ? t("settings.analytics_off_hint")
+                : t("settings.analytics_on_hint")}
             >
               <Toggle
-                label={analyticsOff ? "Off" : "On"}
+                label={analyticsOff ? t("common.off") : t("common.on")}
                 checked={!analyticsOff}
                 onChange={async (next) => {
                   // next=true means analytics is ON, opt-out is FALSE
@@ -549,14 +551,14 @@ export default function SettingsPage() {
 
             {/* ── 4c. The Collective ───────────────────────────────────── */}
             <Section
-              label="The Collective"
+              label={t("settings.collective")}
               status={hiveStatus}
               hint={hiveConsent
-                ? "On. Your chart is part of the Collective, anonymously. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle grows sharper as the Collective grows."
-                : "Off. Your chart is excluded from the Collective. Existing signal data is removed. The Oracle reads only your chart and your sessions, not the wider field."}
+                ? t("settings.collective_on_hint")
+                : t("settings.collective_off_hint")}
             >
               <Toggle
-                label={hiveConsent ? "On" : "Off"}
+                label={hiveConsent ? t("common.on") : t("common.off")}
                 checked={hiveConsent}
                 onChange={toggleHiveConsent}
               />
@@ -564,13 +566,13 @@ export default function SettingsPage() {
 
             {/* ── 5. Birth details ─────────────────────────────────────── */}
             <Section
-              label="Birth details"
+              label={t("settings.birth_details")}
               status={birthStatus}
               error={birthError}
-              hint="Changing these recalculates your full chart. Useful if your time of birth was wrong, or you've learned new information from family."
+              hint={t("settings.birth_details_hint")}
             >
               <div className="space-y-4">
-                <FieldRow label="Date">
+                <FieldRow label={t("common.date")}>
                   <input
                     type="date"
                     value={birthDate}
@@ -578,7 +580,7 @@ export default function SettingsPage() {
                     className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
-                <FieldRow label="Time">
+                <FieldRow label={t("common.time")}>
                   <input
                     type="time"
                     value={birthTime}
@@ -586,7 +588,7 @@ export default function SettingsPage() {
                     className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
-                <FieldRow label="City">
+                <FieldRow label={t("common.city")}>
                   <div className="relative">
                     <input
                       ref={cityInputRef}
@@ -599,11 +601,11 @@ export default function SettingsPage() {
                       }}
                       onFocus={() => birthCity.length >= 2 && setShowCitySuggestions(citySuggestions.length > 0)}
                       className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
-                      placeholder="City, country"
+                      placeholder={t("settings.city_placeholder")}
                       autoCapitalize="words"
                     />
                     {cityLoading && (
-                      <span className="absolute right-1 top-1 text-[12px] text-text-muted">Searching…</span>
+                      <span className="absolute right-1 top-1 text-[12px] text-text-muted">{t("settings.searching")}</span>
                     )}
                     {showCitySuggestions && citySuggestions.length > 0 && (
                       <div
@@ -637,12 +639,12 @@ export default function SettingsPage() {
             </Section>
 
             {/* ── 6. Subscription ──────────────────────────────────────── */}
-            <Section label="Subscription" hint="Manage billing, see renewal date, cancel.">
+            <Section label={t("settings.subscription")} hint={t("settings.subscription_hint")}>
               <button
                 onClick={() => router.push("/subscribe")}
                 className="font-body text-[14px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
               >
-                Manage subscription
+                {t("common.manage_subscription")}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
@@ -655,7 +657,7 @@ export default function SettingsPage() {
                 onClick={handleSignOut}
                 className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase hover:text-ember transition-colors"
               >
-                Sign out
+                {t("common.sign_out")}
               </button>
             </div>
 
@@ -684,12 +686,13 @@ function Section({
   hint?: string;
   children: React.ReactNode;
 }) {
+  const { t } = useT();
   return (
     <section className="py-6 border-b border-forest-border/40">
       <div className="flex items-baseline justify-between mb-3">
         <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">{label}</p>
-        {status === "saving" && <span className="font-body text-[12px] text-text-muted">Saving…</span>}
-        {status === "saved"  && <span className="font-body text-[12px] text-moss">Saved</span>}
+        {status === "saving" && <span className="font-body text-[12px] text-text-muted">{t("settings.saving")}</span>}
+        {status === "saved"  && <span className="font-body text-[12px] text-moss">{t("common.saved")}</span>}
       </div>
       {children}
       {error && <p className="mt-3 font-body text-[12px] text-ember">{error}</p>}
@@ -708,6 +711,7 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
 }
 
 function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStatus }) {
+  const { t } = useT();
   const disabled = status === "saving";
   return (
     <button
@@ -716,7 +720,7 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
       disabled={disabled}
       className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      {status === "saving" ? "Saving" : "Save"}
+      {status === "saving" ? t("common.saving") : t("common.save")}
     </button>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 /**
  * VerifyEmailBanner
@@ -18,6 +19,7 @@ export default function VerifyEmailBanner({
 }: {
   emailVerified: boolean | undefined;
 }) {
+  const { t } = useT();
   const { token } = useAuth();
   const [dismissed, setDismissed] = useState(false);
   const [sending, setSending] = useState(false);
@@ -49,8 +51,8 @@ export default function VerifyEmailBanner({
     >
       <p className="text-xs" style={{ color: "var(--amber, #f39230)" }}>
         {sent
-          ? "Verification email sent. Check your inbox."
-          : "Please verify your email to unlock all features."}
+          ? t("verify_banner.sent")
+          : t("verify_banner.prompt")}
       </p>
       <div className="flex items-center gap-2 shrink-0">
         {!sent && (
@@ -64,14 +66,14 @@ export default function VerifyEmailBanner({
               opacity: sending ? 0.5 : 1,
             }}
           >
-            {sending ? "Sending..." : "Resend"}
+            {sending ? t("verify_banner.sending") : t("verify_banner.resend")}
           </button>
         )}
         <button
           onClick={() => setDismissed(true)}
           className="text-xs px-1 opacity-40 hover:opacity-70"
           style={{ color: "var(--text-secondary)" }}
-          aria-label="Dismiss"
+          aria-label={t("common.dismiss")}
         >
           &times;
         </button>

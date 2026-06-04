@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n";
 
 export default function WeekSummaryCard() {
+  const { t } = useT();
   const [summary, setSummary] = useState<string | null>(null);
   const { token } = useAuth();
 
@@ -32,7 +34,7 @@ export default function WeekSummaryCard() {
 
   return (
     <div className="px-4 py-3 rounded-xl border border-forest-border/50 bg-forest-card/30">
-      <p className="text-text-secondary text-[12px] font-body tracking-[0.2em] uppercase mb-1.5">Days Ahead</p>
+      <p className="text-text-secondary text-[12px] font-body tracking-[0.2em] uppercase mb-1.5">{t("week.days_ahead")}</p>
       <p className="text-text-secondary text-sm font-body leading-relaxed">{summary}</p>
     </div>
   );

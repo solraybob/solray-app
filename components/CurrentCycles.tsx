@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 // Planet-specific atmospheric images for cycle cards
 const PLANET_CYCLE_IMAGES: Record<string, string> = {
@@ -119,6 +120,7 @@ function calcPeakPos(started: string, peak: string, ends: string): number {
 }
 
 function CycleCard({ cycle }: { cycle: Cycle }) {
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const progress = calcProgress(cycle.started, cycle.peak, cycle.ends);
   const peakPos = calcPeakPos(cycle.started, cycle.peak, cycle.ends);
@@ -169,7 +171,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
             </div>
             <div className="flex justify-between mt-1.5">
               <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.started)}</span>
-              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">Peak {fmtDate(cycle.peak)}</span>
+              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">{t("cycles.peak")} {fmtDate(cycle.peak)}</span>
               <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.ends)}</span>
             </div>
           </div>
@@ -182,7 +184,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
             <span className={`text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
               {cycle.phase}
             </span>
-            <span className="text-text-secondary/30 text-[11px] font-body">orb {cycle.orb}°</span>
+            <span className="text-text-secondary/30 text-[11px] font-body">{t("cycles.orb")} {cycle.orb}°</span>
           </div>
         </div>
       </div>
@@ -198,6 +200,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 }
 
 function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const summary = cycle.summary || "";
@@ -233,12 +236,12 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
               className="text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun/50 shrink-0"
             >
               {cycle.days_until_orb >= 60
-                  ? `in ${Math.round(cycle.days_until_orb / 30)} months`
-                  : `in ${cycle.days_until_orb} days`}
+                  ? t("cycles.in_months").replace("{n}", String(Math.round(cycle.days_until_orb / 30)))
+                  : t("cycles.in_days").replace("{n}", String(cycle.days_until_orb))}
             </span>
           </div>
           <p className="text-text-secondary/60 text-[13px] font-body leading-snug">
-            Enters orb {fmtDateLong(cycle.enters_orb)}
+            {t("cycles.enters_orb")} {fmtDateLong(cycle.enters_orb)}
           </p>
         </div>
         <span
@@ -269,7 +272,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
               onClick={handleGoDeeper}
               className="text-[13px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
             >
-              Go Deeper →
+              {t("cycles.go_deeper")}
             </button>
           </div>
         </>
@@ -294,6 +297,7 @@ interface CurrentCyclesProps {
 }
 
 export default function CurrentCycles({ token }: CurrentCyclesProps) {
+  const { t } = useT();
   const [cycles, setCycles] = useState<Cycle[] | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingCycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -349,7 +353,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
       {/* Section header with pagination */}
       <div className="flex items-center justify-between mb-4">
         <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
-          Current Cycles
+          {t("cycles.current_cycles")}
         </p>
         {!loading && total > 1 && (
           <div className="flex items-center gap-3">
@@ -412,7 +416,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
               {/* Section label */}
               <div className="flex items-center gap-3 mb-3">
                 <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
-                  Coming Up
+                  {t("cycles.coming_up")}
                 </p>
                 <div className="flex-1 h-px bg-forest-border/30" />
               </div>

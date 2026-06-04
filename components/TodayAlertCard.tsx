@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 interface Aspect {
   planet: string;
@@ -37,6 +38,7 @@ const PLANET_SYMBOLS: Record<string, string> = {
 };
 
 export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardProps) {
+  const { t } = useT();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -98,7 +100,7 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
       </p>
 
       {/* Subtle label */}
-      <p className="text-text-secondary/50 text-[12px] font-body mt-2">Tap to explore in chat</p>
+      <p className="text-text-secondary/50 text-[12px] font-body mt-2">{t("alert.tap_to_explore")}</p>
     </div>
   );
 }

@@ -7,8 +7,10 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import LanguagePicker from "@/components/LanguagePicker";
+import { useT } from "@/lib/i18n";
 
 export default function LoginPage() {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -56,7 +58,7 @@ export default function LoginPage() {
       }
       router.push("/today");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "The signal didn't reach. Try again.");
+      setError(err instanceof Error ? err.message : t("login.error_no_signal"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export default function LoginPage() {
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
           <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em]" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</p>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Your cosmic intelligence</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">{t("login.cosmic_intelligence")}</p>
         </div>
 
         {/* Form */}
@@ -105,7 +107,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
+              placeholder={t("login.email_placeholder")}
               autoComplete="email"
               required
               className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
@@ -116,7 +118,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t("login.password_placeholder")}
               autoComplete="current-password"
               required
               className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
@@ -132,20 +134,20 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
           >
-            {loading ? <LoadingSpinner size="sm" /> : "Enter"}
+            {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}
           </button>
         </form>
 
         <p className="text-center text-text-secondary text-xs mt-5 font-body">
           <Link href="/forgot-password" className="hover:text-text-primary transition-colors">
-            Forgot password?
+            {t("login.forgot_password")}
           </Link>
         </p>
 
         <p className="text-center text-text-secondary text-xs mt-6 font-body">
-          New here?{" "}
+          {t("login.new_here")}{" "}
           <Link href="/onboard" className="text-amber-sun hover:opacity-80 transition-opacity">
-            Begin your journey
+            {t("login.begin_journey")}
           </Link>
         </p>
       </div>

@@ -15,8 +15,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useT } from "@/lib/i18n";
 
 export default function ForgotPasswordPage() {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -35,11 +37,11 @@ export default function ForgotPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.detail || "Could not request a reset. Try again.");
+        throw new Error(e.detail || t("forgot.error_request"));
       }
       setSubmitted(true);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+      setError(e instanceof Error ? e.message : t("common.error_generic"));
     } finally {
       setLoading(false);
     }
@@ -53,28 +55,28 @@ export default function ForgotPasswordPage() {
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Reset password</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">{t("forgot.reset_password")}</p>
         </div>
 
         {submitted ? (
           <div className="text-center space-y-4">
             <p className="font-body text-text-primary text-[16px] leading-relaxed">
-              If that email is registered, a reset link is on the way.
+              {t("forgot.sent_title")}
             </p>
             <p className="font-body text-text-secondary text-[14px] leading-relaxed">
-              The link is good for one hour. Check spam if it does not arrive within a few minutes.
+              {t("forgot.sent_detail")}
             </p>
             <Link
               href="/login"
               className="inline-block mt-6 font-body text-amber-sun text-[14px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
             >
-              Back to login
+              {t("forgot.back_to_login")}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className="font-body text-text-secondary text-[15px] leading-relaxed text-center mb-4">
-              Enter your email. We&rsquo;ll send a link to set a new password.
+              {t("forgot.prompt")}
             </p>
 
             <div>
@@ -82,7 +84,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t("login.email_placeholder")}
                 autoComplete="email"
                 required
                 autoFocus
@@ -99,12 +101,12 @@ export default function ForgotPasswordPage() {
               disabled={loading || !email.trim()}
               className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
             >
-              {loading ? <LoadingSpinner size="sm" /> : "Send reset link"}
+              {loading ? <LoadingSpinner size="sm" /> : t("forgot.send_link")}
             </button>
 
             <p className="text-center text-text-secondary text-xs mt-5 font-body">
               <Link href="/login" className="hover:text-text-primary transition-colors">
-                Back to login
+                {t("forgot.back_to_login")}
               </Link>
             </p>
           </form>

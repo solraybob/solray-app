@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 interface SolarReturnCardProps {
   birthDate: string; // ISO date string
@@ -45,11 +46,11 @@ function daysUntilBirthday(birthDateStr: string): number {
 }
 
 // Format birth date nicely
-function formatBirthDate(birthDateStr: string): string {
+function formatBirthDate(birthDateStr: string, lang: string): string {
   const date = new Date(birthDateStr);
   if (isNaN(date.getTime())) return "";
 
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleDateString(lang === "en" ? "en-GB" : lang, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -76,6 +77,7 @@ function getUpcomingYear(birthDateStr: string): number {
 
 export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
   const { token } = useAuth();
+  const { t, lang } = useT();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -86,18 +88,18 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
     return null;
   }
 
-  const formattedDate = formatBirthDate(birthDate);
+  const formattedDate = formatBirthDate(birthDate, lang);
   const upcomingYear = getUpcomingYear(birthDate);
   const dayLabel =
     daysUntil === 0
-      ? "Today is your Solar Return!"
+      ? t("solar.today")
       : daysUntil === 1
-      ? "Tomorrow is your Solar Return!"
+      ? t("solar.tomorrow")
       : daysUntil === -1
-      ? "Yesterday was your Solar Return."
+      ? t("solar.yesterday")
       : daysUntil > 0
-      ? `Your Solar Return is in ${daysUntil} days`
-      : `Your Solar Return was ${Math.abs(daysUntil)} days ago`;
+      ? t("solar.in_days").replace("{count}", String(daysUntil))
+      : t("solar.days_ago").replace("{count}", String(Math.abs(daysUntil)));
 
   const handleTapCard = async () => {
     if (!token) return;
@@ -162,7 +164,7 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
           <span className="text-2xl">✨</span>
           <div className="flex-1 text-left">
             <h3 className="font-heading text-lg text-amber-sun font-light">
-              Your year ahead is ready.
+              {t("solar.year_ready")}
             </h3>
             <p className="text-text-secondary text-xs font-body mt-0.5">
               {dayLabel}
@@ -173,19 +175,19 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
         {/* Birth date subtitle */}
         <div className="mb-4">
           <p className="text-text-secondary/80 text-sm font-body">
-            Born {formattedDate}
+            {t("solar.born").replace("{date}", formattedDate)}
           </p>
         </div>
 
         {/* Body text */}
         <p className="text-text-secondary text-sm leading-relaxed font-body mb-4">
-          Every year the Sun returns to its exact birth position. This moment defines the energy of your coming year.
+          {t("solar.body")}
         </p>
 
         {/* CTA Button */}
         <div className="flex items-center justify-between">
           <span className="text-amber-sun text-xs font-body tracking-wider uppercase">
-            {loading ? "Loading..." : "Read your year ahead"}
+            {loading ? t("common.loading") : t("solar.read_year")}
           </span>
           <span className="text-amber-sun/70 text-sm">→</span>
         </div>

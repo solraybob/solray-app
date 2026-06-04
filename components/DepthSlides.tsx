@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useT } from "@/lib/i18n";
 
 interface DepthSlidesProps {
   tags: {
@@ -19,7 +20,7 @@ interface DepthSlidesProps {
 const SLIDES = [
   {
     key: "astrology" as const,
-    label: "The Sky",
+    labelKey: "depth.the_sky",
     color: "var(--amber)",
     // Warm candlelight amber, golden glow matching the color
     image: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=60",
@@ -35,7 +36,7 @@ const SLIDES = [
   },
   {
     key: "human_design" as const,
-    label: "Your Design",
+    labelKey: "depth.your_design",
     color: "var(--mist)", // mist, mental blueprint, cool geometric
     // Earth from space, the cosmic blueprint of a body
     image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
@@ -48,7 +49,7 @@ const SLIDES = [
   },
   {
     key: "gene_keys" as const,
-    label: "Your Keys",
+    labelKey: "depth.your_keys",
     color: "var(--wisteria)", // wisteria, mystical keys, transformative
     // Moon, the inner world, mystery, threshold
     image: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
@@ -61,6 +62,7 @@ const SLIDES = [
 ];
 
 export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
+  const { t } = useT();
   const [openKeys, setOpenKeys] = useState<Set<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -99,7 +101,8 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           }}
           onScroll={handleScroll}
         >
-          {SLIDES.map(({ key, label, icon, color, image }) => {
+          {SLIDES.map(({ key, labelKey, icon, color, image }) => {
+            const label = t(labelKey);
             const headline = tags[key] || "";
             const detail = tagDetails?.[key] || "";
             const isOpen = openKeys.has(key);
@@ -165,7 +168,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                         fontStyle: detail ? "normal" : "italic",
                       }}
                     >
-                      {detail || "Deeper interpretation coming soon."}
+                      {detail || t("depth.coming_soon")}
                     </p>
                   </div>
                 )}

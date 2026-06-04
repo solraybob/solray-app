@@ -18,6 +18,7 @@ import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import {
   parseBlueprintForChart,
   HD_TYPE_MEANINGS,
@@ -43,6 +44,7 @@ export default function ConnectionProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
+  const { t } = useT();
   const id = String(params?.id || "");
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -78,12 +80,12 @@ export default function ConnectionProfilePage() {
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-indigo))" }}>
-              Soul
+              {t("conn.soul")}
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
               <button
                 onClick={() => router.back()}
-                aria-label="Back"
+                aria-label={t("common.back")}
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
                 style={{ minWidth: "32px", minHeight: "32px", marginLeft: "-8px" }}
               >
@@ -95,7 +97,7 @@ export default function ConnectionProfilePage() {
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
-                {profile?.name?.toUpperCase() || "PROFILE"}
+                {profile?.name?.toUpperCase() || t("nav.profile").toUpperCase()}
               </h1>
             </div>
           </div>
@@ -110,27 +112,27 @@ export default function ConnectionProfilePage() {
 
           {!loading && error === "forbidden" && (
             <EmptyState
-              title="Not a soul connection"
-              body="You can only view someone's profile after they accept your invite. Find them on Souls and send an invite."
-              actionLabel="Open Souls"
+              title={t("conn.forbidden_title")}
+              body={t("conn.forbidden_body")}
+              actionLabel={t("conn.open_souls")}
               onAction={() => router.push("/souls")}
             />
           )}
 
           {!loading && error === "missing" && (
             <EmptyState
-              title="Profile not found"
-              body="This person may have deleted their account. Try Souls to find your active connections."
-              actionLabel="Open Souls"
+              title={t("conn.missing_title")}
+              body={t("conn.missing_body")}
+              actionLabel={t("conn.open_souls")}
               onAction={() => router.push("/souls")}
             />
           )}
 
           {!loading && error === "network" && (
             <EmptyState
-              title="Couldn't load this profile"
-              body="Check your connection and try again."
-              actionLabel="Retry"
+              title={t("conn.network_title")}
+              body={t("conn.network_body")}
+              actionLabel={t("common.retry")}
               onAction={() => location.reload()}
             />
           )}
@@ -187,19 +189,21 @@ export default function ConnectionProfilePage() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function PrivateProfileNotice({ name }: { name: string }) {
+  const { t } = useT();
   return (
     <div className="mt-4 mb-6 px-6 py-8 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
       <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
-        Private profile
+        {t("conn.private_title")}
       </p>
       <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-xs mx-auto">
-        {name} hasn&rsquo;t made their chart public. You stay connected on Souls, but their birth details are theirs to share.
+        {t("conn.private_body").replace("{name}", name)}
       </p>
     </div>
   );
 }
 
 function PublicProfileBody({ profile }: { profile: PublicProfile }) {
+  const { t } = useT();
   const chart: ParsedChart | null = useMemo(
     () => (profile.blueprint ? parseBlueprintForChart(profile.blueprint) : null),
     [profile.blueprint]
@@ -220,15 +224,15 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Three-line essence */}
       {(sunSign || chart?.human_design.type) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Essence</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.essence")}</p>
           <div className="space-y-1.5 font-body text-[15px]">
-            {sunSign  && <Row label="Sun"  value={sunSign}  />}
-            {moonSign && <Row label="Moon" value={moonSign} />}
-            {ascSign  && <Row label="Ascendant" value={ascSign} />}
+            {sunSign  && <Row label={t("planets.sun")}  value={sunSign}  />}
+            {moonSign && <Row label={t("planets.moon")} value={moonSign} />}
+            {ascSign  && <Row label={t("planets.ascendant")} value={ascSign} />}
             {chart?.human_design.type && (
-              <Row label="Human Design" value={`${chart.human_design.type}${chart.human_design.profile ? ` ${chart.human_design.profile}` : ""}`} />
+              <Row label={t("conn.human_design")} value={`${chart.human_design.type}${chart.human_design.profile ? ` ${chart.human_design.profile}` : ""}`} />
             )}
-            {chart?.human_design.authority && <Row label="Authority" value={chart.human_design.authority} />}
+            {chart?.human_design.authority && <Row label={t("conn.authority")} value={chart.human_design.authority} />}
           </div>
         </div>
       )}
@@ -242,7 +246,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Natal Chart */}
       {chart && chart.natal.length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Natal Chart</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.natal_chart")}</p>
           <div className="flex justify-center">
             <NatalWheel
               planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
@@ -258,7 +262,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Human Design */}
       {chart && chart.human_design.defined_centres.length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Human Design</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.human_design")}</p>
           <div className="flex justify-center mb-4">
             <BodyGraph
               definedCenters={chart.human_design.defined_centres}
@@ -269,30 +273,30 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
           <div className="space-y-2 font-body text-[14px]">
             {chart.human_design.type && (
               <DepthRow
-                label="Type"
+                label={t("conn.type")}
                 value={chart.human_design.type}
                 meaning={HD_TYPE_MEANINGS[chart.human_design.type]}
               />
             )}
             {chart.human_design.strategy && (
-              <DepthRow label="Strategy" value={chart.human_design.strategy} />
+              <DepthRow label={t("conn.strategy")} value={chart.human_design.strategy} />
             )}
             {chart.human_design.authority && (
               <DepthRow
-                label="Authority"
+                label={t("conn.authority")}
                 value={chart.human_design.authority}
                 meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]}
               />
             )}
             {chart.human_design.profile && (
               <DepthRow
-                label="Profile"
+                label={t("conn.profile")}
                 value={chart.human_design.profile}
                 meaning={profileMeaning}
               />
             )}
             {chart.human_design.incarnation_cross && (
-              <DepthRow label="Cross" value={chart.human_design.incarnation_cross} />
+              <DepthRow label={t("conn.cross")} value={chart.human_design.incarnation_cross} />
             )}
           </div>
         </div>
@@ -301,19 +305,19 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Gene Keys */}
       {chart && Object.keys(chart.gene_keys).length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">Gene Keys</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.gene_keys")}</p>
           <div className="space-y-3">
             {Object.entries(chart.gene_keys).map(([slot, gk]) => (
               <div key={slot} className="border-b border-forest-border/30 last:border-0 pb-3 last:pb-0">
                 <div className="flex items-baseline justify-between gap-2 mb-1">
                   <span className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase">{gk.name}</span>
-                  <span className="font-heading text-amber-sun" style={{ fontSize: 18, fontWeight: 300 }}>Gate {gk.gate}</span>
+                  <span className="font-heading text-amber-sun" style={{ fontSize: 18, fontWeight: 300 }}>{t("conn.gate")} {gk.gate}</span>
                 </div>
                 {(gk.shadow || gk.gift) && (
                   <p className="font-body text-text-secondary text-[13px] leading-snug">
-                    {gk.shadow && <>Shadow: {gk.shadow}</>}
+                    {gk.shadow && <>{t("conn.shadow")}: {gk.shadow}</>}
                     {gk.shadow && gk.gift && <>. </>}
-                    {gk.gift && <>Gift: {gk.gift}</>}
+                    {gk.gift && <>{t("conn.gift")}: {gk.gift}</>}
                   </p>
                 )}
               </div>
@@ -417,6 +421,7 @@ function simpleHash(s: string): string {
 }
 
 function CompatibilitySection({ token, soulId, soulName }: { token: string | null; soulId: string; soulName: string }) {
+  const { t } = useT();
   const [reading, setReading] = useState<CompatReading | null>(null);
   const [signals, setSignals] = useState<CompatSignals | null>(null);
   const [index,   setIndex]   = useState<ResonanceIndex | null>(null);
@@ -465,9 +470,9 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
         } else if (e instanceof ApiError && e.status === 403) {
           // Not in an accepted connection; should never happen on this page
           // since the public-profile fetch above already 403'd.
-          setError("This reading is only available to accepted soul connections.");
+          setError(t("compat.only_connections"));
         } else {
-          setError(e instanceof Error ? e.message : "Could not load compatibility.");
+          setError(e instanceof Error ? e.message : t("compat.error_load"));
         }
       })
       .finally(() => setLoading(false));
@@ -479,16 +484,16 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
   return (
     <div className="mt-8">
       <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-3" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
-        Between you
+        {t("compat.between_you")}
       </p>
 
       {paywall && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5 text-center">
           <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
-            Compatibility readings are part of the membership
+            {t("compat.paywall_title")}
           </p>
           <p className="font-body text-text-secondary text-[14px] leading-relaxed mb-4 max-w-md mx-auto">
-            Subscribers see the four-lens reading: where you amplify each other, where you misread, what each of you needs to feel safe, what the relationship is here to teach.
+            {t("compat.paywall_body")}
           </p>
         </div>
       )}
@@ -507,26 +512,26 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
 
       {!paywall && reading && (
         <div className="space-y-3 mt-3">
-          <Lens label="Where you amplify each other"  body={reading.amplify} />
-          <Lens label="Where you misread each other"  body={reading.misread} />
-          <Lens label="What each of you needs to feel safe" body={reading.safety} />
-          <Lens label="What the relationship is here to teach" body={reading.lesson} />
+          <Lens label={t("compat.lens_amplify")}  body={reading.amplify} />
+          <Lens label={t("compat.lens_misread")}  body={reading.misread} />
+          <Lens label={t("compat.lens_safety")} body={reading.safety} />
+          <Lens label={t("compat.lens_lesson")} body={reading.lesson} />
         </div>
       )}
 
       {!paywall && signals && (signals.shared_gates_count ?? 0) > 0 && (
         <div className="mt-4 rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">Structural signals</p>
+          <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">{t("compat.structural_signals")}</p>
           <div className="space-y-1.5 font-body text-[14px]">
             {signals.hd_types?.compatibility_note && (
-              <Row label="Types" value={signals.hd_types.compatibility_note} />
+              <Row label={t("compat.types")} value={signals.hd_types.compatibility_note} />
             )}
             {(signals.shared_gates_count ?? 0) > 0 && (
-              <Row label="Shared gates" value={`${signals.shared_gates_count}: ${(signals.shared_gates || []).slice(0, 12).join(", ")}`} />
+              <Row label={t("compat.shared_gates")} value={`${signals.shared_gates_count}: ${(signals.shared_gates || []).slice(0, 12).join(", ")}`} />
             )}
             {(signals.shared_channels?.length ?? 0) > 0 && (
               <Row
-                label="Shared channels"
+                label={t("compat.shared_channels")}
                 value={(signals.shared_channels || []).map((c) => `${c[0]}-${c[1]}`).join(", ")}
               />
             )}
@@ -540,7 +545,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
           className="mt-3 font-body text-[11px] tracking-[0.22em] uppercase text-amber-sun/70 hover:text-amber-sun transition-colors"
           disabled={loading}
         >
-          {loading ? "Refreshing" : "Re-read"}
+          {loading ? t("compat.refreshing") : t("compat.re_read")}
         </button>
       )}
     </div>
@@ -559,20 +564,20 @@ function Lens({ label, body }: { label: string; body?: string }) {
   );
 }
 
-const AXIS_LABEL: Record<string, string> = {
-  resonance:      "Resonance",
-  energetic_loop: "Energetic loop",
-  type_pairing:   "Type pairing",
-  astrological:   "Astrological mirror",
-  gene_keys:      "Gene Keys",
+const AXIS_LABEL_KEY: Record<string, string> = {
+  resonance:      "compat.axis_resonance",
+  energetic_loop: "compat.axis_energetic_loop",
+  type_pairing:   "compat.axis_type_pairing",
+  astrological:   "compat.axis_astrological",
+  gene_keys:      "compat.axis_gene_keys",
 };
 
-const AXIS_HINT: Record<string, string> = {
-  resonance:      "Shared HD gates as a share of the unique gates between you.",
-  energetic_loop: "Channels you complete together that neither of you closes alone.",
-  type_pairing:   "How your Human Design types tend to fit (Generator with Projector, etc).",
-  astrological:   "Element-family overlap across Sun, Moon, Venus, Mars, Ascendant.",
-  gene_keys:      "Spheres where you both have the same gate (Life's Work, Radiance, etc).",
+const AXIS_HINT_KEY: Record<string, string> = {
+  resonance:      "compat.hint_resonance",
+  energetic_loop: "compat.hint_energetic_loop",
+  type_pairing:   "compat.hint_type_pairing",
+  astrological:   "compat.hint_astrological",
+  gene_keys:      "compat.hint_gene_keys",
 };
 
 // Per-axis colors map to the extended-palette tokens, the same grammar as
@@ -588,6 +593,7 @@ const AXIS_COLOR: Record<string, string> = {
 };
 
 function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: string }) {
+  const { t } = useT();
   // Defensive guards: a partial backend payload (missing axes object or
   // missing individual axis) was rendering throw -> white screen on
   // /profile/[id]. Codex flagged this as a P1 crash risk before App Store
@@ -610,10 +616,10 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
       <div className="flex items-center justify-between gap-4 mb-1">
         <div>
           <p className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
-            Resonance Index
+            {t("compat.resonance_index")}
           </p>
           <p className="font-body text-text-secondary/70 text-[12px] mt-1">
-            with {soulName}
+            {t("compat.with_name").replace("{name}", soulName)}
           </p>
         </div>
         <div className="text-right">
@@ -627,7 +633,7 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
       </div>
 
       <p className="font-body text-text-secondary/70 text-[12px] leading-relaxed mt-3 mb-5">
-        Overlap, not quality. Not a ranking. The shape of what is happening between you is described in the four lenses below.
+        {t("compat.overlap_note")}
       </p>
 
       {/* Axis bars use the same rhythm as Today's energy bars: label row
@@ -638,8 +644,8 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
         {axes.map(([key, axis], idx) => (
           <AxisBar
             key={key}
-            label={AXIS_LABEL[key]}
-            hint={AXIS_HINT[key]}
+            label={t(AXIS_LABEL_KEY[key])}
+            hint={t(AXIS_HINT_KEY[key])}
             score={Math.round(axis.score)}
             weight={axis.weight}
             color={AXIS_COLOR[key] || "var(--amber)"}

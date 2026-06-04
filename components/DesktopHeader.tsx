@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 /**
  * Top header that appears on desktop (lg breakpoint and above) only.
@@ -19,16 +20,17 @@ import { usePathname } from "next/navigation";
  */
 
 const navItems = [
-  { href: "/today",   label: "Today",   color: "var(--amber)" },
-  { href: "/chat",    label: "Chat",    color: "var(--wisteria)" },
-  { href: "/souls",   label: "Souls",   color: "#6a8692" },
-  { href: "/profile", label: "Profile", color: "var(--moss)" },
+  { href: "/today",   labelKey: "nav.today",   color: "var(--amber)" },
+  { href: "/chat",    labelKey: "nav.chat",    color: "var(--wisteria)" },
+  { href: "/souls",   labelKey: "nav.souls",   color: "#6a8692" },
+  { href: "/profile", labelKey: "nav.profile", color: "var(--moss)" },
 ];
 
 const NAV_ROUTES = ["/today", "/chat", "/souls", "/profile", "/chart"];
 
 export default function DesktopHeader() {
   const pathname = usePathname() || "";
+  const { t } = useT();
 
   // Don't render on auth/onboarding/marketing/admin/etc.
   if (!NAV_ROUTES.some((r) => pathname.startsWith(r))) return null;
@@ -73,7 +75,7 @@ export default function DesktopHeader() {
                 }}
               >
                 <span className="font-body text-[13px] tracking-[0.15em] uppercase">
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
               </Link>
             );

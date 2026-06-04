@@ -15,8 +15,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useT } from "@/lib/i18n";
 
 export default function ResetPasswordPage() {
+  const { t } = useT();
   const params = useParams();
   const router = useRouter();
   const { setToken } = useAuth();
@@ -32,11 +34,11 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (password.length < 6) {
-      setError("Password should be at least 6 characters.");
+      setError(t("reset.error_too_short"));
       return;
     }
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError(t("reset.error_mismatch"));
       return;
     }
 
@@ -50,7 +52,7 @@ export default function ResetPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.detail || "Could not reset password.");
+        throw new Error(e.detail || t("reset.error_failed"));
       }
       const data = await res.json();
       // Backend issues a fresh JWT so we land the user straight into
@@ -67,7 +69,7 @@ export default function ResetPasswordPage() {
         router.replace("/login");
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+      setError(e instanceof Error ? e.message : t("common.error_generic"));
       setLoading(false);
     }
   };
@@ -80,12 +82,12 @@ export default function ResetPasswordPage() {
             <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">Set new password</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">{t("reset.set_new_password")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="font-body text-text-secondary text-[15px] leading-relaxed text-center mb-4">
-            Pick a new password. We&rsquo;ll log you in once it&rsquo;s set.
+            {t("reset.prompt")}
           </p>
 
           <div>
@@ -93,7 +95,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="New password"
+              placeholder={t("reset.new_password")}
               autoComplete="new-password"
               required
               autoFocus
@@ -106,7 +108,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Confirm password"
+              placeholder={t("reset.confirm_password")}
               autoComplete="new-password"
               required
               minLength={6}
@@ -123,12 +125,12 @@ export default function ResetPasswordPage() {
             disabled={loading || password.length < 6 || password !== confirm}
             className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
           >
-            {loading ? <LoadingSpinner size="sm" /> : "Set password"}
+            {loading ? <LoadingSpinner size="sm" /> : t("reset.set_password")}
           </button>
 
           <p className="text-center text-text-secondary text-xs mt-5 font-body">
             <Link href="/login" className="hover:text-text-primary transition-colors">
-              Back to login
+              {t("forgot.back_to_login")}
             </Link>
           </p>
         </form>

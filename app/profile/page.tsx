@@ -9,6 +9,7 @@ import BodyGraph from "@/components/BodyGraph";
 import { planetText, GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 // Types
 
@@ -464,6 +465,7 @@ const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: stri
 const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
 
 function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
+  const { t } = useT();
   const [openAspects, setOpenAspects] = useState<Record<string, boolean>>({});
   const [minorOpen, setMinorOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
@@ -545,7 +547,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
         onClick={() => setSectionOpen(!sectionOpen)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
       >
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Natal Aspects</h2>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("profile.natal_aspects")}</h2>
         <svg
           width="16"
           height="16"
@@ -571,7 +573,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                 className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
               >
                 <span className="text-base w-6 text-center flex-shrink-0 text-text-secondary/50">·</span>
-                <span className="font-body text-[15px] text-text-secondary flex-1 text-left">Minor Aspects</span>
+                <span className="font-body text-[15px] text-text-secondary flex-1 text-left">{t("profile.minor_aspects")}</span>
                 <span className="font-body text-[12px] text-text-secondary/70 mr-2">
                   {minorGroups.reduce((s, k) => s + grouped[k].length, 0)}
                 </span>
@@ -617,8 +619,16 @@ function CollapsibleSection({
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
+  const { t } = useT();
   const [open, setOpen] = useState(defaultOpen);
   const accent = SECTION_ACCENTS[title] || "#8a9e8d";
+  const sectionTitleKey: Record<string, string> = {
+    "Natal Chart": "profile.natal_chart",
+    "Astrocartography": "profile.astrocartography",
+    "Human Design": "profile.human_design",
+    "Gene Keys": "profile.gene_keys",
+  };
+  const displayTitle = sectionTitleKey[title] ? t(sectionTitleKey[title]) : title;
 
   return (
     <div className="rounded-2xl border border-forest-border/50 bg-forest-card/20 overflow-hidden mb-4 transition-colors">
@@ -632,10 +642,10 @@ function CollapsibleSection({
               className="font-body text-[12px] tracking-[0.22em] uppercase mb-1"
               style={{ color: accent }}
             >
-              {title}
+              {displayTitle}
             </span>
             <span className="font-body text-text-secondary/70 text-[13px]">
-              {open ? "Tap to collapse" : "Tap to open"}
+              {open ? t("common.tap_to_collapse") : t("common.tap_to_open")}
             </span>
           </div>
           <svg
@@ -738,6 +748,7 @@ function IconCamera() {
 // Main Page
 
 export default function ProfilePage() {
+  const { t } = useT();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
@@ -883,7 +894,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingName(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : "Couldn't reach the stars just now. Try again.");
+      setSaveError(e instanceof Error ? e.message : t("profile.error_save"));
     } finally {
       setSavingName(false);
     }
@@ -908,7 +919,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingHandle(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : "Couldn't reach the stars just now. Try again.");
+      setSaveError(e instanceof Error ? e.message : t("profile.error_save"));
     } finally {
       setSavingHandle(false);
     }
@@ -983,7 +994,7 @@ export default function ProfilePage() {
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--moss)" }}>
-              Profile
+              {t("nav.profile")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
@@ -994,8 +1005,8 @@ export default function ProfilePage() {
               </h1>
               <button
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
-                title="Settings"
-                aria-label="Settings"
+                title={t("common.settings")}
+                aria-label={t("common.settings")}
                 style={{ minWidth: "32px", minHeight: "32px" }}
                 onClick={() => router.push("/profile/settings")}
               >
@@ -1073,7 +1084,7 @@ export default function ProfilePage() {
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center border border-forest-border"
                     style={{ background: "var(--card)", color: "#8a9e8d" }}
-                    title="Change profile picture"
+                    title={t("profile.change_picture")}
                   >
                     <IconCamera />
                   </button>
@@ -1087,13 +1098,13 @@ export default function ProfilePage() {
                 </div>
                 {/* Upload status */}
                 {avatarSaving === "saving" && (
-                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>saving...</p>
+                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>{t("profile.photo_saving")}</p>
                 )}
                 {avatarSaving === "saved" && (
-                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>saved</p>
+                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>{t("profile.photo_saved")}</p>
                 )}
                 {avatarSaving === "error" && (
-                  <p className="font-body text-[13px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>photo not saved. check connection.</p>
+                  <p className="font-body text-[13px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>{t("profile.photo_error")}</p>
                 )}
 
                 {/* Handle (username), with relative z positioning for gradient overlay */}
@@ -1109,9 +1120,9 @@ export default function ProfilePage() {
                       autoFocus
                     />
                     <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
-                      {savingHandle ? "…" : "Save"}
+                      {savingHandle ? "…" : t("common.save")}
                     </button>
-                    <button onClick={() => setEditingHandle(false)} className="font-body text-[12px] text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingHandle(false)} className="font-body text-[12px] text-text-secondary">{t("common.cancel")}</button>
                   </div>
                 ) : (
                   profile?.handle && (
@@ -1135,9 +1146,9 @@ export default function ProfilePage() {
                       autoFocus
                     />
                     <button onClick={handleSaveName} disabled={savingName} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
-                      {savingName ? "…" : "Save"}
+                      {savingName ? "…" : t("common.save")}
                     </button>
-                    <button onClick={() => setEditingName(false)} className="font-body text-[12px] text-text-secondary">Cancel</button>
+                    <button onClick={() => setEditingName(false)} className="font-body text-[12px] text-text-secondary">{t("common.cancel")}</button>
                   </div>
                 ) : (
                     <h1
@@ -1148,7 +1159,7 @@ export default function ProfilePage() {
                         profile.name
                       ) : (
                         <span className="text-text-secondary opacity-60 italic" style={{ fontWeight: 300 }}>
-                          Add your name
+                          {t("profile.add_name")}
                         </span>
                       )}
                     </h1>
@@ -1161,7 +1172,7 @@ export default function ProfilePage() {
 
                 {profile && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2 relative z-10">
-                    {profile.sunSign && <SunTag>{profile.sunSign} Sun</SunTag>}
+                    {profile.sunSign && <SunTag>{t(`signs.${profile.sunSign.toLowerCase()}`)} {t("planets.sun")}</SunTag>}
                     {profile.hdType && <HDTypeTag>{profile.hdType}</HDTypeTag>}
                     {profile.hdProfile && <ProfileTag>{profile.hdProfile}</ProfileTag>}
                   </div>
@@ -1174,7 +1185,7 @@ export default function ProfilePage() {
                   className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
                   style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
                 >
-                  Your whole blueprint, in one place. Open any section to go deeper.
+                  {t("profile.intro")}
                 </p>
                 <div className="mt-5 w-12 h-px bg-forest-border/60" />
               </div>
@@ -1183,13 +1194,13 @@ export default function ProfilePage() {
               <div className="mb-6">
                 <div className="relative mb-4">
                   <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center" style={{ color: "var(--moss)" }}>
-                    Soul Map
+                    {t("profile.soul_map")}
                   </p>
                   {profile ? (
                     <button
                       onClick={handleSoulMapShare}
                       disabled={soulMapSharing}
-                      aria-label="Share your Soul Map"
+                      aria-label={t("profile.share_soul_map")}
                       className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center border transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                       style={{ borderColor: "rgba(138,158,141,0.40)", color: "var(--moss)", background: "transparent" }}
                     >
@@ -1216,7 +1227,7 @@ export default function ProfilePage() {
 
                       {/* Quiet caption instead of a dev-style legend */}
                       <p className="mt-3 font-body text-text-secondary/60 text-[12px] tracking-[0.15em] uppercase text-center">
-                        The dashed ring is balance
+                        {t("today.balance_ring")}
                       </p>
 
                       {/* Mini bar legend, all 7 dimensions with values and colored bars */}
@@ -1508,6 +1519,7 @@ function parseBlueprintForChart(blueprint: any) {
 // Uses router.push so React state and auth context are preserved (avoids the
 // full page reload that window.location.href would cause).
 function AskButton({ topic, question }: { topic: string; question: string }) {
+  const { t } = useT();
   const router = useRouter();
   const handleClick = () => {
     try {
@@ -1520,12 +1532,13 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
       onClick={handleClick}
       className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
     >
-      Ask →
+      {t("profile.ask")}
     </button>
   );
 }
 
 function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
+  const { t } = useT();
   // token is passed through to AstroGeography
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -1553,10 +1566,10 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       return false;
     };
     if (!tryLoad()) {
-      const t = setTimeout(() => {
+      const retryTimer = setTimeout(() => {
         if (!tryLoad() && !cancelled) setChartReady(true);
       }, 200);
-      return () => { cancelled = true; clearTimeout(t); };
+      return () => { cancelled = true; clearTimeout(retryTimer); };
     }
     return () => { cancelled = true; };
   }, [token]);
@@ -1576,7 +1589,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
     return (
       <div className="mb-4 rounded-2xl border border-forest-border/50 bg-forest-card/30 px-5 py-6 text-center">
         <p className="font-body text-text-secondary text-[15px] leading-relaxed">
-          Your blueprint is still being woven. Refresh in a moment.
+          {t("profile.blueprint_weaving")}
         </p>
       </div>
     );
@@ -1651,7 +1664,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             onClick={() => setShowAll(!showAll)}
             className="flex items-center gap-2 font-body text-text-secondary text-[12px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors"
           >
-            <span>{showAll ? "Hide planets" : "See all planets"}</span>
+            <span>{showAll ? t("profile.hide_planets") : t("profile.see_all_planets")}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}>
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -1736,7 +1749,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             </div>
           )}
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">Defined Centres</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">{t("profile.defined_centres")}</p>
             <div className="flex flex-wrap gap-2">
               {chart.human_design.defined_centres.map((c) => (
                 <span
@@ -1751,7 +1764,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           </div>
           {chart.human_design.undefined_centres.length > 0 && (
             <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Undefined Centres</p>
+              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">{t("profile.undefined_centres")}</p>
               <div className="flex flex-wrap gap-2">
                 {chart.human_design.undefined_centres.map((c) => (
                   <span key={c} className="px-2.5 py-1 bg-forest-card border border-forest-border rounded-full text-text-secondary text-xs font-body">{c}</span>
@@ -1761,7 +1774,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           )}
           {chart.human_design.key_channels.length > 0 && (
             <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">Key Channels</p>
+              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">{t("profile.key_channels")}</p>
               <div className="space-y-1">
                 {chart.human_design.key_channels.map((ch) => (
                   <p key={ch} className="text-text-primary text-sm font-body">· {ch}</p>
@@ -1798,7 +1811,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       <CollapsibleSection title="Astrocartography" defaultOpen={false}>
         <div className="mt-2">
           <p className="text-text-secondary text-xs font-body leading-relaxed mb-4">
-            Where in the world your planetary energies are strongest. Each line marks where a planet was rising, setting, or at its peak at your birth moment.
+            {t("profile.astrocartography_body")}
           </p>
           <AstroGeography token={token} />
         </div>

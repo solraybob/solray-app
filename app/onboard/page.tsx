@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useT } from "@/lib/i18n";
 
 const TOTAL_STEPS = 6;
 
@@ -19,14 +20,16 @@ const STEP_IMAGES = [
 ];
 
 // Magical blueprint calculation loading screen
-const BLUEPRINT_STEPS = [
-  "Mapping your astrology…",
-  "Deriving your Human Design…",
-  "Unlocking your Gene Keys…",
-  "Weaving your blueprint together…",
+const BLUEPRINT_STEP_KEYS = [
+  "onboard.blueprint_astrology",
+  "onboard.blueprint_human_design",
+  "onboard.blueprint_gene_keys",
+  "onboard.blueprint_weaving",
 ];
 
 function BlueprintLoader() {
+  const { t } = useT();
+  const BLUEPRINT_STEPS = BLUEPRINT_STEP_KEYS.map((k) => t(k));
   const [visibleCount, setVisibleCount] = useState(1);
 
   useEffect(() => {
@@ -92,6 +95,7 @@ function BlueprintLoader() {
 }
 
 export default function OnboardPage() {
+  const { t } = useT();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [sex, setSex] = useState<"male" | "female" | "">("");
@@ -229,7 +233,7 @@ export default function OnboardPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Registration failed");
+        throw new Error(err.detail || t("onboard.registration_failed"));
       }
       const data = await res.json();
       const newToken = data.token || data.access_token;
@@ -249,7 +253,7 @@ export default function OnboardPage() {
       // strands the user. Codex UX hook 1.
       router.push("/first-mirror");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : "Something went wrong. Please try again.";
+      const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : t("common.error_generic");
       setError(msg);
       setCalculatingBlueprint(false);
     } finally {
@@ -340,21 +344,21 @@ export default function OnboardPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative", zIndex: 1 }}>
         <div className="w-full max-w-sm">
           {step === 1 && (
-            <StepWrapper label="What is your name?">
+            <StepWrapper label={t("onboard.q_name")}>
               <input
                 autoFocus
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Your name"
+                placeholder={t("onboard.name_placeholder")}
                 className="onboard-input"
               />
             </StepWrapper>
           )}
 
           {step === 2 && (
-            <StepWrapper label="What is your gender?" subtitle="Used to tune your reading. Nothing more.">
+            <StepWrapper label={t("onboard.q_gender")} subtitle={t("onboard.gender_subtitle")}>
               <div className="grid grid-cols-2 gap-3">
                 {(["female", "male"] as const).map((opt) => {
                   const active = sex === opt;
@@ -371,7 +375,7 @@ export default function OnboardPage() {
                       }}
                     >
                       <span className="font-heading text-2xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
-                        {opt === "female" ? "Female" : "Male"}
+                        {opt === "female" ? t("onboard.female") : t("onboard.male")}
                       </span>
                     </button>
                   );
@@ -381,7 +385,7 @@ export default function OnboardPage() {
           )}
 
           {step === 3 && (
-            <StepWrapper label="When were you born?">
+            <StepWrapper label={t("onboard.q_birth_date")}>
               <input
                 autoFocus
                 type="date"
@@ -394,7 +398,7 @@ export default function OnboardPage() {
           )}
 
           {step === 4 && (
-            <StepWrapper label="What time were you born?">
+            <StepWrapper label={t("onboard.q_birth_time")}>
               {!timeUnknown && (
                 <input
                   autoFocus
@@ -411,13 +415,13 @@ export default function OnboardPage() {
                   timeUnknown ? "text-amber-sun" : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                {timeUnknown ? "✓ Using noon" : "I don't know my birth time"}
+                {timeUnknown ? t("onboard.time_using_noon") : t("onboard.time_unknown")}
               </button>
             </StepWrapper>
           )}
 
           {step === 5 && (
-            <StepWrapper label="Where were you born?">
+            <StepWrapper label={t("onboard.q_birth_place")}>
               <div className="relative">
                 <input
                   ref={cityInputRef}
@@ -429,7 +433,7 @@ export default function OnboardPage() {
                     setShowSuggestions(true);
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder="City, Country"
+                  placeholder={t("onboard.city_placeholder")}
                   className="onboard-input"
                   style={{ paddingRight: cityLoading ? "2rem" : undefined }}
                   autoComplete="off"
@@ -465,25 +469,25 @@ export default function OnboardPage() {
                   </div>
                 )}
               </div>
-              <p className="text-text-secondary text-xs mt-2 font-body">e.g. Barcelona, Spain</p>
+              <p className="text-text-secondary text-xs mt-2 font-body">{t("onboard.city_example")}</p>
             </StepWrapper>
           )}
 
           {step === 6 && (
-            <StepWrapper label={`Welcome, ${name}.`} subtitle="Create your account to begin.">
+            <StepWrapper label={`${t("onboard.welcome_name")} ${name}.`} subtitle={t("onboard.create_account")}>
               <input
                 autoFocus
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t("login.email_placeholder")}
                 className="onboard-input mb-3"
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password (min 6 characters)"
+                placeholder={t("onboard.password_placeholder")}
                 className="onboard-input"
               />
 
@@ -496,7 +500,7 @@ export default function OnboardPage() {
                   className="mt-1 w-4 h-4 accent-amber-sun cursor-pointer flex-shrink-0"
                 />
                 <span className="font-body text-[13px] leading-relaxed text-pearl/80">
-                  Add my chart to the Collective. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle grows sharper as the Collective grows. You can change this anytime in Settings.
+                  {t("onboard.hive_consent")}
                 </span>
               </label>
             </StepWrapper>
@@ -517,7 +521,7 @@ export default function OnboardPage() {
               disabled={!canProceed()}
               className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30"
             >
-              Continue
+              {t("common.continue")}
             </button>
           ) : (
             <button
@@ -525,7 +529,7 @@ export default function OnboardPage() {
               disabled={!canProceed() || loading}
               className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
             >
-              {loading ? <LoadingSpinner size="sm" /> : "Begin my journey"}
+              {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>
           )}
         </div>

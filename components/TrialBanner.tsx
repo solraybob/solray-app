@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useSubscription } from "@/lib/subscription-context";
 import { isRunningInCapacitor } from "@/lib/native-push";
+import { useT } from "@/lib/i18n";
 
 /**
  * TrialBanner
@@ -22,6 +23,7 @@ import { isRunningInCapacitor } from "@/lib/native-push";
  * fetches.
  */
 export default function TrialBanner() {
+  const { t } = useT();
   const { token } = useAuth();
   const { sub } = useSubscription();
   const pathname = usePathname();
@@ -62,12 +64,12 @@ export default function TrialBanner() {
 
   const message =
     daysLeft === null
-      ? "Add a card to keep access when your trial ends."
+      ? t("trial.add_card_prompt")
       : daysLeft === 0
-      ? "Your trial ends today."
+      ? t("trial.ends_today")
       : daysLeft === 1
-      ? "One day left in your trial."
-      : `${daysLeft} days left in your trial.`;
+      ? t("trial.one_day_left")
+      : t("trial.days_left").replace("{count}", String(daysLeft));
 
   // Restored prominence per Bob's pre-App-Store memory. Codex confirmed the
   // original (commit 59a77b7) was significantly larger and more visible.
@@ -92,7 +94,7 @@ export default function TrialBanner() {
             className="font-body text-[12px] tracking-[0.22em] uppercase shrink-0"
             style={{ color: urgent ? "#d47a52" : "var(--amber)", opacity: 1, fontWeight: 500 }}
           >
-            Trial
+            {t("trial.label")}
           </span>
           <p
             className="font-heading text-text-primary truncate"
@@ -124,12 +126,12 @@ export default function TrialBanner() {
                 : "rgba(243,146,48,0.12)";
             }}
           >
-            Add card
+            {t("trial.add_card")}
           </button>
           <button
             onClick={handleDismiss}
             className="w-7 h-7 flex items-center justify-center text-text-secondary opacity-50 hover:opacity-80 transition-opacity"
-            aria-label="Dismiss"
+            aria-label={t("common.dismiss")}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

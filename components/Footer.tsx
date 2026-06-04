@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 export default function Footer() {
   const pathname = usePathname();
-  
+  const { t } = useT();
+
   // Only show footer on legal page, nowhere else in the app
   const showFooter = pathname === "/legal";
-  
+
   if (!showFooter) return null;
 
   return (
@@ -21,24 +23,24 @@ export default function Footer() {
               Solray
             </h3>
             <p className="text-text-secondary text-sm leading-relaxed">
-              Spiritual companion app powered by Western Astrology, Human Design, and Gene Keys.
+              {t("footer.brand_description")}
             </p>
           </div>
 
           {/* Links */}
           <div>
             <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4">
-              Legal
+              {t("footer.legal")}
             </h4>
             <nav className="space-y-2">
               <Link href="/legal" className="text-text-secondary hover:text-amber-sun transition text-sm">
-                Terms & Privacy
+                {t("footer.terms_privacy")}
               </Link>
               <p className="text-text-secondary text-sm">
-                30-day refund guarantee
+                {t("footer.refund")}
               </p>
               <p className="text-text-secondary text-sm">
-                $23/month
+                {t("footer.price")}
               </p>
             </nav>
           </div>
@@ -46,7 +48,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4">
-              Contact
+              {t("footer.contact")}
             </h4>
             <nav className="space-y-2">
               <a href="mailto:support@solray.ai" className="text-text-secondary hover:text-amber-sun transition text-sm block">
@@ -61,7 +63,7 @@ export default function Footer() {
 
         <div className="border-t border-forest-border pt-8">
           <p className="text-text-secondary text-xs text-center">
-            © 2026 Solray. All rights reserved. Built with intention.
+            {t("footer.copyright")}
           </p>
         </div>
       </div>

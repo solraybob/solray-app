@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import InviteCodeCard from "@/components/InviteCodeCard";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 // Types
 interface SearchResult {
@@ -144,6 +145,7 @@ interface SoulActionsProps {
 }
 
 function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfile }: SoulActionsProps) {
+  const { t } = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
@@ -175,10 +177,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">View Profile</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">See {soul.soul.name}&rsquo;s chart, blueprint, and details</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.view_profile")}</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.view_profile_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">Open</span>
+              <span className="font-body text-indigo text-[12px]">{t("souls.open")}</span>
             </div>
           </button>
           <button
@@ -187,10 +189,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">Your Reading</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">Just you asking about your dynamic with {soul.soul.name}</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.your_reading")}</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.your_reading_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">Open</span>
+              <span className="font-body text-indigo text-[12px]">{t("souls.open")}</span>
             </div>
           </button>
           <button
@@ -199,10 +201,10 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">Group Reading</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">Invite {soul.soul.name} into a shared session together</p>
+                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.group_reading")}</p>
+                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.group_reading_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">Share</span>
+              <span className="font-body text-indigo text-[12px]">{t("souls.share")}</span>
             </div>
           </button>
         </div>
@@ -220,6 +222,7 @@ interface GroupShareProps {
 }
 
 function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupShareProps) {
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://app.solray.ai"}/group/${sessionCode}`;
 
@@ -238,9 +241,9 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
-        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 400 }}>Group Reading</h2>
+        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("souls.group_reading")}</h2>
         <p className="font-body text-text-secondary text-[15px] mb-6 leading-relaxed">
-          Share this link with {soul.soul.name} to join your shared session. Both of you can ask questions and the guide speaks to you together.
+          {t("souls.group_share_intro").replace("{name}", soul.soul.name)}
         </p>
 
         <div className="bg-forest-card border border-forest-border rounded-xl px-4 py-3 mb-3 font-mono text-xs text-text-secondary break-all">
@@ -252,13 +255,13 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
             onClick={handleCopy}
             className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[15px] tracking-widest transition-all hover:bg-[#5a7582]/20"
           >
-            {copied ? "Copied!" : `Copy link for ${soul.soul.name}`}
+            {copied ? t("souls.copied") : t("souls.copy_link_for").replace("{name}", soul.soul.name)}
           </button>
           <button
             onClick={onEnterSession}
             className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[15px] tracking-widest transition-all hover:opacity-90"
           >
-            Enter Session
+            {t("souls.enter_session")}
           </button>
         </div>
       </div>
@@ -269,6 +272,7 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
 // Main page
 export default function SoulsPage() {
   const { token, user } = useAuth();
+  const { t } = useT();
   const router = useRouter();
 
   const [myUsername, setMyUsername] = useState<string | null>(null);
@@ -346,8 +350,8 @@ export default function SoulsPage() {
   // Clear the inline error after a few seconds
   useEffect(() => {
     if (!errorMessage) return;
-    const t = setTimeout(() => setErrorMessage(null), 4000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setErrorMessage(null), 4000);
+    return () => clearTimeout(timer);
   }, [errorMessage]);
 
   // Load profile + connections on mount
@@ -367,7 +371,7 @@ export default function SoulsPage() {
         setPendingInvites(pending?.pending || []);
         setConnectedSouls(dedupeSouls(souls?.souls || []));
       } catch {
-        setErrorMessage("Couldn't reach the field. Try again in a moment.");
+        setErrorMessage(t("souls.error_field"));
       } finally {
         setLoading(false);
       }
@@ -416,7 +420,7 @@ export default function SoulsPage() {
       }, token);
       setInviteSent(prev => new Set(prev).add(identifier));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "The signal didn't reach. Try once more.";
+      const msg = e instanceof Error ? e.message : t("souls.error_signal");
       setErrorMessage(msg);
     } finally {
       setSendingInvite(null);
@@ -436,7 +440,7 @@ export default function SoulsPage() {
         setConnectedSouls(dedupeSouls(souls?.souls || []));
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Something drifted off course. Try again.";
+      const msg = e instanceof Error ? e.message : t("souls.error_drifted");
       setErrorMessage(msg);
     } finally {
       setRespondingInvite(null);
@@ -455,7 +459,7 @@ export default function SoulsPage() {
       soulBlueprint = data?.blueprint || null;
     } catch {
       // Non-blocking: surface a quiet note but continue
-      setErrorMessage("Couldn't pull their full chart, reading from the basics.");
+      setErrorMessage(t("souls.error_partial_chart"));
     }
 
     const chartSummary = [
@@ -609,7 +613,7 @@ export default function SoulsPage() {
         const data = await apiFetch(`/souls/${bondPartner.connection.connection_id}/blueprint`, {}, token);
         soulBlueprint = data?.blueprint || null;
       } catch {
-        setErrorMessage("Couldn't pull their full chart, reading from the basics.");
+        setErrorMessage(t("souls.error_partial_chart"));
       }
     } else {
       const saved = bondPartner.person;
@@ -645,7 +649,7 @@ export default function SoulsPage() {
             }
           }
         } catch {
-          setErrorMessage("Couldn't pull their full chart, reading from the basics.");
+          setErrorMessage(t("souls.error_partial_chart"));
         }
       }
     }
@@ -675,7 +679,7 @@ export default function SoulsPage() {
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#6a8692" }}>
-              Your Field
+              {t("souls.your_field")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
@@ -691,7 +695,7 @@ export default function SoulsPage() {
                   surface in the app. */}
               <button
                 onClick={handleInviteShare}
-                aria-label="Share an invitation"
+                aria-label={t("souls.share_invitation")}
                 disabled={inviteSharing}
                 className="w-7 h-7 rounded-full flex items-center justify-center border border-indigo/30 text-indigo transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 style={{ background: "transparent" }}
@@ -720,7 +724,7 @@ export default function SoulsPage() {
               className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
               style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
             >
-              Add someone&apos;s birth details, pick how you relate and read what the charts say about your dynamic.
+              {t("souls.intro")}
             </p>
             <div className="mt-5 w-12 h-px bg-forest-border/60" />
           </div>
@@ -756,13 +760,13 @@ export default function SoulsPage() {
 
           {/* Search, for deeper two-way connections with Solray users */}
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">Find a Soul</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">{t("souls.find_a_soul")}</p>
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
-                placeholder="Name, @username, or email"
+                placeholder={t("souls.search_placeholder")}
                 className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = "#6a8692";
@@ -804,9 +808,9 @@ export default function SoulsPage() {
                       {sendingInvite === user.username ? (
                         <LoadingSpinner size="sm" />
                       ) : inviteSent.has(user.username) ? (
-                        "Sent"
+                        t("souls.sent")
                       ) : (
-                        "Connect"
+                        t("souls.connect")
                       )}
                     </button>
                   </div>
@@ -815,7 +819,7 @@ export default function SoulsPage() {
             )}
 
             {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-              <p className="text-text-secondary text-xs font-body mt-2 px-1">No users found. They may not have an account yet.</p>
+              <p className="text-text-secondary text-xs font-body mt-2 px-1">{t("souls.no_users_found")}</p>
             )}
           </div>
 
@@ -844,7 +848,7 @@ export default function SoulsPage() {
               {/* Pending requests */}
               {pendingInvites.length > 0 && (
                 <div>
-                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">Pending Requests</p>
+                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.pending_requests")}</p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
                       <div
@@ -871,7 +875,7 @@ export default function SoulsPage() {
                             disabled={respondingInvite === invite.invite_id}
                             className="px-3 py-1.5 border border-forest-border text-text-secondary rounded-lg text-xs font-body transition-all hover:border-ember/40 hover:text-ember"
                           >
-                            Decline
+                            {t("souls.decline")}
                           </button>
                           <button
                             onClick={() => handleInviteResponse(invite.invite_id, true)}
@@ -881,7 +885,7 @@ export default function SoulsPage() {
                               background: "linear-gradient(135deg, #6a8692, #5a7582)",
                             }}
                           >
-                            {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : "Accept"}
+                            {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : t("souls.accept")}
                           </button>
                         </div>
                       </div>
@@ -894,7 +898,7 @@ export default function SoulsPage() {
               <div>
                 {connectedSouls.length > 0 ? (
                   <>
-                    <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">Connections</p>
+                    <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.connections")}</p>
                     <div className="space-y-3">
                       {connectedSouls.map(connection => (
                         <SoulCard
@@ -908,7 +912,7 @@ export default function SoulsPage() {
                 ) : (
                   <div className="text-center pt-4 pb-2">
                     <p className="font-body text-text-secondary text-[14px] max-w-xs mx-auto">
-                      No two-way connections yet. Invite someone above to share readings together.
+                      {t("souls.no_connections")}
                     </p>
                   </div>
                 )}
@@ -1008,11 +1012,12 @@ interface BondCardProps {
 const MAX_FAMILY_MEMBERS = 5;
 
 function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePartner, onChangeLens, onRead, reading }: BondCardProps) {
+  const { t } = useT();
   const lenses: { key: BondLens; label: string; hint: string }[] = [
-    { key: "family",     label: "Family",     hint: "roots, roles, belonging" },
-    { key: "friendship", label: "Friendship", hint: "trust, play, distance" },
-    { key: "romantic",   label: "Romantic",   hint: "intimacy, attraction, merge" },
-    { key: "working",    label: "Working",    hint: "collaboration, friction, flow" },
+    { key: "family",     label: t("souls.lens_family"),     hint: t("souls.lens_family_hint") },
+    { key: "friendship", label: t("souls.lens_friendship"), hint: t("souls.lens_friendship_hint") },
+    { key: "romantic",   label: t("souls.lens_romantic"),   hint: t("souls.lens_romantic_hint") },
+    { key: "working",    label: t("souls.lens_working"),    hint: t("souls.lens_working_hint") },
   ];
 
   const isFamily   = lens === "family";
@@ -1029,9 +1034,9 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         boxShadow: "0 20px 60px -30px rgba(106,134,146,0.35)",
       }}
     >
-      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-1">Dynamics</p>
+      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-1">{t("souls.dynamics")}</p>
       <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
-        Where two charts meet.
+        {t("souls.where_charts_meet")}
       </h2>
 
       {/* You + partner(s) pills */}
@@ -1050,7 +1055,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
               {myName?.[0]?.toUpperCase() || "·"}
             </div>
           )}
-          <span className="font-body text-[14px] text-text-primary">You</span>
+          <span className="font-body text-[14px] text-text-primary">{t("souls.you")}</span>
         </div>
 
         {/* Selected partners */}
@@ -1073,7 +1078,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
               type="button"
               onClick={() => onRemovePartner(i)}
               className="w-4 h-4 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors shrink-0 ml-0.5"
-              aria-label={`Remove ${partnerName(p)}`}
+              aria-label={t("souls.remove_name").replace("{name}", partnerName(p))}
             >
               ×
             </button>
@@ -1097,7 +1102,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[15px] text-text-secondary shrink-0"
                  style={{ border: "1px dashed rgba(242,236,216,0.25)" }}>+</div>
             <span className="font-body text-[14px] text-text-secondary">
-              {partners.length === 0 ? "Choose someone" : isFamily ? "Add another" : ""}
+              {partners.length === 0 ? t("souls.choose_someone") : isFamily ? t("souls.add_another") : ""}
             </span>
           </button>
         )}
@@ -1116,7 +1121,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 
       {/* Lens pills */}
       <div className="mb-6">
-        <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-2">Lens</p>
+        <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-2">{t("souls.lens")}</p>
         <div className="flex gap-2">
           {lenses.map((l) => {
             const active = lens === l.key;
@@ -1150,7 +1155,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           color: "var(--text-primary)",
         }}
       >
-        {reading ? <LoadingSpinner size="sm" /> : isFamily && partners.length > 1 ? "Read the Family →" : "Read the Dynamic →"}
+        {reading ? <LoadingSpinner size="sm" /> : isFamily && partners.length > 1 ? t("souls.read_family") : t("souls.read_dynamic")}
       </button>
     </div>
   );
@@ -1170,12 +1175,13 @@ interface PartnerPickerProps {
 }
 
 function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSaved, onClose }: PartnerPickerProps) {
+  const { t } = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-5 pt-5 pb-24 max-h-[92dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
-        <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 400 }}>Choose someone</h3>
+        <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 400 }}>{t("souls.choose_someone")}</h3>
 
         <button
           type="button"
@@ -1189,14 +1195,14 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
           <div className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-lg text-[#f2ecd8] shrink-0"
                style={{ background: "linear-gradient(135deg, #6a8692, #5a7582)" }}>+</div>
           <div className="flex-1 text-left">
-            <p className="font-body text-text-primary text-sm font-semibold">Add someone new</p>
-            <p className="font-body text-text-secondary text-[13px]">Their birth data stays on your device</p>
+            <p className="font-body text-text-primary text-sm font-semibold">{t("souls.add_someone_new")}</p>
+            <p className="font-body text-text-secondary text-[13px]">{t("souls.birth_data_local")}</p>
           </div>
         </button>
 
         {savedPeople.length > 0 && (
           <div className="mb-4">
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">Your People</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">{t("souls.your_people")}</p>
             <div className="space-y-2">
               {savedPeople.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
@@ -1219,7 +1225,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                   </button>
                   <button
                     type="button"
-                    aria-label={`Remove ${p.name}`}
+                    aria-label={t("souls.remove_name").replace("{name}", p.name)}
                     onClick={() => onRemoveSaved(p.id)}
                     className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-text-secondary hover:text-ember transition-colors"
                   >
@@ -1233,7 +1239,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 
         {connections.length > 0 && (
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">Connections</p>
+            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">{t("souls.connections")}</p>
             <div className="space-y-2">
               {connections.map((c) => (
                 <button
@@ -1265,7 +1271,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 
         {savedPeople.length === 0 && connections.length === 0 && (
           <p className="text-text-secondary text-xs font-body text-center py-6">
-            No one here yet. Add your first person above.
+            {t("souls.no_one_yet")}
           </p>
         )}
       </div>
@@ -1283,6 +1289,7 @@ interface AddPersonSheetProps {
 }
 
 function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [sex, setSex] = useState<"female" | "male" | "">("");
   const [birthDate, setBirthDate] = useState("");
@@ -1380,7 +1387,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Couldn't read their chart. Check the city name.");
+        throw new Error(err.detail || t("souls.error_read_chart"));
       }
       const data = await res.json();
       const person: SavedPerson = {
@@ -1406,7 +1413,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       };
       onAdded(person);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Something drifted. Try again.";
+      const msg = e instanceof Error ? e.message : t("souls.error_drifted_short");
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -1418,23 +1425,23 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
-        <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>Add someone</h3>
-        <p className="font-body text-text-secondary text-[14px] mb-5">Their birth data stays on your device. Nothing is shared without their consent.</p>
+        <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>{t("souls.add_someone")}</h3>
+        <p className="font-body text-text-secondary text-[14px] mb-5">{t("souls.add_someone_sub")}</p>
 
         <div className="space-y-4">
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Name</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_name")}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Their first name"
+              placeholder={t("souls.name_placeholder")}
               className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#7a96a2] transition-colors"
             />
           </div>
 
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">Gender</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">{t("souls.label_gender")}</label>
             <div className="grid grid-cols-2 gap-2">
               {(["female", "male"] as const).map((opt) => {
                 const active = sex === opt;
@@ -1450,7 +1457,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                       color: active ? "var(--text-primary)" : "var(--text-muted)",
                     }}
                   >
-                    {opt === "female" ? "Female" : "Male"}
+                    {opt === "female" ? t("onboard.female") : t("onboard.male")}
                   </button>
                 );
               })}
@@ -1459,7 +1466,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth date</label>
+              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_date")}</label>
               <input
                 type="date"
                 value={birthDate}
@@ -1469,7 +1476,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               />
             </div>
             <div>
-              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth time</label>
+              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_time")}</label>
               <input
                 type="time"
                 value={birthTime}
@@ -1487,11 +1494,11 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               timeUnknown ? "text-indigo" : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            {timeUnknown ? "✓ Using noon" : "Unknown birth time"}
+            {timeUnknown ? t("onboard.time_using_noon") : t("souls.unknown_birth_time")}
           </button>
 
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">Birth city</label>
+            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_city")}</label>
             <div className="relative">
               <input
                 ref={cityInputRef}
@@ -1501,7 +1508,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                   setBirthCity(e.target.value);
                   setShowSuggestions(true);
                 }}
-                placeholder="City, Country"
+                placeholder={t("onboard.city_placeholder")}
                 autoComplete="off"
                 className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#7a96a2] transition-colors"
                 style={{ paddingRight: cityLoading ? "2rem" : undefined }}
@@ -1559,7 +1566,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               color: "var(--text-primary)",
             }}
           >
-            {submitting ? <LoadingSpinner size="sm" /> : "Read their chart"}
+            {submitting ? <LoadingSpinner size="sm" /> : t("souls.read_their_chart")}
           </button>
         </div>
       </div>
@@ -1574,6 +1581,7 @@ interface SoulCardProps {
 }
 
 function SoulCard({ connection, onOpen }: SoulCardProps) {
+  const { t } = useT();
   const { soul } = connection;
   const avatarInitial = soul.name?.[0]?.toUpperCase() || "·";
 
@@ -1628,7 +1636,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
           </div>
         </div>
         <span className="text-xs font-body tracking-wider opacity-70 shrink-0" style={{ color: "#6a8692" }}>
-          Open →
+          {t("souls.open_arrow")}
         </span>
       </div>
     </button>

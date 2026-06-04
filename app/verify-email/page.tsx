@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 /**
  * /verify-email?token=xxx
@@ -11,6 +12,7 @@ import { apiFetch } from "@/lib/api";
  * then shows success and redirects to the app.
  */
 function VerifyEmailInner() {
+  const { t } = useT();
   const params = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -20,20 +22,20 @@ function VerifyEmailInner() {
     const token = params.get("token");
     if (!token) {
       setStatus("error");
-      setMessage("Missing verification token.");
+      setMessage(t("verify.missing_token"));
       return;
     }
 
     apiFetch(`/users/verify-email?token=${token}`)
       .then((res) => {
         setStatus("success");
-        setMessage(res.message || "Email verified successfully.");
+        setMessage(res.message || t("verify.success_message"));
         // Redirect to the app after a short pause
         setTimeout(() => router.replace("/today"), 2000);
       })
       .catch((e) => {
         setStatus("error");
-        setMessage(e.message || "Verification failed. The link may have expired.");
+        setMessage(e.message || t("verify.failed_message"));
       });
   }, [params, router]);
 
@@ -44,7 +46,7 @@ function VerifyEmailInner() {
           <>
             <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin mx-auto mb-6" />
             <p className="text-sm" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
-              Verifying your email...
+              {t("verify.verifying")}
             </p>
           </>
         )}
@@ -63,13 +65,13 @@ function VerifyEmailInner() {
               className="text-2xl font-light mb-3"
               style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
             >
-              Verified
+              {t("verify.verified")}
             </h1>
             <p className="text-sm" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
               {message}
             </p>
             <p className="text-xs mt-4" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
-              Redirecting you now...
+              {t("verify.redirecting")}
             </p>
           </>
         )}
@@ -89,7 +91,7 @@ function VerifyEmailInner() {
               className="text-2xl font-light mb-3"
               style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
             >
-              Verification Failed
+              {t("verify.failed_title")}
             </h1>
             <p className="text-sm mb-6" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
               {message}
@@ -99,7 +101,7 @@ function VerifyEmailInner() {
               className="px-6 py-2.5 rounded-sm text-sm"
               style={{ background: "var(--amber, #f39230)", color: "var(--bg-deep)" }}
             >
-              Go to App
+              {t("verify.go_to_app")}
             </button>
           </>
         )}

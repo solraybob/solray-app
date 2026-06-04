@@ -16,6 +16,7 @@ import {
   launchNativePurchase,
   setPurchaseListener,
 } from "@/lib/play-billing";
+import { useT } from "@/lib/i18n";
 
 // ---------------------------------------------------------------------------
 // Subscribe / Manage Subscription Page
@@ -30,6 +31,7 @@ export default function SubscribePage() {
 }
 
 function SubscribeContent() {
+  const { t, lang } = useT();
   const { token } = useAuth();
   const { sub, loading: subLoading, refresh } = useSubscription();
   const router = useRouter();
@@ -142,7 +144,7 @@ function SubscribeContent() {
       if (session.session_url) {
         window.location.href = session.session_url;
       } else {
-        setError("Could not open payment page. Please try again.");
+        setError(t("subscribe.error_open_payment"));
       }
     } catch (e: any) {
       setError(e.message);
@@ -207,15 +209,15 @@ function SubscribeContent() {
 
   // Has subscription: show status + management
   const statusSubtitle: Record<string, string> = {
-    trial: "Your five-day window. Your chart, yours to explore.",
-    active: "Living by design. Your chart, spoken to, every day.",
-    past_due: "A charge did not clear. We will try again shortly.",
-    cancelled: "Cancelled. Your access continues until the period ends.",
-    expired: "Your trial has ended. Rejoin when you are ready.",
+    trial: t("subscribe.subtitle_trial"),
+    active: t("subscribe.subtitle_active"),
+    past_due: t("subscribe.subtitle_past_due"),
+    cancelled: t("subscribe.subtitle_cancelled"),
+    expired: t("subscribe.subtitle_expired"),
   };
 
   const dateFmt = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", {
+    new Date(d).toLocaleDateString(lang === "en" ? "en-US" : lang, {
       month: "long",
       day: "numeric",
       year: "numeric",
@@ -229,7 +231,7 @@ function SubscribeContent() {
           className="text-[12px] tracking-[0.3em] uppercase mb-5 text-center"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Subscription
+          {t("subscribe.eyebrow_subscription")}
         </p>
 
         {/* Header */}
@@ -242,7 +244,7 @@ function SubscribeContent() {
             color: "var(--text-primary, #f2ecd8)",
           }}
         >
-          Your membership
+          {t("subscribe.your_membership")}
         </h1>
 
         <p
@@ -270,32 +272,32 @@ function SubscribeContent() {
               className="text-[12px] tracking-[0.3em] uppercase"
               style={{ color: "var(--text-secondary)" }}
             >
-              Status
+              {t("subscribe.status")}
             </span>
             <StatusBadge status={sub.status || ""} />
           </div>
 
           <div className="space-y-3">
             {sub.status === "trial" && sub.trial_end && (
-              <DetailRow label="Trial ends" value={dateFmt(sub.trial_end)} />
+              <DetailRow label={t("subscribe.trial_ends")} value={dateFmt(sub.trial_end)} />
             )}
 
             {sub.current_period_end && sub.status !== "trial" && (
               <DetailRow
-                label={sub.status === "cancelled" ? "Access until" : "Next billing"}
+                label={sub.status === "cancelled" ? t("subscribe.access_until") : t("subscribe.next_billing")}
                 value={dateFmt(sub.current_period_end)}
               />
             )}
 
             {sub.card_brand && sub.card_last_four && (
               <DetailRow
-                label="Card on file"
+                label={t("subscribe.card_on_file")}
                 value={`${sub.card_brand} \u00b7 ${sub.card_last_four}`}
               />
             )}
 
             {sub.price && sub.status !== "expired" && (
-              <DetailRow label="Price" value={`${sub.price} / month`} />
+              <DetailRow label={t("subscribe.price")} value={`${sub.price} ${t("subscribe.per_month")}`} />
             )}
           </div>
         </div>
@@ -312,28 +314,28 @@ function SubscribeContent() {
           {/* Trial without card: add payment */}
           {!isNative && sub.status === "trial" && !sub.card_last_four && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Add payment method
+              {t("subscribe.add_payment")}
             </ActionButton>
           )}
 
           {/* Trial with card: activate now */}
           {!isNative && sub.status === "trial" && sub.card_last_four && (
             <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #f39230)">
-              Subscribe now
+              {t("subscribe.subscribe_now")}
             </ActionButton>
           )}
 
           {/* Expired: restart */}
           {!isNative && sub.status === "expired" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Rejoin Solray
+              {t("subscribe.rejoin")}
             </ActionButton>
           )}
 
           {/* Past due: update card */}
           {!isNative && sub.status === "past_due" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
-              Update payment method
+              {t("subscribe.update_payment")}
             </ActionButton>
           )}
 
@@ -347,7 +349,7 @@ function SubscribeContent() {
               className="text-center text-[14px] leading-relaxed"
               style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.85 }}
             >
-              Your Solray membership is managed on the web.
+              {t("subscribe.managed_on_web")}
             </p>
           )}
 
@@ -364,7 +366,7 @@ function SubscribeContent() {
                 background: "transparent",
               }}
             >
-              Cancel subscription
+              {t("subscribe.cancel")}
             </button>
           )}
         </div>
@@ -384,7 +386,7 @@ function SubscribeContent() {
               background: "var(--amber, #f39230)",
             }}
           >
-            Continue to app
+            {t("subscribe.continue_to_app")}
           </button>
         </div>
 
@@ -441,6 +443,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  * close the app and visit solray.ai on their own.
  */
 function NativeMembershipView() {
+  const { t } = useT();
   const { logout } = useAuth();
   const { refresh } = useSubscription();
   const [loading, setLoading] = useState(false);
@@ -457,7 +460,7 @@ function NativeMembershipView() {
         setError("");
       } else {
         setLoading(false);
-        setError(outcome.error || "Purchase could not be completed.");
+        setError(outcome.error || t("subscribe.purchase_failed"));
       }
     });
     return () => setPurchaseListener(null);
@@ -472,7 +475,7 @@ function NativeMembershipView() {
       await launchNativePurchase();
     } catch (e) {
       setLoading(false);
-      setError(e instanceof Error ? e.message : "Purchase could not be started.");
+      setError(e instanceof Error ? e.message : t("subscribe.purchase_not_started"));
     }
   };
 
@@ -483,7 +486,7 @@ function NativeMembershipView() {
           className="text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Living by design
+          {t("subscribe.eyebrow_lbd")}
         </p>
 
         <h1
@@ -495,7 +498,7 @@ function NativeMembershipView() {
             color: "var(--text-primary, #f2ecd8)",
           }}
         >
-          Your chart, spoken to.
+          {t("subscribe.chart_spoken_to")}
         </h1>
 
         <p
@@ -507,9 +510,7 @@ function NativeMembershipView() {
             fontWeight: 300,
           }}
         >
-          Five days free, then 23 dollars a month. Your exact birth moment, read
-          against today&apos;s sky, every morning. Cancel anytime in your
-          device&apos;s subscription settings.
+          {t("subscribe.native_blurb")}
         </p>
 
         <div className="space-y-3">
@@ -523,7 +524,7 @@ function NativeMembershipView() {
               border: "1px solid var(--amber, #f39230)",
             }}
           >
-            {loading ? "Opening..." : "Start free trial"}
+            {loading ? t("subscribe.opening") : t("subscribe.start_free_trial")}
           </button>
 
           <button
@@ -535,7 +536,7 @@ function NativeMembershipView() {
               background: "transparent",
             }}
           >
-            Sign out
+            {t("common.sign_out")}
           </button>
 
           {error && (
@@ -558,6 +559,7 @@ function TrialOffer({
   loading: boolean;
   error: string;
 }) {
+  const { t } = useT();
   return (
     <div className="min-h-screen px-6 pt-20 pb-32">
       <div className="max-w-md mx-auto text-center">
@@ -566,7 +568,7 @@ function TrialOffer({
           className="text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Living by design
+          {t("subscribe.eyebrow_lbd")}
         </p>
 
         <h1
@@ -578,7 +580,7 @@ function TrialOffer({
             color: "var(--text-primary, #f2ecd8)",
           }}
         >
-          Your chart, spoken to.
+          {t("subscribe.chart_spoken_to")}
         </h1>
 
         <p
@@ -590,8 +592,7 @@ function TrialOffer({
             fontWeight: 300,
           }}
         >
-          Your exact birth moment, read against today's sky, every morning.
-          Three systems, one voice, speaking to your chart alone.
+          {t("subscribe.trial_blurb")}
         </p>
 
         {/* What you get */}
@@ -606,14 +607,14 @@ function TrialOffer({
             className="text-[12px] tracking-[0.3em] uppercase mb-6"
             style={{ color: "var(--text-secondary)" }}
           >
-            Everything included
+            {t("subscribe.everything_included")}
           </p>
           {[
-            "Daily personalised forecast",
-            "Higher Self Oracle, unlimited",
-            "Soul Connections and compatibility readings",
-            "Full natal chart, Human Design, and Gene Keys",
-            "Transit tracking and cycle awareness",
+            t("subscribe.feature_forecast"),
+            t("subscribe.feature_oracle"),
+            t("subscribe.feature_souls"),
+            t("subscribe.feature_blueprint"),
+            t("subscribe.feature_transits"),
           ].map((item) => (
             <div key={item} className="flex items-start gap-4 mb-3.5 last:mb-0">
               <span
@@ -642,7 +643,7 @@ function TrialOffer({
             className="text-xs tracking-wide"
             style={{ color: "var(--text-secondary)" }}
           >
-            Five days free, then
+            {t("subscribe.five_days_then")}
           </p>
           <p
             className="mt-2"
@@ -663,19 +664,19 @@ function TrialOffer({
                 fontStyle: "italic",
               }}
             >
-              / month
+              {t("subscribe.per_month")}
             </span>
           </p>
           <p
             className="text-xs mt-3 tracking-wide"
             style={{ color: "var(--text-secondary)", opacity: 0.75 }}
           >
-            Cancel anytime. No commitment.
+            {t("subscribe.cancel_anytime")}
           </p>
         </div>
 
         <ActionButton onClick={onStart} loading={loading} color="var(--amber, #f39230)">
-          Begin your journey
+          {t("login.begin_journey")}
         </ActionButton>
 
         {error && (
@@ -689,6 +690,7 @@ function TrialOffer({
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useT();
   const colors: Record<string, { bg: string; text: string; border: string }> = {
     trial: {
       bg: "rgba(243,146,48,0.12)",
@@ -719,11 +721,11 @@ function StatusBadge({ status }: { status: string }) {
   const c = colors[status] || colors.expired;
 
   const label: Record<string, string> = {
-    trial: "Trial",
-    active: "Active",
-    past_due: "Retrying",
-    cancelled: "Cancelled",
-    expired: "Expired",
+    trial: t("subscribe.badge_trial"),
+    active: t("subscribe.badge_active"),
+    past_due: t("subscribe.badge_retrying"),
+    cancelled: t("subscribe.badge_cancelled"),
+    expired: t("subscribe.badge_expired"),
   };
 
   return (

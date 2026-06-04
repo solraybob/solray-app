@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n";
 
 interface InvitePayload {
   code: string;
@@ -26,6 +27,7 @@ interface InvitePayload {
 }
 
 export default function InviteCodeCard() {
+  const { t } = useT();
   const [data, setData] = useState<InvitePayload | null>(null);
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function InviteCodeCard() {
         if (!cancelled) setData(json);
       })
       .catch(() => {
-        if (!cancelled) setError("Could not load your invite code.");
+        if (!cancelled) setError(t("invite.error_load"));
       });
     return () => {
       cancelled = true;
@@ -59,7 +61,7 @@ export default function InviteCodeCard() {
       window.setTimeout(() => setCopied(null), 1800);
     } catch {
       // Fallback for environments where the Clipboard API is blocked.
-      setError("Could not copy. Long-press the text and copy by hand.");
+      setError(t("invite.error_copy"));
     }
   };
 
@@ -67,7 +69,7 @@ export default function InviteCodeCard() {
     if (!data) return;
     const shareData = {
       title: "Solray",
-      text: "Solray reads your chart against today's sky and remembers you. Use my code for five days free.",
+      text: t("invite.share_text"),
       url: data.link,
     };
     try {
@@ -92,7 +94,7 @@ export default function InviteCodeCard() {
   if (!data) {
     return (
       <div className="rounded-3xl p-5 border border-forest-border/40 text-text-secondary text-sm">
-        Loading your invite code...
+        {t("invite.loading")}
       </div>
     );
   }
@@ -108,12 +110,12 @@ export default function InviteCodeCard() {
       >
         <span className="min-w-0">
           <span className="block font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-0.5">
-            Bring someone in
+            {t("invite.bring_someone")}
           </span>
           <span className="block font-body text-[13px] text-text-secondary leading-snug">
             {data.bonus_eligible
-              ? `Each friend who joins gives you ${data.inviter_bonus_days} extra trial days.`
-              : "Share Solray with someone whose chart you'd want read."}
+              ? t("invite.bonus_teaser").replace("{days}", String(data.inviter_bonus_days))
+              : t("invite.no_bonus_teaser")}
           </span>
         </span>
         <svg
@@ -131,21 +133,21 @@ export default function InviteCodeCard() {
         <div className="px-5 pb-5 pt-1 animate-fade-in">
           <p className="font-body text-[14px] text-text-secondary leading-relaxed mb-4">
             {data.bonus_eligible
-              ? `Share your code. When a friend starts their five days free and stays, your own trial extends by ${data.inviter_bonus_days} days. They get the map. You get more time on yours.`
-              : "You already live here. Pass your code to someone whose chart you'd want the Oracle to read. No reward, just the pleasure of bringing them in."}
+              ? t("invite.bonus_body").replace("{days}", String(data.inviter_bonus_days))
+              : t("invite.no_bonus_body")}
           </p>
 
           <button
             type="button"
             onClick={() => copy(data.code, "code")}
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-indigo/30 hover:border-indigo/60 transition-colors mb-3"
-            aria-label={`Copy invite code ${data.code}`}
+            aria-label={t("invite.copy_code_aria").replace("{code}", data.code)}
           >
             <span className="font-heading text-2xl tracking-[0.18em] text-indigo" style={{ fontWeight: 300 }}>
               {data.code}
             </span>
             <span className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary">
-              {copied === "code" ? "Copied" : "Copy code"}
+              {copied === "code" ? t("invite.copied") : t("invite.copy_code")}
             </span>
           </button>
 
@@ -155,14 +157,14 @@ export default function InviteCodeCard() {
               onClick={() => copy(data.link, "link")}
               className="flex-1 px-4 py-2.5 rounded-full border border-forest-border/60 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary hover:text-text-primary hover:border-forest-border transition-colors"
             >
-              {copied === "link" ? "Link copied" : "Copy link"}
+              {copied === "link" ? t("invite.link_copied") : t("invite.copy_link")}
             </button>
             <button
               type="button"
               onClick={share}
               className="flex-1 px-4 py-2.5 rounded-full border border-indigo/40 bg-indigo/10 font-body text-[12px] tracking-[0.18em] uppercase text-indigo hover:bg-indigo/20 transition-colors"
             >
-              Share
+              {t("souls.share")}
             </button>
           </div>
 

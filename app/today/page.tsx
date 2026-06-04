@@ -10,6 +10,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
+import { useT } from "@/lib/i18n";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -182,8 +183,10 @@ function EnergyBar({
   delayMs: number;
   onAsk: (label: string, pct: number) => void;
 }) {
+  const { t } = useT();
   const color = ENERGY_COLORS[label] || "#f39230";
   const pct = toDisplayPct(value);
+  const displayLabel = t(`today.${label.toLowerCase()}`);
 
   // Animation is driven by pure CSS @keyframes (see globals.css), not React
   // state. The fill div gets `--pct` as a CSS variable; the keyframe
@@ -203,7 +206,7 @@ function EnergyBar({
     <button
       type="button"
       onClick={() => onAsk(label, pct)}
-      aria-label={`Ask your Higher Self about your ${label.toLowerCase()} energy at ${pct} percent`}
+      aria-label={`${displayLabel} ${pct}%`}
       className="group block w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-sun/40 rounded-sm"
     >
       {/* Label row, fades in as a unit, no per-row stagger here. */}
@@ -214,7 +217,7 @@ function EnergyBar({
         }}
       >
         <span className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
-          {label}
+          {displayLabel}
         </span>
         <span
           className="font-heading text-[17px] text-text-secondary/70"
@@ -270,7 +273,10 @@ const PLANET_COLORS: Record<string, string> = {
 };
 
 function PlanetCard({ planet }: { planet: Planet }) {
+  const { t } = useT();
   const color = PLANET_COLORS[planet.name] || "#8a9e8d";
+  const planetLabel = t(`planets.${planet.name.toLowerCase()}`);
+  const signLabel = t(`signs.${planet.sign.toLowerCase()}`);
   return (
     <div
       className="flex flex-col items-center rounded-2xl px-3 py-3 min-w-[76px] shrink-0 gap-0.5"
@@ -285,10 +291,10 @@ function PlanetCard({ planet }: { planet: Planet }) {
         )}
       </div>
       <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase mt-0.5">
-        {planet.name}
+        {planetLabel}
       </span>
       <span className="font-body text-text-primary text-[15px] font-medium">
-        {planet.sign}
+        {signLabel}
       </span>
       <span className="font-body text-text-secondary/70 text-[12px]">{planet.degree}</span>
     </div>
@@ -297,6 +303,7 @@ function PlanetCard({ planet }: { planet: Planet }) {
 
 // Skeleton components for instant perceived loading
 function SkeletonToday() {
+  const { t } = useT();
   return (
     <div>
       {/* Honest loading copy. Each label is true: the planets ARE
@@ -309,7 +316,7 @@ function SkeletonToday() {
           className="font-body text-[12px] tracking-[0.3em] uppercase"
           style={{ color: "var(--amber)", opacity: 0.7 }}
         >
-          Reading today&apos;s sky
+          {t("today.reading_sky")}
         </p>
       </div>
 
@@ -324,7 +331,7 @@ function SkeletonToday() {
           {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
             <div key={label} className="flex items-center gap-3">
               <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
-                {label}
+                {t(`today.${label.toLowerCase()}`)}
               </span>
               <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
                 <div className="h-full w-0 bg-amber-sun rounded-full" />
@@ -376,13 +383,14 @@ function HeroImageCard({
   imageSrc: string;
   reading?: string;
 }) {
+  const { t, lang } = useT();
   const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
 
   // Build the date label once per render: "Saturday, 3 May"
-  const dateLabel = new Date().toLocaleDateString("en-GB", {
+  const dateLabel = new Date().toLocaleDateString(lang === "en" ? "en-GB" : lang, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -456,7 +464,7 @@ function HeroImageCard({
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1 pointer-events-none">
           <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
-            Today&apos;s Weather
+            {t("today.weather")}
           </p>
           <svg
             width="12" height="8" viewBox="0 0 16 10" fill="none"
@@ -478,7 +486,7 @@ function HeroImageCard({
           there is no parent onClick. Codex UX hook 6. */}
       <button
         onClick={handleShare}
-        aria-label="Share today"
+        aria-label={t("today.share")}
         disabled={sharing}
         className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
         style={{
@@ -551,6 +559,7 @@ const PLANET_SYMBOLS: Record<string, string> = {
 // reading is still being written. Never shows invented tags, energy,
 // or a fake day title. Replaces the previous MOCK_FORECAST fallback.
 function PendingTodayState({ planets }: { planets: Planet[] }) {
+  const { t } = useT();
   return (
     <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-12">
       <div
@@ -564,21 +573,21 @@ function PendingTodayState({ planets }: { planets: Planet[] }) {
           className="font-body text-[12px] tracking-[0.3em] uppercase mb-5"
           style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
         >
-          Your reading
+          {t("today.your_reading")}
         </p>
         <p
           className="font-heading text-text-primary mb-3"
           style={{ fontWeight: 300, fontSize: "1.4rem", lineHeight: 1.3 }}
         >
-          Today&apos;s reading is being written.
+          {t("today.pending_title")}
         </p>
         <p className="font-body text-text-secondary text-[15px] leading-relaxed">
-          The sky below is live. Your personalised reading from the Higher Self will appear here in a few moments. Pull to refresh, or check back shortly.
+          {t("today.pending_body")}
         </p>
       </div>
 
       <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
-        Sky Now
+        {t("today.sky_now")}
       </p>
       <div
         className="-mx-5 px-5 overflow-x-auto"
@@ -647,6 +656,8 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [visibleSections, setVisibleSections] = useState(0);
   const { token } = useAuth();
+  const { t, lang } = useT();
+  const dateLocale = lang === "en" ? "en-GB" : lang;
   const router = useRouter();
   const backgroundFetchDone = useRef(false);
 
@@ -658,7 +669,7 @@ export default function TodayPage() {
   const energyShareRef = useRef<HTMLDivElement | null>(null);
   const [energySharing, setEnergySharing] = useState(false);
 
-  const todayDateLabel = new Date().toLocaleDateString("en-GB", {
+  const todayDateLabel = new Date().toLocaleDateString(dateLocale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -715,7 +726,7 @@ export default function TodayPage() {
     router.push("/chat");
   };
 
-  const today = new Date().toLocaleDateString("en-GB", {
+  const today = new Date().toLocaleDateString(dateLocale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -814,7 +825,7 @@ export default function TodayPage() {
           // grounded in their chart. On total fetch failure we now show
           // a real error and let the user retry.
           setForecast(null);
-          setError("Couldn't reach the sky right now. Check your connection and try again.");
+          setError("today.error_no_sky");
           setLoading(false);
         }
       }
@@ -901,7 +912,7 @@ export default function TodayPage() {
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
             <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
-              Living By Design
+              {t("today.living_by_design")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
@@ -950,7 +961,7 @@ export default function TodayPage() {
               {/* Subtle offline/error notice */}
               {error && (
                 <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
-                  <p className="text-text-secondary/60 text-[12px] font-body text-center">{error}</p>
+                  <p className="text-text-secondary/60 text-[12px] font-body text-center">{t(error)}</p>
                 </div>
               )}
 
@@ -966,11 +977,11 @@ export default function TodayPage() {
                   style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
                 >
                   <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
-                    Today&apos;s Vibe
+                    {t("today.vibe")}
                   </p>
                   <button
                     onClick={handleEnergyShare}
-                    aria-label="Share today's vibe"
+                    aria-label={t("today.share_vibe")}
                     disabled={energySharing}
                     className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                     style={{
@@ -1031,7 +1042,7 @@ export default function TodayPage() {
                 }}
               >
                 <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
-                  Today&apos;s Dimensions
+                  {t("today.dimensions")}
                 </p>
                 <DepthSlides
                   tags={forecast.tags}
@@ -1059,7 +1070,7 @@ export default function TodayPage() {
                 }}
               >
                 <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
-                  Sky Now
+                  {t("today.sky_now")}
                 </p>
                 {/* Scrollable ticker */}
                 <div
@@ -1081,10 +1092,10 @@ export default function TodayPage() {
           // back into the load path so they can retry without leaving.
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-24 text-center">
             <p className="font-heading text-text-primary text-2xl mb-4" style={{ fontWeight: 300 }}>
-              The sky is quiet.
+              {t("today.sky_quiet")}
             </p>
             <p className="text-text-secondary font-body text-[15px] leading-relaxed mb-8">
-              {error || "We couldn't reach the daily reading. Check your connection and try again."}
+              {error ? t(error) : t("today.error_no_reading")}
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -1094,7 +1105,7 @@ export default function TodayPage() {
                 color: "var(--bg-deep, #050f08)",
               }}
             >
-              Try again
+              {t("common.retry")}
             </button>
           </div>
         )}
@@ -1158,11 +1169,16 @@ function getMoonEmoji(p: number): string {
 
 // Persistent moon cycle component, always visible.
 function MoonCycleBar({ planets }: { planets: Planet[] }) {
+  const { t } = useT();
   const phase = getMoonPhaseValue();
   const moonSign = planets.find(p => p.name === "Moon")?.sign || "";
-  const phaseLabel = getMoonPhaseLabel(phase);
+  const phaseLabelEn = getMoonPhaseLabel(phase);
+  // Map the English phase label to a stable i18n key.
+  const phaseKey = phaseLabelEn.toLowerCase().replace(/\s+/g, "_");
+  const phaseLabel = t(`moon.phase_${phaseKey}`);
   const phaseEmoji = getMoonEmoji(phase);
   const illumination = Math.round(Math.sin(phase * Math.PI) * 100);
+  const moonSignLabel = moonSign ? t(`signs.${moonSign.toLowerCase()}`) : "";
 
   return (
     <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-4 mb-4">
@@ -1172,13 +1188,13 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
           <div>
             <p className="font-body text-text-primary text-[15px] font-medium">{phaseLabel}</p>
             {moonSign && (
-              <p className="font-body text-text-secondary text-[12px]">Moon in {moonSign}</p>
+              <p className="font-body text-text-secondary text-[12px]">{t("moon.moon_in")} {moonSignLabel}</p>
             )}
           </div>
         </div>
         <div className="text-right">
           <p className="font-heading text-amber-sun text-[15px]">{illumination}%</p>
-          <p className="font-body text-text-secondary text-[12px]">illuminated</p>
+          <p className="font-body text-text-secondary text-[12px]">{t("moon.illuminated")}</p>
         </div>
       </div>
 
@@ -1204,11 +1220,11 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
 
         {/* Phase labels */}
         <div className="flex justify-between mt-2">
-          <span className="font-body text-text-secondary/60 text-[11px]">New</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">1st Q</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">Full</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">3rd Q</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">New</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_new")}</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_first_q")}</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_full")}</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_third_q")}</span>
+          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_new")}</span>
         </div>
       </div>
     </div>

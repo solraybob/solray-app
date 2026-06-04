@@ -23,9 +23,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { getSubscriptionStatus, type SubscriptionStatus } from "@/lib/subscription";
+import { useT } from "@/lib/i18n";
 
 export default function SubscribeWelcome() {
   const router = useRouter();
+  const { t, lang } = useT();
   const { token, loading: authLoading } = useAuth();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function SubscribeWelcome() {
   // exit links are tappable from the very first paint. Status data is
   // garnish, not gating.
   const renews = sub?.current_period_end
-    ? new Date(sub.current_period_end).toLocaleDateString(undefined, {
+    ? new Date(sub.current_period_end).toLocaleDateString(lang === "en" ? undefined : lang, {
         year: "numeric", month: "long", day: "numeric",
       })
     : null;
@@ -59,13 +61,13 @@ export default function SubscribeWelcome() {
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <p className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase">
-            Subscription
+            {t("subscribe.eyebrow_subscription")}
           </p>
           <button
             onClick={() => router.push("/today")}
             className="font-body text-amber-sun text-[13px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
           >
-            Continue to app
+            {t("subscribe.continue_to_app")}
           </button>
         </div>
       </div>
@@ -100,17 +102,16 @@ export default function SubscribeWelcome() {
         </div>
 
         <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center mb-3">
-          Welcome to Solray
+          {t("welcome.eyebrow")}
         </p>
         <h1
           className="font-heading text-text-primary text-center mb-3"
           style={{ fontSize: 30, fontWeight: 300, letterSpacing: "0.02em" }}
         >
-          You&rsquo;re in.
+          {t("welcome.youre_in")}
         </h1>
         <p className="font-body text-text-secondary text-[16px] leading-relaxed text-center max-w-sm mx-auto mb-8">
-          Your subscription is active. The full Solray experience is unlocked
-          and your daily forecasts will keep arriving each morning.
+          {t("welcome.active_body")}
         </p>
 
         {/* Primary CTA, large, above the fold on every phone, can't miss */}
@@ -122,13 +123,13 @@ export default function SubscribeWelcome() {
             color: "rgb(var(--rgb-bg-deep))",
           }}
         >
-          Open today
+          {t("welcome.open_today")}
         </button>
         <button
           onClick={() => router.push("/profile/settings")}
           className="w-full font-body text-[12px] tracking-[0.22em] uppercase py-2.5 text-text-secondary/70 hover:text-text-secondary transition-colors mb-10"
         >
-          Manage subscription
+          {t("welcome.manage_subscription")}
         </button>
 
         {/* Quiet receipt, only shown if status loaded with details. We
@@ -138,19 +139,19 @@ export default function SubscribeWelcome() {
             <div className="space-y-3 font-body text-[15px]">
               {sub.card_brand && sub.card_last_four && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Card on file</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("subscribe.card_on_file")}</span>
                   <span className="text-text-primary">{sub.card_brand} &middot; {sub.card_last_four}</span>
                 </div>
               )}
               {sub.price && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Price</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("subscribe.price")}</span>
                   <span className="text-text-primary">{sub.price}</span>
                 </div>
               )}
               {renews && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">Next renewal</span>
+                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("welcome.next_renewal")}</span>
                   <span className="text-text-primary">{renews}</span>
                 </div>
               )}
@@ -161,12 +162,12 @@ export default function SubscribeWelcome() {
         {/* What's unlocked, three quiet bullets, no marketing tone */}
         <div>
           <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
-            What&rsquo;s open to you
+            {t("welcome.whats_open")}
           </p>
           <ul className="space-y-3 font-body text-[15px] text-text-primary leading-relaxed">
-            <UnlockRow>Daily personalised forecast and energy reading.</UnlockRow>
-            <UnlockRow>Higher Self chat with full chart context and persistent memory.</UnlockRow>
-            <UnlockRow>Souls, connect with others and read your dynamics together.</UnlockRow>
+            <UnlockRow>{t("welcome.unlock_forecast")}</UnlockRow>
+            <UnlockRow>{t("welcome.unlock_chat")}</UnlockRow>
+            <UnlockRow>{t("welcome.unlock_souls")}</UnlockRow>
           </ul>
         </div>
 

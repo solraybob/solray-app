@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -38,6 +39,7 @@ function saveHistory(code: string, history: ChatMessage[]) {
 export default function GroupChatPage() {
   const { code } = useParams<{ code: string }>();
   const { token, user } = useAuth();
+  const { t } = useT();
   const router = useRouter();
 
   const [session, setSession] = useState<SessionData | null>(null);
@@ -72,7 +74,7 @@ export default function GroupChatPage() {
     const message = input.trim();
     setInput("");
 
-    const senderName = user.name || user.email || "You";
+    const senderName = user.name || user.email || t("souls.you");
     const userMsg: ChatMessage = {
       role: "user",
       content: `${senderName}: ${message}`,
@@ -111,10 +113,10 @@ export default function GroupChatPage() {
       setHistory(finalHistory);
       saveHistory(code as string, finalHistory);
     } catch (e: unknown) {
-      const errMsg = e instanceof Error ? e.message : "Something went wrong";
+      const errMsg = e instanceof Error ? e.message : t("common.error_generic");
       const errMsgObj: ChatMessage = {
         role: "assistant",
-        content: `Could not reach the guide right now. (${errMsg})`,
+        content: `${t("group.error_guide")} (${errMsg})`,
         timestamp: Date.now(),
       };
       const finalHistory = [...updatedHistory, errMsgObj];
@@ -147,15 +149,15 @@ export default function GroupChatPage() {
       <ProtectedRoute>
         <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-5 text-center">
           <div className="text-4xl mb-4">✦</div>
-          <h2 className="font-heading text-3xl text-text-primary mb-2">Session not found</h2>
+          <h2 className="font-heading text-3xl text-text-primary mb-2">{t("group.not_found_title")}</h2>
           <p className="text-text-secondary text-sm font-body mb-6 max-w-xs">
-            This session code was not found on this device. If someone shared this link with you, ask them to resend it.
+            {t("group.not_found_body")}
           </p>
           <button
             onClick={() => router.push("/souls")}
             className="px-6 py-3 bg-amber-sun text-forest-deep font-body font-semibold rounded-xl text-sm"
           >
-            Back to Souls
+            {t("group.back_to_souls")}
           </button>
         </div>
       </ProtectedRoute>
@@ -177,9 +179,9 @@ export default function GroupChatPage() {
           </button>
           <div className="flex-1">
             <h1 className="font-heading text-xl text-text-primary">
-              Group Reading with {session?.soul_name || "Soul"}
+              {t("group.title_with").replace("{name}", session?.soul_name || t("group.soul"))}
             </h1>
-            <p className="text-text-secondary text-xs font-body">Session #{code}</p>
+            <p className="text-text-secondary text-xs font-body">{t("group.session")} #{code}</p>
           </div>
         </div>
 
@@ -188,9 +190,9 @@ export default function GroupChatPage() {
           {history.length === 0 && (
             <div className="text-center pt-8">
               <div className="text-3xl mb-3">✦</div>
-              <p className="font-heading text-xl text-text-primary mb-1">Both of you are present</p>
+              <p className="font-heading text-xl text-text-primary mb-1">{t("group.both_present")}</p>
               <p className="text-text-secondary text-sm font-body max-w-xs mx-auto">
-                The guide holds both charts. Either of you can ask a question. The AI will address you by name.
+                {t("group.both_present_body")}
               </p>
             </div>
           )}
@@ -232,7 +234,7 @@ export default function GroupChatPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Ask as ${user?.name || "yourself"}...`}
+              placeholder={t("group.ask_as").replace("{name}", user?.name || t("group.yourself"))}
               rows={1}
               className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-sm focus:border-amber-sun transition-colors resize-none"
               style={{ maxHeight: "120px", overflowY: "auto" }}

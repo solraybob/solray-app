@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 // Active nav colors pull from the aged-pigment palette. Today keeps
 // amber-sun (the hero), Chat gets wisteria (Higher Self, dreamy),
@@ -9,7 +10,7 @@ import { usePathname } from "next/navigation";
 const navItems = [
   {
     href: "/today",
-    label: "Today",
+    labelKey: "nav.today",
     color: "var(--amber)", // amber-sun, hero
 
     icon: (
@@ -28,7 +29,7 @@ const navItems = [
   },
   {
     href: "/chat",
-    label: "Chat",
+    labelKey: "nav.chat",
     color: "var(--wisteria)", // wisteria
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -38,7 +39,7 @@ const navItems = [
   },
   {
     href: "/souls",
-    label: "Souls",
+    labelKey: "nav.souls",
     color: "#6a8692", // indigo
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -51,7 +52,7 @@ const navItems = [
   },
   {
     href: "/profile",
-    label: "Profile",
+    labelKey: "nav.profile",
     color: "var(--moss)", // moss
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -66,6 +67,7 @@ const NAV_ROUTES = ["/today", "/chat", "/souls", "/profile"];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { t } = useT();
 
   // Only show on the four main nav screens
   if (!NAV_ROUTES.includes(pathname)) return null;
@@ -102,7 +104,7 @@ export default function BottomNav() {
                 className="text-[11px] font-body tracking-wider uppercase"
                 style={{ color: isActive ? item.color : "#6a8068" }}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           );
