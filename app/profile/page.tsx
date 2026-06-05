@@ -10,6 +10,7 @@ import { planetText, GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 
 // Types
 
@@ -302,6 +303,7 @@ const ELEMENT_COLORS: Record<string, string> = {
 };
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
+  const { lang } = useT();
   const progress = useAnimatedProgress(0);
 
   const OUTER = 112;
@@ -435,7 +437,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
             letterSpacing="0.12em"
             style={{ textTransform: "uppercase" }}
           >
-            {label}
+            {tx(label, lang)}
           </text>
         );
       })}
@@ -465,7 +467,7 @@ const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: stri
 const MAJOR_ORDER = ["conjunction", "opposition", "trine", "square", "sextile", "quincunx"];
 
 function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [openAspects, setOpenAspects] = useState<Record<string, boolean>>({});
   const [minorOpen, setMinorOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
@@ -493,9 +495,9 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
         {list.map((a, i) => (
           <div key={i} className="flex items-center justify-between py-0.5">
             <span className="font-body text-xs text-text-secondary">
-              {a.planet1}{" "}
+              {tx(a.planet1, lang)}{" "}
               <span style={{ color: cfg.color }}>{cfg.symbol}</span>{" "}
-              {a.planet2}
+              {tx(a.planet2, lang)}
             </span>
             <span className="font-body text-[12px] text-text-secondary/50 ml-4">
               {a.orb.toFixed(1)}°
@@ -519,7 +521,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
             {cfg.symbol}
           </span>
           <span className="font-body text-[15px] text-text-primary flex-1 text-left">
-            {cfg.label}
+            {tx(cfg.label, lang)}
           </span>
           <span className="font-body text-[12px] text-text-secondary/70 mr-2">
             {list.length}
@@ -748,7 +750,7 @@ function IconCamera() {
 // Main Page
 
 export default function ProfilePage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
@@ -1173,7 +1175,7 @@ export default function ProfilePage() {
                 {profile && (
                   <div className="flex flex-wrap justify-center gap-2 mt-2 relative z-10">
                     {profile.sunSign && <SunTag>{t(`signs.${profile.sunSign.toLowerCase()}`)} {t("planets.sun")}</SunTag>}
-                    {profile.hdType && <HDTypeTag>{profile.hdType}</HDTypeTag>}
+                    {profile.hdType && <HDTypeTag>{tx(profile.hdType, lang)}</HDTypeTag>}
                     {profile.hdProfile && <ProfileTag>{profile.hdProfile}</ProfileTag>}
                   </div>
                 )}
@@ -1239,7 +1241,7 @@ export default function ProfilePage() {
                           return (
                             <div key={key} className="flex items-center gap-2">
                               <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
-                                {label}
+                                {tx(label, lang)}
                               </span>
                               <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
                                 <div
@@ -1538,7 +1540,8 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
 }
 
 function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const es = lang.startsWith("es");
   // token is passed through to AstroGeography
   const [chart, setChart] = useState<ReturnType<typeof parseBlueprintForChart> | null>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -1619,16 +1622,24 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           <div className="space-y-4 mb-6">
             {core.map((p) => {
               const label = p.planet === "ASC" ? "Rising" : p.planet;
-              const subtitles: Record<string, string> = {
+              const signEs = tx(p.sign, lang);
+              const subtitlesEn: Record<string, string> = {
                 Sun: "Your core identity, how you shine",
                 Moon: "Your emotional nature, how you feel",
                 Rising: "Your outer mask, how the world sees you",
               };
-              const questions: Record<string, string> = {
-                Sun: `What does my ${p.sign} Sun mean for my identity and life path?`,
-                Moon: `What does my ${p.sign} Moon reveal about my emotional nature and inner world?`,
-                Rising: `What does my ${p.sign} Rising sign mean for how I show up in the world?`,
-              };
+              const subtitles = es ? ES_CORE_SUBTITLES : subtitlesEn;
+              const questions: Record<string, string> = es
+                ? {
+                    Sun: `¿Qué significa mi Sol en ${signEs} para mi identidad y mi camino de vida?`,
+                    Moon: `¿Qué revela mi Luna en ${signEs} sobre mi naturaleza emocional y mi mundo interior?`,
+                    Rising: `¿Qué significa mi Ascendente en ${signEs} para cómo me muestro al mundo?`,
+                  }
+                : {
+                    Sun: `What does my ${p.sign} Sun mean for my identity and life path?`,
+                    Moon: `What does my ${p.sign} Moon reveal about my emotional nature and inner world?`,
+                    Rising: `What does my ${p.sign} Rising sign mean for how I show up in the world?`,
+                  };
               return (
                 <div key={p.planet} className="flex items-center gap-4 py-3 border-b border-forest-border/40 last:border-0">
                   <span
@@ -1647,13 +1658,13 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     {planetText(p.planet)}
                   </span>
                   <div className="flex-1">
-                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">{label}</p>
+                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">{tx(label, lang)}</p>
                     <p className="font-body text-text-secondary/50 text-[12px]">{subtitles[label]}</p>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
-                    <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{p.sign}</p>
+                    <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{signEs}</p>
                     <p className="font-body text-text-secondary/60 text-[12px]">{p.degree}</p>
-                    {questions[label] && <AskButton topic={`${label} in ${p.sign}`} question={questions[label]} />}
+                    {questions[label] && <AskButton topic={es ? `${tx(label, lang)} en ${signEs}` : `${label} in ${p.sign}`} question={questions[label]} />}
                   </div>
                 </div>
               );
@@ -1688,8 +1699,8 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   >
                     {planetText(p.planet)}
                   </span>
-                  <span className="font-body text-text-primary text-[15px] flex-1">{p.planet}</span>
-                  <span className="font-body text-text-secondary text-[15px]">{p.sign}</span>
+                  <span className="font-body text-text-primary text-[15px] flex-1">{tx(p.planet, lang)}</span>
+                  <span className="font-body text-text-secondary text-[15px]">{tx(p.sign, lang)}</span>
                   <span className="font-body text-text-secondary text-[12px]">{p.degree}</span>
                   {p.retrograde && <span className="font-body text-amber-sun/70 text-[12px] font-semibold">Rx</span>}
                   <span className="font-body text-text-secondary text-[12px]">H{p.house}</span>
@@ -1721,31 +1732,56 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase">Type</p>
-                <AskButton topic={`${chart.human_design.type} type`} question={`I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`} />
+                <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase">{tx("Type", lang)}</p>
+                <AskButton
+                  topic={es ? `Tipo ${tx(chart.human_design.type, lang)}` : `${chart.human_design.type} type`}
+                  question={es
+                    ? `Soy ${tx(chart.human_design.type, lang)}. ¿Qué significa esto para cómo uso mi energía y tomo decisiones?`
+                    : `I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`}
+                />
               </div>
-              <p className="font-heading leading-tight" style={{ color: "var(--moss)", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{chart.human_design.type}</p>
-              {HD_TYPE_MEANINGS[chart.human_design.type] && (
-                <p className="text-text-secondary/60 text-[14px] font-body leading-snug mt-1">{HD_TYPE_MEANINGS[chart.human_design.type]}</p>
+              <p className="font-heading leading-tight" style={{ color: "var(--moss)", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{tx(chart.human_design.type, lang)}</p>
+              {(es ? ES_HD_TYPE_MEANINGS : HD_TYPE_MEANINGS)[chart.human_design.type] && (
+                <p className="text-text-secondary/60 text-[14px] font-body leading-snug mt-1">{(es ? ES_HD_TYPE_MEANINGS : HD_TYPE_MEANINGS)[chart.human_design.type]}</p>
               )}
             </div>
           )}
           <div className="flex items-center justify-between">
-            <div className="flex-1"><HDRow label="Strategy" value={chart.human_design.strategy} /></div>
-            <AskButton topic="Strategy" question={`My Human Design strategy is: ${chart.human_design.strategy}. How do I live this in practice?`} />
+            <div className="flex-1"><HDRow label={tx("Strategy", lang)} value={tx(chart.human_design.strategy, lang)} /></div>
+            <AskButton
+              topic={tx("Strategy", lang)}
+              question={es
+                ? `Mi estrategia de Diseño Humano es: ${tx(chart.human_design.strategy, lang)}. ¿Cómo la vivo en la práctica?`
+                : `My Human Design strategy is: ${chart.human_design.strategy}. How do I live this in practice?`}
+            />
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex-1"><HDRow label="Authority" value={chart.human_design.authority} meaning={HD_AUTHORITY_MEANINGS[chart.human_design.authority]} /></div>
-            <AskButton topic="Authority" question={`My inner authority is ${chart.human_design.authority}. How do I use this to make better decisions?`} />
+            <div className="flex-1"><HDRow label={tx("Authority", lang)} value={tx(chart.human_design.authority, lang)} meaning={(es ? ES_HD_AUTHORITY_MEANINGS : HD_AUTHORITY_MEANINGS)[chart.human_design.authority]} /></div>
+            <AskButton
+              topic={tx("Authority", lang)}
+              question={es
+                ? `Mi autoridad interna es ${tx(chart.human_design.authority, lang)}. ¿Cómo la uso para tomar mejores decisiones?`
+                : `My inner authority is ${chart.human_design.authority}. How do I use this to make better decisions?`}
+            />
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex-1"><HDRow label="Profile" value={chart.human_design.profile} meaning={(() => { const n = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return n ? HD_PROFILE_MEANINGS[n] : undefined; })()} /></div>
-            <AskButton topic="Profile" question={`My Human Design profile is ${chart.human_design.profile}. What does this reveal about my life's purpose and way of being?`} />
+            <div className="flex-1"><HDRow label={tx("Profile", lang)} value={chart.human_design.profile} meaning={(() => { const n = chart.human_design.profile.match(/^(\d\/\d)/)?.[1]; return n ? (es ? ES_HD_PROFILE_MEANINGS : HD_PROFILE_MEANINGS)[n] : undefined; })()} /></div>
+            <AskButton
+              topic={tx("Profile", lang)}
+              question={es
+                ? `Mi perfil de Diseño Humano es ${chart.human_design.profile}. ¿Qué revela sobre el propósito de mi vida y mi forma de ser?`
+                : `My Human Design profile is ${chart.human_design.profile}. What does this reveal about my life's purpose and way of being?`}
+            />
           </div>
           {chart.human_design.incarnation_cross && (
             <div className="flex items-center justify-between">
-              <div className="flex-1"><HDRow label="Cross" value={chart.human_design.incarnation_cross} /></div>
-              <AskButton topic="Incarnation Cross" question={`My Incarnation Cross is ${chart.human_design.incarnation_cross}. What is my life purpose according to this?`} />
+              <div className="flex-1"><HDRow label={tx("Cross", lang)} value={chart.human_design.incarnation_cross} /></div>
+              <AskButton
+                topic={es ? "Cruz de Encarnación" : "Incarnation Cross"}
+                question={es
+                  ? `Mi Cruz de Encarnación es ${chart.human_design.incarnation_cross}. ¿Cuál es el propósito de mi vida según esto?`
+                  : `My Incarnation Cross is ${chart.human_design.incarnation_cross}. What is my life purpose according to this?`}
+              />
             </div>
           )}
           <div>
@@ -1757,7 +1793,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   className="px-2.5 py-1 rounded-full text-[13px] font-body tracking-[0.05em]"
                   style={{ color: "var(--moss)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
                 >
-                  {c}
+                  {tx(c, lang)}
                 </span>
               ))}
             </div>
@@ -1767,7 +1803,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">{t("profile.undefined_centres")}</p>
               <div className="flex flex-wrap gap-2">
                 {chart.human_design.undefined_centres.map((c) => (
-                  <span key={c} className="px-2.5 py-1 bg-forest-card border border-forest-border rounded-full text-text-secondary text-xs font-body">{c}</span>
+                  <span key={c} className="px-2.5 py-1 bg-forest-card border border-forest-border rounded-full text-text-secondary text-xs font-body">{tx(c, lang)}</span>
                 ))}
               </div>
             </div>
@@ -1792,15 +1828,20 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "var(--mist)" }}>{gk!.name}</span>
-                  <span className="text-text-secondary text-xs font-body">· Gate {gk!.gate}</span>
+                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "var(--mist)" }}>{tx(gk!.name, lang)}</span>
+                  <span className="text-text-secondary text-xs font-body">· {tx("Gate", lang)} {gk!.gate}</span>
                 </div>
-                <AskButton topic={`Gene Key ${gk!.gate}`} question={`My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`} />
+                <AskButton
+                  topic={es ? `Llave Genética ${gk!.gate}` : `Gene Key ${gk!.gate}`}
+                  question={es
+                    ? `Mi Llave Genética de ${tx(gk!.name, lang)} es la Puerta ${gk!.gate}, con la sombra de ${tx(gk!.shadow, lang)} y el don de ${tx(gk!.gift, lang)}. ¿Cómo trabajo con esto en mi vida?`
+                    : `My ${gk!.name} Gene Key is Gate ${gk!.gate}, with a shadow of ${gk!.shadow} and a gift of ${gk!.gift}. How do I work with this in my life?`}
+                />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <GKPill label="Shadow" value={gk!.shadow} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
-                <GKPill label="Gift" value={gk!.gift} color="" style={{ color: "var(--mist)" }} />
-                <GKPill label="Siddhi" value={gk!.siddhi} color="" style={{ background: "linear-gradient(135deg, #9b86a0, #9babb9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label={tx("Shadow", lang)} value={tx(gk!.shadow, lang)} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
+                <GKPill label={tx("Gift", lang)} value={tx(gk!.gift, lang)} color="" style={{ color: "var(--mist)" }} />
+                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #9b86a0, #9babb9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

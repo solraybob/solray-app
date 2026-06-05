@@ -3,6 +3,8 @@
 import { WORLD_PATHS } from "@/lib/world-paths";
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
+import { tx } from "@/lib/astro-i18n";
 
 interface LinePoint {
   lat: number;
@@ -214,6 +216,7 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
 }
 
 export default function AstroGeography({ token }: { token: string | null }) {
+  const { lang } = useT();
   const [data, setData] = useState<AstroData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -285,7 +288,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
   if (error || !data) {
     return (
       <div className="text-text-secondary text-sm font-body text-center py-6">
-        {error || "No astrocartography data available."}
+        {lang.startsWith("es") ? "No se pudieron cargar los datos de astrocartografía." : (error || "No astrocartography data available.")}
       </div>
     );
   }
@@ -328,7 +331,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 }}
               >
                 <span>{symbol}</span>
-                <span className="tracking-wider">{planet}</span>
+                <span className="tracking-wider">{tx(planet, lang)}</span>
               </button>
             );
           })}
@@ -350,7 +353,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                   color: active ? "#f39230" : "#6a8068",
                 }}
               >
-                {labels[type]}
+                {tx(labels[type], lang)}
               </button>
             );
           })}
@@ -415,19 +418,21 @@ export default function AstroGeography({ token }: { token: string | null }) {
         {powerSpots.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary">Power Spots</h3>
+              <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary">{lang.startsWith("es") ? "Lugares de Poder" : "Power Spots"}</h3>
               <button
                 onClick={() => {
                   const spotNames = powerSpots.map(s => s.city).join(", ");
                   sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-                    topic: "Astrocartography Power Spots",
-                    question: `My astrocartography shows my top power spots are: ${spotNames}. Can you explain what these locations mean for me and why they are energetically significant?`
+                    topic: lang.startsWith("es") ? "Lugares de Poder de Astrocartografía" : "Astrocartography Power Spots",
+                    question: lang.startsWith("es")
+                      ? `Mi astrocartografía muestra que mis principales lugares de poder son: ${spotNames}. ¿Puedes explicarme qué significan estos lugares para mí y por qué son energéticamente significativos?`
+                      : `My astrocartography shows my top power spots are: ${spotNames}. Can you explain what these locations mean for me and why they are energetically significant?`
                   }));
                   window.location.href = "/chat";
                 }}
                 className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
               >
-                Ask →
+                {lang.startsWith("es") ? "Preguntar →" : "Ask →"}
               </button>
             </div>
             <div className="grid grid-cols-1 gap-2">
@@ -438,20 +443,27 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 >
                   <div className="flex-1">
                     <p className="text-sm font-body text-amber-400/90 mb-0.5">{spot.city}</p>
-                    <p className="text-xs text-text-secondary">{spot.lines.join(" + ")}</p>
-                    <p className="text-xs text-text-secondary/70 mt-1">{spot.description}</p>
+                    <p className="text-xs text-text-secondary">{spot.lines.map(l => { const [pl, ty] = l.split(" "); return `${tx(pl, lang)} ${ty}`; }).join(" + ")}</p>
+                    <p className="text-xs text-text-secondary/70 mt-1">
+                      {lang.startsWith("es")
+                        ? `Las energías de ${spot.lines.map(l => tx(l.split(" ")[0], lang)).join(" y ")} son fuertes aquí`
+                        : spot.description}
+                    </p>
                   </div>
                   <button
                     onClick={() => {
+                      const esQ = `Mi astrocartografía muestra ${spot.city} como un lugar de poder donde se cruzan ${spot.lines.map(l => { const [pl, ty] = l.split(" "); return `${tx(pl, lang)} ${ty}`; }).join(" y ")}. ¿Qué activaría en mi carta vivir en ${spot.city} o visitarlo?`;
                       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-                        topic: `Power Spot: ${spot.city}`,
-                        question: `My astrocartography shows ${spot.city} as a power spot where ${spot.lines.join(" and ")} cross. What would living or visiting ${spot.city} activate in my chart?`
+                        topic: lang.startsWith("es") ? `Lugar de Poder: ${spot.city}` : `Power Spot: ${spot.city}`,
+                        question: lang.startsWith("es")
+                          ? esQ
+                          : `My astrocartography shows ${spot.city} as a power spot where ${spot.lines.join(" and ")} cross. What would living or visiting ${spot.city} activate in my chart?`
                       }));
                       window.location.href = "/chat";
                     }}
                     className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5"
                   >
-                    Ask →
+                    {lang.startsWith("es") ? "Preguntar →" : "Ask →"}
                   </button>
                 </div>
               ))}
@@ -475,6 +487,7 @@ function FullscreenMap({
   powerSpots: PowerSpot[];
   onClose: () => void;
 }) {
+  const { lang } = useT();
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const draggingRef = useRef(false);
@@ -570,7 +583,7 @@ function FullscreenMap({
         <button
           onClick={resetView}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-text-primary transition-colors text-xs font-body"
-          title="Reset view"
+          title={lang.startsWith("es") ? "Restablecer vista" : "Reset view"}
         >
           ↺
         </button>
@@ -595,7 +608,7 @@ function FullscreenMap({
       </div>
 
       <div className="absolute bottom-4 left-4 text-text-secondary/40 text-[12px] font-body">
-        Pinch or scroll to zoom · Drag to pan
+        {lang.startsWith("es") ? "Pellizca o desplaza para acercar · Arrastra para mover" : "Pinch or scroll to zoom · Drag to pan"}
       </div>
 
       {/* Map container with transform */}
