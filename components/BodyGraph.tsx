@@ -1,12 +1,22 @@
 "use client";
 
 /**
- * BodyGraph: minimalist Human Design bodygraph.
+ * BodyGraph: Human Design bodygraph. June 2026 redesign (Bob-approved mockup
+ * solray_chart_redesign.html).
  *
  * Shows the 9 centers with their traditional shapes, colored in the Solray
- * aged palette when defined and hollow when undefined. Defined channels
- * are drawn as amber lines between the two centers they connect. Gate
- * numbers are hidden by default for a clean look.
+ * aged palette when defined and hollow when undefined. Defined channels are
+ * drawn as full-bodied amber lines between the two centers they connect.
+ *
+ * Two upgrades over the prior clean version:
+ *   1. Defined centers carry a soft same-color glow so they lift off the
+ *      field (filter #bgGlow), matching the wheel's glyph treatment.
+ *   2. Activated gate numbers now show on each defined center, placed at the
+ *      edge of the center pointing toward the partner it channels to (the
+ *      gate's real position), derived from the user's actual definedChannels
+ *      rather than a static list. Numbers sit on the filled center in dark
+ *      ink so they read cleanly. A small perpendicular nudge resolves the
+ *      rare case where two gates on one center face the same direction.
  *
  * Center labels live OUTSIDE the shapes in the surrounding whitespace so
  * they never collide with gate numbers, fit inside the small G diamond,
@@ -155,10 +165,11 @@ function CenterShape({
   color: string;
 }) {
   const fill = defined ? color : "transparent";
-  const fillOpacity = defined ? 1.0 : 0;
+  const fillOpacity = defined ? 0.94 : 0;
   const stroke = defined ? color : "rgba(168,184,171,0.55)";
-  const strokeWidth = 1.2;
+  const strokeWidth = 1.3;
   const size = 40;
+  const glow = defined ? "url(#bgGlow)" : undefined;
 
   if (type === "Head") {
     return (
@@ -168,6 +179,7 @@ function CenterShape({
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -179,6 +191,7 @@ function CenterShape({
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -190,10 +203,12 @@ function CenterShape({
         y={y - s}
         width={s * 2}
         height={s * 2}
+        rx={3}
         fill={fill}
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -206,6 +221,7 @@ function CenterShape({
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -218,6 +234,7 @@ function CenterShape({
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -230,6 +247,7 @@ function CenterShape({
         fillOpacity={fillOpacity}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        filter={glow}
       />
     );
   }
@@ -242,6 +260,7 @@ function CenterShape({
       fillOpacity={fillOpacity}
       stroke={stroke}
       strokeWidth={strokeWidth}
+      filter={glow}
     />
   );
 }
@@ -267,6 +286,43 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
     centerPairs.add(key);
   }
 
+  // Place each activated gate number at the edge of its center, pointing
+  // toward the partner center it channels to. A gate's true position is
+  // where its channel leaves the center, so this reads like a real chart.
+  const GATE_OFFSET = 16;
+  const gateLabels: { gate: number; x: number; y: number }[] = [];
+  for (const [gA, gB] of definedChannels) {
+    const cA = GATE_TO_CENTER[gA];
+    const cB = GATE_TO_CENTER[gB];
+    if (!cA || !cB || cA === cB) continue;
+    const pA = CENTER_POS[cA];
+    const pB = CENTER_POS[cB];
+    if (!pA || !pB) continue;
+    if (!definedSet.has(cA) || !definedSet.has(cB)) continue;
+    const dx = pB.x - pA.x;
+    const dy = pB.y - pA.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    gateLabels.push({ gate: gA, x: pA.x + ux * GATE_OFFSET, y: pA.y + uy * GATE_OFFSET });
+    gateLabels.push({ gate: gB, x: pB.x - ux * GATE_OFFSET, y: pB.y - uy * GATE_OFFSET });
+  }
+  // De-dupe identical gates and nudge any that collide.
+  const seenGate = new Set<number>();
+  const placedLabels: { gate: number; x: number; y: number }[] = [];
+  for (const g of gateLabels) {
+    if (seenGate.has(g.gate)) continue;
+    seenGate.add(g.gate);
+    let { x, y } = g;
+    let guard = 0;
+    while (placedLabels.some((p) => Math.hypot(p.x - x, p.y - y) < 11) && guard < 6) {
+      x += 7;
+      y += 4;
+      guard++;
+    }
+    placedLabels.push({ gate: g.gate, x, y });
+  }
+
   return (
     <svg
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
@@ -274,7 +330,18 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
       aria-label="Human Design bodygraph"
     >
-      {/* Channel lines behind the centers, amber at 60% for warmth */}
+      <defs>
+        {/* Soft same-color halo so defined centers lift off the field. */}
+        <filter id="bgGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.5" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Channel lines behind the centers, full-bodied amber */}
       {Array.from(centerPairs).map((key) => {
         const [a, b] = key.split("|") as [CenterKey, CenterKey];
         const p1 = CENTER_POS[a];
@@ -287,8 +354,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y1={p1.y}
             x2={p2.x}
             y2={p2.y}
-            stroke="rgba(243,146,48,0.60)"
-            strokeWidth={2.5}
+            stroke="rgba(243,146,48,0.75)"
+            strokeWidth={3}
             strokeLinecap="round"
           />
         );
@@ -308,6 +375,25 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
           />
         );
       })}
+
+      {/* Activated gate numbers, on the filled center in dark ink */}
+      {placedLabels.map((g) => (
+        <text
+          key={`gate-${g.gate}`}
+          x={g.x}
+          y={g.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#050f08"
+          style={{
+            fontFamily: "Inter, system-ui, sans-serif",
+            fontSize: "10px",
+            fontWeight: 600,
+          }}
+        >
+          {g.gate}
+        </text>
+      ))}
 
       {/* External labels, placed in surrounding whitespace */}
       {(Object.keys(CENTER_LABEL_POS) as CenterKey[]).map((key) => {
