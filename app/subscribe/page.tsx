@@ -610,8 +610,8 @@ function TrialOffer({
             {t("subscribe.everything_included")}
           </p>
           {[
-            t("subscribe.feature_forecast"),
             t("subscribe.feature_oracle"),
+            t("subscribe.feature_forecast"),
             t("subscribe.feature_souls"),
             t("subscribe.feature_blueprint"),
             t("subscribe.feature_transits"),

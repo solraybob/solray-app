@@ -48,6 +48,22 @@ function FirstMirrorContent() {
   const [mirror, setMirror] = useState<FirstMirrorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealStage, setRevealStage] = useState(0); // 0=eyebrow, 1=pattern, 2=shadow, 3=question, 4=cta
+  // First Words: after the mirror, one invitation to ask the Oracle a real
+  // question. The first conversation IS the product; this makes sure every
+  // new user (and every reviewer) meets it before anything else.
+  const [showAsk, setShowAsk] = useState(false);
+
+  const askOracle = (question?: string) => {
+    if (question) {
+      try {
+        sessionStorage.setItem(
+          "solray_chat_prompt",
+          JSON.stringify({ topic: question, question })
+        );
+      } catch (_) {}
+    }
+    router.replace("/chat");
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -107,6 +123,57 @@ function FirstMirrorContent() {
 
   if (!mirror) return null;
 
+  // First Words screen: the Oracle is awake, ask one true question.
+  if (showAsk) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col bg-forest-deep">
+        <div className="flex-1 flex flex-col justify-center px-6 pb-24 animate-slide-up">
+          <div className="max-w-md mx-auto w-full">
+            <p
+              className="font-body text-[11px] tracking-[0.3em] uppercase mb-4 text-center"
+              style={{ color: "var(--amber)", opacity: 0.8 }}
+            >
+              {t("first_mirror.awake")}
+            </p>
+            <h1
+              className="font-heading text-text-primary text-center mb-3"
+              style={{ fontWeight: 300, fontStyle: "italic", fontSize: "2rem", letterSpacing: "-0.01em" }}
+            >
+              {t("first_mirror.ask_title")}
+            </h1>
+            <p className="font-body text-text-secondary/70 text-[13px] text-center mb-10">
+              {t("first_mirror.ask_hint")}
+            </p>
+            <div className="space-y-3">
+              {[t("first_mirror.chip_yes"), t("first_mirror.chip_forcing")].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => askOracle(q)}
+                  className="w-full text-left px-5 py-4 rounded-2xl border border-forest-border/80 bg-forest-card/40 font-body text-[15px] text-text-primary transition-all hover:border-amber-sun/40 active:scale-[0.99]"
+                >
+                  {q}
+                </button>
+              ))}
+              <button
+                onClick={() => askOracle()}
+                className="w-full text-left px-5 py-4 rounded-2xl border border-amber-sun/35 font-body text-[15px] transition-all hover:border-amber-sun/60 active:scale-[0.99]"
+                style={{ color: "var(--amber)", background: "rgba(243,146,48,0.05)" }}
+              >
+                {t("first_mirror.chip_own")}
+              </button>
+            </div>
+            <button
+              onClick={() => router.replace("/today")}
+              className="block mx-auto mt-8 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary/60 hover:text-text-secondary transition-colors"
+            >
+              {t("first_mirror.not_now")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-forest-deep">
       {/* Header */}
@@ -142,7 +209,7 @@ function FirstMirrorContent() {
             }}
           >
             <button
-              onClick={() => router.replace("/today")}
+              onClick={() => setShowAsk(true)}
               className="w-full py-4 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all"
               style={{
                 background: "var(--amber)",

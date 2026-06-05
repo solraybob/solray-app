@@ -385,7 +385,11 @@ export default function OnboardPage() {
           )}
 
           {step === 3 && (
-            <StepWrapper label={t("onboard.q_birth_date")}>
+            <StepWrapper
+              label={t("onboard.q_birth_date")}
+              eyebrow={t("onboard.calibration")}
+              subtitle={t("onboard.calibration_why")}
+            >
               <input
                 autoFocus
                 type="date"
@@ -614,14 +618,22 @@ export default function OnboardPage() {
 function StepWrapper({
   label,
   subtitle,
+  eyebrow,
   children,
 }: {
   label: string;
   subtitle?: string;
+  eyebrow?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
+      {eyebrow && (
+        <p
+          className="font-body text-[11px] tracking-[0.3em] uppercase mb-3"
+          style={{ color: "var(--amber)", opacity: 0.75 }}
+        >{eyebrow}</p>
+      )}
       <h2
         className="font-heading text-4xl text-text-primary mb-2 leading-tight"
         style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
