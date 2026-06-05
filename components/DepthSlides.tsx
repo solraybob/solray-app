@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useT } from "@/lib/i18n";
+import { NIGHT_SURFACE } from "@/lib/night";
 
 interface DepthSlidesProps {
   tags: {
@@ -120,8 +121,10 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                   overflow: "hidden",
                 }}
               >
-                {/* Photo header, absolute Image fill, guaranteed full coverage */}
-                <div style={{ position: "relative", minHeight: "110px" }}>
+                {/* Photo header, absolute Image fill, guaranteed full coverage.
+                    NIGHT_SURFACE pins dark tokens so lettering over the photo
+                    stays cream in light mode. */}
+                <div style={{ position: "relative", minHeight: "110px", ...NIGHT_SURFACE }}>
                   <Image
                     src={image}
                     alt={label}

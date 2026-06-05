@@ -11,6 +11,7 @@ import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
 import { useT } from "@/lib/i18n";
+import { NIGHT_SURFACE } from "@/lib/night";
 
 // Planet to hero image mapping
 const PLANET_HERO_IMAGES: Record<string, string> = {
@@ -431,6 +432,7 @@ function HeroImageCard({
           on different elements. Sibling structure removes the race. */}
       <div
         className="relative w-full h-[160px] cursor-pointer"
+        style={NIGHT_SURFACE}
         onClick={() => setOpen(v => !v)}
       >
         <Image
@@ -490,6 +492,7 @@ function HeroImageCard({
         disabled={sharing}
         className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
         style={{
+          ...NIGHT_SURFACE,
           background: "rgba(5,15,8,0.55)",
           border: "1px solid rgba(243,146,48,0.35)",
           backdropFilter: "blur(6px)",

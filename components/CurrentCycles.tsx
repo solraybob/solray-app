@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { NIGHT_SURFACE } from "@/lib/night";
 
 // Planet-specific atmospheric images for cycle cards
 const PLANET_CYCLE_IMAGES: Record<string, string> = {
@@ -135,8 +136,9 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
       style={{ border: "1px solid rgba(26,48,32,0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
-      {/* Photo header, locked height, never grows */}
-      <div className="relative" style={{ minHeight: "160px" }}>
+      {/* Photo header, locked height, never grows. NIGHT_SURFACE pins the
+          dark tokens so lettering over the photo stays cream in light mode. */}
+      <div className="relative" style={{ minHeight: "160px", ...NIGHT_SURFACE }}>
         <Image
           src={getCycleImage(cycle.transit_planet)}
           alt={cycle.transit_planet}
