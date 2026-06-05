@@ -87,18 +87,24 @@ function humanizeCycleTitle(title: string): string {
   return title;
 }
 
+// Locale for date rendering: English keeps the en-GB day-month order the
+// design was tuned on; any other app language formats natively (e.g. "ene 2026").
+function dateLocale(lang: string): string {
+  return lang === "en" ? "en-GB" : lang;
+}
+
 // Format date like "Jan 2026"
-function fmtDate(dateStr: string): string {
+function fmtDate(dateStr: string, lang: string): string {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00:00Z");
-  return d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+  return d.toLocaleDateString(dateLocale(lang), { month: "short", year: "numeric" });
 }
 
 // Format date like "May 31, 2026"
-function fmtDateLong(dateStr: string): string {
+function fmtDateLong(dateStr: string, lang: string): string {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00:00Z");
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return d.toLocaleDateString(dateLocale(lang), { day: "numeric", month: "long", year: "numeric" });
 }
 
 // Calculate progress 0–100 through the transit window
@@ -121,12 +127,12 @@ function calcPeakPos(started: string, peak: string, ends: string): number {
 }
 
 function CycleCard({ cycle }: { cycle: Cycle }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [expanded, setExpanded] = useState(false);
   const progress = calcProgress(cycle.started, cycle.peak, cycle.ends);
   const peakPos = calcPeakPos(cycle.started, cycle.peak, cycle.ends);
 
-  const duration = `${fmtDate(cycle.started)}, ${fmtDate(cycle.ends)}`;
+  const duration = `${fmtDate(cycle.started, lang)}, ${fmtDate(cycle.ends, lang)}`;
   const summary = cycle.summary || "";
   const [firstSentence, rest] = splitFirstSentence(summary);
 
@@ -172,9 +178,9 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
               <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep" style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }} />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.started)}</span>
-              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">{t("cycles.peak")} {fmtDate(cycle.peak)}</span>
-              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.ends)}</span>
+              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.started, lang)}</span>
+              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">{t("cycles.peak")} {fmtDate(cycle.peak, lang)}</span>
+              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.ends, lang)}</span>
             </div>
           </div>
 
@@ -184,7 +190,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           )}
           <div className="flex items-center gap-2 mt-3">
             <span className={`text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
-              {cycle.phase}
+              {cycle.phase === "applying" ? t("cycles.applying") : cycle.phase === "separating" ? t("cycles.separating") : cycle.phase}
             </span>
             <span className="text-text-secondary/30 text-[11px] font-body">{t("cycles.orb")} {cycle.orb}°</span>
           </div>
@@ -202,7 +208,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 }
 
 function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const summary = cycle.summary || "";
@@ -243,7 +249,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
             </span>
           </div>
           <p className="text-text-secondary/60 text-[13px] font-body leading-snug">
-            {t("cycles.enters_orb")} {fmtDateLong(cycle.enters_orb)}
+            {t("cycles.enters_orb")} {fmtDateLong(cycle.enters_orb, lang)}
           </p>
         </div>
         <span
@@ -299,7 +305,7 @@ interface CurrentCyclesProps {
 }
 
 export default function CurrentCycles({ token }: CurrentCyclesProps) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [cycles, setCycles] = useState<Cycle[] | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingCycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -308,8 +314,11 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
   useEffect(() => {
     if (!token) return;
 
+    // Cache key includes the language: the summaries and titles are
+    // language-specific server content, so switching language must refetch
+    // rather than serve last month's cached English for four weeks.
     const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const cacheKey = `solray_cycles_${monthKey}`;
+    const cacheKey = `solray_cycles_${monthKey}_${lang}`;
 
     // Try cache first
     try {
@@ -340,7 +349,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
         setUpcoming([]);
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, lang]);
 
   const displayCycles = cycles ? cycles.slice(0, 6) : [];
   const total = displayCycles.length;
