@@ -184,12 +184,20 @@ function TrainingGround() {
   return (
     <div style={{ minHeight: "100vh", background: FOREST, color: PEARL, padding: "28px 20px 80px" }}>
       <div style={{ maxWidth: 860, margin: "0 auto" }}>
-        <a
-          href="/admin/akashic-record"
-          style={{ color: MOSS_DIM, fontSize: 12, letterSpacing: "0.12em", textDecoration: "none" }}
-        >
-          ← Akashic Record
-        </a>
+        <span style={{ display: "flex", gap: 16 }}>
+          <a
+            href="/admin/akashic-record"
+            style={{ color: MOSS_DIM, fontSize: 12, letterSpacing: "0.12em", textDecoration: "none" }}
+          >
+            ← Akashic Record
+          </a>
+          <a
+            href="/admin/consciousness"
+            style={{ color: MOSS_DIM, fontSize: 12, letterSpacing: "0.12em", textDecoration: "none" }}
+          >
+            Consciousness →
+          </a>
+        </span>
         <div style={{ marginTop: 14, marginBottom: 6, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
           Training Ground
         </div>

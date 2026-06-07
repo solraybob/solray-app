@@ -228,6 +228,12 @@ function HiveDashboardInner() {
           </div>
           <div className="flex items-center gap-3">
             <a
+              href="/admin/consciousness"
+              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors"
+            >
+              Consciousness
+            </a>
+            <a
               href="/admin/training"
               className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors"
             >
