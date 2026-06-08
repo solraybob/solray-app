@@ -825,8 +825,20 @@ export default function TodayPage() {
     })();
   }, [token]);
 
+  // Mark a breakthrough seen so it never resurfaces. Fire-and-forget.
+  const markInsightSeen = (id: string) => {
+    if (!token) return;
+    apiFetch(`/insight/${id}/seen`, { method: "POST" }, token).catch(() => {});
+  };
+
+  const dismissBreakthrough = () => {
+    if (insight) markInsightSeen(insight.id);
+    setShowBreakthrough(false);
+  };
+
   const openInsightInChat = () => {
     if (!insight) return;
+    markInsightSeen(insight.id);
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: insight.title,
@@ -1050,7 +1062,7 @@ export default function TodayPage() {
         <BreakthroughModal
           insight={insight}
           onAsk={openInsightInChat}
-          onClose={() => setShowBreakthrough(false)}
+          onClose={dismissBreakthrough}
         />
       )}
       <div
