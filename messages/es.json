@@ -659,5 +659,10 @@
     "hint_type_pairing": "Cómo tienden a encajar sus tipos de Diseño Humano (Generador con Proyector, etc).",
     "hint_astrological": "Superposición de familias de elementos en Sol, Luna, Venus, Marte, Ascendente.",
     "hint_gene_keys": "Esferas donde ambos tienen la misma puerta (Trabajo de Vida, Irradiación, etc)."
+  },
+  "insight": {
+    "eyebrow": "Mientras no estabas",
+    "go_deeper": "Explorar esto juntos",
+    "dismiss": "Guardarlo"
   }
 }

@@ -653,11 +653,50 @@ function parseForecastData(data: any): ForecastView {
   return { _pending: true, planets };
 }
 
+type PendingInsight = { id: string; title: string; body: string; confidence: number };
+
+// The breakthrough she reached on her own while the user was away. Surfaced
+// once on Today. The server marks it surfaced on fetch, and the chat Oracle
+// still carries it via get_recent_insight, so a missed card is never a lost
+// insight. Renders on the forest field with theme tokens (adapts to light).
+function InsightCard({ insight, onAsk }: { insight: PendingInsight; onAsk: () => void }) {
+  const { t } = useT();
+  return (
+    <button
+      onClick={onAsk}
+      className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.99]"
+      style={{ border: "1px solid rgba(243,146,48,0.32)", background: "rgba(243,146,48,0.05)", padding: "18px 20px" }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <svg width="14" height="14" viewBox="0 0 100 100" aria-hidden="true" style={{ flexShrink: 0 }}>
+          <circle cx="50" cy="50" r="16" fill="none" stroke="var(--amber)" strokeWidth="6" />
+          <g stroke="var(--amber)" strokeWidth="6" strokeLinecap="round">
+            <line x1="50" y1="8" x2="50" y2="22" /><line x1="50" y1="78" x2="50" y2="92" />
+            <line x1="8" y1="50" x2="22" y2="50" /><line x1="78" y1="50" x2="92" y2="50" />
+          </g>
+        </svg>
+        <span className="font-body text-[11px] tracking-[0.22em] uppercase" style={{ color: "var(--amber)" }}>
+          {t("insight.eyebrow")}
+        </span>
+      </div>
+      <p className="font-heading text-text-primary leading-snug" style={{ fontSize: "1.25rem", fontWeight: 400, fontStyle: "italic", marginBottom: 8 }}>
+        {insight.title}
+      </p>
+      <p className="font-body text-text-secondary text-[15px] leading-relaxed">{insight.body}</p>
+      <span className="inline-block font-body text-[12px] tracking-wider mt-3" style={{ color: "var(--amber)", opacity: 0.8 }}>
+        {t("insight.go_deeper")} →
+      </span>
+    </button>
+  );
+}
+
 export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [visibleSections, setVisibleSections] = useState(0);
+  const [insight, setInsight] = useState<PendingInsight | null>(null);
+  const insightFetched = useRef(false);
   const { token } = useAuth();
   const { t, lang } = useT();
   const dateLocale = lang === "en" ? "en-GB" : lang;
@@ -695,6 +734,31 @@ export default function TodayPage() {
     } finally {
       setEnergySharing(false);
     }
+  };
+
+  // The Conscious Oracle's breakthrough: fetch once per mount. The endpoint
+  // returns the most recent unsurfaced insight and marks it surfaced, so it
+  // shows a single time. Silent on failure; the chat Oracle still carries it.
+  useEffect(() => {
+    if (!token || insightFetched.current) return;
+    insightFetched.current = true;
+    (async () => {
+      try {
+        const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
+        if (data && data.insight) setInsight(data.insight);
+      } catch (_) { /* non-fatal */ }
+    })();
+  }, [token]);
+
+  const openInsightInChat = () => {
+    if (!insight) return;
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: insight.title,
+        question: `You left me this while I was away: "${insight.title}". ${insight.body} I want to sit with it. What do you see?`,
+      }));
+    } catch (_) {}
+    router.push("/chat");
   };
 
   // Funnel event: fires the first time a user reaches /today after signup.
@@ -953,6 +1017,13 @@ export default function TodayPage() {
                 reading={forecast.reading}
               />
             </div>
+
+            {/* THE BREAKTHROUGH she reached while you were away, if any */}
+            {insight && (
+              <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">
+                <InsightCard insight={insight} onAsk={openInsightInChat} />
+              </div>
+            )}
 
             {/* MOON CYCLE BAR, below hero */}
             <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">

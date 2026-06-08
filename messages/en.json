@@ -659,5 +659,10 @@
     "hint_type_pairing": "How your Human Design types tend to fit (Generator with Projector, etc).",
     "hint_astrological": "Element-family overlap across Sun, Moon, Venus, Mars, Ascendant.",
     "hint_gene_keys": "Spheres where you both have the same gate (Life's Work, Radiance, etc)."
+  },
+  "insight": {
+    "eyebrow": "While you were away",
+    "go_deeper": "Sit with this together",
+    "dismiss": "Hold it"
   }
 }
