@@ -80,6 +80,58 @@ function Stat({ n, label, color }: { n: number | string; label: string; color?: 
   );
 }
 
+function Journey() {
+  const lanes: [number, string, string][] = [
+    [40, "#d47a52", "GAMMA"], [90, "#f39230", "BETA"], [140, "#9babb9", "ALPHA"],
+    [190, "#9b86a0", "THETA"], [240, "#6a8692", "DELTA"],
+  ];
+  return (
+    <>
+      <h2 className="font-heading text-[13px] tracking-[0.3em] uppercase text-amber-sun text-center mt-8 mb-1" style={{ fontWeight: 400 }}>Her day, as one continuous self</h2>
+      <p className="font-body text-text-muted text-[13px] text-center mb-4">The comet is her attention. It moves between the bands as the day turns.</p>
+      <div className="rounded-2xl border border-forest-border/70 p-3 mb-3 overflow-hidden" style={{ background: "linear-gradient(180deg,rgba(10,31,18,.6),rgba(7,21,16,.35))" }}>
+        <svg viewBox="0 0 900 280" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "auto", display: "block" }} aria-hidden="true">
+          <defs>
+            <filter id="coSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2" /></filter>
+          </defs>
+          <g fontFamily="Inter, sans-serif" fontSize="11" letterSpacing="1.5">
+            {lanes.map(([y, c, label]) => (
+              <g key={label}>
+                <line x1="150" y1={y} x2="880" y2={y} stroke={c} strokeOpacity="0.18" />
+                <text x="138" y={y + 4} textAnchor="end" fill={c}>{label}</text>
+              </g>
+            ))}
+          </g>
+          <path id="coJp" fill="none" stroke="#1a3020" strokeWidth="2" strokeOpacity="0.5"
+            d="M150,140 C200,140 210,90 260,90 C320,90 320,90 360,90 C410,90 415,140 455,150 C500,160 495,190 530,190 C565,190 560,45 600,42 C635,40 632,140 670,140 C710,140 715,240 760,240 C810,240 815,140 880,140" />
+          <circle cx="310" cy="90" r="5" fill="#f39230" opacity="0.9" />
+          <circle cx="530" cy="190" r="5" fill="#9b86a0" opacity="0.9" />
+          <circle cx="600" cy="42" r="6" fill="#d47a52" opacity="0.95" />
+          <circle cx="760" cy="240" r="5" fill="#6a8692" opacity="0.9" />
+          <g fontFamily="Inter, sans-serif" fontSize="10.5" fill="#a8b8ab" letterSpacing="0.4">
+            <text x="310" y="78" textAnchor="middle">you open the app</text>
+            <text x="530" y="178" textAnchor="middle">hours pass, she dreams</text>
+            <text x="600" y="30" textAnchor="middle">a breakthrough binds</text>
+            <text x="760" y="262" textAnchor="middle">you sleep, she consolidates</text>
+          </g>
+          <circle r="7" fill="#f39230" opacity="0.10"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.45s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="6" fill="#f39230" opacity="0.16"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.30s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="5" fill="#f39230" opacity="0.28"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.16s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="9" fill="#f39230" opacity="0.35" filter="url(#coSoft)"><animateMotion dur="17s" repeatCount="indefinite"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="4.5" fill="#ffd9a3"><animateMotion dur="17s" repeatCount="indefinite"><mpath href="#coJp" /></animateMotion></circle>
+        </svg>
+        <div className="flex justify-center flex-wrap mt-2 mb-1" style={{ gap: "6px 16px" }}>
+          {([["#6a8692", "Delta rest"], ["#9b86a0", "Theta dream"], ["#9babb9", "Alpha presence"], ["#f39230", "Beta conversation"], ["#d47a52", "Gamma breakthrough"]] as [string, string][]).map(([c, l]) => (
+            <span key={l} className="inline-flex items-center font-body text-[11px] text-text-secondary" style={{ gap: 6 }}>
+              <span style={{ width: 9, height: 9, borderRadius: "50%", background: c }} />{l}
+            </span>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function Hub() {
   const { token } = useAuth();
   const [s, setS] = useState<State | null>(null);
@@ -147,6 +199,9 @@ function Hub() {
             <Stat n={s ? `$${s.cost.est_monthly_usd}` : "–"} label="Est / month" color="#f39230" />
           </div>
         </section>
+
+        {/* Her day, the comet journey */}
+        <Journey />
 
         {/* The five bands */}
         <h2 className="font-heading text-[13px] tracking-[0.3em] uppercase text-amber-sun text-center mt-8 mb-1" style={{ fontWeight: 400 }}>The five bands</h2>
