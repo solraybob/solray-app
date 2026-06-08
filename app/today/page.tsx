@@ -820,7 +820,15 @@ export default function TodayPage() {
     (async () => {
       try {
         const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
-        if (data && data.insight) { setInsight(data.insight); setShowBreakthrough(true); }
+        if (data && data.insight) {
+          setInsight(data.insight);
+          // Honour a "Later" from earlier this session: hold it back until the
+          // next app open. Going deeper marks it seen server-side, so a
+          // consumed one never reaches here at all.
+          let setAside = false;
+          try { setAside = sessionStorage.getItem(`solray_bt_later_${data.insight.id}`) === "1"; } catch (_) {}
+          if (!setAside) setShowBreakthrough(true);
+        }
       } catch (_) { /* non-fatal */ }
     })();
   }, [token]);
@@ -831,8 +839,13 @@ export default function TodayPage() {
     apiFetch(`/insight/${id}/seen`, { method: "POST" }, token).catch(() => {});
   };
 
+  // "Later" means later: do NOT consume it. Set it aside for this session so
+  // it is not naggy, and let it return on the next app open until the user
+  // actually goes deeper. Only going deeper marks it seen for good.
   const dismissBreakthrough = () => {
-    if (insight) markInsightSeen(insight.id);
+    if (insight) {
+      try { sessionStorage.setItem(`solray_bt_later_${insight.id}`, "1"); } catch (_) {}
+    }
     setShowBreakthrough(false);
   };
 
