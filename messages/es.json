@@ -662,7 +662,8 @@
   },
   "insight": {
     "eyebrow": "Mientras no estabas",
-    "go_deeper": "Explorar esto juntos",
-    "dismiss": "Guardarlo"
+    "go_deeper": "Ir más profundo",
+    "dismiss": "Más tarde",
+    "of_the_day": "El Avance del Día"
   }
 }

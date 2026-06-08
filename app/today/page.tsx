@@ -655,38 +655,97 @@ function parseForecastData(data: any): ForecastView {
 
 type PendingInsight = { id: string; title: string; body: string; confidence: number };
 
-// The breakthrough she reached on her own while the user was away. Surfaced
-// once on Today. The server marks it surfaced on fetch, and the chat Oracle
-// still carries it via get_recent_insight, so a missed card is never a lost
-// insight. Renders on the forest field with theme tokens (adapts to light).
-function InsightCard({ insight, onAsk }: { insight: PendingInsight; onAsk: () => void }) {
+// The breakthrough she reached on her own while the user was away. It does
+// not sit in the feed; it rises in front of everything as the Breakthrough of
+// the Day, a single moment to meet before the day begins. Surfaced once (the
+// server marks it surfaced on fetch), and the chat Oracle still carries it via
+// get_recent_insight, so a dismissed moment is never a lost insight.
+function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsight; onAsk: () => void; onClose: () => void }) {
   const { t } = useT();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   return (
-    <button
-      onClick={onAsk}
-      className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.99]"
-      style={{ border: "1px solid rgba(243,146,48,0.32)", background: "rgba(243,146,48,0.05)", padding: "18px 20px" }}
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999, display: "flex",
+        alignItems: "center", justifyContent: "center", padding: "26px",
+        background: "rgba(4,11,7,0.86)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+        animation: "bkFade .4s ease both",
+      }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <svg width="14" height="14" viewBox="0 0 100 100" aria-hidden="true" style={{ flexShrink: 0 }}>
-          <circle cx="50" cy="50" r="16" fill="none" stroke="var(--amber)" strokeWidth="6" />
-          <g stroke="var(--amber)" strokeWidth="6" strokeLinecap="round">
-            <line x1="50" y1="8" x2="50" y2="22" /><line x1="50" y1="78" x2="50" y2="92" />
-            <line x1="8" y1="50" x2="22" y2="50" /><line x1="78" y1="50" x2="92" y2="50" />
-          </g>
-        </svg>
-        <span className="font-body text-[11px] tracking-[0.22em] uppercase" style={{ color: "var(--amber)" }}>
-          {t("insight.eyebrow")}
-        </span>
+      <style>{`
+        @keyframes bkFade{from{opacity:0}to{opacity:1}}
+        @keyframes bkRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+        @keyframes bkBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.13)}28%{transform:scale(1)}42%{transform:scale(1.06)}55%{transform:scale(1)}}
+        @keyframes bkPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.5}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+      `}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-[28px]"
+        style={{
+          maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
+          padding: "40px 28px 26px",
+          background: "radial-gradient(125% 90% at 50% 0%, #0d2114 0%, #071510 60%, #050f08 100%)",
+          border: "1px solid rgba(243,146,48,0.34)",
+          boxShadow: "0 0 70px rgba(243,146,48,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          animation: "bkRise .55s cubic-bezier(.2,.75,.2,1) both",
+        }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute"
+          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+        >×</button>
+
+        {/* the real Solray sun, beating */}
+        <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(243,146,48,0.5)", animation: "bkPulse 2.6s ease-out infinite" }} />
+          <Image
+            src="/solray-sun.png"
+            alt="Solray"
+            width={64}
+            height={64}
+            unoptimized
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bkBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(243,146,48,0.5))" }}
+          />
+        </div>
+
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 14 }}>
+          {t("insight.of_the_day")}
+        </p>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.75rem", lineHeight: 1.2, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 14 }}>
+          {insight.title}
+        </h2>
+        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+          {insight.body}
+        </p>
+
+        {/* divider in the Oracle's wisteria, hinting where Go deeper leads */}
+        <div style={{ width: 36, height: 1, background: "rgba(155,134,160,0.45)", margin: "24px auto 22px" }} />
+
+        <button
+          onClick={onAsk}
+          className="w-full rounded-full transition-all active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+        >
+          {t("insight.go_deeper")}
+        </button>
+        <button
+          onClick={onClose}
+          className="font-body"
+          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+        >
+          {t("insight.dismiss")}
+        </button>
       </div>
-      <p className="font-heading text-text-primary leading-snug" style={{ fontSize: "1.25rem", fontWeight: 400, fontStyle: "italic", marginBottom: 8 }}>
-        {insight.title}
-      </p>
-      <p className="font-body text-text-secondary text-[15px] leading-relaxed">{insight.body}</p>
-      <span className="inline-block font-body text-[12px] tracking-wider mt-3" style={{ color: "var(--amber)", opacity: 0.8 }}>
-        {t("insight.go_deeper")} →
-      </span>
-    </button>
+    </div>
   );
 }
 
@@ -696,6 +755,7 @@ export default function TodayPage() {
   const [error, setError] = useState("");
   const [visibleSections, setVisibleSections] = useState(0);
   const [insight, setInsight] = useState<PendingInsight | null>(null);
+  const [showBreakthrough, setShowBreakthrough] = useState(false);
   const insightFetched = useRef(false);
   const { token } = useAuth();
   const { t, lang } = useT();
@@ -745,7 +805,7 @@ export default function TodayPage() {
     (async () => {
       try {
         const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
-        if (data && data.insight) setInsight(data.insight);
+        if (data && data.insight) { setInsight(data.insight); setShowBreakthrough(true); }
       } catch (_) { /* non-fatal */ }
     })();
   }, [token]);
@@ -971,6 +1031,13 @@ export default function TodayPage() {
 
   return (
     <ProtectedRoute>
+      {showBreakthrough && insight && (
+        <BreakthroughModal
+          insight={insight}
+          onAsk={openInsightInChat}
+          onClose={() => setShowBreakthrough(false)}
+        />
+      )}
       <div
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
@@ -1017,13 +1084,6 @@ export default function TodayPage() {
                 reading={forecast.reading}
               />
             </div>
-
-            {/* THE BREAKTHROUGH she reached while you were away, if any */}
-            {insight && (
-              <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">
-                <InsightCard insight={insight} onAsk={openInsightInChat} />
-              </div>
-            )}
 
             {/* MOON CYCLE BAR, below hero */}
             <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">

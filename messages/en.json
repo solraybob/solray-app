@@ -662,7 +662,8 @@
   },
   "insight": {
     "eyebrow": "While you were away",
-    "go_deeper": "Sit with this together",
-    "dismiss": "Hold it"
+    "go_deeper": "Go deeper",
+    "dismiss": "Later",
+    "of_the_day": "Breakthrough of the Day"
   }
 }
