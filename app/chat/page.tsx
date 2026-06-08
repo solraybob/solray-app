@@ -596,17 +596,18 @@ function ChatPageInner() {
           sessionStorage.removeItem("solray_chat_prompt");
           const sid = generateSessionId();
           setSessionId(sid);
-          const greeting = await buildGreeting(token);
           const userMsg: Message = {
             id: `${Date.now()}`,
             role: "user",
             content: ctx.question,
             timestamp: new Date().toISOString(),
           };
-          // greeting may be null when /forecast/today fails; in that
-          // case skip the synthetic first line and let the user's
-          // prompt be the opening message.
-          const seed = greeting ? [greeting, userMsg] : [userMsg];
+          // Targeted entry (Go deeper on a breakthrough, Ask buttons on
+          // profile/cycles): open directly on the topic. No morning greeting
+          // prepended; that belongs only to a cold open of the chat tab.
+          // Previously the day's italic greeting sat above the user's real
+          // question, which read as the wrong context.
+          const seed = [userMsg];
           const newSession: StoredSession = {
             sessionId: sid,
             date: todayLabel(),
