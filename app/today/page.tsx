@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -665,16 +666,29 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Lock background scroll so nothing slides behind the moment.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [onClose]);
-  return (
+
+  if (typeof document === "undefined") return null;
+
+  // Portal to the page body so the overlay escapes any transformed ancestor
+  // on Today and pins to the real viewport instead of the document flow.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 9999, display: "flex",
-        alignItems: "center", justifyContent: "center", padding: "26px",
+        position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
+        alignItems: "flex-start", justifyContent: "center",
+        padding: "calc(env(safe-area-inset-top, 0px) + 7vh) 22px 40px",
+        overflowY: "auto", WebkitOverflowScrolling: "touch",
         background: "rgba(4,11,7,0.86)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "bkFade .4s ease both",
       }}
@@ -745,7 +759,8 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
           {t("insight.dismiss")}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
