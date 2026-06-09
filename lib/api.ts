@@ -12,6 +12,17 @@ export class ApiError extends Error {
   }
 }
 
+// The user's wall-clock calendar date (YYYY-MM-DD). The backend keys daily
+// forecasts by this instead of server-UTC "today", so a user in Sydney gets
+// Wednesday's forecast on her Wednesday morning, not Tuesday's. Built from
+// local date parts on purpose: toISOString() would convert back to UTC.
+function localDateString(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 export async function apiFetch(
   path: string,
   options: RequestInit = {},
@@ -19,6 +30,7 @@ export async function apiFetch(
 ) {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    "X-Local-Date": localDateString(),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
