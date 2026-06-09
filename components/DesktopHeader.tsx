@@ -39,7 +39,7 @@ export default function DesktopHeader() {
     <header
       className="hidden lg:block fixed top-0 left-0 right-0 z-40 backdrop-blur"
       style={{
-        background: "rgb(var(--rgb-bg-deep) / 0.8)",
+        background: "rgb(var(--rgb-bg-deep) / var(--header-alpha))",
         borderBottom: "1px solid rgb(var(--rgb-border) / 0.6)",
       }}
     >

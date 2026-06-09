@@ -1853,11 +1853,14 @@ function ChatPageInner() {
                   wordBreak: "break-word",
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = "#9b86a0";
-                  e.target.style.boxShadow = "0 0 0 2px rgba(155,134,160,0.25)";
+                  // Theme tokens, not literals: the hardcoded dark-forest
+                  // values used to stick a dark green border onto the
+                  // light-mode input after focus.
+                  e.target.style.borderColor = "rgb(var(--rgb-wisteria))";
+                  e.target.style.boxShadow = "0 0 0 2px rgb(var(--rgb-wisteria) / 0.25)";
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "rgb(26, 48, 32)";
+                  e.target.style.borderColor = "rgb(var(--rgb-border))";
                   e.target.style.boxShadow = "none";
                 }}
               />
@@ -1871,10 +1874,10 @@ function ChatPageInner() {
                   style={{
                     background: isRecording
                       ? "linear-gradient(135deg, #c8a27a, #8a6a48)"
-                      : "rgba(106,134,146,0.12)",
+                      : "rgb(var(--rgb-mist) / 0.12)",
                     border: isRecording
                       ? "1px solid rgba(200,162,122,0.6)"
-                      : "1px solid rgba(106,134,146,0.35)",
+                      : "1px solid rgb(var(--rgb-mist) / 0.35)",
                     color: isRecording ? "#f2ecd8" : "var(--mist)",
                     boxShadow: isRecording ? "0 0 16px rgba(200,162,122,0.35)" : undefined,
                   }}
@@ -1900,7 +1903,14 @@ function ChatPageInner() {
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || sending}
-                className="w-11 h-11 rounded-xl text-text-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end" style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)" }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end"
+                style={{
+                  // The gradient is fixed dark wisteria in both themes, so
+                  // the glyph stays cream explicitly. text-text-primary
+                  // flipped it to near-black in light mode.
+                  background: "linear-gradient(135deg, #9b86a0, #5a4a5e)",
+                  color: "#f2ecd8",
+                }}
               >
                 {sending ? (
                   <LoadingSpinner size="sm" />

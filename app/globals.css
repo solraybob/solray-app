@@ -39,6 +39,14 @@
   --rgb-wisteria:     155 134 160;     /* #9b86a0 */
   --rgb-pearl:        236 228 207;     /* #ece4cf */
 
+  /* Fixed-header scrim opacity. 0.8 reads as glass over the dark forest;
+     light mode needs more body (0.94) or dark cards scrolling underneath
+     show through as a muddy band. */
+  --header-alpha: 0.8;
+  /* Spinner track. 0.4 border is enough contrast on forest; on pearl the
+     tan hairline disappears at 40%, so light mode runs it at full. */
+  --spinner-track-alpha: 0.4;
+
   /* Legacy hex aliases — kept so any inline style still resolving to
      these names continues to render the dark default. */
   --bg-deep:        #050f08;
@@ -77,6 +85,9 @@
   --rgb-indigo:        60  92 110;      /* #3c5c6e */
   --rgb-wisteria:     130 100 138;      /* #82648a */
   --rgb-pearl:        245 239 222;      /* #f5efde — also the card tone */
+
+  --header-alpha: 0.94;
+  --spinner-track-alpha: 1;
 
   --bg-deep:        #ece4cf;
   --bg-dark:        #e0d6bd;
