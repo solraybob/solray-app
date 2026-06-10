@@ -80,7 +80,11 @@ export default function WidgetPage() {
 
     async function fetchForecast() {
       try {
-        const dateKey = new Date().toISOString().split("T")[0];
+        // Local date parts, not toISOString (which is UTC): the backend now
+        // resolves "today" by the user's local date, so the widget cache key
+        // must agree or it goes stale around UTC midnight.
+        const _d = new Date();
+        const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
         const cacheKey = `solray_forecast_${dateKey}`;
 
         // Try cache first, but only a COMPLETE reading. A pending/partial
