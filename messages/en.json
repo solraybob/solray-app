@@ -292,7 +292,12 @@
     "suggest_season": "What should I keep my eye on this season?",
     "suggest_truth": "Tell me something true about me that I might not want to hear.",
     "suggest_authority": "How do I make decisions with my {authority} authority?",
-    "suggest_today": "What is the sky asking of me today?"
+    "suggest_today": "What is the sky asking of me today?",
+    "suggest_sky_days": "What should I keep my eye on in the coming days?",
+    "suggest_unknown": "Tell me something I likely don't know about myself.",
+    "suggest_undervalue": "What am I good at that I tend to undervalue?",
+    "suggest_money_block": "Do I have any money blocks in my chart?",
+    "suggest_love_block": "Do I have blocks around love in my chart?"
   },
   "souls": {
     "title": "SOULS",

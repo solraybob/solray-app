@@ -309,51 +309,71 @@ function ChatPageInner() {
   const [soulBlueprint, setSoulBlueprint] = useState<any>(null);
   const [soulName, setSoulName] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  // Opening suggestions: ONE set of three doors, composed deliberately.
-  //   1. Today-anchored: from lib/today-prompts (Codex UX hook 2), seeded
-  //      by the cached forecast, the line that could only exist for this
-  //      user on this day ("Tell me more about Saturn squaring my Sun").
-  //   2. Placement-anchored: from the cached blueprint (Moon sign, HD
-  //      type, authority), translated via tx for Spanish.
-  //   3. One deep universal question, rotated daily.
-  // Fallbacks fill from the universal pool, so there are always exactly
-  // three. Replaces the arrangement where the forecast chips and the
-  // blueprint chips both rendered and stacked six prompts. Fail-soft:
-  // errors mean fewer chips, never a broken chat.
+  // Opening suggestions: three doors, one per theme, each rotating daily.
+  //   SKY: what the sky is doing today or in the coming days. The
+  //        forecast-seeded line (lib/today-prompts) leads when cached,
+  //        because it could only exist for this user on this day.
+  //   SELF: revelation about who they are ("tell me something I likely
+  //        don't know about myself"), placement-personalized when the
+  //        blueprint is cached.
+  //   CHART: diagnostic questions against their chart ("do I have money
+  //        blocks?"), the question shapes the Oracle is strongest at.
+  // Pools rotate on different daily offsets so the combination changes
+  // around. Fail-soft everywhere: a missing cache shrinks a pool, never
+  // breaks the chat.
   const [suggestions, setSuggestions] = useState<string[]>([]);
   useEffect(() => {
     void (async () => {
       try {
         const day = Math.floor(Date.now() / 86400000);
-        const picked: string[] = [];
 
+        let summary: Record<string, string> = {};
+        try {
+          const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
+          summary = (bp && (bp.summary || bp)) || {};
+        } catch { /* no blueprint cache */ }
+        const moon = summary.moon_sign ? tx(summary.moon_sign, lang) : null;
+        const hdType = summary.hd_type ? tx(summary.hd_type, lang) : null;
+        const authority = summary.hd_authority ? tx(summary.hd_authority, lang) : null;
+
+        // SKY pool: forecast-seeded first when available.
+        const sky: string[] = [];
         try {
           const { buildTodayPrompts, readCachedForecast } = await import("@/lib/today-prompts");
           const tp = buildTodayPrompts(readCachedForecast());
-          if (tp.length > 0) picked.push(tp[day % tp.length].question);
+          if (tp.length > 0) sky.push(tp[day % tp.length].question);
         } catch { /* no forecast cache */ }
+        sky.push(
+          t("chat.suggest_today"),
+          t("chat.suggest_sky_days"),
+          t("chat.suggest_season"),
+        );
 
-        try {
-          const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
-          const summary: Record<string, string> = (bp && (bp.summary || bp)) || {};
-          const placement: string[] = [];
-          if (summary.moon_sign) placement.push(t("chat.suggest_moon").replace("{moon}", tx(summary.moon_sign, lang)));
-          if (summary.hd_type) placement.push(t("chat.suggest_type").replace("{type}", tx(summary.hd_type, lang)));
-          if (summary.hd_authority) placement.push(t("chat.suggest_authority").replace("{authority}", tx(summary.hd_authority, lang)));
-          if (placement.length > 0) picked.push(placement[day % placement.length]);
-        } catch { /* no blueprint cache */ }
-
-        const universal = [
+        // SELF pool: revelation, placement-flavored when possible.
+        const self: string[] = [
+          t("chat.suggest_unknown"),
           t("chat.suggest_truth"),
+          t("chat.suggest_undervalue"),
+        ];
+        if (moon) self.push(t("chat.suggest_moon").replace("{moon}", moon));
+        if (hdType) self.push(t("chat.suggest_type").replace("{type}", hdType));
+
+        // CHART pool: diagnostics against their actual chart.
+        const chart: string[] = [
+          t("chat.suggest_money_block"),
+          t("chat.suggest_love_block"),
           t("chat.suggest_pattern"),
           t("chat.suggest_work"),
-          t("chat.suggest_season"),
-          t("chat.suggest_today"),
         ];
-        for (let i = 0; picked.length < 3 && i < universal.length; i++) {
-          const candidate = universal[(day + i) % universal.length];
-          if (!picked.includes(candidate)) picked.push(candidate);
-        }
+        if (authority) chart.push(t("chat.suggest_authority").replace("{authority}", authority));
+
+        // One pick per theme, each pool on its own daily stride so the
+        // combination shifts rather than marching in lockstep.
+        const picked = [
+          sky[day % sky.length],
+          self[(day * 2 + 1) % self.length],
+          chart[(day * 3 + 2) % chart.length],
+        ];
         setSuggestions(Array.from(new Set(picked)).slice(0, 3));
       } catch { /* suggestions are decoration; never break chat */ }
     })();

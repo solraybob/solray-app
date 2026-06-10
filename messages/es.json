@@ -201,7 +201,12 @@
     "suggest_season": "¿Qué debería vigilar esta temporada?",
     "suggest_truth": "Dime algo verdadero sobre mí que quizá no quiera escuchar.",
     "suggest_authority": "¿Cómo tomo decisiones con mi autoridad {authority}?",
-    "suggest_today": "¿Qué me pide el cielo hoy?"
+    "suggest_today": "¿Qué me pide el cielo hoy?",
+    "suggest_sky_days": "¿Qué debería vigilar en los próximos días?",
+    "suggest_unknown": "Dime algo que probablemente no sé sobre mí.",
+    "suggest_undervalue": "¿En qué soy buena o bueno que tiendo a infravalorar?",
+    "suggest_money_block": "¿Tengo bloqueos con el dinero en mi carta?",
+    "suggest_love_block": "¿Tengo bloqueos en el amor en mi carta?"
   },
   "souls": {
     "title": "ALMAS",
