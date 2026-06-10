@@ -193,7 +193,15 @@
     "voice_open_failed": "No se pudo abrir el micrófono. Inténtalo de nuevo.",
     "voice_cant_record": "Este navegador no puede grabar audio.",
     "voice_start_failed": "No se pudo iniciar la grabación. Inténtalo de nuevo.",
-    "voice_stopped_unexpectedly": "La grabación se detuvo inesperadamente."
+    "voice_stopped_unexpectedly": "La grabación se detuvo inesperadamente.",
+    "suggest_moon": "¿Qué dice mi Luna en {moon} sobre mi forma de amar?",
+    "suggest_type": "¿Cómo quiere trabajar realmente mi energía de {type}?",
+    "suggest_pattern": "¿Por qué termino siempre en el mismo patrón?",
+    "suggest_work": "¿Cuál es mi verdadero trabajo en esta vida?",
+    "suggest_season": "¿Qué debería vigilar esta temporada?",
+    "suggest_truth": "Dime algo verdadero sobre mí que quizá no quiera escuchar.",
+    "suggest_authority": "¿Cómo tomo decisiones con mi autoridad {authority}?",
+    "suggest_today": "¿Qué me pide el cielo hoy?"
   },
   "souls": {
     "title": "ALMAS",
@@ -665,5 +673,8 @@
     "go_deeper": "Ir más profundo",
     "dismiss": "Más tarde",
     "of_the_day": "El Avance del Día"
+  },
+  "sky_echo": {
+    "eyebrow": "Un cielo que ya conociste"
   }
 }

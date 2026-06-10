@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import { useT } from "@/lib/i18n";
+import { tx } from "@/lib/astro-i18n";
 
 interface Message {
   id: string;
@@ -294,7 +295,7 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 function ChatPageInner() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
   // Soul-compatibility chat state. When the user opens chat from a Souls
@@ -308,6 +309,45 @@ function ChatPageInner() {
   const [soulBlueprint, setSoulBlueprint] = useState<any>(null);
   const [soulName, setSoulName] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  // Opening suggestion prompts. Three tappable questions under the
+  // greeting, drawn from the user's own placements (cached blueprint)
+  // so the very first touch already feels addressed to them, rotated
+  // by day so the door looks different each morning. Hidden in soul
+  // chats and as soon as a conversation exists. Strings live in i18n;
+  // placements are translated with tx() so Spanish users see Spanish
+  // signs.
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      let summary: Record<string, string> = {};
+      try {
+        const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
+        summary = (bp && (bp.summary || bp)) || {};
+      } catch { /* no cached blueprint, universal prompts only */ }
+      const moon = summary.moon_sign ? tx(summary.moon_sign, lang) : null;
+      const hdType = summary.hd_type ? tx(summary.hd_type, lang) : null;
+      const authority = summary.hd_authority ? tx(summary.hd_authority, lang) : null;
+      const pool: string[] = [];
+      if (moon) pool.push(t("chat.suggest_moon").replace("{moon}", moon));
+      if (hdType) pool.push(t("chat.suggest_type").replace("{type}", hdType));
+      if (authority) pool.push(t("chat.suggest_authority").replace("{authority}", authority));
+      pool.push(
+        t("chat.suggest_pattern"),
+        t("chat.suggest_work"),
+        t("chat.suggest_season"),
+        t("chat.suggest_truth"),
+        t("chat.suggest_today"),
+      );
+      // Deterministic daily rotation: same three all day, new three tomorrow.
+      const day = Math.floor(Date.now() / 86400000);
+      const picked: string[] = [];
+      for (let i = 0; i < pool.length && picked.length < 3; i++) {
+        picked.push(pool[(day + i * 3) % pool.length]);
+      }
+      setSuggestions(Array.from(new Set(picked)).slice(0, 3));
+    } catch { /* suggestions are decoration; never break chat */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
   const [sending, setSending] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
@@ -1628,6 +1668,24 @@ function ChatPageInner() {
                 >
                   {t("chat.empty_invocation")}
                 </p>
+              </div>
+            )}
+
+            {/* Opening suggestions: only before the first exchange, never in
+                soul chats, gone the moment a real message exists. */}
+            {!soulBlueprint && suggestions.length > 0 && !sending &&
+              (messages.length === 0 || (messages.length === 1 && messages[0].id === "greeting")) && (
+              <div className="flex flex-col items-center gap-2.5 pb-6 animate-fade-in">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => sendMessage(s)}
+                    className="font-body text-[13.5px] text-text-secondary border border-forest-border/70 rounded-full px-4 py-2 transition-all duration-200 hover:text-text-primary hover:border-wisteria/50 active:scale-[0.98] max-w-[320px]"
+                    style={{ background: "rgb(var(--rgb-card) / 0.5)" }}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             )}
 

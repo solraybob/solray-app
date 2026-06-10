@@ -284,7 +284,15 @@
     "voice_open_failed": "Couldn't open the microphone. Try again.",
     "voice_cant_record": "This browser can't record audio.",
     "voice_start_failed": "Couldn't start recording. Try again.",
-    "voice_stopped_unexpectedly": "Recording stopped unexpectedly."
+    "voice_stopped_unexpectedly": "Recording stopped unexpectedly.",
+    "suggest_moon": "What does my {moon} Moon say about how I love?",
+    "suggest_type": "How does my {type} energy actually want to work?",
+    "suggest_pattern": "Why do I keep ending up in the same pattern?",
+    "suggest_work": "What is my actual work in this life?",
+    "suggest_season": "What should I keep my eye on this season?",
+    "suggest_truth": "Tell me something true about me that I might not want to hear.",
+    "suggest_authority": "How do I make decisions with my {authority} authority?",
+    "suggest_today": "What is the sky asking of me today?"
   },
   "souls": {
     "title": "SOULS",
@@ -665,5 +673,8 @@
     "go_deeper": "Go deeper",
     "dismiss": "Later",
     "of_the_day": "Breakthrough of the Day"
+  },
+  "sky_echo": {
+    "eyebrow": "A sky you have met before"
   }
 }
