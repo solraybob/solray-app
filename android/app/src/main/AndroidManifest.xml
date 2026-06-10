@@ -38,4 +38,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice input: the Oracle's mic button runs getUserMedia inside the
+         WebView, which can only be granted if the app itself holds the
+         audio permission. Without these, voice is silently dead on
+         Android (caught 2026-06-10 before the first device test). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Push (Android 13+ runtime permission), for the initiative
+         scheduler riding the anticipation ledger once it ships. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Mic is optional hardware: never exclude devices without one. -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>
