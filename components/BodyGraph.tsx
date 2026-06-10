@@ -28,6 +28,8 @@
  * external labels.
  */
 
+import { useTheme } from "@/lib/theme-context";
+
 type CenterKey = "Head" | "Ajna" | "Throat" | "G" | "Heart" | "Sacral" | "Spleen" | "SolarPlexus" | "Root";
 
 // Gate -> center lookup (canonical HD system)
@@ -266,6 +268,11 @@ function CenterShape({
 }
 
 export default function BodyGraph({ definedCenters, definedChannels, size = 280 }: BodyGraphProps) {
+  const { theme } = useTheme();
+  const isDark = theme !== "light";
+  // Center labels: muted sage on the dark theme, deep forest-green on the light
+  // theme so they read clearly against the pearl ground.
+  const labelFill = isDark ? "#a8b8ab" : "#1f3a28";
   // Extended viewBox gives the external labels breathing room on all sides.
   const vbX = -10;
   const vbY = -4;
@@ -403,9 +410,9 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             key={`lbl-${key}`}
             x={lbl.x}
             y={lbl.y}
-            textAnchor={lbl.anchor}
+            textAnchor={lbl.anchor as "start" | "middle" | "end"}
             dominantBaseline="middle"
-            fill="#a8b8ab"
+            fill={labelFill}
             fillOpacity={0.92}
             style={{
               fontFamily: "Inter, system-ui, sans-serif",

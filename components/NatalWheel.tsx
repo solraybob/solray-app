@@ -21,6 +21,7 @@
  */
 
 import { signText, planetText, GLYPH_FONT_FAMILY } from "./AstroGlyphs";
+import { useTheme } from "@/lib/theme-context";
 
 type Planet = {
   planet: string;
@@ -89,6 +90,8 @@ export default function NatalWheel({
   size = 320,
   showLegend = false,
 }: NatalWheelProps) {
+  const { theme } = useTheme();
+  const isDark = theme !== "light";
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -101,6 +104,17 @@ export default function NatalWheel({
 
   const cx = size / 2;
   const cy = size / 2;
+
+  // Theme-aware palette. In dark mode the original forest treatment; in light
+  // mode a soft white field with deep-forest ink so the wheel sits in the
+  // pearl theme instead of punching a dark hole in it.
+  const inkRGB     = isDark ? "232,210,180" : "26,48,32";   // cream vs deep forest
+  const discFill   = isDark ? "url(#nwInner)" : "rgba(255,255,255,0.55)";
+  const centerFill = isDark ? "rgba(6,16,10,0.7)" : "rgba(255,255,255,0.62)";
+  const haloFlood  = isDark ? "#000" : "#f7f3e9";
+  const haloOpacity = isDark ? 0.85 : 0.7;
+  // Pale planet glyphs (cream) vanish on a white disc; darken them in light mode.
+  const LIGHT_PLANET: Record<string, string> = { Moon: "#6f7e72", Chiron: "#6f7e72", ASC: "#b58a3a" };
 
   // Redesigned radii: houses OUTERMOST, then signs, planets, aspects, center.
   const rHouseOuter = size * 0.487;
@@ -175,7 +189,8 @@ export default function NatalWheel({
     adjusted.push({ p, displayLon: display });
   }
 
-  const planetColor = (name: string) => PLANET_COLOR[name] ?? "#8a9e8d";
+  const planetColor = (name: string) =>
+    (!isDark && LIGHT_PLANET[name]) || PLANET_COLOR[name] || "#8a9e8d";
 
   // Full aspect web: every major aspect inside MAX_ORB, tightest first,
   // weighted by exactness.
@@ -188,7 +203,7 @@ export default function NatalWheel({
     .sort((a, b) => a.orb - b.orb)
     .slice(0, MAX_LINES);
 
-  const ringStroke = "rgba(232,210,180,0.32)";
+  const ringStroke = `rgba(${inkRGB},0.32)`;
   const ringWidth  = 1.1;
 
   return (
@@ -211,15 +226,15 @@ export default function NatalWheel({
           </radialGradient>
           {/* Soft halo behind glyphs so they lift off the busy field. */}
           <filter id="nwGlyph" x="-60%" y="-60%" width="220%" height="220%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#000" floodOpacity="0.85" />
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor={haloFlood} floodOpacity={haloOpacity} />
           </filter>
         </defs>
 
         {/* Background glow */}
         <circle cx={cx} cy={cy} r={rHouseOuter + 3} fill="url(#nwGlow)" />
 
-        {/* Dark inner disk */}
-        <circle cx={cx} cy={cy} r={rZodInner} fill="url(#nwInner)" />
+        {/* Inner disk: dark in dark mode, soft white in light mode */}
+        <circle cx={cx} cy={cy} r={rZodInner} fill={discFill} />
 
         {/* Zodiac ring sectors + serif sign glyphs */}
         {signSectors.map((s) => (
@@ -253,7 +268,7 @@ export default function NatalWheel({
             key={`tick-${i}`}
             x1={t.a.x} y1={t.a.y}
             x2={t.b.x} y2={t.b.y}
-            stroke={`rgba(232,210,180,${t.major ? 0.5 : 0.26})`}
+            stroke={`rgba(${inkRGB},${t.major ? 0.5 : 0.26})`}
             strokeWidth={t.major ? 1.0 : 0.6}
           />
         ))}
@@ -273,7 +288,7 @@ export default function NatalWheel({
               key={`cusp-${idx}`}
               x1={inner.x} y1={inner.y}
               x2={outer.x} y2={outer.y}
-              stroke="rgba(232,210,180,1)"
+              stroke={`rgba(${inkRGB},1)`}
               strokeOpacity={isAngle ? 0.7 : 0.32}
               strokeWidth={isAngle ? 1.3 : 0.8}
               strokeDasharray={isAngle ? undefined : "2 3"}
@@ -287,7 +302,7 @@ export default function NatalWheel({
             key={`hn-${num}`}
             x={pos.x} y={pos.y}
             fontSize={size * 0.032}
-            fill="rgba(232,210,180,0.7)"
+            fill={`rgba(${inkRGB},0.7)`}
             textAnchor="middle"
             dominantBaseline="central"
             style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500 }}
@@ -339,7 +354,7 @@ export default function NatalWheel({
         })}
 
         {/* Center disk + Sun mark */}
-        <circle cx={cx} cy={cy} r={rCenter} fill="rgba(6,16,10,0.7)" />
+        <circle cx={cx} cy={cy} r={rCenter} fill={centerFill} />
         <text
           x={cx} y={cy}
           fill="#e8913c"
@@ -375,7 +390,7 @@ export default function NatalWheel({
                   x={pos.x + size * 0.020}
                   y={pos.y + size * 0.014}
                   fontSize={size * 0.028}
-                  fill="rgba(232,210,180,0.8)"
+                  fill={`rgba(${inkRGB},0.8)`}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}
@@ -409,7 +424,7 @@ export default function NatalWheel({
             fontSize: 10,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "rgba(232,210,180,0.6)",
+            color: `rgba(${inkRGB},0.6)`,
           }}
         >
           <LegendItem kind="dot"  color="#8a9e66" label="Trine" />
