@@ -207,7 +207,12 @@ function SubscribeContent() {
     return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} />;
   }
 
-  // Has subscription: show status + management
+  // Has subscription: show status + management.
+  // "Lapsed" = status still says active but the paid period (plus grace) has
+  // ended and recurring billing had no card token to renew with. The user
+  // must pass through SecurePay checkout once more; afterwards the period
+  // restarts. Rendered like expired, with its own honest copy.
+  const lapsed = sub.status === "active" && !sub.has_access;
   const statusSubtitle: Record<string, string> = {
     trial: t("subscribe.subtitle_trial"),
     active: t("subscribe.subtitle_active"),
@@ -256,7 +261,7 @@ function SubscribeContent() {
             fontWeight: 300,
           }}
         >
-          {statusSubtitle[sub.status || ""] || ""}
+          {lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
         </p>
 
         {/* Status card */}
@@ -274,7 +279,7 @@ function SubscribeContent() {
             >
               {t("subscribe.status")}
             </span>
-            <StatusBadge status={sub.status || ""} />
+            <StatusBadge status={lapsed ? "expired" : sub.status || ""} />
           </div>
 
           <div className="space-y-3">
@@ -284,7 +289,7 @@ function SubscribeContent() {
 
             {sub.current_period_end && sub.status !== "trial" && (
               <DetailRow
-                label={sub.status === "cancelled" ? t("subscribe.access_until") : t("subscribe.next_billing")}
+                label={sub.status === "cancelled" || lapsed ? t("subscribe.access_until") : t("subscribe.next_billing")}
                 value={dateFmt(sub.current_period_end)}
               />
             )}
@@ -325,6 +330,15 @@ function SubscribeContent() {
             </ActionButton>
           )}
 
+          {/* Lapsed active: paid period over, no token to auto-renew with.
+              Same SecurePay checkout as rejoin; charges the month and
+              restarts the period on return. */}
+          {!isNative && lapsed && (
+            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
+              {t("subscribe.renew")}
+            </ActionButton>
+          )}
+
           {/* Expired: restart */}
           {!isNative && sub.status === "expired" && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
@@ -344,7 +358,7 @@ function SubscribeContent() {
               button, no call to action; just status info. Apple permits
               status info; it does not permit calls to action that route
               to non-IAP purchasing. */}
-          {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial") && (
+          {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial" || lapsed) && (
             <p
               className="text-center text-[14px] leading-relaxed"
               style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.85 }}

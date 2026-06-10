@@ -553,7 +553,9 @@
     "badge_active": "Activa",
     "badge_retrying": "Reintentando",
     "badge_cancelled": "Cancelada",
-    "badge_expired": "Expirada"
+    "badge_expired": "Expirada",
+    "subtitle_lapsed": "Tu mes ha terminado. Continúa donde lo dejaste.",
+    "renew": "Renovar membresía"
   },
   "depth": {
     "the_sky": "El Cielo",

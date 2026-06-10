@@ -553,7 +553,9 @@
     "badge_active": "Active",
     "badge_retrying": "Retrying",
     "badge_cancelled": "Cancelled",
-    "badge_expired": "Expired"
+    "badge_expired": "Expired",
+    "subtitle_lapsed": "Your month has ended. Continue where you left off.",
+    "renew": "Renew membership"
   },
   "depth": {
     "the_sky": "The Sky",
