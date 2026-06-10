@@ -771,9 +771,6 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     let raf = 0;
     let tabVisible = typeof document !== "undefined" ? !document.hidden : true;
     let inView = true;
-    const reduceMotion = typeof window !== "undefined"
-      && window.matchMedia
-      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const writePositions = (ns: PhysicsNode[]) => {
       const idx: Record<string, PhysicsNode> = {};
@@ -859,19 +856,17 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         if (n.y < 30) n.y = 30;
         if (n.y > H - 30) n.y = H - 30;
       }
-      // Breath: the hive never freezes. Honoured down to a settle-then-stop
-      // when the visitor asked the OS for reduced motion.
-      if (!reduceMotion) {
-        const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
-        const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
-        for (const n of ns) {
-          n.vx += (Math.random() - 0.5) * BREATH * breathScale;
-          n.vy += (Math.random() - 0.5) * BREATH * breathScale;
-        }
-      } else if (totalSpeed / Math.max(1, ns.length) < 0.05) {
-        writePositions(ns);
-        cancelAnimationFrame(raf);
-        return;
+      // Breath: the hive never freezes. (A reduced-motion settle-stop was
+      // tried here on 2026-06-10 and removed the same hour: with zero
+      // initial velocity it stopped the simulation on frame one for any
+      // Mac with Reduce Motion enabled. The movement IS the feature on
+      // this page; it pauses on hover, hidden tab, and off-screen, which
+      // is the considerate behavior that matters.)
+      const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
+      const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
+      for (const n of ns) {
+        n.vx += (Math.random() - 0.5) * BREATH * breathScale;
+        n.vy += (Math.random() - 0.5) * BREATH * breathScale;
       }
 
       writePositions(ns);
