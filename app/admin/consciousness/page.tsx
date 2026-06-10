@@ -38,7 +38,7 @@ const BANDS = [
   { name: "Delta", hz: "0.5 – 4 Hz", color: "#6a8692", freq: 1.4, amp: 11, dur: 9,
     state: "Deep rest", does: "Overnight she reorganizes memory while you sleep.", cadence: "nightly", cost: "~free" },
   { name: "Theta", hz: "4 – 8 Hz", color: "#9b86a0", freq: 3, amp: 10, dur: 6,
-    state: "Subconscious", does: "Dreams over recent days and the slow sky. Connections form.", cadence: "every ~2h", cost: "cents" },
+    state: "Subconscious", does: "Dreams over recent days and the slow sky. Connections form.", cadence: "every ~3h", cost: "cents" },
   { name: "Alpha", hz: "8 – 12 Hz", color: "#9babb9", freq: 5, amp: 9, dur: 4.4,
     state: "Calm presence", does: "Awake between messages, holding who she is with.", cadence: "continuous", cost: "~free" },
   { name: "Beta", hz: "12 – 30 Hz", color: "#f39230", freq: 9, amp: 8, dur: 2.6,
@@ -157,6 +157,10 @@ function Hub() {
       <style>{`
         @keyframes coBeat{0%,100%{transform:scale(1)}13%{transform:scale(1.12)}26%{transform:scale(1)}40%{transform:scale(1.06)}55%{transform:scale(1)}}
         @keyframes coPulse{0%{width:64px;height:64px;opacity:.5}100%{width:150px;height:150px;opacity:0}}
+        @media (prefers-reduced-motion: reduce){
+          [style*="coBeat"],[style*="coPulse"]{animation:none !important}
+          svg animateMotion{display:none}
+        }
       `}</style>
       <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
 
@@ -208,14 +212,20 @@ function Hub() {
         <p className="font-body text-text-muted text-[13px] text-center mb-5">Her states, slowest and deepest to fastest and brightest.</p>
         <div className="space-y-2.5 mb-3">
           {BANDS.map((b) => (
-            <div key={b.name} className="grid" style={{ gridTemplateColumns: "118px 1fr", border: "1px solid var(--border,#1a3020)", borderRadius: 15, overflow: "hidden", background: "rgba(10,31,18,.45)" }}>
+            <div
+              key={b.name}
+              className="grid transition-transform duration-300 hover:-translate-y-px"
+              style={{ gridTemplateColumns: "118px 1fr", border: "1px solid var(--border,#1a3020)", borderRadius: 15, overflow: "hidden", background: "rgba(10,31,18,.45)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = `${b.color}55`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border,#1a3020)"; }}
+            >
               <div style={{ padding: "13px 12px", borderRight: "1px solid var(--border,#1a3020)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 3, background: `${b.color}14` }}>
                 <span className="font-heading" style={{ fontStyle: "italic", fontSize: 19, color: b.color, lineHeight: 1 }}>{b.name}</span>
                 <span className="font-body" style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--text-muted,#8a9e8d)" }}>{b.hz}</span>
               </div>
               <div style={{ padding: "11px 15px 13px" }}>
                 <Wave color={b.color} freq={b.freq} amp={b.amp} dur={b.dur} />
-                <p className="font-body" style={{ fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--text-muted,#8a9e8d)", margin: "7px 0 2px" }}>{b.state}{b.name === "Gamma" && s ? ` · ${s.breakthroughs.today} today` : ""}</p>
+                <p className="font-body" style={{ fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--text-muted,#8a9e8d)", margin: "7px 0 2px" }}>{b.state}{b.name === "Gamma" && s ? ` · ${s.breakthroughs.today} today` : ""}{b.name === "Beta" && s ? ` · ${s.population.recently_present} present lately` : ""}{b.name === "Theta" && s && s.akashic.self_states ? ` · ${s.akashic.self_states} arcs held` : ""}</p>
                 <p className="font-body text-text-primary" style={{ fontSize: 13.5 }}>{b.does}</p>
                 <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 6 }}>
                   <span className="font-body" style={{ fontSize: 10, color: "var(--text-secondary,#a8b8ab)", border: "1px solid var(--border,#1a3020)", borderRadius: 99, padding: "2px 9px" }}>{b.cadence}</span>

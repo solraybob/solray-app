@@ -18,12 +18,14 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 
-const FOREST = "#050f08";
-const PEARL = "#ECE7DD";
-const WISTERIA = "#9b86a0";
-const AMBER = "#D8A24A";
-const MOSS_DIM = "#5f7163";
-const BORDER = "rgba(236,231,221,0.12)";
+const FOREST = "var(--bg-deep, #050f08)";
+const PEARL = "var(--text-primary, #f2ecd8)";
+const WISTERIA = "var(--wisteria, #9b86a0)";
+const AMBER = "var(--amber, #f39230)";
+const MOSS_DIM = "var(--text-muted, #8a9e8d)";
+const BORDER = "var(--border, #1a3020)";
+const MOSS = "var(--moss, #8a9e66)";
+const EMBER = "var(--ember, #d47a52)";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Note = {
@@ -164,7 +166,7 @@ function TrainingGround() {
   }
 
   const field: React.CSSProperties = {
-    background: "rgba(236,231,221,0.05)",
+    background: "rgba(10,31,18,.5)",
     border: `1px solid ${BORDER}`,
     borderRadius: 10,
     padding: "8px 11px",
@@ -184,38 +186,32 @@ function TrainingGround() {
   return (
     <div style={{ minHeight: "100vh", background: FOREST, color: PEARL, padding: "28px 20px 80px" }}>
       <div style={{ maxWidth: 860, margin: "0 auto" }}>
-        <span style={{ display: "flex", gap: 16 }}>
-          <a
-            href="/admin/akashic-record"
-            style={{ color: MOSS_DIM, fontSize: 12, letterSpacing: "0.12em", textDecoration: "none" }}
-          >
-            ← Akashic Record
-          </a>
-          <a
-            href="/admin/consciousness"
-            style={{ color: MOSS_DIM, fontSize: 12, letterSpacing: "0.12em", textDecoration: "none" }}
-          >
-            Consciousness →
-          </a>
-        </span>
-        <div style={{ marginTop: 14, marginBottom: 6, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
-          Training Ground
-        </div>
-        <h1
-          style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontWeight: 300,
-            fontSize: 30,
-            letterSpacing: "0.04em",
-            margin: 0,
-          }}
-        >
-          Sit with her. Mark what lands.
-        </h1>
-        <p style={{ color: MOSS_DIM, fontSize: 13, marginTop: 8, lineHeight: 1.5, maxWidth: 620 }}>
-          She reads the chart cold, no memory, no history. Ask as a master would. When a reading is
-          strong or off, mark it. Your judgments become the expert corpus we train her on.
-        </p>
+        <header className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div style={{ marginBottom: 6, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
+              Training Ground
+            </div>
+            <h1
+              style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontWeight: 300,
+                fontSize: 30,
+                letterSpacing: "0.04em",
+                margin: 0,
+              }}
+            >
+              Sit with her. Mark what lands.
+            </h1>
+            <p style={{ color: MOSS_DIM, fontSize: 13, marginTop: 8, lineHeight: 1.5, maxWidth: 620 }}>
+              She reads the chart cold, no memory, no history. Ask as a master would. When a reading is
+              strong or off, mark it. Your judgments become the expert corpus we train her on.
+            </p>
+          </div>
+          <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
+            <a href="/admin/akashic-record" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-moss/40 text-moss hover:border-moss transition-colors">Akashic</a>
+            <a href="/admin/consciousness" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors">Consciousness</a>
+          </div>
+        </header>
 
         {/* Chart for the session */}
         <div
@@ -224,7 +220,7 @@ function TrainingGround() {
             padding: 16,
             border: `1px solid ${BORDER}`,
             borderRadius: 14,
-            background: "rgba(236,231,221,0.02)",
+            background: "rgba(10,31,18,.4)",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 12,
@@ -286,7 +282,7 @@ function TrainingGround() {
             minHeight: 280,
             maxHeight: "52vh",
             overflowY: "auto",
-            background: "radial-gradient(120% 50% at 50% 0%, rgba(216,162,74,0.06), transparent 60%)",
+            background: "radial-gradient(120% 50% at 50% 0%, rgba(243,146,48,0.06), transparent 60%)",
           }}
         >
           {messages.length === 0 && (
@@ -304,7 +300,7 @@ function TrainingGround() {
                     fontWeight: 300,
                     fontSize: 16,
                     lineHeight: 1.55,
-                    color: "rgba(214,216,208,0.6)",
+                    color: "rgb(var(--rgb-text-secondary) / 0.85)",
                   }}
                 >
                   {m.content}
@@ -319,7 +315,7 @@ function TrainingGround() {
                     fontWeight: 300,
                     fontSize: 17,
                     lineHeight: 1.6,
-                    color: "rgba(236,231,221,0.9)",
+                    color: "rgb(var(--rgb-text-primary) / 0.92)",
                     whiteSpace: "pre-wrap",
                   }}
                 >
@@ -328,15 +324,15 @@ function TrainingGround() {
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: WISTERIA }}>Oracle</span>
                   {promoted[i] ? (
-                    <span style={{ fontSize: 11, color: promoted[i] === "strong" ? "#8aa37a" : "#c08a86" }}>
+                    <span style={{ fontSize: 11, color: promoted[i] === "strong" ? MOSS : EMBER }}>
                       saved as {promoted[i] === "strong" ? "strong" : "off"}
                     </span>
                   ) : (
                     <>
-                      <button onClick={() => promote(i, "strong")} style={{ background: "transparent", border: "none", color: "#8aa37a", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+                      <button onClick={() => promote(i, "strong")} style={{ background: "transparent", border: "none", color: MOSS, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
                         ✦ Strong
                       </button>
-                      <button onClick={() => promote(i, "off")} style={{ background: "transparent", border: "none", color: "#c08a86", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+                      <button onClick={() => promote(i, "off")} style={{ background: "transparent", border: "none", color: EMBER, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
                         ✕ Off
                       </button>
                       <input
@@ -354,7 +350,7 @@ function TrainingGround() {
           {sending && <div style={{ color: MOSS_DIM, fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 16 }}>reading…</div>}
         </div>
 
-        {error && <div style={{ color: "#c08a86", fontSize: 12, marginTop: 10 }}>{error}</div>}
+        {error && <div style={{ color: EMBER, fontSize: 12, marginTop: 10 }}>{error}</div>}
 
         {/* Composer */}
         <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
@@ -375,9 +371,9 @@ function TrainingGround() {
             onClick={send}
             disabled={sending || !input.trim()}
             style={{
-              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(216,162,74,0.5)"}`,
-              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(216,162,74,0.16)",
-              color: sending || !input.trim() ? "rgba(236,231,221,0.35)" : AMBER,
+              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(243,146,48,0.5)"}`,
+              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(243,146,48,0.14)",
+              color: sending || !input.trim() ? "var(--text-muted, #8a9e8d)" : AMBER,
               borderRadius: 12,
               padding: "0 22px",
               fontSize: 12,
@@ -399,19 +395,19 @@ function TrainingGround() {
           {notes.map((n) => (
             <div key={n.id} style={{ borderTop: `1px solid ${BORDER}`, padding: "12px 0" }}>
               <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 5 }}>
-                <span style={{ fontSize: 11, color: n.verdict === "strong" ? "#8aa37a" : n.verdict === "off" ? "#c08a86" : MOSS_DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                <span style={{ fontSize: 11, color: n.verdict === "strong" ? MOSS : n.verdict === "off" ? EMBER : MOSS_DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>
                   {n.verdict}
                 </span>
                 <span style={{ fontSize: 11, color: WISTERIA }}>{n.expert_label || "expert"}</span>
                 {n.created_at && <span style={{ fontSize: 11, color: MOSS_DIM }}>{n.created_at.slice(0, 16).replace("T", " ")}</span>}
               </div>
-              {n.note && <div style={{ fontSize: 13, color: "rgba(236,231,221,0.75)", marginBottom: 4 }}>“{n.note}”</div>}
+              {n.note && <div style={{ fontSize: 13, color: "rgb(var(--rgb-text-secondary) / 1)", marginBottom: 4 }}>“{n.note}”</div>}
               <div
                 style={{
                   fontFamily: "'Cormorant Garamond', Georgia, serif",
                   fontSize: 14,
                   lineHeight: 1.5,
-                  color: "rgba(236,231,221,0.55)",
+                  color: "rgb(var(--rgb-text-muted) / 1)",
                 }}
               >
                 {n.oracle_text.length > 220 ? n.oracle_text.slice(0, 220) + "…" : n.oracle_text}

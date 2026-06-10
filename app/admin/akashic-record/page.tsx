@@ -275,6 +275,15 @@ function HiveDashboardInner() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
             <div className="lg:col-span-2 rounded-2xl border border-forest-border bg-forest-card/30 overflow-hidden">
               <HiveGraph nodes={graph.nodes} edges={graph.edges} />
+              <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-1.5 px-4 pb-4 -mt-2">
+                {([["#f39230", "Fire"], ["#8a9e66", "Earth"], ["#9babb9", "Air"], ["#9b86a0", "Water"]] as [string, string][]).map(([c, l]) => (
+                  <span key={l} className="inline-flex items-center gap-2 font-body text-[11px] text-text-secondary">
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}66` }} />
+                    {l}
+                  </span>
+                ))}
+                <span className="font-body text-[11px] text-text-muted">Hover to pause and read</span>
+              </div>
             </div>
             <div className="space-y-5">
               <Panel title="Cohorts emerging">
@@ -349,21 +358,29 @@ function HiveDashboardInner() {
 }
 
 function CountsRow({ counts }: { counts: Counts }) {
-  const items: Array<[string, number]> = [
-    ["Souls in the field", counts.consenting_users],
-    ["Chart signals", counts.chart_signals],
-    ["Components", counts.chart_components],
-    ["Cohorts", counts.pattern_cohorts],
-    ["High-confidence", counts.high_confidence_cohorts],
-    ["Themes", counts.pattern_themes],
-    ["Correlations", counts.pattern_correlations],
+  // Aged-pigment accents: each figure carries the hue of what it counts,
+  // desaturated enough to stay quiet until you look at it.
+  const items: Array<[string, number, string]> = [
+    ["Souls in the field", counts.consenting_users, "#f39230"],
+    ["Chart signals", counts.chart_signals, "#9babb9"],
+    ["Components", counts.chart_components, "#9babb9"],
+    ["Cohorts", counts.pattern_cohorts, "#8a9e66"],
+    ["High-confidence", counts.high_confidence_cohorts, "#8a9e66"],
+    ["Themes", counts.pattern_themes, "#9b86a0"],
+    ["Correlations", counts.pattern_correlations, "#d47a52"],
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-      {items.map(([label, val]) => (
-        <div key={label} className="rounded-xl border border-forest-border bg-forest-card/30 px-4 py-3">
+      {items.map(([label, val, hue]) => (
+        <div
+          key={label}
+          className="rounded-xl border border-forest-border bg-forest-card/30 px-4 py-3 transition-colors duration-300 hover:border-forest-border/0"
+          style={{ borderColor: undefined }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = `${hue}55`; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = ""; }}
+        >
           <p className="font-body text-[10px] tracking-[0.22em] uppercase text-text-secondary">{label}</p>
-          <p className="font-heading text-text-primary mt-1 tabular-nums" style={{ fontSize: 26, fontWeight: 300 }}>
+          <p className="font-heading mt-1 tabular-nums" style={{ fontSize: 26, fontWeight: 300, color: val > 0 ? hue : "var(--text-muted)" }}>
             {val}
           </p>
         </div>
@@ -592,12 +609,12 @@ function AuditRow({
           </p>
           {item.user_message_excerpt && (
             <p className="font-body text-[12px] text-text-secondary mb-2">
-              <span className="text-text-tertiary mr-2">user</span>
+              <span className="text-text-muted mr-2">user</span>
               {item.user_message_excerpt}
             </p>
           )}
           <p className="font-body text-[12px] text-text-primary whitespace-pre-wrap">
-            <span className="text-text-tertiary mr-2">oracle</span>
+            <span className="text-text-muted mr-2">oracle</span>
             {item.reply_excerpt}
           </p>
           <button
@@ -656,7 +673,11 @@ function ScoreHistogram({
             <div className="flex-1 h-3 rounded-full bg-forest-deep/60 overflow-hidden">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${Math.max(pct, count > 0 ? 1.5 : 0)}%`, backgroundColor: colorFor(b) }}
+                style={{
+                  width: `${Math.max(pct, count > 0 ? 1.5 : 0)}%`,
+                  backgroundColor: colorFor(b),
+                  transition: "width 600ms cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
               />
             </div>
             <span className="font-mono text-[11px] text-text-secondary tabular-nums w-12">{count}</span>
@@ -676,89 +697,113 @@ function ScoreHistogram({
 
 function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [tick, setTick] = useState(0);
-  // hovering = pause physics so the user can read names. Stored in a ref
-  // so the RAF loop sees the latest value without re-binding every frame.
+  // hovering = pause physics so the user can read names. A ref so the RAF
+  // loop sees it without re-binding.
   const hoveringRef = useRef(false);
 
-  // Physics state, preserved across renders so the simulation continues.
-  const physRef = useRef<{
-    nodes: PhysicsNode[];
-    width: number;
-    height: number;
-    cx: number;
-    cy: number;
-    edgeMap: Map<string, GraphEdge>;
-  }>({
-    nodes: [],
-    width: 0,
-    height: 0,
-    cx: 0,
-    cy: 0,
-    edgeMap: new Map(),
-  });
+  const W = 760;
+  const H = 540;
+  const cx = W / 2;
+  const cy = H / 2;
 
-  // Initialize / re-initialize when the input data changes.
+  // One stable signature per dataset; everything below re-seeds on change.
   const initSig = useMemo(
     () => `${nodes.map((n) => n.id).join("|")}__${edges.length}`,
     [nodes, edges]
   );
 
-  useEffect(() => {
-    const W = 760;
-    const H = 540;
-    const cx = W / 2;
-    const cy = H / 2;
-    physRef.current.width = W;
-    physRef.current.height = H;
-    physRef.current.cx = cx;
-    physRef.current.cy = cy;
-    // Place nodes in a spiral around the core for a pleasant initial state
-    physRef.current.nodes = nodes.map((n, i) => {
-      const ang = (i / Math.max(1, nodes.length)) * Math.PI * 2 + Math.random() * 0.3;
+  // Initial spiral placement, used both for the first React render and to
+  // seed the physics. Deterministic per signature (seeded jitter), so the
+  // server render and the physics agree.
+  const initial = useMemo(() => {
+    return nodes.map((n, i) => {
+      const jitter = ((i * 2654435761) % 1000) / 1000 * 0.3;
+      const ang = (i / Math.max(1, nodes.length)) * Math.PI * 2 + jitter;
       const r = 140 + (i % 5) * 22;
-      return {
-        id: n.id,
-        x: cx + Math.cos(ang) * r,
-        y: cy + Math.sin(ang) * r,
-        vx: 0,
-        vy: 0,
-        data: n,
-      };
+      return { id: n.id, x: cx + Math.cos(ang) * r, y: cy + Math.sin(ang) * r, data: n };
     });
-    physRef.current.edgeMap = new Map(edges.map((e) => [`${e.a}|${e.b}`, e]));
-  }, [initSig, nodes, edges]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initSig]);
 
-  // RAF loop running the physics
+  const physRef = useRef<PhysicsNode[]>([]);
   useEffect(() => {
-    let running = true;
-    let frame = 0;
-    // Keep the original lively dance — Bob explicitly likes the movement.
-    // The hive is alive, not a static diagram.
+    physRef.current = initial.map((p) => ({ id: p.id, x: p.x, y: p.y, vx: 0, vy: 0, data: p.data }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initSig]);
+
+  // The physics loop. THE PERFORMANCE FIX (2026-06-10): the old loop called
+  // setTick at 20Hz, forcing React to reconcile the entire SVG tree
+  // (hundreds of elements) on every third frame, which is what made this
+  // page heavy. Now React renders the structure ONCE per dataset and the
+  // loop writes positions straight onto the existing DOM nodes. Same
+  // visuals, same lively dance Bob likes, near-zero React work. The loop
+  // also parks completely when the tab is hidden or the graph is scrolled
+  // out of view.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    // Collect DOM handles once per dataset.
+    const nodeEls = new Map<string, SVGGElement>();
+    svg.querySelectorAll<SVGGElement>("g[data-node-id]").forEach((el) => {
+      nodeEls.set(el.getAttribute("data-node-id") || "", el);
+    });
+    const edgeEls: Array<{ el: SVGLineElement; a: string; b: string }> = [];
+    svg.querySelectorAll<SVGLineElement>("line[data-edge-a]").forEach((el) => {
+      edgeEls.push({ el, a: el.getAttribute("data-edge-a") || "", b: el.getAttribute("data-edge-b") || "" });
+    });
+    const spokeEls = new Map<string, SVGLineElement>();
+    svg.querySelectorAll<SVGLineElement>("line[data-spoke-id]").forEach((el) => {
+      spokeEls.set(el.getAttribute("data-spoke-id") || "", el);
+    });
+
+    // Same lively constants as always; the hive is alive, not a diagram.
     const REPULSION = 1800;
     const LINK_K = 0.018;
     const LINK_REST = 110;
     const CORE_K = 0.012;
     const CORE_REST = 180;
     const DAMPING = 0.86;
-    // Tiny per-frame noise so the hive keeps drifting even after the
-    // initial dance settles. Light enough that it never reads as jitter,
-    // strong enough that nodes never freeze in place.
     const BREATH = 0.06;
 
-    const step = () => {
-      if (!running) return;
-      // Pause on hover. We still RAF so the loop resumes the moment the
-      // mouse leaves, but we skip integration so positions stay frozen
-      // and the user can read the labels.
-      if (hoveringRef.current) {
-        requestAnimationFrame(step);
-        return;
+    const edgeData = edges.map((e) => ({ a: e.a, b: e.b, weight: e.weight }));
+
+    let raf = 0;
+    let tabVisible = typeof document !== "undefined" ? !document.hidden : true;
+    let inView = true;
+    const reduceMotion = typeof window !== "undefined"
+      && window.matchMedia
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const writePositions = (ns: PhysicsNode[]) => {
+      const idx: Record<string, PhysicsNode> = {};
+      for (const n of ns) idx[n.id] = n;
+      for (const n of ns) {
+        const el = nodeEls.get(n.id);
+        if (el) el.setAttribute("transform", `translate(${n.x.toFixed(2)}, ${n.y.toFixed(2)})`);
+        const sp = spokeEls.get(n.id);
+        if (sp) {
+          sp.setAttribute("x2", n.x.toFixed(2));
+          sp.setAttribute("y2", n.y.toFixed(2));
+        }
       }
-      const phys = physRef.current;
-      const ns = phys.nodes;
-      const cx = phys.cx;
-      const cy = phys.cy;
+      for (const e of edgeEls) {
+        const a = idx[e.a];
+        const b = idx[e.b];
+        if (!a || !b) continue;
+        e.el.setAttribute("x1", a.x.toFixed(2));
+        e.el.setAttribute("y1", a.y.toFixed(2));
+        e.el.setAttribute("x2", b.x.toFixed(2));
+        e.el.setAttribute("y2", b.y.toFixed(2));
+      }
+    };
+
+    const step = () => {
+      raf = requestAnimationFrame(step);
+      if (hoveringRef.current || !tabVisible || !inView) return;
+
+      const ns = physRef.current;
+      if (ns.length === 0) return;
 
       // Repulsion (all pairs)
       for (let i = 0; i < ns.length; i++) {
@@ -772,45 +817,35 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
           const d = Math.sqrt(d2);
           const fx = (dx / d) * f;
           const fy = (dy / d) * f;
-          a.vx += fx;
-          a.vy += fy;
-          b.vx -= fx;
-          b.vy -= fy;
+          a.vx += fx; a.vy += fy;
+          b.vx -= fx; b.vy -= fy;
         }
       }
-
       // Spring to core
       for (const n of ns) {
         const dx = cx - n.x;
         const dy = cy - n.y;
         const d = Math.sqrt(dx * dx + dy * dy) + 0.01;
-        const stretch = d - CORE_REST;
-        const f = CORE_K * stretch;
+        const f = CORE_K * (d - CORE_REST);
         n.vx += (dx / d) * f;
         n.vy += (dy / d) * f;
       }
-
       // Spring along edges
-      const idIdx: Record<string, PhysicsNode> = {};
-      for (const n of ns) idIdx[n.id] = n;
-      const edgeList = Array.from(phys.edgeMap.values());
-      for (const e of edgeList) {
-        const a = idIdx[e.a];
-        const b = idIdx[e.b];
+      const idx: Record<string, PhysicsNode> = {};
+      for (const n of ns) idx[n.id] = n;
+      for (const e of edgeData) {
+        const a = idx[e.a];
+        const b = idx[e.b];
         if (!a || !b) continue;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.sqrt(dx * dx + dy * dy) + 0.01;
-        const stretch = d - LINK_REST;
-        const f = LINK_K * stretch * Math.min(3, e.weight);
+        const f = LINK_K * (d - LINK_REST) * Math.min(3, e.weight);
         const fx = (dx / d) * f;
         const fy = (dy / d) * f;
-        a.vx += fx;
-        a.vy += fy;
-        b.vx -= fx;
-        b.vy -= fy;
+        a.vx += fx; a.vy += fy;
+        b.vx -= fx; b.vy -= fy;
       }
-
       // Integrate + damping + bounds
       let totalSpeed = 0;
       for (const n of ns) {
@@ -820,43 +855,47 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         n.y += n.vy;
         totalSpeed += Math.abs(n.vx) + Math.abs(n.vy);
         if (n.x < 30) n.x = 30;
-        if (n.x > phys.width - 30) n.x = phys.width - 30;
+        if (n.x > W - 30) n.x = W - 30;
         if (n.y < 30) n.y = 30;
-        if (n.y > phys.height - 30) n.y = phys.height - 30;
+        if (n.y > H - 30) n.y = H - 30;
+      }
+      // Breath: the hive never freezes. Honoured down to a settle-then-stop
+      // when the visitor asked the OS for reduced motion.
+      if (!reduceMotion) {
+        const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
+        const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
+        for (const n of ns) {
+          n.vx += (Math.random() - 0.5) * BREATH * breathScale;
+          n.vy += (Math.random() - 0.5) * BREATH * breathScale;
+        }
+      } else if (totalSpeed / Math.max(1, ns.length) < 0.05) {
+        writePositions(ns);
+        cancelAnimationFrame(raf);
+        return;
       }
 
-      // Always inject a small noise so the hive stays alive. Strength
-      // scales up slightly when motion is low so the graph never settles
-      // into stillness, but never overpowers the natural physics either.
-      const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
-      const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
-      for (const n of ns) {
-        n.vx += (Math.random() - 0.5) * BREATH * breathScale;
-        n.vy += (Math.random() - 0.5) * BREATH * breathScale;
-      }
-
-      frame += 1;
-      // Re-render every third frame to keep CPU light without making the
-      // motion look choppy.
-      if (frame % 3 === 0) setTick((t) => (t + 1) % 1_000_000);
-      requestAnimationFrame(step);
+      writePositions(ns);
     };
-    requestAnimationFrame(step);
+    raf = requestAnimationFrame(step);
+
+    const onVis = () => { tabVisible = !document.hidden; };
+    document.addEventListener("visibilitychange", onVis);
+    const io = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver((entries) => { inView = entries[0]?.isIntersecting ?? true; })
+      : null;
+    io?.observe(svg);
+
     return () => {
-      running = false;
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVis);
+      io?.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initSig]);
 
-  // Render
-  const phys = physRef.current;
-  const W = phys.width || 760;
-  const H = phys.height || 540;
-  const cx = phys.cx || W / 2;
-  const cy = phys.cy || H / 2;
-  const ns = phys.nodes;
-  const idIdx: Record<string, PhysicsNode> = {};
-  for (const n of ns) idIdx[n.id] = n;
+  // Rendered ONCE per dataset; the loop owns positions from here on.
+  const idx: Record<string, { x: number; y: number }> = {};
+  for (const p of initial) idx[p.id] = p;
 
   return (
     <svg
@@ -865,8 +904,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       className="w-full h-[540px]"
       role="img"
       aria-label="Akashic Record: each node is a soul; lines connect souls who share chart components. Hover to pause the simulation."
-      data-tick={tick}
-      onMouseEnter={() => { hoveringRef.current = true; setTick((t) => (t + 1) % 1_000_000); }}
+      onMouseEnter={() => { hoveringRef.current = true; }}
       onMouseLeave={() => { hoveringRef.current = false; }}
     >
       <defs>
@@ -875,20 +913,25 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
           <stop offset="40%" stopColor={CORE_COLOR} stopOpacity={0.35} />
           <stop offset="100%" stopColor={CORE_COLOR} stopOpacity={0} />
         </radialGradient>
-        <filter id="node-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
+        <radialGradient id="field-vignette" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stopColor="#0a1f12" stopOpacity={0.0} />
+          <stop offset="100%" stopColor="#050f08" stopOpacity={0.55} />
+        </radialGradient>
       </defs>
+
+      <rect x={0} y={0} width={W} height={H} fill="url(#field-vignette)" />
 
       {/* Edges */}
       <g stroke={EDGE_COLOR}>
         {edges.map((e) => {
-          const a = idIdx[e.a];
-          const b = idIdx[e.b];
+          const a = idx[e.a];
+          const b = idx[e.b];
           if (!a || !b) return null;
           return (
             <line
               key={`${e.a}|${e.b}`}
+              data-edge-a={e.a}
+              data-edge-b={e.b}
               x1={a.x}
               y1={a.y}
               x2={b.x}
@@ -898,14 +941,15 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
             />
           );
         })}
-        {/* Soft lines from each node to the core, like spokes */}
-        {ns.map((n) => (
+        {/* Soft spokes from each node to the core */}
+        {initial.map((p) => (
           <line
-            key={`core-${n.id}`}
+            key={`core-${p.id}`}
+            data-spoke-id={p.id}
             x1={cx}
             y1={cy}
-            x2={n.x}
-            y2={n.y}
+            x2={p.x}
+            y2={p.y}
             strokeOpacity={0.05}
             strokeWidth={1}
           />
@@ -921,10 +965,10 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       {/* Nodes */}
       <g>
-        {ns.map((n) => {
-          const fill = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#9babb9";
+        {initial.map((p) => {
+          const fill = (p.data.sun_sign && ELEMENT_COLOR[p.data.sun_sign]) || "#9babb9";
           return (
-            <g key={n.id} transform={`translate(${n.x}, ${n.y})`}>
+            <g key={p.id} data-node-id={p.id} transform={`translate(${p.x}, ${p.y})`}>
               <circle r={6} fill={fill} opacity={0.9} />
               <circle r={11} fill={fill} opacity={0.18} />
               <text
@@ -934,7 +978,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
                 fill="rgba(245, 239, 222, 0.8)"
                 fontFamily="Inter, system-ui, sans-serif"
               >
-                {n.data.name}
+                {p.data.name}
               </text>
             </g>
           );
