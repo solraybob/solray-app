@@ -28,9 +28,18 @@ export async function apiFetch(
   options: RequestInit = {},
   token?: string | null
 ) {
+  // IANA timezone of the device (e.g. "Europe/Madrid"). The backend stores
+  // it lazily and uses it to pre-generate forecasts for the user's LOCAL
+  // date, so mornings east of UTC hit the cache instead of regenerating.
+  let tz = "";
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch { /* very old browsers: header simply omitted */ }
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-Local-Date": localDateString(),
+    ...(tz ? { "X-Timezone": tz } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
