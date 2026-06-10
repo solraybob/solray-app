@@ -309,63 +309,61 @@ function ChatPageInner() {
   const [soulBlueprint, setSoulBlueprint] = useState<any>(null);
   const [soulName, setSoulName] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  // Opening suggestion prompts. Three tappable questions under the
-  // greeting, drawn from the user's own placements (cached blueprint)
-  // so the very first touch already feels addressed to them, rotated
-  // by day so the door looks different each morning. Hidden in soul
-  // chats and as soon as a conversation exists. Strings live in i18n;
-  // placements are translated with tx() so Spanish users see Spanish
-  // signs.
+  // Opening suggestions: ONE set of three doors, composed deliberately.
+  //   1. Today-anchored: from lib/today-prompts (Codex UX hook 2), seeded
+  //      by the cached forecast, the line that could only exist for this
+  //      user on this day ("Tell me more about Saturn squaring my Sun").
+  //   2. Placement-anchored: from the cached blueprint (Moon sign, HD
+  //      type, authority), translated via tx for Spanish.
+  //   3. One deep universal question, rotated daily.
+  // Fallbacks fill from the universal pool, so there are always exactly
+  // three. Replaces the arrangement where the forecast chips and the
+  // blueprint chips both rendered and stacked six prompts. Fail-soft:
+  // errors mean fewer chips, never a broken chat.
   const [suggestions, setSuggestions] = useState<string[]>([]);
   useEffect(() => {
-    try {
-      let summary: Record<string, string> = {};
+    void (async () => {
       try {
-        const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
-        summary = (bp && (bp.summary || bp)) || {};
-      } catch { /* no cached blueprint, universal prompts only */ }
-      const moon = summary.moon_sign ? tx(summary.moon_sign, lang) : null;
-      const hdType = summary.hd_type ? tx(summary.hd_type, lang) : null;
-      const authority = summary.hd_authority ? tx(summary.hd_authority, lang) : null;
-      const pool: string[] = [];
-      if (moon) pool.push(t("chat.suggest_moon").replace("{moon}", moon));
-      if (hdType) pool.push(t("chat.suggest_type").replace("{type}", hdType));
-      if (authority) pool.push(t("chat.suggest_authority").replace("{authority}", authority));
-      pool.push(
-        t("chat.suggest_pattern"),
-        t("chat.suggest_work"),
-        t("chat.suggest_season"),
-        t("chat.suggest_truth"),
-        t("chat.suggest_today"),
-      );
-      // Deterministic daily rotation: same three all day, new three tomorrow.
-      const day = Math.floor(Date.now() / 86400000);
-      const picked: string[] = [];
-      for (let i = 0; i < pool.length && picked.length < 3; i++) {
-        picked.push(pool[(day + i * 3) % pool.length]);
-      }
-      setSuggestions(Array.from(new Set(picked)).slice(0, 3));
-    } catch { /* suggestions are decoration; never break chat */ }
+        const day = Math.floor(Date.now() / 86400000);
+        const picked: string[] = [];
+
+        try {
+          const { buildTodayPrompts, readCachedForecast } = await import("@/lib/today-prompts");
+          const tp = buildTodayPrompts(readCachedForecast());
+          if (tp.length > 0) picked.push(tp[day % tp.length].question);
+        } catch { /* no forecast cache */ }
+
+        try {
+          const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
+          const summary: Record<string, string> = (bp && (bp.summary || bp)) || {};
+          const placement: string[] = [];
+          if (summary.moon_sign) placement.push(t("chat.suggest_moon").replace("{moon}", tx(summary.moon_sign, lang)));
+          if (summary.hd_type) placement.push(t("chat.suggest_type").replace("{type}", tx(summary.hd_type, lang)));
+          if (summary.hd_authority) placement.push(t("chat.suggest_authority").replace("{authority}", tx(summary.hd_authority, lang)));
+          if (placement.length > 0) picked.push(placement[day % placement.length]);
+        } catch { /* no blueprint cache */ }
+
+        const universal = [
+          t("chat.suggest_truth"),
+          t("chat.suggest_pattern"),
+          t("chat.suggest_work"),
+          t("chat.suggest_season"),
+          t("chat.suggest_today"),
+        ];
+        for (let i = 0; picked.length < 3 && i < universal.length; i++) {
+          const candidate = universal[(day + i) % universal.length];
+          if (!picked.includes(candidate)) picked.push(candidate);
+        }
+        setSuggestions(Array.from(new Set(picked)).slice(0, 3));
+      } catch { /* suggestions are decoration; never break chat */ }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
   const [sending, setSending] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
 
-  // Three tappable prompts seeded from today's cached forecast.
-  // Empty array when no forecast is cached, in which case the chat
-  // shows just the greeting + input. Computed once on mount.
-  const [todayPrompts, setTodayPrompts] = useState<Array<{ topic: string; question: string }>>([]);
-  useEffect(() => {
-    void (async () => {
-      try {
-        const { buildTodayPrompts, readCachedForecast } = await import("@/lib/today-prompts");
-        setTodayPrompts(buildTodayPrompts(readCachedForecast()));
-      } catch {
-        setTodayPrompts([]);
-      }
-    })();
-  }, []);
+  // (forecast-seeded prompts now feed the unified `suggestions` above)
 
   // Streaming state
   const [streamingId, setStreamingId] = useState<string | null>(null);
@@ -1671,23 +1669,6 @@ function ChatPageInner() {
               </div>
             )}
 
-            {/* Opening suggestions: only before the first exchange, never in
-                soul chats, gone the moment a real message exists. */}
-            {!soulBlueprint && suggestions.length > 0 && !sending &&
-              (messages.length === 0 || (messages.length === 1 && messages[0].id === "greeting")) && (
-              <div className="flex flex-col items-center gap-2.5 pb-6 animate-fade-in">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => sendMessage(s)}
-                    className="font-body text-[13.5px] text-text-secondary border border-forest-border/70 rounded-full px-4 py-2 transition-all duration-200 hover:text-text-primary hover:border-wisteria/50 active:scale-[0.98] max-w-[320px]"
-                    style={{ background: "rgb(var(--rgb-card) / 0.5)" }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {messages.map((msg) => {
               const isStreaming = streamingId === msg.id;
@@ -1799,21 +1780,21 @@ function ChatPageInner() {
                 input and auto-sends, removing typing friction on the
                 first interaction. Hidden as soon as the user types or
                 taps one. Codex UX hook 2. */}
-            {todayPrompts.length > 0 &&
+            {suggestions.length > 0 && !soulBlueprint &&
               !messages.some((m) => m.role === "user") &&
               !sending && (
                 <div className="flex flex-col gap-2 items-center pt-2 pb-1 animate-fade-in">
-                  {todayPrompts.map((p) => (
+                  {suggestions.map((s) => (
                     <button
-                      key={p.question}
-                      onClick={() => sendMessage(p.question)}
+                      key={s}
+                      onClick={() => sendMessage(s)}
                       className="font-body text-[13px] leading-snug text-text-primary text-left max-w-[300px] px-4 py-2.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
                       style={{
                         background: "rgba(155,134,160,0.06)",
                         border: "1px solid rgba(155,134,160,0.22)",
                       }}
                     >
-                      {p.question}
+                      {s}
                     </button>
                   ))}
                 </div>
