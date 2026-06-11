@@ -20,8 +20,15 @@ export default function ServiceWorkerRegistration() {
   useEffect(() => {
     const CLEARED_KEY = `solray_cache_cleared_${APP_VERSION}`;
 
+    // Storage can throw (private mode, disabled cookies, partitioned
+    // webviews). If it does, skip the one-time reset entirely: with no
+    // storage there is nothing stale to clear, and crashing the app shell
+    // before first paint is the worst possible trade.
+    let cleared: string | null = "1";
+    try { cleared = localStorage.getItem(CLEARED_KEY); } catch { /* no storage */ }
+
     // One-time nuclear cache clear for this version
-    if (!localStorage.getItem(CLEARED_KEY)) {
+    if (!cleared) {
       const doReset = async () => {
         // 1. Clear all Cache Storage
         if ("caches" in window) {
@@ -44,8 +51,9 @@ export default function ServiceWorkerRegistration() {
             }
           }
         } catch { /* ignore storage errors */ }
-        // 3. Mark done so we don't loop
-        localStorage.setItem(CLEARED_KEY, "1");
+        // 3. Mark done so we don't loop. If this write fails we must NOT
+        // reload (an unmarkable reset would loop forever).
+        try { localStorage.setItem(CLEARED_KEY, "1"); } catch { return; }
         // 4. Force a hard reload to get fresh assets
         window.location.reload();
       };

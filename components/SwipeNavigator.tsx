@@ -57,8 +57,13 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     const el = wrapRef.current;
     if (!el) return;
 
-    const dir = sessionStorage.getItem("swipe_dir");
-    sessionStorage.removeItem("swipe_dir");
+    // sessionStorage can throw (private mode / disabled storage); missing
+    // storage just means no entrance direction, never a crash.
+    let dir: string | null = null;
+    try {
+      dir = sessionStorage.getItem("swipe_dir");
+      sessionStorage.removeItem("swipe_dir");
+    } catch { /* no storage, no animation */ }
 
     if (dir) {
       // Page starts at a small offset in the incoming direction, fully opaque.
@@ -192,7 +197,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
           el.style.transform = `translateX(${flyTo})`;
           el.style.opacity   = "0.5";
 
-          sessionStorage.setItem("swipe_dir", goForward ? "forward" : "back");
+          try { sessionStorage.setItem("swipe_dir", goForward ? "forward" : "back"); } catch { /* best-effort */ }
           // Start the navigation IMMEDIATELY rather than waiting 175ms
           // for the outgoing animation to finish. Next.js will start
           // loading the next route in parallel with the visual exit;

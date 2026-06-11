@@ -60,7 +60,7 @@ function getSessionIds(): string[] {
 }
 
 function saveSessionIds(ids: string[]) {
-  localStorage.setItem("solray_chat_sessions", JSON.stringify(ids));
+  try { localStorage.setItem("solray_chat_sessions", JSON.stringify(ids)); } catch { /* best-effort */ }
 }
 
 function loadSession(sessionId: string): StoredSession | null {
@@ -73,12 +73,16 @@ function loadSession(sessionId: string): StoredSession | null {
 }
 
 function saveSession(session: StoredSession) {
-  localStorage.setItem(`solray_chat_${session.sessionId}`, JSON.stringify(session));
-  const ids = getSessionIds();
-  if (!ids.includes(session.sessionId)) {
-    ids.unshift(session.sessionId);
-    saveSessionIds(ids);
-  }
+  // Best-effort: quota exhaustion or disabled storage must never break the
+  // conversation itself; in-memory state and the server sync still work.
+  try {
+    localStorage.setItem(`solray_chat_${session.sessionId}`, JSON.stringify(session));
+    const ids = getSessionIds();
+    if (!ids.includes(session.sessionId)) {
+      ids.unshift(session.sessionId);
+      saveSessionIds(ids);
+    }
+  } catch { /* memory + server only */ }
 }
 
 // ─── Server sync ────────────────────────────────────────────────────────────
@@ -540,6 +544,11 @@ function ChatPageInner() {
         const wordCount = mg.trim().split(/\s+/).length;
         if (mg && wordCount > 10) {
           content = mg;
+        } else if (lang !== "en") {
+          // The composed fallback below is English. A Spanish member must
+          // never get an English first line from the Oracle; starting
+          // plainly is more honest than starting in the wrong language.
+          return null;
         } else {
           // Build a rich greeting from today's transits + tightest aspect
           let sunSign = "";
@@ -637,7 +646,7 @@ function ChatPageInner() {
         timestamp: new Date().toISOString(),
       };
     },
-    []
+    [lang]
   );
 
   // ── Initialise session on mount ───────────────────────────────────────────
@@ -794,9 +803,11 @@ function ChatPageInner() {
               const reply: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: data.response || data.message || `I feel the thread between you and ${ctx.soulName}. Let me read it.`,
+                content: data.response || data.message || "",
                 timestamp: new Date().toISOString(),
               };
+              // An empty reply is a failure, not a license to invent one.
+              if (!reply.content) throw new Error("empty souls reply");
               setMessages((prev) => [...prev, reply]);
               setStreamedLength(0);
               setStreamingId(reply.id);

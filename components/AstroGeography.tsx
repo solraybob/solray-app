@@ -602,8 +602,9 @@ function FullscreenMap({
         <button
           onClick={onClose}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-amber-sun transition-colors"
+          aria-label="Close"
         >
-          ✕
+          ×
         </button>
       </div>
 
@@ -625,7 +626,7 @@ function FullscreenMap({
           viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           style={{
             width: '100vw',
-            height: '100vh',
+            height: '100dvh',
             display: 'block',
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: 'center center',
@@ -679,7 +680,7 @@ function FullscreenMap({
                 <circle cx={x} cy={y} r={12} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
                 <text x={x} y={y - 14} textAnchor="middle" fill="#f39230"
                   fontSize={9} fontFamily="Inter, sans-serif" fontWeight="600">
-                  ★ {spot.city}
+                  {spot.city}
                 </text>
               </g>
             );

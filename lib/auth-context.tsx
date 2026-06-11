@@ -79,8 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sameUser = !!prevId && prevId === usr.id;
     } catch { /* ignore */ }
     if (!sameUser) clearReadingCaches();
-    localStorage.setItem("solray_token", tok);
-    localStorage.setItem("solray_user", JSON.stringify(usr));
+    // Persistence is best-effort: if storage throws (private mode), the
+    // session still works from React state for this tab. Blocking a
+    // SUCCESSFUL login on a storage write was audit finding number two.
+    try {
+      localStorage.setItem("solray_token", tok);
+      localStorage.setItem("solray_user", JSON.stringify(usr));
+    } catch { /* memory-only session */ }
     setTokenState(tok);
     setUser(usr);
   };
