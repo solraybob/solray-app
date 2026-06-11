@@ -361,3 +361,54 @@ html {
 .entry-settled .entry-rise { opacity: 1 !important; }
 .entry-settled .entry-instrument,
 .entry-settled .entry-instrument-inner { opacity: 1 !important; }
+
+/* Mobile: the entry decoration must never cost scroll performance. Same
+   policy as the landing (where an Android user reported jank): the giant
+   rotating bezel goes away on phones, the sky canvas already halves its
+   star budget there. */
+@media (max-width: 760px), (pointer: coarse) {
+  .entry-instrument, .entry-instrument-inner { display: none; }
+}
+
+/* ===========================================================================
+   ENTRY NIGHT SCOPE. The entry pages (login/onboard) are always night, but
+   they must NOT touch data-theme: the ThemeProvider syncs its state from
+   that attribute on mount, and children's effects run before the
+   provider's, so forcing data-theme=dark from the entry pages silently
+   OVERWROTE light-theme members' stored preference (found in the final
+   audit; it flipped a real account). Instead EntrySky sets
+   html[data-entry-night] and this block re-asserts the dark tokens at
+   higher specificity, leaving the member's theme untouched.
+   ======================================================================== */
+:root[data-entry-night][data-theme="light"] {
+  --rgb-bg-deep:        5  15   8;
+  --rgb-bg-dark:        7  21  16;
+  --rgb-card:          10  31  18;
+  --rgb-border:        26  48  32;
+  --rgb-amber:        243 146  48;
+  --rgb-text-primary: 242 236 216;
+  --rgb-text-secondary:168 184 171;
+  --rgb-text-muted:   138 158 141;
+  --rgb-ember:        212 122  82;
+  --rgb-moss:         138 158 102;
+  --rgb-mist:         155 171 185;
+  --rgb-indigo:       106 134 146;
+  --rgb-wisteria:     155 134 160;
+  --rgb-pearl:        236 228 207;
+  --header-alpha: 0.8;
+  --spinner-track-alpha: 0.4;
+  --bg-deep:        #050f08;
+  --bg-dark:        #071510;
+  --card:           #0a1f12;
+  --border:         #1a3020;
+  --amber:          #f39230;
+  --text-primary:   #f2ecd8;
+  --text-secondary: #a8b8ab;
+  --text-muted:     #8a9e8d;
+  --ember:          #d47a52;
+  --moss:           #8a9e66;
+  --mist:           #9babb9;
+  --indigo:         #6a8692;
+  --wisteria:       #9b86a0;
+  --pearl:          #ece4cf;
+}

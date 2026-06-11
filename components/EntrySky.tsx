@@ -33,13 +33,12 @@ export default function EntrySky() {
   const [still, setStill] = useState(false);
 
   useEffect(() => {
-    // The entry is always night. A returning light-theme member would
-    // otherwise get the night-sky composition painted onto pearl (broken
-    // stars, invisible bezel). Force dark while an entry page is mounted
-    // and hand back whatever theme the person actually uses on the way in.
+    // The entry is always night, but it must never touch data-theme: the
+    // ThemeProvider syncs from that attribute on mount and child effects
+    // run first, so forcing it here overwrote light members' stored
+    // preference. data-entry-night scopes the dark tokens via CSS instead.
     const root = document.documentElement;
-    const previousTheme = root.getAttribute("data-theme");
-    root.setAttribute("data-theme", "dark");
+    root.setAttribute("data-entry-night", "1");
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStill(reduced);
@@ -56,7 +55,7 @@ export default function EntrySky() {
     return () => {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
-      if (previousTheme) root.setAttribute("data-theme", previousTheme);
+      root.removeAttribute("data-entry-night");
     };
   }, []);
 
