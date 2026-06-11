@@ -124,6 +124,7 @@ export default function LoginPage() {
           >
             <Image
               src="/solray-sun.png"
+              unoptimized
               alt="Solray"
               width={96}
               height={96}
