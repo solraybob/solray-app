@@ -271,3 +271,46 @@ html {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* ===========================================================================
+   ENTRY PAGES (login, onboard): landing-standard life. The cascade plays
+   once on mount; everything respects prefers-reduced-motion.
+   ======================================================================== */
+@keyframes entry-rise {
+  from { opacity: 0; transform: translate3d(0, 22px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.entry-rise {
+  opacity: 0;
+  animation: entry-rise 1.05s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) forwards;
+}
+@keyframes entry-sun-turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes entry-sun-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+.entry-sun { animation: entry-sun-breathe 9s ease-in-out 1.6s infinite; }
+.entry-sun img { animation: entry-sun-turn 240s linear infinite; }
+
+/* Primary button sheen, same grammar as the landing CTAs */
+.entry-cta { position: relative; overflow: hidden; }
+.entry-cta::after {
+  content: "";
+  position: absolute; top: 0; bottom: 0; left: -60%;
+  width: 40%;
+  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+.entry-cta:hover::after { opacity: 1; animation: entry-sheen 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes entry-sheen { from { left: -60%; } to { left: 130%; } }
+
+/* Inputs wake up under the hand */
+.entry-input:focus {
+  border-color: rgba(243, 146, 48, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(243, 146, 48, 0.08), 0 0 24px rgba(243, 146, 48, 0.06);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-rise { opacity: 1; animation: none; }
+  .entry-sun, .entry-sun img { animation: none; }
+  .entry-cta::after { display: none; }
+}

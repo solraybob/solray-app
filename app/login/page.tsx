@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import LanguagePicker from "@/components/LanguagePicker";
 import { useT } from "@/lib/i18n";
+import EntrySky from "@/components/EntrySky";
 
 export default function LoginPage() {
   const { t } = useT();
@@ -65,22 +66,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6 relative">
+    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6 relative overflow-hidden">
+      <EntrySky />
       {/* Quiet language switcher in the corner. Users who arrived in
           Spanish (browser locale or chosen on a previous visit) see the
           page in Spanish already; this lets the rest opt in before they
           even create an account. */}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-10">
         <LanguagePicker layout="inline" />
       </div>
-      <div className="w-full max-w-sm animate-fade-in">
+      <div className="w-full max-w-sm relative z-10">
         {/* Logo — same sun as the landing hero, transparent PNG with the
             amber drop-shadow halo. No circle clip; the silhouette IS the
             shape, which avoids the iOS Safari square-halo bug we hit on
             solray.ai. */}
         <div className="flex flex-col items-center mb-12">
           <div
-            className="w-24 h-24 mb-5"
+            className="w-24 h-24 mb-5 entry-sun entry-rise"
             style={{
               filter:
                 "drop-shadow(0 0 32px rgba(243, 146, 48, 0.42)) drop-shadow(0 0 80px rgba(243, 146, 48, 0.18))",
@@ -95,13 +97,13 @@ export default function LoginPage() {
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em]" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</p>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">{t("login.cosmic_intelligence")}</p>
+          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary entry-rise" style={{ fontWeight: 300, "--d": "180ms" } as React.CSSProperties}>SOLRAY</h1>
+          <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em] entry-rise" style={{ fontStyle: "italic", fontWeight: 300, "--d": "300ms" } as React.CSSProperties}>living by design</p>
+          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase entry-rise" style={{ "--d": "420ms" } as React.CSSProperties}>{t("login.cosmic_intelligence")}</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 entry-rise" style={{ "--d": "560ms" } as React.CSSProperties}>
           <div>
             <input
               type="email"
@@ -110,7 +112,7 @@ export default function LoginPage() {
               placeholder={t("login.email_placeholder")}
               autoComplete="email"
               required
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors entry-input"
             />
           </div>
           <div>
@@ -121,7 +123,7 @@ export default function LoginPage() {
               placeholder={t("login.password_placeholder")}
               autoComplete="current-password"
               required
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors entry-input"
             />
           </div>
 
@@ -132,19 +134,19 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
           >
             {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}
           </button>
         </form>
 
-        <p className="text-center text-text-secondary text-xs mt-5 font-body">
+        <p className="text-center text-text-secondary text-xs mt-5 font-body entry-rise" style={{ "--d": "720ms" } as React.CSSProperties}>
           <Link href="/forgot-password" className="hover:text-text-primary transition-colors">
             {t("login.forgot_password")}
           </Link>
         </p>
 
-        <p className="text-center text-text-secondary text-xs mt-6 font-body">
+        <p className="text-center text-text-secondary text-xs mt-6 font-body entry-rise" style={{ "--d": "820ms" } as React.CSSProperties}>
           {t("login.new_here")}{" "}
           <Link href="/onboard" className="text-amber-sun hover:opacity-80 transition-opacity">
             {t("login.begin_journey")}

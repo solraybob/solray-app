@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
+import EntrySky from "@/components/EntrySky";
 
 const TOTAL_STEPS = 6;
 
@@ -70,7 +71,7 @@ function BlueprintLoader() {
                 className="text-amber-sun text-sm"
                 style={{ opacity: i < visibleCount ? 1 : 0 }}
               >
-                {i < visibleCount - 1 ? "✓" : "·"}
+                {i < visibleCount - 1 ? "•" : "·"}
               </span>
               <p
                 className="font-body text-sm"
@@ -263,6 +264,8 @@ export default function OnboardPage() {
 
   return (
     <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
+      {/* The living sky behind the whole journey, beneath the step images */}
+      <EntrySky />
       {/* Atmospheric step images, transition on step change */}
       {STEP_IMAGES.map((src, i) => (
         <img
@@ -523,7 +526,7 @@ export default function OnboardPage() {
             <button
               onClick={next}
               disabled={!canProceed()}
-              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30"
+              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta"
             >
               {t("common.continue")}
             </button>
@@ -531,7 +534,7 @@ export default function OnboardPage() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
+              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2"
             >
               {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>
