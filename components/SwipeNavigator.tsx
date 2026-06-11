@@ -82,10 +82,20 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
           el.style.opacity   = "1";
         });
       });
+      // Once settled, drop the transform entirely. translateX(0) is still a
+      // transform, and a transformed ancestor hijacks position:fixed, which
+      // pinned the souls bottom sheets to the page bottom instead of the
+      // screen.
+      const settle = setTimeout(() => {
+        el.style.transition = "";
+        el.style.transform = "";
+      }, 360);
+      return () => clearTimeout(settle);
     } else {
-      // Tab tap: instant reset, no animation needed
+      // Tab tap: instant reset, no animation needed. Rest = no transform at
+      // all (see the settle note above).
       el.style.transition = "none";
-      el.style.transform  = "translateX(0)";
+      el.style.transform  = "";
       el.style.opacity    = "1";
     }
   }, [pathname]);
@@ -218,6 +228,14 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
       el.style.transform = "translateX(0)";
       el.style.opacity   = "1";
       dragging.current   = false;
+      // Drop the transform after the bounce so fixed overlays anchor to the
+      // viewport again.
+      window.setTimeout(() => {
+        if (!dragging.current && !committed.current) {
+          el.style.transition = "";
+          el.style.transform = "";
+        }
+      }, 480);
     };
 
     el.addEventListener("touchstart", onStart,  { passive: true  });
