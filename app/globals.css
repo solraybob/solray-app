@@ -314,3 +314,15 @@ html {
   .entry-sun, .entry-sun img { animation: none; }
   .entry-cta::after { display: none; }
 }
+
+/* The sun carries BOTH its entrance and its breath: the animation shorthand
+   on .entry-sun would otherwise replace .entry-rise entirely and leave the
+   sun parked at opacity 0. */
+.entry-sun.entry-rise {
+  animation:
+    entry-rise 1.05s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) forwards,
+    entry-sun-breathe 9s ease-in-out 1.8s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-sun.entry-rise { opacity: 1; animation: none; }
+}
