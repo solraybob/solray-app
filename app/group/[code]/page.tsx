@@ -148,7 +148,9 @@ export default function GroupChatPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-5 text-center">
-          <div className="text-4xl mb-4">✦</div>
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" className="text-amber-sun mb-4" aria-hidden="true">
+            <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
+          </svg>
           <h2 className="font-heading text-3xl text-text-primary mb-2">{t("group.not_found_title")}</h2>
           <p className="text-text-secondary text-sm font-body mb-6 max-w-xs">
             {t("group.not_found_body")}
@@ -188,8 +190,10 @@ export default function GroupChatPage() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 max-w-lg mx-auto w-full space-y-4">
           {history.length === 0 && (
-            <div className="text-center pt-8">
-              <div className="text-3xl mb-3">✦</div>
+            <div className="text-center pt-8 flex flex-col items-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="text-amber-sun mb-3" aria-hidden="true">
+                <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
+              </svg>
               <p className="font-heading text-xl text-text-primary mb-1">{t("group.both_present")}</p>
               <p className="text-text-secondary text-sm font-body max-w-xs mx-auto">
                 {t("group.both_present_body")}

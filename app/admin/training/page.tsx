@@ -330,10 +330,10 @@ function TrainingGround() {
                   ) : (
                     <>
                       <button onClick={() => promote(i, "strong")} style={{ background: "transparent", border: "none", color: MOSS, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
-                        ✦ Strong
+                        Strong
                       </button>
                       <button onClick={() => promote(i, "off")} style={{ background: "transparent", border: "none", color: EMBER, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
-                        ✕ Off
+                        Off
                       </button>
                       <input
                         value={noteDrafts[i] || ""}

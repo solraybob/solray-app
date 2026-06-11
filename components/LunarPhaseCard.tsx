@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme-context";
 
 interface LunarEvent {
   type: "New Moon" | "Full Moon";
@@ -15,7 +17,7 @@ interface LunarEvent {
   expanded?: string;
 }
 
-function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
+function MoonIcon({ type, fill }: { type: "New Moon" | "Full Moon"; fill: string }) {
   if (type === "Full Moon") {
     return (
       <svg
@@ -26,7 +28,7 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Full Moon"
       >
-        <circle cx="14" cy="14" r="11" fill="#ece4cf" opacity="0.92" />
+        <circle cx="14" cy="14" r="11" fill={fill} opacity="0.92" />
         <circle cx="14" cy="14" r="11" stroke="#9babb9" strokeWidth="1.2" fill="none" />
       </svg>
     );
@@ -44,7 +46,7 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
     >
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        fill="#ece4cf"
+        fill={fill}
         opacity="0.92"
       />
       <path
@@ -57,20 +59,14 @@ function MoonIcon({ type }: { type: "New Moon" | "Full Moon" }) {
   );
 }
 
-function formatDaysUntil(days_until: number, is_today: boolean): string {
-  if (is_today) return "Today";
+function formatDaysUntil(days_until: number, is_today: boolean, t: (k: string) => string): string {
+  if (is_today) return t("lunar.today");
   const rounded = Math.round(days_until);
-  if (rounded === 0) return "Today";
-  if (rounded === 1) return "Tomorrow";
-  if (rounded === -1) return "Yesterday";
-  if (rounded > 1) return `In ${rounded} days`;
-  return `${Math.abs(rounded)} days ago`;
-}
-
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  if (rounded === 0) return t("lunar.today");
+  if (rounded === 1) return t("lunar.tomorrow");
+  if (rounded === -1) return t("lunar.yesterday");
+  if (rounded > 1) return `${t("lunar.in")} ${rounded} ${t("lunar.days")}`;
+  return `${Math.abs(rounded)} ${t("lunar.days_ago")}`;
 }
 
 // House themes for expansion text
@@ -100,9 +96,19 @@ function generateExpandedText(event: LunarEvent): string {
 }
 
 export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
+  const { t } = useT();
+  const { theme } = useTheme();
+  const isDark = theme !== "light";
   const [expanded, setExpanded] = useState(false);
-  const timing = formatDaysUntil(event.days_until, event.is_today);
+  const timing = formatDaysUntil(event.days_until, event.is_today, t);
   const expandedText = event.expanded || generateExpandedText(event);
+
+  // Theme-aware moonlit treatment. Dark: forest card lit by mist. Light: a soft
+  // moonlit-pale card on the pearl ground, with the same silvery mist accent.
+  const cardBg = isDark
+    ? "linear-gradient(135deg, rgba(20, 38, 24, 0.95) 0%, rgba(14, 28, 18, 0.98) 100%)"
+    : "linear-gradient(135deg, rgba(246, 249, 251, 0.96) 0%, rgba(236, 241, 245, 0.98) 100%)";
+  const moonFill = isDark ? "#ece4cf" : "#6a8692";
 
   return (
     <div
@@ -111,13 +117,10 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       tabIndex={0}
       aria-expanded={expanded}
       style={{
-        // Card frame pulls mist (silvery moonlight) at 45% opacity and a
-        // very faint pearl inner highlight so the card reads as "lit by
-        // moonlight" without any warm/gold chroma.
+        // Mist (silvery moonlight) accent reads on both themes.
         borderColor: "rgba(122, 138, 154, 0.45)",
-        background:
-          "linear-gradient(135deg, rgba(20, 38, 24, 0.95) 0%, rgba(14, 28, 18, 0.98) 100%)",
-        boxShadow: "0 2px 16px rgba(122, 138, 154, 0.08), inset 0 1px 0 rgba(216, 208, 188, 0.06)",
+        background: cardBg,
+        boxShadow: "0 2px 16px rgba(122, 138, 154, 0.10)",
         cursor: "pointer",
         position: "relative",
         zIndex: 1,
@@ -129,21 +132,21 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
     >
       {/* Top row: icon + title + timing badge */}
       <div className="flex items-center gap-3 mb-2.5">
-        <MoonIcon type={event.type} />
+        <MoonIcon type={event.type} fill={moonFill} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="font-heading text-base leading-tight"
-              style={{ color: "var(--pearl)", fontWeight: 400, letterSpacing: "0.01em" }}
+              style={{ color: "var(--text-primary)", fontWeight: 400, letterSpacing: "0.01em" }}
             >
               {event.type} in {event.sign}
             </span>
             <span
               className="text-[12px] font-body tracking-wider px-2 py-0.5 rounded-full border"
               style={{
-                color: "rgba(216, 208, 188, 0.85)",    // pearl
-                borderColor: "rgba(122, 138, 154, 0.35)", // mist
-                background: "rgba(216, 208, 188, 0.08)",   // pearl wash
+                color: "var(--text-secondary)",
+                borderColor: "rgba(122, 138, 154, 0.35)",
+                background: "rgba(122, 138, 154, 0.12)",
               }}
             >
               {timing}
@@ -151,9 +154,9 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           </div>
           <p
             className="text-xs font-body mt-0.5"
-            style={{ color: "rgba(200, 215, 200, 0.6)" }}
+            style={{ color: "var(--text-secondary)", opacity: 0.85 }}
           >
-            Illuminating your {ordinal(event.house)} house
+            {t("lunar.illuminating")} {event.house}
           </p>
         </div>
       </div>
@@ -161,7 +164,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       {/* Note */}
       <p
         className="font-body text-sm leading-relaxed"
-        style={{ color: "rgba(200, 215, 200, 0.82)" }}
+        style={{ color: "var(--text-secondary)" }}
       >
         {event.note}
       </p>
@@ -171,8 +174,9 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
         <p
           className="font-body text-sm leading-relaxed mt-3 pt-3"
           style={{
-            color: "rgba(200, 215, 200, 0.70)",
-            borderTop: "1px solid rgba(122, 138, 154, 0.18)", // mist divider
+            color: "var(--text-secondary)",
+            opacity: 0.9,
+            borderTop: "1px solid rgba(122, 138, 154, 0.22)",
           }}
         >
           {expandedText}
@@ -182,10 +186,10 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
       {/* Read more / Close toggle */}
       <button
         className="mt-2.5 text-[13px] font-body tracking-wider"
-        style={{ color: "rgba(216, 208, 188, 0.6)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
+        style={{ color: "var(--text-secondary)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
         onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
       >
-        {expanded ? "Close ∧" : "Read more ∨"}
+        {expanded ? t("lunar.close") : t("lunar.read_more")}
       </button>
     </div>
   );

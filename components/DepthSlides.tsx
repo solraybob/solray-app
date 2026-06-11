@@ -167,7 +167,8 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                     <p
                       className="font-body text-[15px] leading-relaxed"
                       style={{
-                        color: detail ? "#8a9e8d" : "rgba(138,158,141,0.45)",
+                        color: "var(--text-secondary)",
+                        opacity: detail ? 1 : 0.5,
                         fontStyle: detail ? "normal" : "italic",
                       }}
                     >
@@ -190,7 +191,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
               width: i === activeIndex ? 16 : 6,
               height: 6,
               borderRadius: 9999,
-              background: i === activeIndex ? s.color : "rgba(26,48,32,0.8)",
+              background: i === activeIndex ? s.color : "rgb(var(--rgb-border) / 0.8)",
               transition: "all 0.3s ease",
             }}
           />

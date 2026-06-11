@@ -44,7 +44,9 @@ export default function PushNotificationPrompt() {
     return (
       <div className="px-4 py-3 rounded-xl border border-amber-sun/40 bg-amber-sun/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-amber-sun text-sm">✓</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-sun shrink-0" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           <p className="text-text-secondary text-sm font-body">{t("push.enabled")}</p>
         </div>
       </div>

@@ -161,7 +161,9 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
       >
         {/* Icon and title */}
         <div className="flex items-start gap-3 mb-3">
-          <span className="text-2xl">✨</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-amber-sun shrink-0 mt-0.5" aria-hidden="true">
+            <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
+          </svg>
           <div className="flex-1 text-left">
             <h3 className="font-heading text-lg text-amber-sun font-light">
               {t("solar.year_ready")}

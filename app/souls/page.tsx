@@ -1045,7 +1045,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         {/* You, always fixed */}
         <div
           className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0"
-          style={{ background: "rgba(242,236,216,0.04)", border: "1px solid rgba(242,236,216,0.12)" }}
+          style={{ background: "rgb(var(--rgb-text-primary) / 0.04)", border: "1px solid rgb(var(--rgb-text-primary) / 0.12)" }}
         >
           {myAvatar ? (
             <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
@@ -1065,7 +1065,9 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full shrink-0"
             style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.45)" }}
           >
-            <span className="text-indigo/50 text-xs shrink-0" aria-hidden="true">✦</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo/50 shrink-0" aria-hidden="true">
+              <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
+            </svg>
             {partnerPhoto(p) ? (
               <img src={partnerPhoto(p)!} alt={partnerName(p)} className="w-6 h-6 rounded-full object-cover shrink-0" />
             ) : (
@@ -1093,14 +1095,16 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-[#7a96a2]/60"
             style={{
               background: "transparent",
-              border: "1px dashed rgba(242,236,216,0.25)",
+              border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)",
             }}
           >
             {partners.length === 0 && (
-              <span className="text-indigo/50 text-xs" aria-hidden="true">✦</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo/50 shrink-0" aria-hidden="true">
+                <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
+              </svg>
             )}
             <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[15px] text-text-secondary shrink-0"
-                 style={{ border: "1px dashed rgba(242,236,216,0.25)" }}>+</div>
+                 style={{ border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)" }}>+</div>
             <span className="font-body text-[14px] text-text-secondary">
               {partners.length === 0 ? t("souls.choose_someone") : isFamily ? t("souls.add_another") : ""}
             </span>
@@ -1453,7 +1457,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     className="py-2.5 rounded-xl transition-all font-body text-[14px]"
                     style={{
                       background: active ? "rgba(106,134,146,0.10)" : "transparent",
-                      border: active ? "1px solid rgba(106,134,146,0.55)" : "1px solid rgba(242,236,216,0.12)",
+                      border: active ? "1px solid rgba(106,134,146,0.55)" : "1px solid rgb(var(--rgb-text-primary) / 0.12)",
                       color: active ? "var(--text-primary)" : "var(--text-muted)",
                     }}
                   >
@@ -1611,8 +1615,8 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             </div>
           )}
         </div>
-        <div className="flex-1">
-          <h3 className="font-heading text-xl text-text-primary">{soul.name}</h3>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-heading text-xl text-text-primary truncate">{soul.name}</h3>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {soul.sun_sign && (
               <span className="text-text-secondary text-sm">
@@ -1630,12 +1634,12 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             {soul.username && (
               <>
                 <span className="text-forest-border text-xs">·</span>
-                <span className="text-text-secondary text-xs font-mono">@{soul.username}</span>
+                <span className="text-text-secondary text-xs font-body">@{soul.username}</span>
               </>
             )}
           </div>
         </div>
-        <span className="text-xs font-body tracking-wider opacity-70 shrink-0" style={{ color: "#6a8692" }}>
+        <span className="text-xs font-body tracking-wider opacity-70 shrink-0 whitespace-nowrap pl-1" style={{ color: "#6a8692" }}>
           {t("souls.open_arrow")}
         </span>
       </div>

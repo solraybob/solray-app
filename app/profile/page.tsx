@@ -3,14 +3,23 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import AstroGeography from "@/components/AstroGeography";
+import dynamic from "next/dynamic";
 import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
 import { planetText, GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme-context";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
+
+// Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
+// inside a collapsed section that rarely opens, so code-split it into its own
+// chunk that loads on demand instead of bloating the profile route bundle.
+const AstroGeography = dynamic(() => import("@/components/AstroGeography"), {
+  ssr: false,
+  loading: () => <div className="py-10" aria-busy="true" />,
+});
 
 // Types
 
@@ -304,6 +313,11 @@ const ELEMENT_COLORS: Record<string, string> = {
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
   const { lang } = useT();
+  const { theme } = useTheme();
+  const isDark = theme !== "light";
+  // Grid lines: dark forest hairlines on the dark theme; a soft sage-grey on the
+  // pearl theme so the radar grid stays subtle instead of heavy dark lines.
+  const gridStroke = isDark ? "#1a3020" : "#9aa89c";
   const progress = useAnimatedProgress(0);
 
   const OUTER = 112;
@@ -346,7 +360,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
             key={level}
             points={heptGridPolygon(cx, cy, r)}
             fill="none"
-            stroke="#1a3020"
+            stroke={gridStroke}
             strokeWidth={level === 50 ? 1.2 : 0.7}
             opacity={0.55}
           />
@@ -361,7 +375,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
             key={i}
             x1={cx} y1={cy}
             x2={x2} y2={y2}
-            stroke="#1a3020"
+            stroke={gridStroke}
             strokeWidth={0.7}
             opacity={0.4}
           />

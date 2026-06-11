@@ -97,7 +97,7 @@ export default function ConnectionProfilePage() {
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
                 style={{ fontWeight: 300, fontSize: "21px" }}
               >
-                {profile?.name?.toUpperCase() || t("nav.profile").toUpperCase()}
+                SOLRAY
               </h1>
             </div>
           </div>
@@ -167,7 +167,10 @@ export default function ConnectionProfilePage() {
                 </div>
               </div>
 
-              {profile.is_public ? (
+              {/* Accepted connections always see each other's chart (the
+                  backend returns the blueprint for connections regardless of
+                  is_public). Show it whenever the blueprint is present. */}
+              {profile.blueprint ? (
                 <PublicProfileBody profile={profile} />
               ) : (
                 <PrivateProfileNotice name={profile.name} />

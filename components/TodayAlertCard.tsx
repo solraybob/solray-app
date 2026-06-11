@@ -47,8 +47,8 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
     return null;
   }
 
-  const planetSymbol = PLANET_SYMBOLS[aspect.planet.toLowerCase()] || "✦";
-  const natalSymbol = PLANET_SYMBOLS[aspect.natal_planet.toLowerCase()] || "✦";
+  const planetSymbol = PLANET_SYMBOLS[aspect.planet.toLowerCase()] || "·";
+  const natalSymbol = PLANET_SYMBOLS[aspect.natal_planet.toLowerCase()] || "·";
 
   // Extract interpretation from tag_details.astrology
   const interpretation = tagDetails?.astrology || `${aspect.planet} ${aspect.aspect_type} ${aspect.natal_planet} today`;

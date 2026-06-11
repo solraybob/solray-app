@@ -12,6 +12,7 @@ import LunarPhaseCard from "@/components/LunarPhaseCard";
 import DepthSlides from "@/components/DepthSlides";
 import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
 import { useT } from "@/lib/i18n";
+import { tx } from "@/lib/astro-i18n";
 import { NIGHT_SURFACE } from "@/lib/night";
 
 // Planet to hero image mapping
@@ -90,6 +91,7 @@ interface ForecastData {
 interface PreparingForecast {
   _pending: true;
   planets: Planet[];
+  lunar_event?: LunarEvent;
 }
 
 type ForecastView = ForecastData | PreparingForecast;
@@ -629,7 +631,7 @@ function extractPlanets(data: any): Planet[] {
     .slice(0, 10)
     .map(([name, p]: [string, any]) => ({
       name,
-      symbol: PLANET_SYMBOLS[name] || "✦",
+      symbol: PLANET_SYMBOLS[name] || "·",
       sign: p.sign,
       degree: `${Math.floor(p.degree)}°`,
       retrograde: p.retrograde,
@@ -655,6 +657,15 @@ function parseForecastData(data: any): ForecastView {
 }
 
 type PendingInsight = { id: string; title: string; body: string; confidence: number };
+type SkyEcho = {
+  match: string;
+  moon_phase_bucket: string | null;
+  moon_sign: string | null;
+  sun_sign: string | null;
+  days_ago: number | null;
+  excerpt: string;
+  created_at: string | null;
+};
 
 // The breakthrough she reached on her own while the user was away. It does
 // not sit in the feed; it rises in front of everything as the Breakthrough of
@@ -686,10 +697,10 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
-        alignItems: "flex-start", justifyContent: "center",
-        padding: "calc(env(safe-area-inset-top, 0px) + 7vh) 22px 40px",
-        overflowY: "auto", WebkitOverflowScrolling: "touch",
-        background: "rgba(4,11,7,0.86)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+        alignItems: "center", justifyContent: "center",
+        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        overflow: "hidden", overscrollBehavior: "contain",
+        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
         animation: "bkFade .4s ease both",
       }}
     >
@@ -703,8 +714,13 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
         onClick={(e) => e.stopPropagation()}
         className="rounded-[28px]"
         style={{
+          // The modal card is always dark; pin the night palette so its
+          // var(--text-*) stay light on both themes (else light mode renders
+          // near-black text on the dark card, invisible).
+          ...NIGHT_SURFACE,
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
+          maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
           background: "radial-gradient(125% 90% at 50% 0%, #0d2114 0%, #071510 60%, #050f08 100%)",
           border: "1px solid rgba(243,146,48,0.34)",
           boxShadow: "0 0 70px rgba(243,146,48,0.14), 0 30px 90px rgba(0,0,0,0.55)",
@@ -764,6 +780,389 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
   );
 }
 
+// Sky-stamp recall card (Build 1, step 3). A quiet inline note, not a modal:
+// a moment from the reader's own past that happened under a sky like today's.
+// Their own words, shown back to them. Deliberately understated, in the
+// wisteria register used for the Oracle's own reflective voice.
+const SKY_PHASE_LABELS: Record<string, { en: string; es: string }> = {
+  new: { en: "new moon", es: "luna nueva" },
+  waxing_crescent: { en: "waxing crescent moon", es: "luna creciente" },
+  first_quarter: { en: "first-quarter moon", es: "cuarto creciente" },
+  waxing_gibbous: { en: "waxing gibbous moon", es: "luna gibosa creciente" },
+  full: { en: "full moon", es: "luna llena" },
+  waning_gibbous: { en: "waning gibbous moon", es: "luna gibosa menguante" },
+  last_quarter: { en: "last-quarter moon", es: "cuarto menguante" },
+  waning_crescent: { en: "waning crescent moon", es: "luna menguante" },
+};
+
+function skyPhaseLabel(bucket: string | null, isEs: boolean): string {
+  if (!bucket) return "";
+  const e = SKY_PHASE_LABELS[bucket];
+  if (!e) return bucket.replace(/_/g, " ");
+  return isEs ? e.es : e.en;
+}
+
+function skyWhenText(days: number | null, isEs: boolean): string {
+  const d = days == null ? 0 : days;
+  if (isEs) {
+    if (d < 45) return "el mes pasado";
+    if (d < 300) return `hace ${Math.round(d / 30)} meses`;
+    if (d < 430) return "hace casi un año";
+    if (d < 660) return "hace más de un año";
+    return `hace ${Math.round(d / 365)} años`;
+  }
+  if (d < 45) return "last month";
+  if (d < 300) return `${Math.round(d / 30)} months ago`;
+  if (d < 430) return "about a year ago";
+  if (d < 660) return "over a year ago";
+  return `${Math.round(d / 365)} years ago`;
+}
+
+// Sky-recall takeover, mirrors BreakthroughModal: a full-screen moment the
+// Oracle surfaces when today's sky echoes one in your own past. "Go deeper"
+// opens the Oracle about it (and consumes it so it does not return); "Later"
+// sets it aside for this session so it comes again next app open.
+function SkyEchoModal({ echo, onGoDeeper, onLater }: { echo: SkyEcho; onGoDeeper: (sentence: string, excerpt: string) => void; onLater: () => void }) {
+  const { t, lang } = useT();
+  const isEs = (lang || "").startsWith("es");
+  const phase = skyPhaseLabel(echo.moon_phase_bucket, isEs);
+  const moon = tx(echo.moon_sign, lang);
+  const sun = tx(echo.sun_sign, lang);
+  const when = skyWhenText(echo.days_ago, isEs);
+
+  let sky: string;
+  if (echo.match === "phase_sign" && phase && moon) {
+    sky = isEs ? `bajo una ${phase} en ${moon}, el mismo cielo que esta noche`
+              : `under a ${phase} in ${moon}, the same sky as tonight`;
+  } else if (echo.match === "phase" && phase) {
+    sky = isEs ? `bajo una ${phase}, como esta noche` : `under a ${phase}, like tonight`;
+  } else if (echo.match === "sign" && moon) {
+    sky = isEs ? `con la luna en ${moon}, como ahora` : `with the moon in ${moon}, as it is now`;
+  } else if (echo.match === "season" && sun) {
+    sky = isEs ? `con el sol en ${sun}, la misma estación que ahora` : `with the sun in ${sun}, the same season as now`;
+  } else {
+    sky = isEs ? "bajo un cielo como el de esta noche" : "under a sky like tonight's";
+  }
+  const sentence = `${when.charAt(0).toUpperCase() + when.slice(1)}, ${sky}.`;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onLater(); };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onLater]);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onLater}
+      style={{
+        position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        overflow: "hidden", overscrollBehavior: "contain",
+        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        animation: "skFade .4s ease both",
+      }}
+    >
+      <style>{`
+        @keyframes skFade{from{opacity:0}to{opacity:1}}
+        @keyframes skRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+        @keyframes skGlow{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
+        @keyframes skPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.45}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+      `}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-[28px]"
+        style={{
+          ...NIGHT_SURFACE,
+          maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
+          padding: "40px 28px 26px",
+          maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+          background: "radial-gradient(125% 90% at 50% 0%, #161427 0%, #0c1622 55%, #050f08 100%)",
+          border: "1px solid rgba(155,134,160,0.34)",
+          boxShadow: "0 0 70px rgba(155,134,160,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          animation: "skRise .55s cubic-bezier(.2,.75,.2,1) both",
+        }}
+      >
+        <button
+          onClick={onLater}
+          aria-label="Close"
+          className="absolute"
+          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+        >×</button>
+
+        {/* a soft moon, the sky returning */}
+        <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(155,134,160,0.5)", animation: "skPulse 2.8s ease-out infinite" }} />
+          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: "radial-gradient(circle at 38% 35%, #cfc4d2 0%, #9b86a0 60%, #6a5b70 100%)", animation: "skGlow 3s ease-in-out infinite", boxShadow: "0 0 24px rgba(155,134,160,0.45)" }} />
+        </div>
+
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#9b86a0", marginBottom: 14 }}>
+          {t("sky_echo.eyebrow")}
+        </p>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.55rem", lineHeight: 1.25, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 16 }}>
+          {sentence}
+        </h2>
+        <p className="font-heading italic text-text-secondary" style={{ fontSize: 16, lineHeight: 1.6, maxWidth: 340, margin: "0 auto" }}>
+          &ldquo;{echo.excerpt}&rdquo;
+        </p>
+
+        <div style={{ width: 36, height: 1, background: "rgba(155,134,160,0.45)", margin: "24px auto 22px" }} />
+
+        <button
+          onClick={() => onGoDeeper(sentence, echo.excerpt)}
+          className="w-full rounded-full transition-all active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+        >
+          {t("insight.go_deeper")}
+        </button>
+        <button
+          onClick={onLater}
+          className="font-body"
+          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+        >
+          {t("insight.dismiss")}
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// Lunar-moment takeover: fires on the day of a new or full moon (~every two
+// weeks), showing where the lunation lands in your chart. Same Go deeper /
+// Later interaction. Silver-moon + mist identity, distinct from the amber
+// breakthrough and the wisteria recall.
+function LunarMomentModal({ event, onGoDeeper, onLater }: { event: LunarEvent; onGoDeeper: () => void; onLater: () => void }) {
+  const { t, lang } = useT();
+  const isEs = (lang || "").startsWith("es");
+  const isFull = event.type === "Full Moon";
+  const typeLabel = isFull ? (isEs ? "Luna llena" : "Full moon") : (isEs ? "Luna nueva" : "New moon");
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onLater(); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onLater]);
+
+  if (typeof document === "undefined") return null;
+
+  const moonBg = isFull
+    ? "radial-gradient(circle at 38% 35%, #fffef8 0%, #e9e4d6 55%, #aeb6ba 100%)"
+    : "radial-gradient(circle at 62% 40%, #2c2636 0%, #15131d 70%, #0a0810 100%)";
+
+  return createPortal(
+    <div
+      role="dialog" aria-modal="true" onClick={onLater}
+      style={{
+        position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        overflow: "hidden", overscrollBehavior: "contain",
+        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        animation: "lnFade .4s ease both",
+      }}
+    >
+      <style>{`
+        @keyframes lnFade{from{opacity:0}to{opacity:1}}
+        @keyframes lnRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+        @keyframes lnGlow{0%,100%{opacity:.9;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
+        @keyframes lnPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.45}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+      `}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-[28px]"
+        style={{
+          ...NIGHT_SURFACE,
+          maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
+          padding: "40px 28px 26px",
+          maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+          background: "radial-gradient(125% 90% at 50% 0%, #101a26 0%, #0a141d 55%, #050f08 100%)",
+          border: "1px solid rgba(155,171,185,0.34)",
+          boxShadow: "0 0 70px rgba(155,171,185,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          animation: "lnRise .55s cubic-bezier(.2,.75,.2,1) both",
+        }}
+      >
+        <button
+          onClick={onLater} aria-label="Close" className="absolute"
+          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+        >×</button>
+
+        <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(155,171,185,0.5)", animation: "lnPulse 2.8s ease-out infinite" }} />
+          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: moonBg, animation: "lnGlow 3s ease-in-out infinite", boxShadow: isFull ? "0 0 26px rgba(233,228,214,0.55)" : "0 0 22px rgba(155,171,185,0.30)" }} />
+        </div>
+
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#9babb9", marginBottom: 12 }}>
+          {typeLabel}
+        </p>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.9rem", lineHeight: 1.15, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
+          {tx(event.sign, lang)}
+        </h2>
+        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#9babb9", marginBottom: 4 }}>
+          {t("lunar.illuminating")} {event.house}
+        </p>
+        {event.house_meaning && (
+          <p className="font-body text-text-secondary" style={{ fontSize: 13, lineHeight: 1.5, maxWidth: 320, margin: "0 auto 14px", opacity: 0.8 }}>
+            {event.house_meaning}
+          </p>
+        )}
+        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+          {event.note}
+        </p>
+
+        <div style={{ width: 36, height: 1, background: "rgba(155,171,185,0.45)", margin: "24px auto 22px" }} />
+
+        <button
+          onClick={onGoDeeper}
+          className="w-full rounded-full transition-all active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+        >
+          {t("insight.go_deeper")}
+        </button>
+        <button
+          onClick={onLater} className="font-body"
+          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+        >
+          {t("insight.dismiss")}
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// Signed days to the user's next/last birthday (positive = upcoming, negative
+// = just passed). Used to gate the once-a-year birthday takeover.
+function daysToBirthday(birthDateStr: string): number {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const b = new Date(birthDateStr);
+  if (isNaN(b.getTime())) return Infinity;
+  const thisYear = new Date(today.getFullYear(), b.getMonth(), b.getDate());
+  let d = Math.round((thisYear.getTime() - today.getTime()) / 86400000);
+  if (d < -7) {
+    const nextYear = new Date(today.getFullYear() + 1, b.getMonth(), b.getDate());
+    d = Math.round((nextYear.getTime() - today.getTime()) / 86400000);
+  }
+  return d;
+}
+
+// Birthday (solar return) takeover: once a year, the Sun returns to its birth
+// position. Gold radiant sun, distinct from the breakthrough's logo sun.
+function BirthdayModal({ birthDate, onGoDeeper, onLater }: { birthDate: string; onGoDeeper: () => void; onLater: () => void }) {
+  const { t, lang } = useT();
+  let bornLabel = "";
+  try {
+    const d = new Date(birthDate);
+    if (!isNaN(d.getTime())) bornLabel = d.toLocaleDateString(lang === "en" ? "en-GB" : lang, { day: "numeric", month: "long", year: "numeric" });
+  } catch (_) {}
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onLater(); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onLater]);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      role="dialog" aria-modal="true" onClick={onLater}
+      style={{
+        position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        overflow: "hidden", overscrollBehavior: "contain",
+        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        animation: "bdFade .4s ease both",
+      }}
+    >
+      <style>{`
+        @keyframes bdFade{from{opacity:0}to{opacity:1}}
+        @keyframes bdRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+        @keyframes bdBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.13)}28%{transform:scale(1)}42%{transform:scale(1.06)}55%{transform:scale(1)}}
+        @keyframes bdPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.5}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+      `}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-[28px]"
+        style={{
+          ...NIGHT_SURFACE,
+          maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
+          padding: "40px 28px 26px",
+          maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+          background: "radial-gradient(125% 90% at 50% 0%, #2a1c0c 0%, #160f06 55%, #050f08 100%)",
+          border: "1px solid rgba(243,146,48,0.36)",
+          boxShadow: "0 0 70px rgba(243,146,48,0.16), 0 30px 90px rgba(0,0,0,0.55)",
+          animation: "bdRise .55s cubic-bezier(.2,.75,.2,1) both",
+        }}
+      >
+        <button
+          onClick={onLater} aria-label="Close" className="absolute"
+          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+        >×</button>
+
+        {/* the real Solray sun, returning home, beating like the breakthrough */}
+        <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(243,146,48,0.5)", animation: "bdPulse 2.6s ease-out infinite" }} />
+          <Image
+            src="/solray-sun.png"
+            alt="Solray"
+            width={64}
+            height={64}
+            unoptimized
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bdBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(243,146,48,0.5))" }}
+          />
+        </div>
+
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 12 }}>
+          {t("solar.eyebrow")}
+        </p>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.75rem", lineHeight: 1.2, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
+          {t("solar.new_year_begins")}
+        </h2>
+        {bornLabel && (
+          <p className="font-body" style={{ fontSize: 12.5, letterSpacing: "0.04em", color: "var(--amber)", opacity: 0.85, marginBottom: 14 }}>
+            {t("solar.born").replace("{date}", bornLabel)}
+          </p>
+        )}
+        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+          {t("solar.body")}
+        </p>
+
+        <div style={{ width: 36, height: 1, background: "rgba(243,146,48,0.45)", margin: "24px auto 22px" }} />
+
+        <button
+          onClick={onGoDeeper}
+          className="w-full rounded-full transition-all active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+        >
+          {t("insight.go_deeper")}
+        </button>
+        <button
+          onClick={onLater} className="font-body"
+          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+        >
+          {t("insight.dismiss")}
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastView | null>(null);
   const [loading, setLoading] = useState(true);
@@ -772,6 +1171,14 @@ export default function TodayPage() {
   const [insight, setInsight] = useState<PendingInsight | null>(null);
   const [showBreakthrough, setShowBreakthrough] = useState(false);
   const insightFetched = useRef(false);
+  const [skyEcho, setSkyEcho] = useState<SkyEcho | null>(null);
+  const [showSkyEcho, setShowSkyEcho] = useState(false);
+  const skyEchoFetched = useRef(false);
+  const [showLunar, setShowLunar] = useState(false);
+  const lunarChecked = useRef(false);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [showBirthday, setShowBirthday] = useState(false);
+  const birthdayChecked = useRef(false);
   const { token } = useAuth();
   const { t, lang } = useT();
   const dateLocale = lang === "en" ? "en-GB" : lang;
@@ -839,6 +1246,29 @@ export default function TodayPage() {
     apiFetch(`/insight/${id}/seen`, { method: "POST" }, token).catch(() => {});
   };
 
+  // Sky-stamp recall (Build 1, step 3): a moment from your own past under a sky
+  // like today's. Fetch once per mount. Null is the common case (little stamped
+  // history yet); the card simply does not render. Silent on failure.
+  useEffect(() => {
+    if (!token || skyEchoFetched.current) return;
+    skyEchoFetched.current = true;
+    (async () => {
+      try {
+        const data = await apiFetch("/insight/sky-echo", {}, token) as { echo: SkyEcho | null };
+        if (data && data.echo) {
+          setSkyEcho(data.echo);
+          // Show the takeover unless this exact memory was already consumed
+          // (Go deeper, localStorage) or set aside this session (Later).
+          const key = data.echo.created_at || "x";
+          let consumed = false, later = false;
+          try { consumed = localStorage.getItem(`solray_echo_seen_${key}`) === "1"; } catch (_) {}
+          try { later = sessionStorage.getItem(`solray_echo_later_${key}`) === "1"; } catch (_) {}
+          if (!consumed && !later) setShowSkyEcho(true);
+        }
+      } catch (_) { /* non-fatal */ }
+    })();
+  }, [token]);
+
   // "Later" means later: do NOT consume it. Set it aside for this session so
   // it is not naggy, and let it return on the next app open until the user
   // actually goes deeper. Only going deeper marks it seen for good.
@@ -859,6 +1289,124 @@ export default function TodayPage() {
       }));
     } catch (_) {}
     router.push("/chat");
+  };
+
+  // Sky-echo "Go deeper": open the Oracle about the remembered moment AND mark
+  // this exact memory consumed (localStorage) so it never returns.
+  const goDeeperSkyEcho = (sentence: string, excerpt: string) => {
+    const key = skyEcho?.created_at || "x";
+    try { localStorage.setItem(`solray_echo_seen_${key}`, "1"); } catch (_) {}
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: "Under a familiar sky",
+        question: `${sentence} Back then I wrote: "${excerpt}". I'd like to sit with how far I've come since. What do you see?`,
+      }));
+    } catch (_) {}
+    router.push("/chat");
+  };
+
+  // Sky-echo "Later": set aside for this session only; it returns next app open.
+  const laterSkyEcho = () => {
+    const key = skyEcho?.created_at || "x";
+    try { sessionStorage.setItem(`solray_echo_later_${key}`, "1"); } catch (_) {}
+    setShowSkyEcho(false);
+  };
+
+  // Lunar moment: surface a takeover on the day of a new or full moon (~every
+  // two weeks). Consumed via Go deeper (localStorage, by lunation); Later holds
+  // it for the session and it returns next open until the moon passes.
+  useEffect(() => {
+    const ev = forecast?.lunar_event;
+    if (!ev || lunarChecked.current) return;
+    // Live only while the Moon is still in (or just left) the lunation's sign:
+    // the day of the event through ~2 days after. Within this window a "Later"
+    // re-shows it on the next app open; once the window closes it is gone for
+    // good. days_until is negative once the event has passed.
+    const within = typeof ev.days_until === "number" && ev.days_until <= 0.75 && ev.days_until >= -2;
+    if (!within) return;
+    lunarChecked.current = true;
+    const key = `${ev.date}_${ev.type}`;
+    let consumed = false, later = false;
+    try { consumed = localStorage.getItem(`solray_lunar_seen_${key}`) === "1"; } catch (_) {}
+    try { later = sessionStorage.getItem(`solray_lunar_later_${key}`) === "1"; } catch (_) {}
+    if (!consumed && !later) setShowLunar(true);
+  }, [forecast]);
+
+  const goDeeperLunar = () => {
+    const ev = forecast?.lunar_event;
+    if (!ev) return;
+    const key = `${ev.date}_${ev.type}`;
+    try { localStorage.setItem(`solray_lunar_seen_${key}`, "1"); } catch (_) {}
+    const isFull = ev.type === "Full Moon";
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: `${ev.type} in ${ev.sign}`,
+        question: isFull
+          ? `Tonight's full moon in ${ev.sign} falls in my ${ev.house}th house. ${ev.note} What is reaching completion here, and what am I ready to release?`
+          : `Tonight's new moon in ${ev.sign} falls in my ${ev.house}th house. ${ev.note} What intention should I plant here?`,
+      }));
+    } catch (_) {}
+    router.push("/chat");
+  };
+
+  const laterLunar = () => {
+    const ev = forecast?.lunar_event;
+    const key = ev ? `${ev.date}_${ev.type}` : "x";
+    try { sessionStorage.setItem(`solray_lunar_later_${key}`, "1"); } catch (_) {}
+    setShowLunar(false);
+  };
+
+  // Birthday (solar return): once a year. Window = the day of through ~2 days
+  // after (a grace if they did not open the app on the day). Go deeper consumes
+  // it for the year (localStorage by year); Later returns it next open in window.
+  useEffect(() => {
+    if (!birthDate || birthdayChecked.current) return;
+    const d = daysToBirthday(birthDate);
+    const within = d <= 0 && d >= -2;
+    if (!within) return;
+    birthdayChecked.current = true;
+    const yr = new Date().getFullYear();
+    let consumed = false, later = false;
+    try { consumed = localStorage.getItem(`solray_birthday_seen_${yr}`) === "1"; } catch (_) {}
+    try { later = sessionStorage.getItem(`solray_birthday_later_${yr}`) === "1"; } catch (_) {}
+    if (!consumed && !later) setShowBirthday(true);
+  }, [birthDate]);
+
+  const goDeeperBirthday = async () => {
+    const yr = new Date().getFullYear();
+    try { localStorage.setItem(`solray_birthday_seen_${yr}`, "1"); } catch (_) {}
+    // Pull the real solar-return chart so the Oracle reads the year ahead from
+    // true placements, not invented ones. Fail-soft: if it is unavailable the
+    // question still opens a personalised reading from her chart knowledge.
+    let facts = "";
+    try {
+      const data = token ? (await apiFetch("/solar-return", {}, token)) as { solar_return: any } : null;
+      const sr = data?.solar_return;
+      if (sr) {
+        const parts: string[] = [];
+        if (sr.ascendant_sign) parts.push(`a ${sr.ascendant_sign} ascendant`);
+        if (sr.sun_house) parts.push(`the Sun in the ${sr.sun_house}th house`);
+        if (sr.moon_sign && sr.moon_house) parts.push(`the Moon in ${sr.moon_sign} in the ${sr.moon_house}th house`);
+        if (Array.isArray(sr.aspects) && sr.aspects.length) {
+          const a = sr.aspects.slice(0, 2).map((x: any) => `${x.a} ${x.aspect} ${x.b}`).join(", ");
+          if (a) parts.push(`and ${a}`);
+        }
+        if (parts.length) facts = ` My solar return chart this year carries ${parts.join(", ")}.`;
+      }
+    } catch (_) { /* non-fatal */ }
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
+        topic: "My solar return",
+        question: `The Sun has returned to where it stood when I was born, a new year of my life begins today.${facts} Read me the dominant themes of my year ahead, grounded in this chart. Where should I put my energy?`,
+      }));
+    } catch (_) {}
+    router.push("/chat");
+  };
+
+  const laterBirthday = () => {
+    const yr = new Date().getFullYear();
+    try { sessionStorage.setItem(`solray_birthday_later_${yr}`, "1"); } catch (_) {}
+    setShowBirthday(false);
   };
 
   // Funnel event: fires the first time a user reaches /today after signup.
@@ -920,6 +1468,7 @@ export default function TodayPage() {
           apiFetch("/forecast/today", {}, token),
           apiFetch("/users/me", {}, token).then((userData) => {
             if (cancelled) return;
+            if (userData?.birth_date) setBirthDate(userData.birth_date);
             if (userData.blueprint) {
               try {
                 const bpCacheKey = "solray_blueprint";
@@ -1071,11 +1620,36 @@ export default function TodayPage() {
 
   return (
     <ProtectedRoute>
-      {showBreakthrough && insight && (
+      {/* One takeover per open. Priority: birthday (once a year, the rarest
+          and most personal) wins, then the lunar moment (time-bound to its
+          day), then the breakthrough (persists, shows next open), then the
+          recall. */}
+      {showBirthday && birthDate && (
+        <BirthdayModal
+          birthDate={birthDate}
+          onGoDeeper={goDeeperBirthday}
+          onLater={laterBirthday}
+        />
+      )}
+      {!showBirthday && showLunar && forecast?.lunar_event && (
+        <LunarMomentModal
+          event={forecast.lunar_event}
+          onGoDeeper={goDeeperLunar}
+          onLater={laterLunar}
+        />
+      )}
+      {!showBirthday && !showLunar && showBreakthrough && insight && (
         <BreakthroughModal
           insight={insight}
           onAsk={openInsightInChat}
           onClose={dismissBreakthrough}
+        />
+      )}
+      {!showBirthday && !showLunar && !showBreakthrough && showSkyEcho && skyEcho && (
+        <SkyEchoModal
+          echo={skyEcho}
+          onGoDeeper={goDeeperSkyEcho}
+          onLater={laterSkyEcho}
         />
       )}
       <div
@@ -1129,6 +1703,9 @@ export default function TodayPage() {
             <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">
               <MoonCycleBar planets={forecast.planets} />
             </div>
+
+            {/* Sky-stamp recall surfaces as a full-screen takeover (SkyEchoModal),
+                not an inline card, so nothing renders here. */}
 
             {/* Below fold content */}
             <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
@@ -1330,6 +1907,10 @@ function getMoonPhaseLabel(p: number): string {
 // rather than face/object emoji and fit the soft forest palette, so
 // they are kept as a deliberate, single-purpose carve-out from the
 // otherwise strict no-emoji rule.
+// Moon-phase glyph. The realistic moon-phase symbols are kept here as an
+// intentional exception to the no-emoji rule (Bob's call): they are celestial
+// symbols depicting the actual phase, the same spirit as the chart glyphs, not
+// decorative emoji.
 function getMoonEmoji(p: number): string {
   if (p < 0.03 || p > 0.97) return "\u{1F311}"; // new
   if (p < 0.25) return "\u{1F312}";              // waxing crescent
