@@ -68,6 +68,40 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6 relative overflow-hidden">
       <EntrySky />
+      {/* The observatory bezel: two counter-rotating instrument rings, the
+          landing hero's signature, here framing the door into the app. */}
+      <svg className="entry-instrument" viewBox="0 0 1000 1000" aria-hidden="true">
+        <circle cx="500" cy="500" r="478" fill="none" stroke="rgba(242,236,216,0.09)" strokeWidth="1" />
+        <circle cx="500" cy="500" r="430" fill="none" stroke="rgba(242,236,216,0.06)" strokeWidth="1" strokeDasharray="1 7" />
+        {Array.from({ length: 60 }, (_, i) => {
+          const major = i % 5 === 0;
+          const ang = (i / 60) * Math.PI * 2;
+          const r1 = major ? 452 : 466;
+          return (
+            <line
+              key={i}
+              x1={500 + r1 * Math.cos(ang)}
+              y1={500 + r1 * Math.sin(ang)}
+              x2={500 + 478 * Math.cos(ang)}
+              y2={500 + 478 * Math.sin(ang)}
+              stroke="rgba(242,236,216,1)"
+              strokeOpacity={major ? 0.12 : 0.06}
+              strokeWidth={major ? 1.4 : 0.8}
+            />
+          );
+        })}
+        {Array.from({ length: 4 }, (_, i) => {
+          const ang = (i / 4) * Math.PI * 2 + Math.PI / 6;
+          const x = 500 + 430 * Math.cos(ang);
+          const y = 500 + 430 * Math.sin(ang);
+          return <path key={`d-${i}`} d={`M ${x} ${y - 5} L ${x + 5} ${y} L ${x} ${y + 5} L ${x - 5} ${y} Z`} fill="rgba(243,146,48,0.22)" />;
+        })}
+      </svg>
+      <svg className="entry-instrument entry-instrument-inner" viewBox="0 0 1000 1000" aria-hidden="true">
+        <circle cx="500" cy="500" r="478" fill="none" stroke="rgba(242,236,216,0.07)" strokeWidth="1" strokeDasharray="2 10" />
+        <circle cx="500" cy="500" r="380" fill="none" stroke="rgba(242,236,216,0.05)" strokeWidth="1" />
+      </svg>
+
       {/* Quiet language switcher in the corner. Users who arrived in
           Spanish (browser locale or chosen on a previous visit) see the
           page in Spanish already; this lets the rest opt in before they

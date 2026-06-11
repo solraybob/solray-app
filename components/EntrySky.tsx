@@ -30,8 +30,11 @@ export default function EntrySky() {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [enabled, setEnabled] = useState(false);
 
+  const [still, setStill] = useState(false);
+
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setStill(reduced);
     setEnabled(true);
   }, []);
 
@@ -58,15 +61,15 @@ export default function EntrySky() {
       canvas.height = Math.round(h * dpr);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      const count = Math.round(Math.min(150, (w * h) / 9000));
+      const count = Math.round(Math.min(210, (w * h) / 6200));
       stars = Array.from({ length: count }, () => {
         const depth = 0.4 + Math.random() * 0.6;
         return {
           x: Math.random() * w,
           y: Math.random() * h,
-          r: (0.35 + Math.random() * 1.05) * depth,
+          r: (0.45 + Math.random() * 1.25) * depth,
           rgb: starColor(),
-          base: 0.1 + Math.random() * 0.38,
+          base: 0.16 + Math.random() * 0.42,
           amp: 0.08 + Math.random() * 0.4,
           phase: Math.random() * Math.PI * 2,
           speed: 0.2 + Math.random() * 0.8,
@@ -105,14 +108,14 @@ export default function EntrySky() {
       const n1x = w * (0.3 + 0.08 * Math.sin(t * 0.05));
       const n1y = h * (0.28 + 0.07 * Math.cos(t * 0.04));
       const g1 = ctx.createRadialGradient(n1x, n1y, 0, n1x, n1y, nr);
-      g1.addColorStop(0, "rgba(243,146,48,0.045)");
+      g1.addColorStop(0, "rgba(243,146,48,0.07)");
       g1.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, w, h);
       const n2x = w * (0.72 + 0.07 * Math.cos(t * 0.045));
       const n2y = h * (0.7 + 0.08 * Math.sin(t * 0.055));
       const g2 = ctx.createRadialGradient(n2x, n2y, 0, n2x, n2y, nr * 0.9);
-      g2.addColorStop(0, "rgba(155,134,160,0.04)");
+      g2.addColorStop(0, "rgba(155,134,160,0.06)");
       g2.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g2;
       ctx.fillRect(0, 0, w, h);
@@ -165,9 +168,18 @@ export default function EntrySky() {
 
       raf = requestAnimationFrame(frame);
     };
-    raf = requestAnimationFrame(frame);
+    if (still) {
+      // One painted frame; a quiet sky rather than a missing one.
+      last = performance.now() - 16;
+      frame(performance.now());
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    } else {
+      raf = requestAnimationFrame(frame);
+    }
 
     const onVis = () => {
+      if (still) return;
       if (!document.hidden && !raf) {
         last = performance.now();
         raf = requestAnimationFrame(frame);
@@ -181,7 +193,7 @@ export default function EntrySky() {
       window.removeEventListener("resize", seed);
       if (fine) window.removeEventListener("pointermove", onPointer);
     };
-  }, [enabled]);
+  }, [enabled, still]);
 
   if (!enabled) return null;
   return (

@@ -326,3 +326,31 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .entry-sun.entry-rise { opacity: 1; animation: none; }
 }
+
+/* The observatory bezel behind the login */
+.entry-instrument {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 125vmin; height: 125vmin;
+  margin: -62.5vmin 0 0 -62.5vmin;
+  pointer-events: none;
+  z-index: 0;
+  animation: entry-ring-turn 600s linear infinite;
+  opacity: 0;
+  transition: opacity 3s ease 0.6s;
+}
+.entry-instrument-inner {
+  width: 88vmin; height: 88vmin;
+  margin: -44vmin 0 0 -44vmin;
+  animation-direction: reverse;
+  transition-delay: 1.2s;
+}
+@keyframes entry-ring-turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* Fade in once mounted (the page root carries .entry-ready via :has or just
+   always-on after animation start). Simplest: animate opacity in too. */
+.entry-instrument { animation: entry-ring-turn 600s linear infinite, entry-ring-in 3s ease 0.6s forwards; }
+.entry-instrument-inner { animation: entry-ring-turn 600s linear infinite reverse, entry-ring-in 3s ease 1.2s forwards; }
+@keyframes entry-ring-in { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .entry-instrument, .entry-instrument-inner { animation: none; opacity: 0.7; }
+}
