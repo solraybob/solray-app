@@ -30,7 +30,7 @@ export default function CardForm({
   token: string;
   onSuccess: (r: CardSaveResult) => void;
 }) {
-  const t = useT();
+  const { t } = useT();
   const [pan, setPan] = useState("");
   const [expiry, setExpiry] = useState("");
   const [busy, setBusy] = useState(false);
