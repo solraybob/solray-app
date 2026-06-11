@@ -307,18 +307,18 @@ export default function OnboardPage() {
             sun above, wordmark beneath. */}
         <div className="flex flex-col items-center entry-rise">
           <div
-            className="w-12 h-12 mb-2 entry-sun"
+            className="w-24 h-24 mb-4 entry-sun"
             style={{
               filter:
-                "drop-shadow(0 0 18px rgba(243, 146, 48, 0.45))",
+                "drop-shadow(0 0 32px rgba(243, 146, 48, 0.42)) drop-shadow(0 0 80px rgba(243, 146, 48, 0.18))",
             }}
           >
             <Image
               src="/solray-sun.png"
               unoptimized
               alt="Solray"
-              width={48}
-              height={48}
+              width={96}
+              height={96}
               className="w-full h-full object-contain"
             />
           </div>
@@ -343,7 +343,7 @@ export default function OnboardPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative", zIndex: 1 }}>
+      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative", zIndex: 1 }}>
         <div className="w-full max-w-sm">
           {step === 1 && (
             <StepWrapper label={t("onboard.q_name")}>
