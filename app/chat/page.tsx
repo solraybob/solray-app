@@ -326,6 +326,12 @@ function ChatPageInner() {
   // around. Fail-soft everywhere: a missing cache shrinks a pool, never
   // breaks the chat.
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  // Ghost-tap guard: a real user reported the Oracle answering suggestion
+  // prompts she never tapped. The chips mount asynchronously and used to
+  // render below a still-streaming greeting, so they could appear or move
+  // under a finger mid-tap and auto-send. Chips now ignore interactions for
+  // their first 450ms on screen (and never render during streaming).
+  const suggestionsArmedAt = useRef(0);
   useEffect(() => {
     void (async () => {
       try {
@@ -380,6 +386,7 @@ function ChatPageInner() {
         ];
         setSuggestions(Array.from(new Set(picked)).slice(0, 3));
       } catch { /* suggestions are decoration; never break chat */ }
+      suggestionsArmedAt.current = Date.now();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
@@ -391,6 +398,11 @@ function ChatPageInner() {
 
   // Streaming state
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  // Chips become visible the instant streaming ends; re-arm the ghost-tap
+  // window at that exact moment, not just at load.
+  useEffect(() => {
+    if (!streamingId) suggestionsArmedAt.current = Date.now();
+  }, [streamingId]);
   const [streamedLength, setStreamedLength] = useState(0);
 
   // Rename state
@@ -1813,12 +1825,15 @@ function ChatPageInner() {
                 taps one. Codex UX hook 2. */}
             {suggestions.length > 0 && !soulBlueprint &&
               !messages.some((m) => m.role === "user") &&
-              !sending && (
+              !sending && !streamingId && (
                 <div className="flex flex-col gap-2 items-center pt-2 pb-1 animate-fade-in">
                   {suggestions.map((s) => (
                     <button
                       key={s}
-                      onClick={() => sendMessage(s)}
+                      onClick={() => {
+                        if (Date.now() - suggestionsArmedAt.current < 450) return;
+                        sendMessage(s);
+                      }}
                       className="font-body text-[13px] leading-snug text-text-primary text-left max-w-[300px] px-4 py-2.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
                       style={{
                         background: "rgba(155,134,160,0.06)",
