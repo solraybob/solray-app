@@ -36,6 +36,19 @@ export default function EntrySky() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStill(reduced);
     setEnabled(true);
+    // Failsafe for the whole entry cascade: CSS animations pause in
+    // throttled/background tabs, which can strand the page at opacity 0,
+    // a black screen with nothing to do. After 2.5s (or on first
+    // visibility), force everything visible; !important opacity beats the
+    // keyframed value, so a late-running animation can't re-hide content.
+    const settle = () => document.documentElement.classList.add("entry-settled");
+    const timer = setTimeout(settle, 2500);
+    const onVisible = () => { if (!document.hidden) setTimeout(settle, 1800); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   useEffect(() => {

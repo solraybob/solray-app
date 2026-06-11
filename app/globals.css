@@ -354,3 +354,10 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .entry-instrument, .entry-instrument-inner { animation: none; opacity: 0.7; }
 }
+
+/* Entry cascade failsafe: once settled, nothing may remain hidden. The
+   !important wins against keyframed opacity, so a paused or late animation
+   can never strand the page black. */
+.entry-settled .entry-rise { opacity: 1 !important; }
+.entry-settled .entry-instrument,
+.entry-settled .entry-instrument-inner { opacity: 1 !important; }
