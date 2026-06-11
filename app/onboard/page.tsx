@@ -316,6 +316,7 @@ export default function OnboardPage() {
             <Image
               src="/solray-sun.png"
               unoptimized
+              priority
               alt="Solray"
               width={96}
               height={96}
