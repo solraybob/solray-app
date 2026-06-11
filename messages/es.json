@@ -555,7 +555,18 @@
     "badge_cancelled": "Cancelada",
     "badge_expired": "Expirada",
     "subtitle_lapsed": "Tu mes ha terminado. Continúa donde lo dejaste.",
-    "renew": "Renovar membresía"
+    "renew": "Renovar membresía",
+    "card_details": "Datos de la tarjeta",
+    "card_number_ph": "Número de tarjeta",
+    "card_expiry_ph": "MM/AA",
+    "card_save": "Guardar tarjeta",
+    "card_saving": "Guardando...",
+    "card_saved": "Tarjeta guardada. Las renovaciones ahora son automáticas.",
+    "card_saved_charged": "Tarjeta guardada y tu mes está pagado. Bienvenida de nuevo.",
+    "card_invalid_number": "Ese número de tarjeta no parece correcto.",
+    "card_invalid_expiry": "Revisa la fecha de vencimiento.",
+    "card_error": "No se pudo guardar la tarjeta. Inténtalo de nuevo.",
+    "card_privacy": "El número de tu tarjeta va directamente al proveedor de pagos por una conexión cifrada. Nunca pasa por los servidores de Solray; solo guardamos un token seguro."
   },
   "depth": {
     "the_sky": "El Cielo",
@@ -578,7 +589,9 @@
     "year_ready": "Tu año por delante está listo.",
     "born": "Nacido el {date}",
     "body": "Cada año el Sol regresa a su posición exacta de nacimiento. Este momento define la energía de tu año venidero.",
-    "read_year": "Lee tu año por delante"
+    "read_year": "Lee tu año por delante",
+    "eyebrow": "Retorno solar",
+    "new_year_begins": "Tu nuevo año comienza"
   },
   "invite": {
     "error_load": "No se pudo cargar tu código de invitación.",
@@ -683,5 +696,16 @@
   },
   "sky_echo": {
     "eyebrow": "Un cielo que ya conociste"
+  },
+  "lunar": {
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "yesterday": "Ayer",
+    "in": "En",
+    "days": "días",
+    "days_ago": "días atrás",
+    "illuminating": "Iluminando tu casa",
+    "read_more": "Leer más",
+    "close": "Cerrar"
   }
 }

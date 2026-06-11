@@ -555,7 +555,18 @@
     "badge_cancelled": "Cancelled",
     "badge_expired": "Expired",
     "subtitle_lapsed": "Your month has ended. Continue where you left off.",
-    "renew": "Renew membership"
+    "renew": "Renew membership",
+    "card_details": "Card details",
+    "card_number_ph": "Card number",
+    "card_expiry_ph": "MM/YY",
+    "card_save": "Save card",
+    "card_saving": "Saving...",
+    "card_saved": "Card saved. Renewals are now automatic.",
+    "card_saved_charged": "Card saved and your month is paid. Welcome back.",
+    "card_invalid_number": "That card number does not look right.",
+    "card_invalid_expiry": "Check the expiry date.",
+    "card_error": "The card could not be saved. Please try again.",
+    "card_privacy": "Your card number goes directly to the payment provider over an encrypted connection. It never touches Solray's servers; we only store a secure token."
   },
   "depth": {
     "the_sky": "The Sky",
@@ -578,7 +589,9 @@
     "year_ready": "Your year ahead is ready.",
     "born": "Born {date}",
     "body": "Every year the Sun returns to its exact birth position. This moment defines the energy of your coming year.",
-    "read_year": "Read your year ahead"
+    "read_year": "Read your year ahead",
+    "eyebrow": "Solar return",
+    "new_year_begins": "Your new year begins"
   },
   "invite": {
     "error_load": "Could not load your invite code.",
@@ -683,5 +696,16 @@
   },
   "sky_echo": {
     "eyebrow": "A sky you have met before"
+  },
+  "lunar": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "in": "In",
+    "days": "days",
+    "days_ago": "days ago",
+    "illuminating": "Illuminating your house",
+    "read_more": "Read more",
+    "close": "Close"
   }
 }

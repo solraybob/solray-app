@@ -17,6 +17,7 @@ import {
   setPurchaseListener,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
+import CardForm, { type CardSaveResult } from "@/components/CardForm";
 
 // ---------------------------------------------------------------------------
 // Subscribe / Manage Subscription Page
@@ -37,6 +38,8 @@ function SubscribeContent() {
   const router = useRouter();
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [cardSavedNote, setCardSavedNote] = useState("");
   // Show the spinner only on a true cold load (no cached sub yet);
   // every subsequent visit renders instantly because the provider
   // already has state. This is the user-visible part of the speed
@@ -130,7 +133,6 @@ function SubscribeContent() {
 
   const handleAddCard = async () => {
     if (!token) return;
-    setActionLoading(true);
     setError("");
     // Funnel event: user has explicitly tapped a payment-launch button.
     // This is the "intent to pay" line that the canary divides into to
@@ -139,6 +141,19 @@ function SubscribeContent() {
       const { track } = await import("@/lib/analytics");
       await track("subscribe_card_tap", { sub_status: sub?.status ?? null }, token);
     } catch { /* ignore */ }
+
+    // Default path since 2026-06-11: the inline card form. It tokenizes in
+    // the browser against RPG and stores a MULTI-use token, which is the
+    // only thing monthly billing can charge. SecurePay (which never returns
+    // reusable tokens) stays behind an env escape hatch in case the token
+    // flow ever needs to be disabled in a hurry.
+    if (process.env.NEXT_PUBLIC_USE_SECUREPAY !== "1") {
+      setCardSavedNote("");
+      setShowCardForm(true);
+      return;
+    }
+
+    setActionLoading(true);
     try {
       const session = await createSecurePaySession(token);
       if (session.session_url) {
@@ -351,6 +366,31 @@ function SubscribeContent() {
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #f39230)">
               {t("subscribe.update_payment")}
             </ActionButton>
+          )}
+
+          {/* Inline card form: browser tokenization, multi-use token saved,
+              due payments settled on the spot. */}
+          {!isNative && showCardForm && token && (
+            <CardForm
+              token={token}
+              onSuccess={async (r: CardSaveResult) => {
+                setShowCardForm(false);
+                setCardSavedNote(
+                  r.charged
+                    ? t("subscribe.card_saved_charged")
+                    : t("subscribe.card_saved")
+                );
+                await refresh();
+              }}
+            />
+          )}
+          {!isNative && cardSavedNote && (
+            <p
+              className="text-center text-[13px]"
+              style={{ color: "var(--moss, #9caf78)" }}
+            >
+              {cardSavedNote}
+            </p>
           )}
 
           {/* Native-only: a soft, non-CTA status line for the states where
