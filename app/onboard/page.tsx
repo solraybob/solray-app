@@ -302,32 +302,30 @@ export default function OnboardPage() {
       {calculatingBlueprint && <BlueprintLoader />}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-12 pb-6" style={{ position: "relative", zIndex: 1 }}>
-        <div className="flex items-center gap-2">
-          {/* Same transparent sun as the login + landing hero. No circle
-              clip needed — the silhouette IS the shape. */}
+      <div className="flex flex-col items-center px-6 pt-10 pb-6" style={{ position: "relative", zIndex: 1 }}>
+        {/* Centered lockup, same composition as the landing hero and login:
+            sun above, wordmark beneath. */}
+        <div className="flex flex-col items-center entry-rise">
           <div
-            className="w-9 h-9"
+            className="w-12 h-12 mb-2 entry-sun"
             style={{
               filter:
-                "drop-shadow(0 0 14px rgba(243, 146, 48, 0.45))",
+                "drop-shadow(0 0 18px rgba(243, 146, 48, 0.45))",
             }}
           >
             <Image
               src="/solray-sun.png"
               alt="Solray"
-              width={36}
-              height={36}
+              width={48}
+              height={48}
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="flex flex-col">
-            <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</span>
-            <span className="font-heading text-[12px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
-          </div>
+          <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</span>
+          <span className="font-heading text-[12px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
         </div>
         {/* Progress dots */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-5">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <div
               key={i}
