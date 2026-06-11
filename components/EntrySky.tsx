@@ -33,6 +33,14 @@ export default function EntrySky() {
   const [still, setStill] = useState(false);
 
   useEffect(() => {
+    // The entry is always night. A returning light-theme member would
+    // otherwise get the night-sky composition painted onto pearl (broken
+    // stars, invisible bezel). Force dark while an entry page is mounted
+    // and hand back whatever theme the person actually uses on the way in.
+    const root = document.documentElement;
+    const previousTheme = root.getAttribute("data-theme");
+    root.setAttribute("data-theme", "dark");
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStill(reduced);
     setEnabled(true);
@@ -48,6 +56,7 @@ export default function EntrySky() {
     return () => {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
+      if (previousTheme) root.setAttribute("data-theme", previousTheme);
     };
   }, []);
 
