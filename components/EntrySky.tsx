@@ -83,7 +83,8 @@ export default function EntrySky() {
       canvas.height = Math.round(h * dpr);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      const count = Math.round(Math.min(210, (w * h) / 6200));
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      const count = Math.round(Math.min(coarse ? 100 : 210, (w * h) / (coarse ? 11000 : 6200)));
       stars = Array.from({ length: count }, () => {
         const depth = 0.4 + Math.random() * 0.6;
         return {
@@ -208,11 +209,24 @@ export default function EntrySky() {
       }
     };
     document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("resize", seed, { passive: true });
+    // Mobile URL bars fire height-only resizes during scroll; reseeding
+    // there teleports the whole sky. Only reseed on width changes.
+    let lastW = window.innerWidth;
+    const onResize = () => {
+      if (window.innerWidth !== lastW) {
+        lastW = window.innerWidth;
+        seed();
+        return;
+      }
+      h = window.innerHeight;
+      canvas.height = Math.round(h * dpr);
+      canvas.style.height = `${h}px`;
+    };
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
       if (raf) cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("resize", seed);
+      window.removeEventListener("resize", onResize);
       if (fine) window.removeEventListener("pointermove", onPointer);
     };
   }, [enabled, still]);
