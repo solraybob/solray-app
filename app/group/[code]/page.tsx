@@ -33,7 +33,9 @@ function loadHistory(code: string): ChatMessage[] {
 }
 
 function saveHistory(code: string, history: ChatMessage[]) {
-  localStorage.setItem(`${STORAGE_KEY_PREFIX}${code}`, JSON.stringify(history));
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${code}`, JSON.stringify(history));
+  } catch { /* best-effort; the server holds the thread now */ }
 }
 
 export default function GroupChatPage() {
@@ -53,7 +55,10 @@ export default function GroupChatPage() {
   // Load session data
   useEffect(() => {
     if (!code) return;
-    const sessions = JSON.parse(localStorage.getItem("solray_group_sessions") || "{}");
+    let sessions: Record<string, SessionData> = {};
+    try {
+      sessions = JSON.parse(localStorage.getItem("solray_group_sessions") || "{}");
+    } catch { /* no storage = no local session record */ }
     const s = sessions[code as string];
     if (!s) {
       // Try to infer from connection list (for joined sessions without local storage)
@@ -137,7 +142,7 @@ export default function GroupChatPage() {
   if (initialising) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-forest-deep flex items-center justify-center">
+        <div className="min-h-[100dvh] bg-forest-deep flex items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
       </ProtectedRoute>
@@ -147,7 +152,7 @@ export default function GroupChatPage() {
   if (notFound) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-5 text-center">
+        <div className="min-h-[100dvh] bg-forest-deep flex flex-col items-center justify-center px-5 text-center">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" className="text-amber-sun mb-4" aria-hidden="true">
             <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
           </svg>
@@ -168,7 +173,7 @@ export default function GroupChatPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-forest-deep flex flex-col">
+      <div className="min-h-[100dvh] bg-forest-deep flex flex-col overflow-x-hidden">
         {/* Header */}
         <div className="px-5 pt-12 pb-4 border-b border-forest-border flex items-center gap-3 max-w-lg mx-auto w-full">
           <button
@@ -213,7 +218,7 @@ export default function GroupChatPage() {
                     : "bg-forest-card border border-forest-border text-text-primary"
                 }`}
               >
-                <p className="font-body text-sm whitespace-pre-wrap leading-relaxed">
+                <p className="font-body text-sm whitespace-pre-wrap leading-relaxed break-words">
                   {msg.content}
                 </p>
               </div>
