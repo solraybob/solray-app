@@ -21,16 +21,18 @@ import { apiFetch, ApiError } from "@/lib/api";
 
 type GraphNode = {
   id: string;
-  name: string;
+  name: string | null;
   sun_sign?: string | null;
   hd_type?: string | null;
   component_count?: number;
+  ghost?: boolean;
 };
 
 type GraphEdge = { a: string; b: string; weight: number };
 
 type Counts = {
   consenting_users: number;
+  opted_out?: number;
   chart_signals: number;
   chart_components: number;
   pattern_cohorts: number;
@@ -223,7 +225,7 @@ function HiveDashboardInner() {
               Akashic Record
             </h1>
             <p className="font-body text-text-secondary text-[13px] mt-1">
-              Each soul is a node. Lines connect souls who share chart frequencies.
+              Each soul is a node. Lines connect souls who share chart frequencies. Dim points are souls who have not joined the field.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -368,6 +370,7 @@ function CountsRow({ counts }: { counts: Counts }) {
   // desaturated enough to stay quiet until you look at it.
   const items: Array<[string, number, string]> = [
     ["Souls in the field", counts.consenting_users, "#f39230"],
+    ["Opted out", counts.opted_out ?? 0, "#a8b8ab"],
     ["Chart signals", counts.chart_signals, "#9babb9"],
     ["Components", counts.chart_components, "#9babb9"],
     ["Cohorts", counts.pattern_cohorts, "#8a9e66"],
@@ -967,6 +970,17 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       {/* Nodes */}
       <g>
         {initial.map((p) => {
+          // Ghost: a soul present but not consented to the field. Dim,
+          // unlabelled, no element colour. Honours their choice while still
+          // showing the true population.
+          if (p.data.ghost) {
+            return (
+              <g key={p.id} data-node-id={p.id} transform={`translate(${p.x}, ${p.y})`}>
+                <circle r={3.5} fill="#a8b8ab" opacity={0.22} />
+                <circle r={7} fill="none" stroke="#a8b8ab" strokeWidth={0.5} opacity={0.12} />
+              </g>
+            );
+          }
           const fill = (p.data.sun_sign && ELEMENT_COLOR[p.data.sun_sign]) || "#9babb9";
           return (
             <g key={p.id} data-node-id={p.id} transform={`translate(${p.x}, ${p.y})`}>
