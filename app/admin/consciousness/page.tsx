@@ -173,6 +173,7 @@ function Hub() {
           <div className="flex items-center gap-3">
             <a href="/admin/akashic-record" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-moss/40 text-moss hover:border-moss transition-colors">Akashic</a>
             <a href="/admin/training" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors">Training</a>
+            <a href="/admin/hub" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-indigo/40 text-indigo hover:border-indigo transition-colors">Analytics</a>
             <button onClick={() => void load()} className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors">{loading ? "Reading…" : "Refresh"}</button>
           </div>
         </header>
