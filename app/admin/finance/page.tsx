@@ -35,6 +35,8 @@ type Finance = {
 };
 
 const AMBER = "#f39230", MOSS = "#8a9e66", EMBER = "#d47a52", INDIGO = "#6a8692";
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthLabel = (ym: string) => MONTH_ABBR[(parseInt(ym.slice(5), 10) || 1) - 1] ?? ym;
 const usd = (n: number) => "$" + (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const usd0 = (n: number) => "$" + Math.round(n ?? 0).toLocaleString();
 
@@ -62,7 +64,7 @@ function RevenueBars({ data }: { data: { month: string; usd: number }[] }) {
         return (
           <g key={d.month}>
             <rect x={x} y={y} width={bw} height={Math.max(0, h)} rx={4} fill={AMBER} opacity={0.85} />
-            <text x={x + bw / 2} y={H - pad + 14} textAnchor="middle" fontSize={10} fill="rgb(var(--rgb-text-secondary))" fontFamily="Inter, system-ui">{d.month.slice(5)}</text>
+            <text x={x + bw / 2} y={H - pad + 14} textAnchor="middle" fontSize={10} fill="rgb(var(--rgb-text-secondary))" fontFamily="Inter, system-ui">{monthLabel(d.month)}</text>
             <text x={x + bw / 2} y={y - 5} textAnchor="middle" fontSize={10} fill="rgb(var(--rgb-text-primary))" fontFamily="Inter, system-ui">{d.usd ? usd0(d.usd) : ""}</text>
           </g>
         );
