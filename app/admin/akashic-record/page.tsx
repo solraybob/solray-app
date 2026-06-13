@@ -718,8 +718,15 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
   const cy = H / 2;
 
   // One stable signature per dataset; everything below re-seeds on change.
+  // Re-seed whenever anything the field shows changes, not just the id set:
+  // node display fields (name, sign, type, ghost) and every edge endpoint and
+  // weight. Otherwise a Refresh that keeps the same ids and edge count would
+  // keep simulating and drawing stale data.
   const initSig = useMemo(
-    () => `${nodes.map((n) => n.id).join("|")}__${edges.length}`,
+    () =>
+      JSON.stringify(nodes.map((n) => [n.id, n.name, n.sun_sign, n.hd_type, n.ghost])) +
+      "::" +
+      JSON.stringify(edges.map((e) => [e.a, e.b, e.weight])),
     [nodes, edges]
   );
 
@@ -785,8 +792,11 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     const edgeData = edges.map((e) => ({ a: e.a, b: e.b, weight: e.weight }));
 
     let raf = 0;
+    let running = false;
     let tabVisible = typeof document !== "undefined" ? !document.hidden : true;
     let inView = true;
+    const start = () => { if (!running) { running = true; raf = requestAnimationFrame(step); } };
+    const stop = () => { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } };
 
     const draw = (ns: PhysicsNode[]) => {
       // Clear in device space, then paint in the 760x540 logical space.
@@ -874,8 +884,11 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     };
 
     const step = () => {
+      // Park COMPLETELY off-screen / on a hidden tab: stop scheduling frames
+      // entirely. The visibility + IntersectionObserver handlers below call
+      // start() to wake it again.
+      if (!tabVisible || !inView) { stop(); return; }
       raf = requestAnimationFrame(step);
-      if (!tabVisible || !inView) return; // park off-screen / hidden tab
 
       const ns = physRef.current;
       if (ns.length === 0) return;
@@ -970,17 +983,23 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       draw(ns);
     };
-    raf = requestAnimationFrame(step);
+    start();
 
-    const onVis = () => { tabVisible = !document.hidden; };
+    const onVis = () => {
+      tabVisible = !document.hidden;
+      if (tabVisible && inView) start(); else stop();
+    };
     document.addEventListener("visibilitychange", onVis);
     const io = typeof IntersectionObserver !== "undefined"
-      ? new IntersectionObserver((entries) => { inView = entries[0]?.isIntersecting ?? true; })
+      ? new IntersectionObserver((entries) => {
+          inView = entries[0]?.isIntersecting ?? true;
+          if (inView && tabVisible) start(); else stop();
+        })
       : null;
     io?.observe(canvas);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
       document.removeEventListener("visibilitychange", onVis);
       io?.disconnect();
       ro?.disconnect();
