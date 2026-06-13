@@ -246,6 +246,12 @@ function HiveDashboardInner() {
             >
               Analytics
             </a>
+            <a
+              href="/admin/marketing"
+              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-ember/40 text-ember hover:border-ember transition-colors"
+            >
+              Marketing
+            </a>
             <button
               onClick={() => void load()}
               className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
