@@ -247,6 +247,12 @@ function HiveDashboardInner() {
               Analytics
             </a>
             <a
+              href="/admin/finance"
+              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors"
+            >
+              Finance
+            </a>
+            <a
               href="/admin/marketing"
               className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-ember/40 text-ember hover:border-ember transition-colors"
             >
