@@ -141,6 +141,13 @@ function Header({ userName }: { userName: string }) {
             {userName}
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <a href="/admin/hub" className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-lg border border-indigo/40 text-indigo hover:border-indigo transition-colors">Analytics</a>
+          <a href="/admin/finance" className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors">Finance</a>
+          <a href="/admin/akashic-record" className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-lg border border-moss/40 text-moss hover:border-moss transition-colors">Akashic</a>
+          <a href="/admin/consciousness" className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors">Consciousness</a>
+          <a href="/admin/training" className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors">Training</a>
+        </div>
       </div>
     </div>
   );

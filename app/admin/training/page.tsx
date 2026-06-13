@@ -189,7 +189,7 @@ function TrainingGround() {
         <header className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div style={{ marginBottom: 6, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
-              Training Ground
+              Training
             </div>
             <h1
               style={{

@@ -238,7 +238,7 @@ function HiveDashboardInner() {
               href="/admin/training"
               className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors"
             >
-              Training ground
+              Training
             </a>
             <a
               href="/admin/hub"
