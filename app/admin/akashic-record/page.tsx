@@ -14,7 +14,7 @@
  * halo as the landing hero, user nodes coloured by Sun-sign element.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -96,7 +96,6 @@ const ELEMENT_COLOR: Record<string, string> = {
 };
 
 const CORE_COLOR = "#f39230"; // amber-sun
-const EDGE_COLOR = "rgba(243, 146, 48, 0.18)";
 
 interface PhysicsNode {
   id: string;
@@ -705,10 +704,13 @@ function ScoreHistogram({
 // ───────────────────────────────────────────────────────────────────────────
 
 function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] }) {
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // hovering = pause physics so the user can read names. A ref so the RAF
   // loop sees it without re-binding.
   const hoveringRef = useRef(false);
+  // The soul nearest the pointer, highlighted with its name. Ref so the draw
+  // loop reads it without re-binding.
+  const hoverIdRef = useRef<string | null>(null);
 
   const W = 760;
   const H = 540;
@@ -740,31 +742,36 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initSig]);
 
-  // The physics loop. THE PERFORMANCE FIX (2026-06-10): the old loop called
-  // setTick at 20Hz, forcing React to reconcile the entire SVG tree
-  // (hundreds of elements) on every third frame, which is what made this
-  // page heavy. Now React renders the structure ONCE per dataset and the
-  // loop writes positions straight onto the existing DOM nodes. Same
-  // visuals, same lively dance Bob likes, near-zero React work. The loop
-  // also parks completely when the tab is hidden or the graph is scrolled
-  // out of view.
+  // The physics + render loop. THE SCALE FIX (2026-06-13): the field used to
+  // be SVG, one <line> per shared-component pair. Souls who share a sun sign
+  // or HD type form cliques, so edge count grew quadratically and hundreds to
+  // thousands of live DOM elements repainted every frame, which is what made
+  // the page hesitate. Now the whole field is painted on a single <canvas>:
+  // no retained DOM, no per-element layout, so drawing a few hundred edges and
+  // nodes is well under a millisecond and stays smooth as the collective grows
+  // into the hundreds and beyond. Same lively dance Bob likes. The loop parks
+  // completely when the tab is hidden or the graph is scrolled out of view.
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    // Collect DOM handles once per dataset.
-    const nodeEls = new Map<string, SVGGElement>();
-    svg.querySelectorAll<SVGGElement>("g[data-node-id]").forEach((el) => {
-      nodeEls.set(el.getAttribute("data-node-id") || "", el);
-    });
-    const edgeEls: Array<{ el: SVGLineElement; a: string; b: string }> = [];
-    svg.querySelectorAll<SVGLineElement>("line[data-edge-a]").forEach((el) => {
-      edgeEls.push({ el, a: el.getAttribute("data-edge-a") || "", b: el.getAttribute("data-edge-b") || "" });
-    });
-    const spokeEls = new Map<string, SVGLineElement>();
-    svg.querySelectorAll<SVGLineElement>("line[data-spoke-id]").forEach((el) => {
-      spokeEls.set(el.getAttribute("data-spoke-id") || "", el);
-    });
+    // Map the fixed 760x540 logical field into the canvas with uniform "meet"
+    // scaling, honouring device pixel ratio so it stays crisp on retina.
+    let scale = 1, offx = 0, offy = 0, dpr = 1;
+    const resize = () => {
+      dpr = window.devicePixelRatio || 1;
+      const cw = canvas.clientWidth || W;
+      canvas.width = Math.round(cw * dpr);
+      canvas.height = Math.round(H * dpr);
+      scale = Math.min(cw / W, 1); // meet: fixed 540 height, never upscale past 1
+      offx = (cw - W * scale) / 2;
+      offy = (H - H * scale) / 2;
+    };
+    resize();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    ro?.observe(canvas);
 
     // Same lively constants as always; the hive is alive, not a diagram.
     const REPULSION = 1800;
@@ -781,50 +788,132 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     let tabVisible = typeof document !== "undefined" ? !document.hidden : true;
     let inView = true;
 
-    const writePositions = (ns: PhysicsNode[]) => {
+    const draw = (ns: PhysicsNode[]) => {
+      // Clear in device space, then paint in the 760x540 logical space.
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offx, dpr * offy);
+
+      // Vignette for depth.
+      const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.72);
+      vg.addColorStop(0, "rgba(10,31,18,0)");
+      vg.addColorStop(1, "rgba(5,15,8,0.55)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, W, H);
+
       const idx: Record<string, PhysicsNode> = {};
       for (const n of ns) idx[n.id] = n;
+
+      // Faint spokes to the core.
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(243,146,48,0.05)";
+      ctx.beginPath();
       for (const n of ns) {
-        const el = nodeEls.get(n.id);
-        if (el) el.setAttribute("transform", `translate(${n.x.toFixed(2)}, ${n.y.toFixed(2)})`);
-        const sp = spokeEls.get(n.id);
-        if (sp) {
-          sp.setAttribute("x2", n.x.toFixed(2));
-          sp.setAttribute("y2", n.y.toFixed(2));
-        }
+        if (n.data.ghost) continue;
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(n.x, n.y);
       }
-      for (const e of edgeEls) {
+      ctx.stroke();
+
+      // Edges: the constellation of shared chart frequencies.
+      for (const e of edgeData) {
         const a = idx[e.a];
         const b = idx[e.b];
         if (!a || !b) continue;
-        e.el.setAttribute("x1", a.x.toFixed(2));
-        e.el.setAttribute("y1", a.y.toFixed(2));
-        e.el.setAttribute("x2", b.x.toFixed(2));
-        e.el.setAttribute("y2", b.y.toFixed(2));
+        ctx.strokeStyle = `rgba(243,146,48,${Math.min(0.5, 0.16 + e.weight * 0.07)})`;
+        ctx.lineWidth = Math.min(2.2, 0.4 + e.weight * 0.45);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+
+      // Core glow + core node.
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70);
+      cg.addColorStop(0, "rgba(243,146,48,0.85)");
+      cg.addColorStop(0.4, "rgba(243,146,48,0.35)");
+      cg.addColorStop(1, "rgba(243,146,48,0)");
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = CORE_COLOR;
+      ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(10,31,18,0.78)";
+      ctx.font = "600 11px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("SOL", cx, cy + 1);
+
+      // Souls. Labels for all when the field is small; only the hovered soul
+      // once it grows past ~120, so text never becomes the bottleneck.
+      const showAllLabels = ns.length <= 120;
+      for (const n of ns) {
+        if (n.data.ghost) {
+          ctx.fillStyle = "rgba(168,184,171,0.22)";
+          ctx.beginPath(); ctx.arc(n.x, n.y, 3.5, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "rgba(168,184,171,0.12)";
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); ctx.arc(n.x, n.y, 7, 0, Math.PI * 2); ctx.stroke();
+          continue;
+        }
+        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#9babb9";
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        const hovered = hoverIdRef.current === n.id;
+        if ((showAllLabels || hovered) && n.data.name) {
+          ctx.fillStyle = hovered ? "rgba(242,236,216,0.98)" : "rgba(242,236,216,0.8)";
+          ctx.font = "10px Inter, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "alphabetic";
+          ctx.fillText(n.data.name, n.x, n.y + 20);
+        }
       }
     };
 
     const step = () => {
       raf = requestAnimationFrame(step);
-      if (hoveringRef.current || !tabVisible || !inView) return;
+      if (!tabVisible || !inView) return; // park off-screen / hidden tab
 
       const ns = physRef.current;
       if (ns.length === 0) return;
 
-      // Repulsion (all pairs)
-      for (let i = 0; i < ns.length; i++) {
-        for (let j = i + 1; j < ns.length; j++) {
-          const a = ns[i];
-          const b = ns[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy + 0.01;
-          const f = REPULSION / d2;
-          const d = Math.sqrt(d2);
-          const fx = (dx / d) * f;
-          const fy = (dy / d) * f;
-          a.vx += fx; a.vy += fy;
-          b.vx -= fx; b.vy -= fy;
+      // Physics runs only when the pointer is away, so hovering freezes the
+      // field for reading. Drawing still happens every frame below so the
+      // hover highlight updates live.
+      if (!hoveringRef.current) {
+      // Repulsion via a uniform spatial grid: each soul only repels souls in
+      // its own cell and the 8 neighbours. Repulsion is short-range (1/d^2),
+      // so distant pairs contribute ~nothing; skipping them keeps this near
+      // O(N) instead of O(N^2), which is what lets the field scale.
+      const CELL = 90;
+      const grid = new Map<number, PhysicsNode[]>();
+      const gkey = (gx: number, gy: number) => (gx + 1000) * 4096 + (gy + 1000);
+      for (const n of ns) {
+        const k = gkey(Math.floor(n.x / CELL), Math.floor(n.y / CELL));
+        const cell = grid.get(k);
+        if (cell) cell.push(n); else grid.set(k, [n]);
+      }
+      for (const n of ns) {
+        const gx = Math.floor(n.x / CELL);
+        const gy = Math.floor(n.y / CELL);
+        for (let ox = -1; ox <= 1; ox++) {
+          for (let oy = -1; oy <= 1; oy++) {
+            const cell = grid.get(gkey(gx + ox, gy + oy));
+            if (!cell) continue;
+            for (const m of cell) {
+              if (m === n) continue;
+              const dx = n.x - m.x;
+              const dy = n.y - m.y;
+              const d2 = dx * dx + dy * dy + 0.01;
+              const f = REPULSION / d2;
+              const d = Math.sqrt(d2);
+              n.vx += (dx / d) * f;
+              n.vy += (dy / d) * f;
+            }
+          }
         }
       }
       // Spring to core
@@ -877,8 +966,9 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         n.vx += (Math.random() - 0.5) * BREATH * breathScale;
         n.vy += (Math.random() - 0.5) * BREATH * breathScale;
       }
+      } // end physics (skipped while hovering)
 
-      writePositions(ns);
+      draw(ns);
     };
     raf = requestAnimationFrame(step);
 
@@ -887,118 +977,49 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     const io = typeof IntersectionObserver !== "undefined"
       ? new IntersectionObserver((entries) => { inView = entries[0]?.isIntersecting ?? true; })
       : null;
-    io?.observe(svg);
+    io?.observe(canvas);
 
     return () => {
       cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", onVis);
       io?.disconnect();
+      ro?.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initSig]);
 
-  // Rendered ONCE per dataset; the loop owns positions from here on.
-  const idx: Record<string, { x: number; y: number }> = {};
-  for (const p of initial) idx[p.id] = p;
+  // Pointer handling: highlight the soul nearest the cursor and pause the
+  // field while the pointer is over it so names are readable.
+  const onMove = (e: ReactMouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sc = Math.min((rect.width || W) / W, 1);
+    const ox = ((rect.width || W) - W * sc) / 2;
+    const oy = (rect.height - H * sc) / 2;
+    const lx = (e.clientX - rect.left - ox) / sc;
+    const ly = (e.clientY - rect.top - oy) / sc;
+    let best: string | null = null;
+    let bestD = 16 * 16;
+    for (const p of physRef.current) {
+      if (p.data.ghost) continue;
+      const dx = p.x - lx;
+      const dy = p.y - ly;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD) { bestD = d2; best = p.id; }
+    }
+    hoverIdRef.current = best;
+  };
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full h-[540px]"
+    <canvas
+      ref={canvasRef}
+      className="w-full h-[540px] block"
       role="img"
-      aria-label="Akashic Record: each node is a soul; lines connect souls who share chart components. Hover to pause the simulation."
+      aria-label="Akashic Record: each node is a soul; lines connect souls who share chart components. Hover to pause the field and read a name."
       onMouseEnter={() => { hoveringRef.current = true; }}
-      onMouseLeave={() => { hoveringRef.current = false; }}
-    >
-      <defs>
-        <radialGradient id="core-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={CORE_COLOR} stopOpacity={0.85} />
-          <stop offset="40%" stopColor={CORE_COLOR} stopOpacity={0.35} />
-          <stop offset="100%" stopColor={CORE_COLOR} stopOpacity={0} />
-        </radialGradient>
-        <radialGradient id="field-vignette" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor="#0a1f12" stopOpacity={0.0} />
-          <stop offset="100%" stopColor="#050f08" stopOpacity={0.55} />
-        </radialGradient>
-      </defs>
-
-      <rect x={0} y={0} width={W} height={H} fill="url(#field-vignette)" />
-
-      {/* Edges */}
-      <g stroke={EDGE_COLOR}>
-        {edges.map((e) => {
-          const a = idx[e.a];
-          const b = idx[e.b];
-          if (!a || !b) return null;
-          return (
-            <line
-              key={`${e.a}|${e.b}`}
-              data-edge-a={e.a}
-              data-edge-b={e.b}
-              x1={a.x}
-              y1={a.y}
-              x2={b.x}
-              y2={b.y}
-              strokeWidth={Math.min(2.4, 0.4 + e.weight * 0.5)}
-              opacity={Math.min(0.55, 0.18 + e.weight * 0.08)}
-            />
-          );
-        })}
-        {/* Soft spokes from each node to the core */}
-        {initial.map((p) => (
-          <line
-            key={`core-${p.id}`}
-            data-spoke-id={p.id}
-            x1={cx}
-            y1={cy}
-            x2={p.x}
-            y2={p.y}
-            strokeOpacity={0.05}
-            strokeWidth={1}
-          />
-        ))}
-      </g>
-
-      {/* Core */}
-      <circle cx={cx} cy={cy} r={70} fill="url(#core-glow)" />
-      <circle cx={cx} cy={cy} r={14} fill={CORE_COLOR} />
-      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={11} fill="rgba(10, 31, 18, 0.75)" fontFamily="Inter, system-ui, sans-serif" fontWeight={600} letterSpacing="0.18em">
-        SOL
-      </text>
-
-      {/* Nodes */}
-      <g>
-        {initial.map((p) => {
-          // Ghost: a soul present but not consented to the field. Dim,
-          // unlabelled, no element colour. Honours their choice while still
-          // showing the true population.
-          if (p.data.ghost) {
-            return (
-              <g key={p.id} data-node-id={p.id} transform={`translate(${p.x}, ${p.y})`}>
-                <circle r={3.5} fill="#a8b8ab" opacity={0.22} />
-                <circle r={7} fill="none" stroke="#a8b8ab" strokeWidth={0.5} opacity={0.12} />
-              </g>
-            );
-          }
-          const fill = (p.data.sun_sign && ELEMENT_COLOR[p.data.sun_sign]) || "#9babb9";
-          return (
-            <g key={p.id} data-node-id={p.id} transform={`translate(${p.x}, ${p.y})`}>
-              <circle r={6} fill={fill} opacity={0.9} />
-              <circle r={11} fill={fill} opacity={0.18} />
-              <text
-                y={20}
-                textAnchor="middle"
-                fontSize={10}
-                fill="rgba(245, 239, 222, 0.8)"
-                fontFamily="Inter, system-ui, sans-serif"
-              >
-                {p.data.name}
-              </text>
-            </g>
-          );
-        })}
-      </g>
-    </svg>
+      onMouseLeave={() => { hoveringRef.current = false; hoverIdRef.current = null; }}
+      onMouseMove={onMove}
+    />
   );
 }
