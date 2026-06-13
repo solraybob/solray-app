@@ -52,20 +52,22 @@ function Kpi({ label, value, sub, color }: { label: string; value: string; sub?:
 
 // Monthly revenue: vertical bars.
 function RevenueBars({ data }: { data: { month: string; usd: number }[] }) {
-  const W = 520, H = 180, pad = 28, bw = 46;
+  const W = 560, H = 180, pad = 28;
+  const n = Math.max(1, data.length);
+  const slot = (W - pad * 2) / n;       // one column per month
+  const bw = Math.min(40, slot * 0.62); // bar narrower than its slot
   const max = Math.max(1, ...data.map(d => d.usd));
-  const gap = (W - pad * 2 - bw * data.length) / Math.max(1, data.length - 1);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }} role="img" aria-label="Revenue collected by month">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }} role="img" aria-label="Revenue collected by month, last 12 months">
       {data.map((d, i) => {
-        const x = pad + i * (bw + gap);
+        const cx = pad + i * slot + slot / 2;
         const h = (d.usd / max) * (H - pad * 2);
         const y = H - pad - h;
         return (
           <g key={d.month}>
-            <rect x={x} y={y} width={bw} height={Math.max(0, h)} rx={4} fill={AMBER} opacity={0.85} />
-            <text x={x + bw / 2} y={H - pad + 14} textAnchor="middle" fontSize={10} fill="rgb(var(--rgb-text-secondary))" fontFamily="Inter, system-ui">{monthLabel(d.month)}</text>
-            <text x={x + bw / 2} y={y - 5} textAnchor="middle" fontSize={10} fill="rgb(var(--rgb-text-primary))" fontFamily="Inter, system-ui">{d.usd ? usd0(d.usd) : ""}</text>
+            <rect x={cx - bw / 2} y={y} width={bw} height={Math.max(0, h)} rx={3} fill={AMBER} opacity={0.85} />
+            <text x={cx} y={H - pad + 14} textAnchor="middle" fontSize={9} fill="rgb(var(--rgb-text-secondary))" fontFamily="Inter, system-ui">{monthLabel(d.month)}</text>
+            {d.usd > 0 && <text x={cx} y={y - 5} textAnchor="middle" fontSize={9} fill="rgb(var(--rgb-text-primary))" fontFamily="Inter, system-ui">{usd0(d.usd)}</text>}
           </g>
         );
       })}
