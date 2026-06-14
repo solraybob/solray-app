@@ -100,6 +100,22 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
   const { theme } = useTheme();
   const isDark = theme !== "light";
   const [expanded, setExpanded] = useState(false);
+
+  // Staleness guard. A stale cached forecast (left on a device from a previous
+  // lunation) can carry a month-old lunar_event and render the wrong moon
+  // ("New Moon in Taurus" weeks after the fact). The backend only ever emits an
+  // event within a 3-day window, so any event whose date is further than ~4
+  // days from today is stale data, not a real upcoming/recent moon. In that
+  // case render nothing rather than show a false sky. Purely additive: a real
+  // event (within the window) always renders; only stale ones disappear, and
+  // the background refresh then repopulates the correct one. Defensive: if the
+  // date is missing or unparseable, fall back to the existing behavior.
+  const _eventDateMs = event?.date ? Date.parse(event.date + "T00:00:00") : NaN;
+  if (!Number.isNaN(_eventDateMs)) {
+    const _daysFromNow = Math.abs(Date.now() - _eventDateMs) / 86400000;
+    if (_daysFromNow > 4) return null;
+  }
+
   const timing = formatDaysUntil(event.days_until, event.is_today, t);
   const expandedText = event.expanded || generateExpandedText(event);
 
