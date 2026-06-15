@@ -9,6 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import LanguagePicker from "@/components/LanguagePicker";
 import { useT } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
+import InstallApp from "@/components/InstallApp";
 
 export default function LoginPage() {
   const { t } = useT();
@@ -187,6 +188,14 @@ export default function LoginPage() {
             {t("login.begin_journey")}
           </Link>
         </p>
+
+        {/* Add-to-home-screen. Renders only when the browser can install (or on
+            iOS, where it shows the manual Share instruction); invisible once
+            installed. Lets influencer traffic put the icon on their phone today,
+            ahead of the native app stores. */}
+        <div className="mt-8 entry-rise" style={{ "--d": "920ms" } as React.CSSProperties}>
+          <InstallApp variant="ghost" />
+        </div>
       </div>
     </div>
   );

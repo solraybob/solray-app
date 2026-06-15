@@ -54,6 +54,11 @@
     "begin_journey": "Comienza tu camino.",
     "error_no_signal": "No se pudo conectar. Inténtalo de nuevo."
   },
+  "install": {
+    "cta": "Añade Solray a tu pantalla de inicio",
+    "ios_hint": "Toca el botón Compartir en la barra del navegador y elige \"Añadir a pantalla de inicio\".",
+    "close": "Entendido"
+  },
   "onboard": {
     "welcome": "Bienvenido a Solray",
     "tagline": "Vivir por diseño.",

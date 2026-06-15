@@ -39,6 +39,13 @@ import NativePushBootstrap from "@/components/NativePushBootstrap";
 // light mode on a previous visit. Tiny, safe, self-contained.
 const themeFoucKiller = `(function(){try{var t=localStorage.getItem('solray-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
 
+// Capture the PWA install prompt the instant the browser offers it. Chromium
+// fires `beforeinstallprompt` once, early, and only the page that calls
+// preventDefault + stashes the event can later trigger the native "Add to home
+// screen" dialog from a button tap. Running this before React mounts means the
+// event is never missed; InstallApp then reads window.__solrayInstall.
+const installPromptCapture = `(function(){try{window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__solrayInstall=e;window.dispatchEvent(new Event('solray:installable'));});window.addEventListener('appinstalled',function(){window.__solrayInstall=null;window.dispatchEvent(new Event('solray:installed'));});}catch(e){}})();`;
+
 export const metadata: Metadata = {
   title: "Solray",
   description: "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
@@ -74,6 +81,7 @@ export default function RootLayout({
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
+        <script dangerouslySetInnerHTML={{ __html: installPromptCapture }} />
       </head>
       <body className="bg-forest-deep min-h-screen text-text-primary">
         <SplashHider />

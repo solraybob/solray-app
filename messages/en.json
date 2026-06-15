@@ -54,6 +54,11 @@
     "begin_journey": "Begin your journey",
     "error_no_signal": "The signal didn't reach. Try again."
   },
+  "install": {
+    "cta": "Add Solray to your home screen",
+    "ios_hint": "Tap the Share button in your browser bar, then choose \"Add to Home Screen\".",
+    "close": "Got it"
+  },
   "forgot": {
     "reset_password": "Reset password",
     "prompt": "Enter your email. We'll send a link to set a new password.",
