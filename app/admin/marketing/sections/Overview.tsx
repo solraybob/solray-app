@@ -10,12 +10,7 @@ interface Metrics {
   mrr_usd: number | null;
   signups_last_7d: number | null;
   signups_last_30d: number | null;
-  active_users_1d: number | null;
   active_users_7d: number | null;
-  active_users_30d: number | null;
-  home_screen_total: number | null;
-  home_screen_pct: number | null;
-  home_screen_new_7d: number | null;
   price_usd_monthly: number;
   generated_at: string;
 }
@@ -51,10 +46,7 @@ export default function OverviewSection({ token }: { token: string | null }) {
         <Card label="Total accounts"         value={fmt(metrics.total_users)} />
         <Card label="Signups last 7 days"    value={fmt(metrics.signups_last_7d)} />
         <Card label="Signups last 30 days"   value={fmt(metrics.signups_last_30d)} />
-        <Card label="On home screen"         value={fmt(metrics.home_screen_total)} sub={homeScreenSub(metrics)} />
-        <Card label="Active today"           value={fmt(metrics.active_users_1d)}   sub="Opened the app in the last 24 hours" />
-        <Card label="Active in last 7 days"  value={fmt(metrics.active_users_7d)}   sub="Opened the app in the last week" />
-        <Card label="Active in last 30 days" value={fmt(metrics.active_users_30d)} />
+        <Card label="Active in last 7 days"  value={fmt(metrics.active_users_7d)}   sub="Generated a forecast in the last week" />
       </div>
 
       <p className="font-body text-text-secondary/60 text-[11px] tracking-[0.18em] uppercase">
@@ -97,13 +89,6 @@ function Banner({ kind, text }: { kind: "error" | "info"; text: string }) {
       {text}
     </div>
   );
-}
-
-function homeScreenSub(m: Metrics): string {
-  const parts: string[] = [];
-  if (m.home_screen_pct !== null && m.home_screen_pct !== undefined) parts.push(`${m.home_screen_pct}% of accounts`);
-  if (m.home_screen_new_7d) parts.push(`${m.home_screen_new_7d} added this week`);
-  return parts.join(", ");
 }
 
 function fmt(n: number | null): string {
