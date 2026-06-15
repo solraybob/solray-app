@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSubscription } from "@/lib/subscription-context";
 import LoadingSpinner from "./LoadingSpinner";
 import TrialBanner from "./TrialBanner";
+import InstallBanner from "./InstallBanner";
 
 /**
  * ProtectedRoute
@@ -104,6 +105,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   return (
     <>
+      <InstallBanner />
       <TrialBanner />
       {children}
     </>

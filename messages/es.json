@@ -56,8 +56,11 @@
   },
   "install": {
     "cta": "Añade Solray a tu pantalla de inicio",
+    "banner": "Ten Solray a un toque. Añádelo a tu pantalla de inicio.",
+    "action": "Añadir",
     "ios_hint": "Toca el botón Compartir en la barra del navegador y elige \"Añadir a pantalla de inicio\".",
-    "close": "Entendido"
+    "close": "Entendido",
+    "dismiss": "Descartar"
   },
   "onboard": {
     "welcome": "Bienvenido a Solray",
