@@ -36,10 +36,25 @@ export async function apiFetch(
     tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
   } catch { /* very old browsers: header simply omitted */ }
 
+  // Display mode: "standalone" when the app is opened from the home screen
+  // (installed PWA), the iOS standalone flag, or the native shell; "browser"
+  // otherwise. The backend stamps home-screen adoption from this on the daily
+  // forecast call. Best-effort; omitted if the APIs are unavailable.
+  let displayMode = "";
+  try {
+    const w = window as unknown as { navigator?: { standalone?: boolean }; Capacitor?: unknown };
+    const standalone =
+      (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+      w?.navigator?.standalone === true ||
+      !!w?.Capacitor;
+    displayMode = standalone ? "standalone" : "browser";
+  } catch { /* SSR or unsupported: header omitted */ }
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-Local-Date": localDateString(),
     ...(tz ? { "X-Timezone": tz } : {}),
+    ...(displayMode ? { "X-Display-Mode": displayMode } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
