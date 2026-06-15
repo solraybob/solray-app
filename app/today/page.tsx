@@ -1229,12 +1229,13 @@ export default function TodayPage() {
         const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
         if (data && data.insight) {
           setInsight(data.insight);
-          // Honour a "Later" from earlier this session: hold it back until the
-          // next app open. Going deeper marks it seen server-side, so a
-          // consumed one never reaches here at all.
-          let setAside = false;
-          try { setAside = sessionStorage.getItem(`solray_bt_later_${data.insight.id}`) === "1"; } catch (_) {}
-          if (!setAside) setShowBreakthrough(true);
+          // Show unless this exact breakthrough was already dismissed (X) for
+          // good. Dismissing one card never blocks tomorrow's different one;
+          // going deeper marks it seen server-side, so a consumed one never
+          // reaches here at all.
+          let dismissed = false;
+          try { dismissed = localStorage.getItem(`solray_bt_dismissed_${data.insight.id}`) === "1"; } catch (_) {}
+          if (!dismissed) setShowBreakthrough(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
@@ -1260,21 +1261,21 @@ export default function TodayPage() {
           // Show the takeover unless this exact memory was already consumed
           // (Go deeper, localStorage) or set aside this session (Later).
           const key = data.echo.created_at || "x";
-          let consumed = false, later = false;
+          let consumed = false, dismissed = false;
           try { consumed = localStorage.getItem(`solray_echo_seen_${key}`) === "1"; } catch (_) {}
-          try { later = sessionStorage.getItem(`solray_echo_later_${key}`) === "1"; } catch (_) {}
-          if (!consumed && !later) setShowSkyEcho(true);
+          try { dismissed = localStorage.getItem(`solray_echo_dismissed_${key}`) === "1"; } catch (_) {}
+          if (!consumed && !dismissed) setShowSkyEcho(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
   }, [token]);
 
-  // "Later" means later: do NOT consume it. Set it aside for this session so
-  // it is not naggy, and let it return on the next app open until the user
-  // actually goes deeper. Only going deeper marks it seen for good.
+  // X / close means done for good: this exact breakthrough never returns.
+  // (Tomorrow's different breakthrough still appears; identity is the insight
+  // id.) Going deeper additionally marks it seen server-side.
   const dismissBreakthrough = () => {
     if (insight) {
-      try { sessionStorage.setItem(`solray_bt_later_${insight.id}`, "1"); } catch (_) {}
+      try { localStorage.setItem(`solray_bt_dismissed_${insight.id}`, "1"); } catch (_) {}
     }
     setShowBreakthrough(false);
   };
@@ -1305,10 +1306,10 @@ export default function TodayPage() {
     router.push("/chat");
   };
 
-  // Sky-echo "Later": set aside for this session only; it returns next app open.
+  // Sky-echo X / close: dismiss this exact memory for good (never returns).
   const laterSkyEcho = () => {
     const key = skyEcho?.created_at || "x";
-    try { sessionStorage.setItem(`solray_echo_later_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(`solray_echo_dismissed_${key}`, "1"); } catch (_) {}
     setShowSkyEcho(false);
   };
 
@@ -1326,10 +1327,13 @@ export default function TodayPage() {
     if (!within) return;
     lunarChecked.current = true;
     const key = `${ev.date}_${ev.type}`;
-    let consumed = false, later = false;
+    // Per lunation: shows once around the new/full moon. Go deeper consumes it
+    // (seen); X dismisses it for good. Either way it does not return until the
+    // next moon (~2 weeks), which is a different key.
+    let consumed = false, dismissed = false;
     try { consumed = localStorage.getItem(`solray_lunar_seen_${key}`) === "1"; } catch (_) {}
-    try { later = sessionStorage.getItem(`solray_lunar_later_${key}`) === "1"; } catch (_) {}
-    if (!consumed && !later) setShowLunar(true);
+    try { dismissed = localStorage.getItem(`solray_lunar_dismissed_${key}`) === "1"; } catch (_) {}
+    if (!consumed && !dismissed) setShowLunar(true);
   }, [forecast]);
 
   const goDeeperLunar = () => {
@@ -1352,7 +1356,7 @@ export default function TodayPage() {
   const laterLunar = () => {
     const ev = forecast?.lunar_event;
     const key = ev ? `${ev.date}_${ev.type}` : "x";
-    try { sessionStorage.setItem(`solray_lunar_later_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(`solray_lunar_dismissed_${key}`, "1"); } catch (_) {}
     setShowLunar(false);
   };
 
@@ -1366,10 +1370,10 @@ export default function TodayPage() {
     if (!within) return;
     birthdayChecked.current = true;
     const yr = new Date().getFullYear();
-    let consumed = false, later = false;
+    let consumed = false, dismissed = false;
     try { consumed = localStorage.getItem(`solray_birthday_seen_${yr}`) === "1"; } catch (_) {}
-    try { later = sessionStorage.getItem(`solray_birthday_later_${yr}`) === "1"; } catch (_) {}
-    if (!consumed && !later) setShowBirthday(true);
+    try { dismissed = localStorage.getItem(`solray_birthday_dismissed_${yr}`) === "1"; } catch (_) {}
+    if (!consumed && !dismissed) setShowBirthday(true);
   }, [birthDate]);
 
   const goDeeperBirthday = async () => {
@@ -1405,7 +1409,7 @@ export default function TodayPage() {
 
   const laterBirthday = () => {
     const yr = new Date().getFullYear();
-    try { sessionStorage.setItem(`solray_birthday_later_${yr}`, "1"); } catch (_) {}
+    try { localStorage.setItem(`solray_birthday_dismissed_${yr}`, "1"); } catch (_) {}
     setShowBirthday(false);
   };
 
