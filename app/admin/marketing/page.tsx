@@ -24,6 +24,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import OverviewSection   from "./sections/Overview";
+import AnalyticsSection  from "./sections/Analytics";
 import BrandSection      from "./sections/Brand";
 import CalendarSection   from "./sections/Calendar";
 import IntegrationsSection from "./sections/Integrations";
@@ -103,7 +104,7 @@ export default function MarketingPage() {
               {tab === "calendar"  && <CalendarSection token={token} />}
               {tab === "social"    && <IntegrationsSection token={token} category="social"    title="Social channels" subtitle="Connect each platform once and the same UI becomes live." />}
               {tab === "ads"       && <IntegrationsSection token={token} category="ads"       title="Ads"             subtitle="Meta is first. Other platforms slot in as we add them." />}
-              {tab === "analytics" && <IntegrationsSection token={token} category="analytics" title="Analytics"       subtitle="Visit data, funnel data, where users come from." />}
+              {tab === "analytics" && <AnalyticsSection token={token} />}
             </div>
           </>
         )}
