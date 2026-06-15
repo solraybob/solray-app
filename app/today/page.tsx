@@ -672,10 +672,10 @@ type SkyEcho = {
 // the Day, a single moment to meet before the day begins. Surfaced once (the
 // server marks it surfaced on fetch), and the chat Oracle still carries it via
 // get_recent_insight, so a dismissed moment is never a lost insight.
-function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsight; onAsk: () => void; onClose: () => void }) {
+function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: PendingInsight; onAsk: () => void; onLater: () => void; onDismiss: () => void }) {
   const { t } = useT();
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onLater(); };
     window.addEventListener("keydown", onKey);
     // Lock background scroll so nothing slides behind the moment.
     const prevOverflow = document.body.style.overflow;
@@ -684,7 +684,7 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [onClose]);
+  }, [onLater]);
 
   if (typeof document === "undefined") return null;
 
@@ -694,7 +694,7 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
     <div
       role="dialog"
       aria-modal="true"
-      onClick={onClose}
+      onClick={onLater}
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
         alignItems: "center", justifyContent: "center",
@@ -728,7 +728,7 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
         }}
       >
         <button
-          onClick={onClose}
+          onClick={onDismiss}
           aria-label="Close"
           className="absolute"
           style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
@@ -768,7 +768,7 @@ function BreakthroughModal({ insight, onAsk, onClose }: { insight: PendingInsigh
           {t("insight.go_deeper")}
         </button>
         <button
-          onClick={onClose}
+          onClick={onLater}
           className="font-body"
           style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
         >
@@ -822,7 +822,7 @@ function skyWhenText(days: number | null, isEs: boolean): string {
 // Oracle surfaces when today's sky echoes one in your own past. "Go deeper"
 // opens the Oracle about it (and consumes it so it does not return); "Later"
 // sets it aside for this session so it comes again next app open.
-function SkyEchoModal({ echo, onGoDeeper, onLater }: { echo: SkyEcho; onGoDeeper: (sentence: string, excerpt: string) => void; onLater: () => void }) {
+function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho; onGoDeeper: (sentence: string, excerpt: string) => void; onLater: () => void; onDismiss: () => void }) {
   const { t, lang } = useT();
   const isEs = (lang || "").startsWith("es");
   const phase = skyPhaseLabel(echo.moon_phase_bucket, isEs);
@@ -893,7 +893,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater }: { echo: SkyEcho; onGoDeeper
         }}
       >
         <button
-          onClick={onLater}
+          onClick={onDismiss}
           aria-label="Close"
           className="absolute"
           style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
@@ -941,7 +941,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater }: { echo: SkyEcho; onGoDeeper
 // weeks), showing where the lunation lands in your chart. Same Go deeper /
 // Later interaction. Silver-moon + mist identity, distinct from the amber
 // breakthrough and the wisteria recall.
-function LunarMomentModal({ event, onGoDeeper, onLater }: { event: LunarEvent; onGoDeeper: () => void; onLater: () => void }) {
+function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: LunarEvent; onGoDeeper: () => void; onLater: () => void; onDismiss: () => void }) {
   const { t, lang } = useT();
   const isEs = (lang || "").startsWith("es");
   const isFull = event.type === "Full Moon";
@@ -994,7 +994,7 @@ function LunarMomentModal({ event, onGoDeeper, onLater }: { event: LunarEvent; o
         }}
       >
         <button
-          onClick={onLater} aria-label="Close" className="absolute"
+          onClick={onDismiss} aria-label="Close" className="absolute"
           style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
         >×</button>
 
@@ -1059,7 +1059,7 @@ function daysToBirthday(birthDateStr: string): number {
 
 // Birthday (solar return) takeover: once a year, the Sun returns to its birth
 // position. Gold radiant sun, distinct from the breakthrough's logo sun.
-function BirthdayModal({ birthDate, onGoDeeper, onLater }: { birthDate: string; onGoDeeper: () => void; onLater: () => void }) {
+function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDate: string; onGoDeeper: () => void; onLater: () => void; onDismiss: () => void }) {
   const { t, lang } = useT();
   let bornLabel = "";
   try {
@@ -1110,7 +1110,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater }: { birthDate: string; 
         }}
       >
         <button
-          onClick={onLater} aria-label="Close" className="absolute"
+          onClick={onDismiss} aria-label="Close" className="absolute"
           style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
         >×</button>
 
@@ -1227,15 +1227,28 @@ export default function TodayPage() {
     (async () => {
       try {
         const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
-        if (data && data.insight) {
-          setInsight(data.insight);
-          // Show unless this exact breakthrough was already dismissed (X) for
-          // good. Dismissing one card never blocks tomorrow's different one;
-          // going deeper marks it seen server-side, so a consumed one never
-          // reaches here at all.
-          let dismissed = false;
-          try { dismissed = localStorage.getItem(`solray_bt_dismissed_${data.insight.id}`) === "1"; } catch (_) {}
-          if (!dismissed) setShowBreakthrough(true);
+        let ins: PendingInsight | null = (data && data.insight) ? data.insight : null;
+        const _d = new Date();
+        const dayStr = `${_d.getFullYear()}-${_d.getMonth() + 1}-${_d.getDate()}`;
+        // Same-day return for "Later": the server marks an insight surfaced on
+        // first fetch, so on reopen it returns null. Reuse the stashed copy from
+        // earlier today so a Later'd breakthrough comes back the same day (X and
+        // Go deeper clear the stash, so those never return).
+        if (!ins) {
+          try {
+            const raw = localStorage.getItem("solray_bt_active");
+            if (raw) { const a = JSON.parse(raw); if (a && a.day === dayStr && a.insight) ins = a.insight as PendingInsight; }
+          } catch (_) {}
+        }
+        if (ins) {
+          setInsight(ins);
+          try { localStorage.setItem("solray_bt_active", JSON.stringify({ day: dayStr, insight: ins })); } catch (_) {}
+          // X (permanent) wins forever; Later (this session) holds it back until
+          // the next open the same day.
+          let dismissed = false, later = false;
+          try { dismissed = localStorage.getItem(`solray_bt_dismissed_${ins.id}`) === "1"; } catch (_) {}
+          try { later = sessionStorage.getItem(`solray_bt_later_${ins.id}`) === "1"; } catch (_) {}
+          if (!dismissed && !later) setShowBreakthrough(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
@@ -1261,21 +1274,31 @@ export default function TodayPage() {
           // Show the takeover unless this exact memory was already consumed
           // (Go deeper, localStorage) or set aside this session (Later).
           const key = data.echo.created_at || "x";
-          let consumed = false, dismissed = false;
+          let consumed = false, dismissed = false, later = false;
           try { consumed = localStorage.getItem(`solray_echo_seen_${key}`) === "1"; } catch (_) {}
           try { dismissed = localStorage.getItem(`solray_echo_dismissed_${key}`) === "1"; } catch (_) {}
-          if (!consumed && !dismissed) setShowSkyEcho(true);
+          try { later = sessionStorage.getItem(`solray_echo_later_${key}`) === "1"; } catch (_) {}
+          if (!consumed && !dismissed && !later) setShowSkyEcho(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
   }, [token]);
 
-  // X / close means done for good: this exact breakthrough never returns.
-  // (Tomorrow's different breakthrough still appears; identity is the insight
-  // id.) Going deeper additionally marks it seen server-side.
+  // "Later": set aside for this session; comes back on the next open the same
+  // day (the stash in the fetch effect re-shows it). Not permanent.
+  const laterBreakthrough = () => {
+    if (insight) { try { sessionStorage.setItem(`solray_bt_later_${insight.id}`, "1"); } catch (_) {} }
+    setShowBreakthrough(false);
+  };
+
+  // X: done for good. This exact breakthrough never returns (clears the stash
+  // so it cannot reappear today either). Tomorrow's different one still can.
   const dismissBreakthrough = () => {
     if (insight) {
-      try { localStorage.setItem(`solray_bt_dismissed_${insight.id}`, "1"); } catch (_) {}
+      try {
+        localStorage.setItem(`solray_bt_dismissed_${insight.id}`, "1");
+        localStorage.removeItem("solray_bt_active");
+      } catch (_) {}
     }
     setShowBreakthrough(false);
   };
@@ -1283,6 +1306,7 @@ export default function TodayPage() {
   const openInsightInChat = () => {
     if (!insight) return;
     markInsightSeen(insight.id);
+    try { localStorage.removeItem("solray_bt_active"); } catch (_) {}
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: insight.title,
@@ -1306,8 +1330,15 @@ export default function TodayPage() {
     router.push("/chat");
   };
 
-  // Sky-echo X / close: dismiss this exact memory for good (never returns).
+  // Sky-echo "Later": set aside for this session; returns on next open same day.
   const laterSkyEcho = () => {
+    const key = skyEcho?.created_at || "x";
+    try { sessionStorage.setItem(`solray_echo_later_${key}`, "1"); } catch (_) {}
+    setShowSkyEcho(false);
+  };
+
+  // Sky-echo X: dismiss this exact memory for good (never returns).
+  const dismissSkyEcho = () => {
     const key = skyEcho?.created_at || "x";
     try { localStorage.setItem(`solray_echo_dismissed_${key}`, "1"); } catch (_) {}
     setShowSkyEcho(false);
@@ -1330,10 +1361,11 @@ export default function TodayPage() {
     // Per lunation: shows once around the new/full moon. Go deeper consumes it
     // (seen); X dismisses it for good. Either way it does not return until the
     // next moon (~2 weeks), which is a different key.
-    let consumed = false, dismissed = false;
+    let consumed = false, dismissed = false, later = false;
     try { consumed = localStorage.getItem(`solray_lunar_seen_${key}`) === "1"; } catch (_) {}
     try { dismissed = localStorage.getItem(`solray_lunar_dismissed_${key}`) === "1"; } catch (_) {}
-    if (!consumed && !dismissed) setShowLunar(true);
+    try { later = sessionStorage.getItem(`solray_lunar_later_${key}`) === "1"; } catch (_) {}
+    if (!consumed && !dismissed && !later) setShowLunar(true);
   }, [forecast]);
 
   const goDeeperLunar = () => {
@@ -1353,7 +1385,16 @@ export default function TodayPage() {
     router.push("/chat");
   };
 
+  // "Later": this session only; returns next open while the moon is still in
+  // its window. X dismisses the lunation for good.
   const laterLunar = () => {
+    const ev = forecast?.lunar_event;
+    const key = ev ? `${ev.date}_${ev.type}` : "x";
+    try { sessionStorage.setItem(`solray_lunar_later_${key}`, "1"); } catch (_) {}
+    setShowLunar(false);
+  };
+
+  const dismissLunar = () => {
     const ev = forecast?.lunar_event;
     const key = ev ? `${ev.date}_${ev.type}` : "x";
     try { localStorage.setItem(`solray_lunar_dismissed_${key}`, "1"); } catch (_) {}
@@ -1370,10 +1411,11 @@ export default function TodayPage() {
     if (!within) return;
     birthdayChecked.current = true;
     const yr = new Date().getFullYear();
-    let consumed = false, dismissed = false;
+    let consumed = false, dismissed = false, later = false;
     try { consumed = localStorage.getItem(`solray_birthday_seen_${yr}`) === "1"; } catch (_) {}
     try { dismissed = localStorage.getItem(`solray_birthday_dismissed_${yr}`) === "1"; } catch (_) {}
-    if (!consumed && !dismissed) setShowBirthday(true);
+    try { later = sessionStorage.getItem(`solray_birthday_later_${yr}`) === "1"; } catch (_) {}
+    if (!consumed && !dismissed && !later) setShowBirthday(true);
   }, [birthDate]);
 
   const goDeeperBirthday = async () => {
@@ -1408,6 +1450,12 @@ export default function TodayPage() {
   };
 
   const laterBirthday = () => {
+    const yr = new Date().getFullYear();
+    try { sessionStorage.setItem(`solray_birthday_later_${yr}`, "1"); } catch (_) {}
+    setShowBirthday(false);
+  };
+
+  const dismissBirthday = () => {
     const yr = new Date().getFullYear();
     try { localStorage.setItem(`solray_birthday_dismissed_${yr}`, "1"); } catch (_) {}
     setShowBirthday(false);
@@ -1633,6 +1681,7 @@ export default function TodayPage() {
           birthDate={birthDate}
           onGoDeeper={goDeeperBirthday}
           onLater={laterBirthday}
+          onDismiss={dismissBirthday}
         />
       )}
       {!showBirthday && showLunar && forecast?.lunar_event && (
@@ -1640,13 +1689,15 @@ export default function TodayPage() {
           event={forecast.lunar_event}
           onGoDeeper={goDeeperLunar}
           onLater={laterLunar}
+          onDismiss={dismissLunar}
         />
       )}
       {!showBirthday && !showLunar && showBreakthrough && insight && (
         <BreakthroughModal
           insight={insight}
           onAsk={openInsightInChat}
-          onClose={dismissBreakthrough}
+          onLater={laterBreakthrough}
+          onDismiss={dismissBreakthrough}
         />
       )}
       {!showBirthday && !showLunar && !showBreakthrough && showSkyEcho && skyEcho && (
@@ -1654,6 +1705,7 @@ export default function TodayPage() {
           echo={skyEcho}
           onGoDeeper={goDeeperSkyEcho}
           onLater={laterSkyEcho}
+          onDismiss={dismissSkyEcho}
         />
       )}
       <div
