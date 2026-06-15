@@ -24,16 +24,31 @@ interface Metrics {
   generated_at: string;
 }
 
+interface AdoptionUser {
+  name: string | null;
+  email: string | null;
+  last_seen: string | null;
+  home_screen: boolean;
+  home_screen_at: string | null;
+}
+
 export default function AnalyticsSection({ token }: { token: string | null }) {
   const [m, setM] = useState<Metrics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roster, setRoster] = useState<AdoptionUser[] | null>(null);
+  const [onlyMissing, setOnlyMissing] = useState(true);
 
   useEffect(() => {
     if (!token) return;
     apiFetch("/admin/metrics", {}, token)
       .then((d) => setM(d as Metrics))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Could not load analytics"));
+    apiFetch("/admin/users/adoption", {}, token)
+      .then((d) => setRoster((d as { users: AdoptionUser[] }).users))
+      .catch(() => { /* roster is non-fatal; cards still render */ });
   }, [token]);
+
+  const shown = (roster || []).filter((u) => (onlyMissing ? !u.home_screen : true));
 
   return (
     <div className="space-y-8 page-enter">
@@ -70,6 +85,56 @@ export default function AnalyticsSection({ token }: { token: string | null }) {
         )}
       </div>
 
+      {roster && (
+        <div>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 className="font-heading text-text-primary" style={{ fontSize: 18, fontWeight: 300 }}>
+              Home screen by person
+            </h3>
+            <button
+              onClick={() => setOnlyMissing((v) => !v)}
+              className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-md transition-colors"
+              style={{ border: "1px solid var(--forest-border)", color: "var(--text-secondary)" }}
+            >
+              {onlyMissing ? "Showing: not installed" : "Showing: everyone"}
+            </button>
+          </div>
+          <p className="font-body text-text-secondary/70 text-[12px] mb-3 leading-snug">
+            Who to email an &ldquo;add Solray to your home screen&rdquo; nudge. Not-installed first, most recently active at the top.
+          </p>
+          <div className="rounded-2xl border border-forest-border/50 overflow-hidden">
+            {shown.map((u, i) => (
+              <div
+                key={(u.email || "") + i}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+                style={{ borderTop: i === 0 ? "none" : "1px solid rgb(var(--rgb-border))" }}
+              >
+                <div className="min-w-0">
+                  <p className="font-body text-text-primary text-[14px] truncate">{u.name || u.email || "Unknown"}</p>
+                  <p className="font-body text-text-secondary/60 text-[12px] truncate">
+                    {u.email}{u.last_seen ? ` · seen ${relSeen(u.last_seen)}` : " · never opened"}
+                  </p>
+                </div>
+                {u.home_screen ? (
+                  <span className="font-body text-[11px] tracking-[0.16em] uppercase shrink-0" style={{ color: "var(--amber)" }}>
+                    On home screen
+                  </span>
+                ) : (
+                  <span className="font-body text-[11px] tracking-[0.16em] uppercase shrink-0" style={{ color: "var(--text-secondary)", opacity: 0.6 }}>
+                    Not yet
+                  </span>
+                )}
+              </div>
+            ))}
+            {shown.length === 0 && (
+              <p className="font-body text-text-secondary/70 text-[13px] px-4 py-5 text-center">
+                {onlyMissing ? "Everyone has it on their home screen." : "No accounts yet."}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <IntegrationsSection
         token={token}
         category="analytics"
@@ -100,4 +165,15 @@ function homeSub(m: Metrics): string {
 function fmt(n: number | null): string {
   if (n === null || n === undefined) return "-";
   return n.toLocaleString();
+}
+
+function relSeen(iso: string): string {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "";
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? "1mo ago" : `${months}mo ago`;
 }
