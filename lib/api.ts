@@ -1,6 +1,8 @@
 // Trim defensively. The Vercel env var got saved with a trailing newline,
 // which made fetches fail with "Failed to fetch" because the resulting URL
 // had a literal \n inside it. trim() strips any whitespace.
+import { clearUserScopedCaches } from "./local-cache";
+
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
 
 export class ApiError extends Error {
@@ -50,11 +52,23 @@ export async function apiFetch(
     displayMode = standalone ? "standalone" : "browser";
   } catch { /* SSR or unsupported: header omitted */ }
 
+  // Native platform: "ios" | "android" only when running inside the Capacitor
+  // native shell (NOT a standalone PWA, which is still the web flow). The
+  // backend uses this to route native sign-ups through Apple/Play billing
+  // instead of granting the web-only 5-day server trial.
+  let nativePlatform = "";
+  try {
+    const cap = (window as unknown as { Capacitor?: { getPlatform?: () => string } })?.Capacitor;
+    const p = cap?.getPlatform?.();
+    if (p === "ios" || p === "android") nativePlatform = p;
+  } catch { /* not native: header omitted */ }
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-Local-Date": localDateString(),
     ...(tz ? { "X-Timezone": tz } : {}),
     ...(displayMode ? { "X-Display-Mode": displayMode } : {}),
+    ...(nativePlatform ? { "X-Platform": nativePlatform } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
@@ -76,12 +90,10 @@ export async function apiFetch(
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const k = localStorage.key(i);
-          if (k && (k.startsWith("solray_forecast") || k.startsWith("solray_blueprint"))) {
-            localStorage.removeItem(k);
-          }
-        }
+        // Wipe the full per-user cache namespace, not just forecast/blueprint,
+        // so a dead session never leaves another account's cycles, avatar,
+        // astrocartography, chat, etc. readable. Shared with the login path.
+        clearUserScopedCaches();
       } catch (_) { /* ignore storage errors */ }
       if (!window.location.pathname.startsWith("/login")) {
         window.location.replace("/login?expired=1");

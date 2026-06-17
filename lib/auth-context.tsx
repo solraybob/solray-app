@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { clearUserScopedCaches } from "./local-cache";
 
 interface User {
   id: string;
@@ -51,20 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  // Clear per-user cached reading data (forecast, blueprint), which use
-  // shared, non-user-scoped localStorage keys across the app. Called whenever
-  // the authenticated identity changes so one account on a device can never
-  // read another account's cached forecast or chart.
-  const clearReadingCaches = () => {
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith("solray_forecast") || k.startsWith("solray_blueprint"))) {
-          localStorage.removeItem(k);
-        }
-      }
-    } catch { /* ignore storage errors */ }
-  };
+  // Clear EVERY per-user cached value when the authenticated identity changes,
+  // so one account on a device can never read another account's cached data.
+  // Centralized in lib/local-cache so the login path and the 401 path in
+  // lib/api can never drift. (An earlier version wiped only solray_forecast*
+  // and solray_blueprint*, which let solray_cycles_* survive an account switch:
+  // that is how a test account's active "Saturn Return" leaked onto another
+  // account's profile.)
+  const clearReadingCaches = clearUserScopedCaches;
 
   const setToken = (tok: string, usr: User) => {
     // Clear cached reading data UNLESS we can positively prove this is the
