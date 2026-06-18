@@ -28,7 +28,11 @@ export default function TrialBanner() {
   const { sub } = useSubscription();
   const pathname = usePathname();
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(false);
+  // Suppress synchronously on native so the trial banner's "Add card" CTA
+  // (a web/Teya payment call to action, forbidden under App Store 3.1.3)
+  // never paints for even one frame inside the native shell. The effect
+  // keeps handling the per-session web dismissal.
+  const [dismissed, setDismissed] = useState(() => typeof window !== "undefined" && isRunningInCapacitor());
 
   useEffect(() => {
     if (!token) return;

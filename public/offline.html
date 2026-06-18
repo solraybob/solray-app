@@ -21,7 +21,11 @@
       padding: 32px calc(24px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-right));
       box-sizing: border-box;
     }
-    .sun { width: 76px; height: 76px; margin-bottom: 28px; }
+    .sun {
+      width: 92px; height: 92px; margin-bottom: 28px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 32px rgba(243,146,48,0.42)) drop-shadow(0 0 80px rgba(243,146,48,0.18));
+    }
     h1 {
       font-family: "Cormorant Garamond", Georgia, serif;
       font-weight: 300; letter-spacing: 0.18em; font-size: 26px; margin: 0 0 14px;
@@ -38,22 +42,7 @@
 </head>
 <body>
   <div class="wrap">
-    <svg class="sun" viewBox="0 0 100 100" aria-hidden="true">
-      <g fill="#e8913c">
-        <circle cx="50" cy="50" r="17" />
-        <!-- 12 rays -->
-        <g>
-          <rect x="48" y="6" width="4" height="14" rx="2" />
-          <rect x="48" y="80" width="4" height="14" rx="2" />
-          <rect x="6" y="48" width="14" height="4" rx="2" />
-          <rect x="80" y="48" width="14" height="4" rx="2" />
-          <rect x="20" y="20" width="4" height="13" rx="2" transform="rotate(-45 22 26)" />
-          <rect x="76" y="74" width="4" height="13" rx="2" transform="rotate(-45 78 80)" />
-          <rect x="76" y="20" width="4" height="13" rx="2" transform="rotate(45 78 26)" />
-          <rect x="20" y="74" width="4" height="13" rx="2" transform="rotate(45 22 80)" />
-        </g>
-      </g>
-    </svg>
+    <img class="sun" src="solray-sun.png" alt="Solray" />
     <h1>SOLRAY</h1>
     <p>The connection to the sky dropped for a moment. Check your network and try again.</p>
     <button onclick="location.replace('https://app.solray.ai/')">Try again</button>

@@ -11,10 +11,13 @@ import {
   createSecurePaySession,
   activateSubscription,
   cancelSubscription,
+  setPlan,
 } from "@/lib/subscription";
 import {
   launchNativePurchase,
   setPurchaseListener,
+  initNativeIAP,
+  getLocalizedMonthlyPrice,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
 import CardForm, { type CardSaveResult } from "@/components/CardForm";
@@ -40,6 +43,7 @@ function SubscribeContent() {
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardSavedNote, setCardSavedNote] = useState("");
+  const [planBusy, setPlanBusy] = useState(false);
   // Show the spinner only on a true cold load (no cached sub yet);
   // every subsequent visit renders instantly because the provider
   // already has state. This is the user-visible part of the speed
@@ -54,7 +58,13 @@ function SubscribeContent() {
   // same model Spotify, Netflix, Audible and Kindle use, and is the only
   // model Apple approves for non-Reader subscription apps that don't
   // implement StoreKit IAP.
-  const [isNative, setIsNative] = useState(false);
+  // Initialize synchronously so the very first render inside the native
+  // WebView already knows it is native. A deferred (useEffect-only) flip
+  // let /subscribe paint the web payment branches for one frame on a cold
+  // native load, which both flashed the web price and risked an App Store
+  // 3.1.1 read. The effect stays as a belt-and-suspenders re-check in case
+  // Capacitor injects its bridge a tick late.
+  const [isNative, setIsNative] = useState(() => typeof window !== "undefined" && isRunningInCapacitor());
   useEffect(() => {
     setIsNative(isRunningInCapacitor());
   }, []);
@@ -210,15 +220,21 @@ function SubscribeContent() {
     );
   }
 
-  // No subscription yet.
-  // On the web, show the trial offer. On native (iOS/Android), App Store
-  // and Play Store rules prohibit any in-app payment CTA for digital
-  // subscriptions, so we render a sign-in-and-use view instead. New
-  // members must subscribe on the web at solray.ai, then sign in here.
+  // Native (iOS/Android): ANY account without active access goes straight to
+  // the in-app purchase screen. This covers never-subscribed, expired,
+  // lapsed, past_due, and a trial that has ended. Previously these states
+  // fell through to the web "management" view whose only control was a
+  // "Continue to app" button that pushed to /today, where the entitlement
+  // gate bounced the user right back to /subscribe: a soft-lock where
+  // nothing visibly happened and the user could never reach the purchase
+  // sheet. Gating on has_access (not the looser `subscribed`) is what makes
+  // the StoreKit purchase reachable for every non-member on iOS.
+  if (isNative && (!sub || !sub.has_access)) {
+    return <NativeMembershipView />;
+  }
+
+  // No subscription yet (web only now; native handled above).
   if (!sub || !sub.subscribed) {
-    if (isNative) {
-      return <NativeMembershipView />;
-    }
     return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} />;
   }
 
@@ -316,11 +332,38 @@ function SubscribeContent() {
               />
             )}
 
-            {sub.price && sub.status !== "expired" && (
-              <DetailRow label={t("subscribe.price")} value={`${sub.price} ${t("subscribe.per_month")}`} />
+            {!isNative && sub.price && sub.status !== "expired" && (
+              <DetailRow
+                label={t("subscribe.price")}
+                value={`${sub.price} ${sub.plan === "yearly" ? t("subscribe.per_year") : t("subscribe.per_month")}`}
+              />
             )}
           </div>
         </div>
+
+        {/* Plan picker (web only, before the sub is charged). Monthly $23 or
+            yearly $199. Switching POSTs /subscribe/plan and refreshes so the
+            price row + the charge that follows reflect the chosen plan. The
+            backend locks the plan once active, so this never shows post-charge. */}
+        {!isNative && (sub.status === "trial" || sub.status === "expired") && (
+          <PlanPicker
+            current={sub.plan === "yearly" ? "yearly" : "monthly"}
+            disabled={planBusy}
+            onChoose={async (p) => {
+              if (!token || planBusy) return;
+              setPlanBusy(true);
+              try {
+                await setPlan(token, p);
+                await refresh();
+              } catch {
+                /* keep current selection on failure; refresh shows truth */
+              } finally {
+                setPlanBusy(false);
+              }
+            }}
+            t={t}
+          />
+        )}
 
         {/* Actions
             All four payment-launching CTAs (Add payment method, Subscribe
@@ -457,6 +500,61 @@ function SubscribeContent() {
   );
 }
 
+function PlanPicker({
+  current,
+  disabled,
+  onChoose,
+  t,
+}: {
+  current: "monthly" | "yearly";
+  disabled: boolean;
+  onChoose: (plan: "monthly" | "yearly") => void;
+  t: (k: string) => string;
+}) {
+  const options: { key: "monthly" | "yearly"; price: string; per: string; note?: string }[] = [
+    { key: "monthly", price: "$23", per: t("subscribe.per_month") },
+    { key: "yearly", price: "$199", per: t("subscribe.per_year"), note: t("subscribe.plan_yearly_save") },
+  ];
+  return (
+    <div className="mb-4">
+      <p className="mb-2 text-[12px] tracking-wide" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>
+        {t("subscribe.plan_choose")}
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        {options.map((o) => {
+          const active = current === o.key;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              disabled={disabled}
+              onClick={() => !active && onChoose(o.key)}
+              className="rounded-2xl border px-4 py-3 text-left transition-colors"
+              style={{
+                borderColor: active ? "var(--amber, #f39230)" : "var(--line, rgba(255,255,255,.12))",
+                background: active ? "rgba(243,146,48,.10)" : "transparent",
+                opacity: disabled ? 0.6 : 1,
+                cursor: disabled ? "default" : "pointer",
+              }}
+            >
+              <div className="text-[13px]" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>
+                {o.key === "yearly" ? t("subscribe.plan_yearly") : t("subscribe.plan_monthly")}
+              </div>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-[20px] font-medium" style={{ color: "var(--ink, #f2ecd8)" }}>{o.price}</span>
+                <span className="text-[12px]" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>{o.per}</span>
+              </div>
+              {o.note && (
+                <div className="mt-1 text-[11px]" style={{ color: "var(--moss, #9caf78)" }}>{o.note}</div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline">
@@ -487,14 +585,11 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  * signed-in user has no active subscription. Apple App Store Guideline
  * 3.1.1 prohibits any digital-subscription payment outside of IAP, and
  * 3.1.3 prohibits buttons, external links, and calls to action that
- * direct customers to non-IAP purchasing. Solray does not implement
- * StoreKit IAP for v1.0, so the native app simply has no path to
- * subscribe; new members must do so on solray.ai in a browser.
- *
- * Pattern follows Spotify, Netflix, Audible, Kindle: status info only,
- * no CTAs to the web. The user can sign out, continue to the app
- * (which will route them around content gates as a non-subscriber), or
- * close the app and visit solray.ai on their own.
+ * direct customers to non-IAP purchasing. The native app subscribes
+ * exclusively through StoreKit in-app purchase: the button below opens
+ * Apple's purchase sheet via launchNativePurchase (cordova-plugin-purchase),
+ * the backend verifies the receipt, and entitlement refreshes in place.
+ * No web payment path is ever shown on native.
  */
 function NativeMembershipView() {
   const { t } = useT();
@@ -502,6 +597,18 @@ function NativeMembershipView() {
   const { refresh } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [priceLabel, setPriceLabel] = useState<string | null>(null);
+
+  // Warm the StoreKit/Play store on mount so (a) tapping Subscribe opens the
+  // sheet instantly and (b) we can show the localized recurring price on the
+  // paywall itself, which App Store Guideline 3.1.2 expects. Best-effort.
+  useEffect(() => {
+    let cancelled = false;
+    void initNativeIAP()
+      .then(() => { if (!cancelled) setPriceLabel(getLocalizedMonthlyPrice()); })
+      .catch(() => { /* sheet still shows the price on tap; disclosure covers terms */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Wire the store callback once: when the backend confirms a verified
   // purchase, refresh entitlement so the page re-renders into the
@@ -598,6 +705,44 @@ function NativeMembershipView() {
               {error}
             </p>
           )}
+        </div>
+
+        {/* App Store Guideline 3.1.2: the paywall itself must show the price,
+            duration, auto-renew terms, and functional Terms of Use + Privacy
+            Policy links. Apple's purchase sheet shows the price too, but
+            reviewers expect it on our screen. Links open in the system
+            browser (they are not in the WebView allow-list). */}
+        <div className="mt-9 space-y-3 text-center">
+          {priceLabel && (
+            <p className="text-[13px]" style={{ color: "var(--text-primary, #f2ecd8)" }}>
+              {t("subscribe.free_week_then")} {priceLabel} {t("subscribe.per_month")}
+            </p>
+          )}
+          <p
+            className="text-[12px] leading-relaxed mx-auto"
+            style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.8, maxWidth: "22rem" }}
+          >
+            {t("subscribe.auto_renew_terms")}
+          </p>
+          <p className="text-[12px]">
+            <a
+              href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--amber, #f39230)", textDecoration: "underline" }}
+            >
+              {t("subscribe.terms_of_use")}
+            </a>
+            <span style={{ color: "var(--text-secondary, #8a9e8d)", opacity: 0.5 }}>{"   ·   "}</span>
+            <a
+              href="https://solray.ai/legal"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--amber, #f39230)", textDecoration: "underline" }}
+            >
+              {t("subscribe.privacy_policy")}
+            </a>
+          </p>
         </div>
       </div>
     </div>

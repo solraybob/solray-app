@@ -116,12 +116,42 @@ function authToken(): string | null {
   }
 }
 
+// Best-effort read of the StoreKit/Play localized recurring price for the
+// subscribe screen (App Store Guideline 3.1.2 wants the price shown on the
+// paywall itself, in the user's currency). Returns a formatted string like
+// "$24.99" / "29,99 EUR" or null if the store isn't ready. Never throws.
+export function getLocalizedMonthlyPrice(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const store = getStore();
+    if (!store) return null;
+    const platform = storePlatform();
+    const product =
+      (platform ? store.get(PRODUCT_ID, platform) : undefined) || store.get(PRODUCT_ID);
+    if (!product) return null;
+    const anyP = product as unknown as {
+      pricing?: { price?: string };
+      offers?: Array<{ pricingPhrases?: Array<{ price?: string }> }>;
+    };
+    if (anyP.pricing?.price) return anyP.pricing.price;
+    const phrases = anyP.offers?.[0]?.pricingPhrases;
+    if (phrases && phrases.length) {
+      // Last phrase is the ongoing recurring price (the intro/free phrase is first).
+      const last = phrases[phrases.length - 1];
+      if (last?.price) return last.price;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function initNativeIAP(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (initialized) return Promise.resolve();
   if (initializing) return initializing;
 
-  initializing = new Promise((resolve, reject) => {
+  const p = new Promise<void>((resolve, reject) => {
     const w = window as unknown as CdvPurchaseWindow;
     const cdv = w.CdvPurchase;
     const platform = storePlatform();
@@ -147,13 +177,25 @@ export function initNativeIAP(): Promise<void> {
         resolve();
       });
 
-      void cdv.store.initialize([platform]);
+      cdv.store.initialize([platform]).catch((e: unknown) => {
+        reject(e instanceof Error ? e : new Error(String(e)));
+      });
     } catch (e) {
       reject(e instanceof Error ? e : new Error(String(e)));
     }
   });
 
-  return initializing;
+  // Clear the in-flight latch on ANY rejection: the synchronous not-ready
+  // case, a synchronous throw, or an async StoreKit init failure. The native
+  // bridge can finish loading AFTER first paint, so without this a failed
+  // init at mount would cache a rejected promise and the Subscribe button
+  // would stay broken (reusing that rejection) until a full reload. This
+  // catch runs after the assignment below, so it correctly resets the latch
+  // for the synchronous paths too. The original promise still rejects for
+  // its real callers; this is a separate, side-effect-only handler.
+  p.catch(() => { if (initializing === p) initializing = null; });
+  initializing = p;
+  return p;
 }
 
 async function onApproved(tx: TransactionLike): Promise<void> {

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
+import { isRunningInCapacitor } from "@/lib/native-push";
 
 const TOTAL_STEPS = 6;
 
@@ -248,11 +249,16 @@ export default function OnboardPage() {
       // Show magical blueprint loading screen for at least 3.5 seconds
       setCalculatingBlueprint(true);
       await new Promise((resolve) => setTimeout(resolve, 3500));
-      // Send the user to the First Mirror before Today: three lines
-      // that prove Solray understood them. The mirror page itself
-      // routes to /today on Continue or on error, so this never
-      // strands the user. Codex UX hook 1.
-      router.push("/first-mirror");
+      // Native (iOS/Android) sign-ups get no server trial; their only trial
+      // is the App Store / Play free week, so send them straight to the
+      // Subscribe screen to start it (subscribe-first model). Web sign-ups go
+      // to the First Mirror: three lines that prove Solray understood them,
+      // then on to Today on their 5-day web trial.
+      if (isRunningInCapacitor()) {
+        router.push("/subscribe");
+      } else {
+        router.push("/first-mirror");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : t("common.error_generic");
       setError(msg);
@@ -344,7 +350,7 @@ export default function OnboardPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative", zIndex: 1 }}>
+      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative" }}>
         <div className="w-full max-w-sm">
           {step === 1 && (
             <StepWrapper label={t("onboard.q_name")}>

@@ -20,6 +20,8 @@ export interface SubscriptionStatus {
   card_brand: string | null;
   card_last_four: string | null;
   price: string | null;
+  plan?: "monthly" | "yearly";
+  period_days?: number;
   cancelled_at: string | null;
 }
 
@@ -50,6 +52,17 @@ export async function startTrial(token: string) {
 
 export async function activateSubscription(token: string) {
   return apiFetch("/subscribe/activate", { method: "POST" }, token);
+}
+
+// Choose monthly ($23/mo) or yearly ($199/yr) before the subscription is
+// charged. Allowed only while the sub has not been activated; the backend
+// rejects a change on an active sub so a charged period's price never moves.
+export async function setPlan(token: string, plan: "monthly" | "yearly") {
+  return apiFetch(
+    "/subscribe/plan",
+    { method: "POST", body: JSON.stringify({ plan }) },
+    token
+  );
 }
 
 export async function cancelSubscription(token: string) {

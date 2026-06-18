@@ -318,9 +318,23 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
     // language-specific server content, so switching language must refetch
     // rather than serve last month's cached English for four weeks.
     const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const cacheKey = `solray_cycles_${monthKey}_${lang}`;
+    // Cache VERSION (v2): a monthly cache with no revalidation meant a bad value
+    // (e.g. a stale "Saturn Return" from an earlier response) could stick for up
+    // to a month. Bumping the version invalidates every stale client cache once,
+    // and we now revalidate in the background instead of early-returning, so the
+    // displayed cycles self-heal on the next load even within the same month.
+    const cacheKey = `solray_cycles_v2_${monthKey}_${lang}`;
 
-    // Try cache first
+    let servedFromCache = false;
+    // Drop any pre-v2 cached cycles so the old stale title cannot linger.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("solray_cycles_") && !k.startsWith("solray_cycles_v2_"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch (_) {}
+
+    // Show cache immediately if present, but DO NOT stop there: still refetch
+    // below to refresh it (stale-while-revalidate).
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -328,7 +342,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
         setCycles(data.cycles || []);
         setUpcoming(data.upcoming || []);
         setLoading(false);
-        return; // Don't re-fetch for monthly cache
+        servedFromCache = true;
       }
     } catch (_) {}
 
@@ -345,8 +359,13 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
         } catch (_) {}
       })
       .catch(() => {
-        setCycles([]);
-        setUpcoming([]);
+        // If we already painted from cache, keep it; only clear when we have
+        // nothing to show, so a failed background revalidation never blanks
+        // the cards the user is looking at.
+        if (!servedFromCache) {
+          setCycles([]);
+          setUpcoming([]);
+        }
       })
       .finally(() => setLoading(false));
   }, [token, lang]);
