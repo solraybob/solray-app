@@ -31,7 +31,13 @@
 import { apiFetch } from "./api";
 import { getNativePlatform } from "./native-push";
 
-const PRODUCT_ID = "solray_monthly";
+// Two subscription products, matching the backend IAP_PRODUCT_IDS allowlist
+// and the Play Console / App Store Connect product ids.
+export const MONTHLY_PRODUCT_ID = "solray_monthly";
+export const YEARLY_PRODUCT_ID = "solray_yearly";
+const ALL_PRODUCT_IDS = [MONTHLY_PRODUCT_ID, YEARLY_PRODUCT_ID];
+// Back-compat default for callers that don't specify a plan.
+const PRODUCT_ID = MONTHLY_PRODUCT_ID;
 const GOOGLE_VERIFY_PATH = "/subscribe/google-play-verify";
 const APPLE_VERIFY_PATH = "/subscribe/apple-verify";
 const TOKEN_KEY = "solray_token";
@@ -160,13 +166,13 @@ export function initNativeIAP(): Promise<void> {
       return;
     }
     try {
-      cdv.store.register([
-        {
-          id: PRODUCT_ID,
+      cdv.store.register(
+        ALL_PRODUCT_IDS.map((id) => ({
+          id,
           type: cdv.ProductType.PAID_SUBSCRIPTION,
           platform,
-        },
-      ]);
+        })),
+      );
 
       cdv.store.when().approved((tx) => {
         void onApproved(tx);
@@ -234,12 +240,12 @@ async function onApproved(tx: TransactionLike): Promise<void> {
   }
 }
 
-export async function launchNativePurchase(): Promise<void> {
+export async function launchNativePurchase(productId: string = PRODUCT_ID): Promise<void> {
   await initNativeIAP();
   const store = getStore();
   const platform = storePlatform();
   if (!store || !platform) throw new Error("In-app purchases are not available");
-  const product = store.get(PRODUCT_ID, platform) || store.get(PRODUCT_ID);
+  const product = store.get(productId, platform) || store.get(productId);
   if (!product) throw new Error("Subscription is still loading. Try again in a moment.");
 
   const offer =

@@ -18,6 +18,8 @@ import {
   setPurchaseListener,
   initNativeIAP,
   getLocalizedMonthlyPrice,
+  MONTHLY_PRODUCT_ID,
+  YEARLY_PRODUCT_ID,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
 import CardForm, { type CardSaveResult } from "@/components/CardForm";
@@ -598,6 +600,7 @@ function NativeMembershipView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [priceLabel, setPriceLabel] = useState<string | null>(null);
+  const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
 
   // Warm the StoreKit/Play store on mount so (a) tapping Subscribe opens the
   // sheet instantly and (b) we can show the localized recurring price on the
@@ -631,9 +634,10 @@ function NativeMembershipView() {
     setError("");
     setLoading(true);
     try {
-      // Opens the native store sheet. The approved -> verify -> finish flow
-      // runs in play-billing.ts; the listener above flips state on success.
-      await launchNativePurchase();
+      // Opens the native store sheet for the chosen plan. The approved ->
+      // verify -> finish flow runs in play-billing.ts; the listener above
+      // flips state on success.
+      await launchNativePurchase(plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID);
     } catch (e) {
       setLoading(false);
       setError(e instanceof Error ? e.message : t("subscribe.purchase_not_started"));
@@ -673,6 +677,33 @@ function NativeMembershipView() {
         >
           {t("subscribe.native_blurb")}
         </p>
+
+        {/* Plan choice: monthly or annual. Both start the same 3-day free
+            trial; the chosen product id is what gets ordered on the store. */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {([
+            { key: "monthly" as const, price: "$23", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
+            { key: "yearly" as const, price: "$199", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
+          ]).map((o) => {
+            const selected = plan === o.key;
+            return (
+              <button
+                key={o.key}
+                onClick={() => setPlanChoice(o.key)}
+                disabled={loading}
+                className="py-4 px-3 rounded-2xl text-center transition-colors disabled:opacity-50"
+                style={{
+                  border: selected ? "1px solid var(--amber, #f39230)" : "1px solid rgba(138, 158, 141, 0.25)",
+                  background: selected ? "rgba(243, 146, 48, 0.10)" : "transparent",
+                }}
+              >
+                <span className="block text-[11px] tracking-[0.25em] uppercase" style={{ color: "var(--text-secondary, #8a9e8d)" }}>{o.label}</span>
+                <span className="block text-xl mt-1" style={{ color: "var(--text-primary, #f2ecd8)" }}>{o.price}</span>
+                <span className="block text-[11px]" style={{ color: "var(--text-secondary, #8a9e8d)" }}>{o.per}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="space-y-3">
           <button

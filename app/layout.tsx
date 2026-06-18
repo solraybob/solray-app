@@ -66,6 +66,12 @@ export const viewport: Viewport = {
   // No maximumScale: pinch-zoom must stay available (accessibility). iOS
   // Safari ignores a lock anyway; locking it only hurts Android + a11y.
   themeColor: "var(--bg-deep)",
+  // viewport-fit=cover is required for env(safe-area-inset-*) to report real
+  // values. Without it the insets read 0, so on Android 15 (edge-to-edge by
+  // default, targetSdk 35) the WebView draws under the status bar and the
+  // header rode up behind the clock. With cover, the top padding
+  // (max(env(safe-area-inset-top), 20px)) gets the true status-bar height.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
