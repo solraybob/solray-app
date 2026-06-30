@@ -24,6 +24,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { SubscriptionProvider } from "@/lib/subscription-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import { LanguageProvider } from "@/lib/i18n";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import VersionCheck from "@/components/VersionCheck";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -97,6 +98,7 @@ export default function RootLayout({
             <AuthProvider>
               <SubscriptionProvider>
                 <NativePushBootstrap />
+                <AnalyticsTracker />
                 <DesktopHeader />
                 <PullToRefresh>
                   <SwipeNavigator>

@@ -25,7 +25,9 @@
       width: 92px; height: 92px; margin-bottom: 28px;
       object-fit: contain;
       filter: drop-shadow(0 0 32px rgba(243,146,48,0.42)) drop-shadow(0 0 80px rgba(243,146,48,0.18));
+      animation: breathe 3.2s ease-in-out infinite;
     }
+    @keyframes breathe { 0%,100% { opacity: 0.78; } 50% { opacity: 1; } }
     h1 {
       font-family: "Cormorant Garamond", Georgia, serif;
       font-weight: 300; letter-spacing: 0.18em; font-size: 26px; margin: 0 0 14px;
@@ -44,14 +46,70 @@
   <div class="wrap">
     <img class="sun" src="solray-sun.png" alt="Solray" />
     <h1>SOLRAY</h1>
-    <p>The connection to the sky dropped for a moment. Check your network and try again.</p>
-    <button onclick="location.replace('https://app.solray.ai/')">Try again</button>
+    <p id="msg">Reconnecting you to the sky&hellip;</p>
+    <button id="retry" type="button">Try again</button>
   </div>
   <script>
-    // If connectivity returns on its own, slip back to the app without a tap.
-    window.addEventListener('online', function () {
-      location.replace('https://app.solray.ai/');
+    // Self-healing reconnect. The previous version only recovered on the
+    // browser 'online' event, which never fires when the device was already
+    // online and the first load merely hiccupped (slow cold load, a momentary
+    // blip). That left users, and an App Review tester with active internet,
+    // stranded on a "check your network" dead end. This version actively probes
+    // the server and slips back into the app the instant it is reachable, so a
+    // transient first-load failure recovers on its own within a second or two.
+    var APP = 'https://app.solray.ai/';
+    var done = false;
+    var pending = false;
+    var tries = 0;
+
+    function go() {
+      if (done) return;
+      done = true;
+      location.replace(APP);
+    }
+
+    // A no-cors probe resolves on ANY server response (even a redirect or
+    // 404) and only rejects on a real network failure, so a resolved promise
+    // means "the server is reachable, a reload will succeed" without us
+    // navigating blindly and looping back onto this page.
+    function probe(cb) {
+      // Call cb exactly once, and ALWAYS enforce a timeout (even when
+      // AbortController is unavailable) so a hung fetch can never freeze the
+      // recovery loop.
+      var called = false;
+      function settle(ok) { if (called) return; called = true; cb(ok); }
+      try {
+        var ctl = ('AbortController' in window) ? new AbortController() : null;
+        var to = setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (e) {} } settle(false); }, 4000);
+        fetch(APP + '?_probe=' + Date.now(), { cache: 'no-store', mode: 'no-cors', signal: ctl ? ctl.signal : undefined })
+          .then(function () { clearTimeout(to); settle(true); })
+          .catch(function () { clearTimeout(to); settle(false); });
+      } catch (e) { settle(false); }
+    }
+
+    function tick() {
+      // pending guard: visibilitychange / online can call tick() while a probe
+      // is already in flight; never run two retry chains at once.
+      if (done || pending) return;
+      pending = true;
+      tries++;
+      probe(function (ok) {
+        pending = false;
+        if (done) return;
+        if (ok) { go(); return; }
+        var delay = tries < 3 ? 1500 : (tries < 6 ? 3000 : 6000);
+        setTimeout(tick, delay);
+      });
+    }
+
+    document.getElementById('retry').addEventListener('click', function () { done = false; go(); });
+    window.addEventListener('online', tick);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && !done) tick();
     });
+
+    // Start probing immediately on load.
+    tick();
   </script>
 </body>
 </html>

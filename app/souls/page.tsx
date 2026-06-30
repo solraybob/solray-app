@@ -379,6 +379,68 @@ export default function SoulsPage() {
     load();
   }, [token]);
 
+  // Sync saved people with the server so they survive reinstalls and follow the
+  // user across devices. The server is the source of truth; people that only
+  // exist locally (created before server persistence, or while offline) are
+  // migrated up once. Falls back silently to the localStorage copy if offline.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch("/saved-people", {}, token);
+        const server: SavedPerson[] = Array.isArray(res?.people) ? res.people : [];
+        const serverIds = new Set(server.map((p) => p.id));
+        const local = loadSavedPeople();
+        const toMigrate = local.filter((p) => p && p.id && !serverIds.has(p.id));
+        const migrated: SavedPerson[] = [];
+        const failed: SavedPerson[] = [];
+        const idRemap: Record<string, string> = {};
+        for (const p of toMigrate) {
+          try {
+            const r = await apiFetch("/saved-people", {
+              method: "POST",
+              body: JSON.stringify(p),
+            }, token);
+            if (r?.person) {
+              const sp = r.person as SavedPerson;
+              migrated.push(sp);
+              if (sp.id && sp.id !== p.id) idRemap[p.id] = sp.id;
+            } else {
+              failed.push(p); // keep local copy so it is not lost
+            }
+          } catch {
+            failed.push(p); // offline / error: keep local copy, retried next load
+          }
+        }
+        if (cancelled) return;
+        const seen = new Set<string>();
+        // failed (still local-only) first so a dropped POST never loses the person
+        const final = [...failed, ...migrated, ...server].filter((p) => {
+          if (!p || !p.id || seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+        setSavedPeople(final);
+        writeSavedPeople(final);
+        // If migration changed any ids, reconcile selected bond partners too.
+        if (Object.keys(idRemap).length) {
+          const byId = new Map(final.map((p) => [p.id, p] as const));
+          setBondPartners(prev => prev.map(bp => {
+            if (bp.kind === "saved" && idRemap[bp.person.id]) {
+              const np = byId.get(idRemap[bp.person.id]);
+              return np ? { kind: "saved", person: np } : bp;
+            }
+            return bp;
+          }));
+        }
+      } catch {
+        // offline or error: keep whatever localStorage already gave us
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
+
   // Debounced search, avoid firing /users/search on every keystroke
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = useCallback((q: string) => {
@@ -514,6 +576,33 @@ export default function SoulsPage() {
       setBondPartners([newPartner]);
     }
     setAddPersonOpen(false);
+    // Persist to the server so the person survives reinstalls and syncs across
+    // devices. Optimistic above; reconcile the id if the server minted its own.
+    if (token) {
+      (async () => {
+        try {
+          const r = await apiFetch("/saved-people", {
+            method: "POST",
+            body: JSON.stringify(person),
+          }, token);
+          const saved = r?.person as SavedPerson | undefined;
+          if (saved && saved.id && saved.id !== person.id) {
+            setSavedPeople(prev => {
+              const updated = prev.map(p => (p.id === person.id ? saved : p));
+              writeSavedPeople(updated);
+              return updated;
+            });
+            setBondPartners(prev => prev.map(bp =>
+              bp.kind === "saved" && bp.person.id === person.id
+                ? { kind: "saved", person: saved }
+                : bp
+            ));
+          }
+        } catch {
+          // offline: local copy remains and migrates on the next load
+        }
+      })();
+    }
   };
 
   const handlePersonRemove = (id: string) => {
@@ -521,6 +610,9 @@ export default function SoulsPage() {
     setSavedPeople(next);
     writeSavedPeople(next);
     setBondPartners(prev => prev.filter(p => !(p.kind === "saved" && p.person.id === id)));
+    if (token) {
+      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).catch(() => {});
+    }
   };
 
   // Fire the Bond reading, route to /chat?compat=1 with context
@@ -917,6 +1009,59 @@ export default function SoulsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Your People: the saved (server-synced) people, surfaced on the
+                  page itself below Connections for quick access. Tapping one
+                  selects them into the current bond; they are also available
+                  from the add-person picker. */}
+              {savedPeople.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.your_people")}</p>
+                  <div className="space-y-3">
+                    {savedPeople.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const partner: BondPartner = { kind: "saved", person: p };
+                            if (bondLens === "family") {
+                              setBondPartners(prev =>
+                                prev.some(b => b.kind === "saved" && b.person.id === p.id)
+                                  ? prev
+                                  : (prev.length < 5 ? [...prev, partner] : prev)
+                              );
+                            } else {
+                              setBondPartners([partner]);
+                            }
+                            if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
+                            <span className="font-heading text-base text-text-primary">{p.name?.[0]?.toUpperCase() || "·"}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
+                            <p className="text-text-secondary text-[13px] font-body truncate">
+                              {p.profile?.sun_sign && <>☉ {p.profile.sun_sign}</>}
+                              {p.profile?.sun_sign && p.profile?.hd_type && " · "}
+                              {p.profile?.hd_type}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={t("souls.remove_name").replace("{name}", p.name)}
+                          onClick={() => handlePersonRemove(p.id)}
+                          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-text-secondary hover:text-ember transition-colors"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

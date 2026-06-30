@@ -216,10 +216,24 @@ export default function OnboardPage() {
         language = localStorage.getItem("solray_language");
       }
     } catch { /* ignore */ }
+    // Tell the backend which platform is registering. Inside the Capacitor
+    // native shell this MUST be sent so the server skips the web-only trial
+    // and lets Apple/Play own the free trial. Without it, native sign-ups get
+    // a server trial, which hides the in-app purchase sheet and lands them on
+    // the "managed on the web" screen with no way to start store billing.
+    let nativePlatform = "";
+    try {
+      const cap = (window as unknown as { Capacitor?: { getPlatform?: () => string } })?.Capacitor;
+      const p = cap?.getPlatform?.();
+      if (p === "ios" || p === "android") nativePlatform = p;
+    } catch { /* not native: header omitted, web trial applies */ }
     try {
       const res = await fetch(`${apiUrl}/users/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(nativePlatform ? { "X-Platform": nativePlatform } : {}),
+        },
         body: JSON.stringify({
           name,
           sex: sex || null,

@@ -41,6 +41,11 @@ import { apiFetch } from "./api";
 const SESSION_KEY = "solray_analytics_session";
 const OPT_OUT_KEY = "solray_analytics_opt_out";
 
+// Heartbeat cadence for AnalyticsTracker. The server reconstructs time-on-page
+// as count(heartbeat) * (HEARTBEAT_MS / 1000), so this MUST stay in sync with
+// HEARTBEAT_SECONDS in api/main.py (/admin/hub/engagement).
+export const HEARTBEAT_MS = 30000;
+
 let cachedSessionId: string | null = null;
 
 function getSessionId(): string {
