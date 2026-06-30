@@ -175,7 +175,7 @@ export default function GroupChatPage() {
     <ProtectedRoute>
       <div className="min-h-[100dvh] bg-forest-deep flex flex-col overflow-x-hidden">
         {/* Header */}
-        <div className="px-5 pt-12 pb-4 border-b border-forest-border flex items-center gap-3 max-w-lg mx-auto w-full">
+        <div className="px-5 pt-2 pb-4 border-b border-forest-border flex items-center gap-3 max-w-lg mx-auto w-full">
           <button
             onClick={() => router.back()}
             className="text-text-secondary hover:text-text-primary transition-colors"

@@ -1607,7 +1607,7 @@ function ChatPageInner() {
 
   return (
     <ProtectedRoute>
-      <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
+      <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "calc(100dvh - env(safe-area-inset-top))", overflow: "hidden" }}>
         {/* Calm ambient background: a soft amber glow over forest, drawn with
             CSS instead of a 1200px remote image so opening the Oracle never
             waits on a decorative download on the critical path. */}

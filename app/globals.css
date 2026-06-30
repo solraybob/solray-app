@@ -125,6 +125,18 @@ html, body {
   overscroll-behavior-y: contain;
 }
 
+/* Single source of truth for the status-bar inset. The native shell draws the
+   WebView under the status bar (iOS black-translucent, Android 15 edge-to-edge),
+   so without this the page header rides up behind the clock, battery, and
+   signal. Padding the body once means every in-flow page header clears the
+   status bar, so a per-page header can never regress behind it again. Fixed
+   overlays (breakthrough modals, EntrySky, BottomNav, PullToRefresh spinner)
+   position to the viewport and are unaffected. On desktop the inset is 0 and
+   the media query below overrides this with 4rem for the fixed DesktopHeader. */
+body {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Pull-to-refresh spinner (see components/PullToRefresh.tsx). */
 .solray-ptr-spinner {
   width: 28px;
