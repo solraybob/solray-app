@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>8</string>
+	<string>9</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -49,5 +49,9 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Solray uses the microphone so you can speak with the Higher Self instead of typing.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Lets you take a photo when setting your profile picture. Solray never records video.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Lets you save shared reading cards as images to your photo library.</string>
 </dict>
 </plist>
