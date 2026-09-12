@@ -34,7 +34,7 @@ type Finance = {
   };
 };
 
-const AMBER = "#f39230", MOSS = "#8a9e66", EMBER = "#d47a52", INDIGO = "#6a8692";
+const AMBER = "#6C3CCC", MOSS = "#4F7A4A", EMBER = "#C4602F", INDIGO = "#4A6FA5";
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthLabel = (ym: string) => MONTH_ABBR[(parseInt(ym.slice(5), 10) || 1) - 1] ?? ym;
 const usd = (n: number) => "$" + (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -103,8 +103,8 @@ function CostComposition({ c }: { c: Finance["cost"] }) {
     { label: "Railway", v: c.railway_usd_mo, color: INDIGO },
     { label: "Teya fees", v: c.teya_fees_30d_usd, color: AMBER },
     { label: "Domain", v: c.domain_usd_mo, color: MOSS },
-    { label: "Vercel", v: c.vercel_usd_mo, color: "#9babb9" },
-    { label: "Other", v: c.other_usd_mo, color: "#9b86a0" },
+    { label: "Vercel", v: c.vercel_usd_mo, color: "#543F96" },
+    { label: "Other", v: c.other_usd_mo, color: "#D23F8C" },
   ].filter(p => p.v > 0);
   const total = Math.max(0.0001, parts.reduce((s, p) => s + p.v, 0));
   return (

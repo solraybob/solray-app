@@ -17,15 +17,15 @@ interface PaletteEntry {
 }
 
 const PALETTE: PaletteEntry[] = [
-  { name: "Forest deep",  cssVar: "rgb(var(--rgb-bg-deep))", dark: "#050f08", light: "#ece4cf", hint: "Background, the night under the trees." },
-  { name: "Forest card",  cssVar: "rgb(var(--rgb-card))",    dark: "#0a1f12", light: "#f5efde", hint: "Cards, panels, surfaces sitting above background." },
-  { name: "Amber sun",    cssVar: "rgb(var(--rgb-amber))",   dark: "#f39230", light: "#d06e14", hint: "Primary action, single warmth in the frame." },
-  { name: "Pearl",        cssVar: "rgb(var(--rgb-pearl))",   dark: "#ece4cf", light: "#f5efde", hint: "Highlight, careful, never decorative." },
-  { name: "Ember",        cssVar: "rgb(var(--rgb-ember))",   dark: "#d47a52", light: "#b45a38", hint: "Mars, Aries, fire, danger states." },
-  { name: "Moss",         cssVar: "rgb(var(--rgb-moss))",    dark: "#8a9e66", light: "#5a6e40", hint: "Earth signs, growth, sustained presence." },
-  { name: "Mist",         cssVar: "rgb(var(--rgb-mist))",    dark: "#9babb9", light: "#647a90", hint: "Air signs, communication, lift." },
-  { name: "Indigo",       cssVar: "rgb(var(--rgb-indigo))",  dark: "#6a8692", light: "#3c5c6e", hint: "Water signs, depth, after dusk." },
-  { name: "Wisteria",     cssVar: "rgb(var(--rgb-wisteria))",dark: "#9b86a0", light: "#82648a", hint: "Venus, soul-connection, the relational frequency." },
+  { name: "Forest deep",  cssVar: "rgb(var(--rgb-bg-deep))", dark: "#F5F0E6", light: "#FAF6EC", hint: "Background, the night under the trees." },
+  { name: "Forest card",  cssVar: "rgb(var(--rgb-card))",    dark: "#FAF6EC", light: "#FAF6EC", hint: "Cards, panels, surfaces sitting above background." },
+  { name: "Amber sun",    cssVar: "rgb(var(--rgb-amber))",   dark: "#6C3CCC", light: "#6C3CCC", hint: "Primary action, single warmth in the frame." },
+  { name: "Pearl",        cssVar: "rgb(var(--rgb-pearl))",   dark: "#FAF6EC", light: "#FAF6EC", hint: "Highlight, careful, never decorative." },
+  { name: "Ember",        cssVar: "rgb(var(--rgb-ember))",   dark: "#C4602F", light: "#C4602F", hint: "Mars, Aries, fire, danger states." },
+  { name: "Moss",         cssVar: "rgb(var(--rgb-moss))",    dark: "#4F7A4A", light: "#4F7A4A", hint: "Earth signs, growth, sustained presence." },
+  { name: "Mist",         cssVar: "rgb(var(--rgb-mist))",    dark: "#543F96", light: "#4A6FA5", hint: "Air signs, communication, lift." },
+  { name: "Indigo",       cssVar: "rgb(var(--rgb-indigo))",  dark: "#4A6FA5", light: "#543F96", hint: "Water signs, depth, after dusk." },
+  { name: "Wisteria",     cssVar: "rgb(var(--rgb-wisteria))",dark: "#D23F8C", light: "#D23F8C", hint: "Venus, soul-connection, the relational frequency." },
 ];
 
 const VOICE_RULES = [

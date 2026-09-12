@@ -1,0 +1,80 @@
+/* Solray operations: the connector look.
+   Warm paper, ink type, hairlines, the orb wordmark. Same palette and type
+   scale as connector/web/landing.html, so the operator surfaces and the
+   customer surfaces read as one product.
+
+   The app's theme tokens are redefined inside .sa-root only, so every
+   Tailwind utility already written into these pages (bg-forest-deep,
+   text-amber-sun, border-forest-border...) resolves to the new palette
+   without touching the member app, which keeps its forest theme. */
+
+.sa-root {
+  /* theme tokens, "R G B" triplets so Tailwind's /opacity syntax still works */
+  --rgb-bg-deep:        245 240 230;   /* #F5F0E6 paper */
+  --rgb-bg-dark:        250 246 236;   /* #FAF6EC */
+  --rgb-card:           250 246 236;
+  --rgb-border:         226 218 202;   /* #E2DACA hairline */
+  --rgb-amber:          108  60 204;   /* #6C3CCC orb violet, the accent */
+  --rgb-text-primary:    34  32  28;   /* #22201C ink */
+  --rgb-text-secondary: 110 102  89;   /* #6E6659 */
+  --rgb-text-muted:     167 158 144;   /* #A79E90 */
+  --rgb-ember:          196  96  47;   /* #C4602F burnt coral */
+  --rgb-moss:            79 122  74;   /* #4F7A4A */
+  --rgb-mist:           110 102  89;
+  --rgb-indigo:          84  63 150;   /* #543F96 deep orb violet */
+  --rgb-wisteria:       210  63 140;   /* #D23F8C orb pink */
+  --rgb-pearl:          250 246 236;
+
+  /* hex aliases, for anything still reading the flat names */
+  --bg-deep: #F5F0E6;  --bg-dark: #FAF6EC;  --card: #FAF6EC;  --border: #E2DACA;
+  --amber: #6C3CCC;    --text-primary: #22201C; --text-secondary: #6E6659;
+  --text-muted: #A79E90; --ember: #C4602F; --moss: #4F7A4A; --mist: #6E6659;
+  --indigo: #543F96;   --wisteria: #D23F8C; --pearl: #FAF6EC;
+
+  /* connector names */
+  --paper: #F5F0E6; --paper-2: #FAF6EC; --ink: #22201C; --ink2: #6E6659;
+  --ink3: #A79E90;  --hair: #E2DACA;    --violet: #6C3CCC; --pink: #F06CB4;
+
+  --font-heading: var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body:    var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
+  --header-alpha: 1;
+  --spinner-track-alpha: 1;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 400;
+  min-height: 100dvh;
+}
+
+/* Weights: the connector sets its headlines at 900 with tight tracking.
+   !important because several pages carry an inline fontWeight: 300 left
+   over from the Cormorant era. */
+.sa-root h1 { font-weight: 900 !important; letter-spacing: -.042em; line-height: 1.05; }
+.sa-root h2 { font-weight: 900 !important; letter-spacing: -.038em; line-height: 1.08; }
+.sa-root h3 { font-weight: 700 !important; letter-spacing: -.03em; }
+.sa-root b, .sa-root strong { font-weight: 700; }
+
+/* Cards are paper with a hairline, never a filled panel. */
+.sa-root [class*="bg-forest-card"],
+.sa-root [class*="bg-forest-dark"],
+.sa-root [class*="bg-forest-deep"] { background-color: transparent !important; }
+.sa-root [class*="backdrop-blur"] { backdrop-filter: none !important; }
+.sa-root ::selection { background: rgba(240,108,180,.25); }
+.sa-root :focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.sa-root table { font-variant-numeric: tabular-nums; }
+
+/* wordmark: the orb replaces the o, at lowercase height */
+.sa-word { display: inline-flex; align-items: baseline; gap: 0; font-size: 1.28rem;
+  font-weight: 700; letter-spacing: -.02em; color: var(--ink); text-decoration: none; }
+.sa-orb { width: 1ex; height: 1ex; object-fit: contain; margin: 0 .01em; transform: translateY(.02em); }
+
+.sa-bar { max-width: 1400px; margin: 0 auto; padding: 26px 24px 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.sa-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.sa-link { display: inline-block; padding: 9px 18px; border-radius: 999px; border: 1px solid var(--hair);
+  font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; font-weight: 500;
+  color: var(--ink2); text-decoration: none; white-space: nowrap;
+  transition: border-color .3s, color .3s, background .3s; }
+.sa-link:hover { border-color: var(--ink3); color: var(--ink); }
+.sa-link[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }

@@ -81,21 +81,21 @@ type AuditLowest = {
 // Sun-sign element families → colour. Aligns with the extended palette so
 // the graph reads as Solray, not as a generic D3 demo.
 const ELEMENT_COLOR: Record<string, string> = {
-  Aries: "#d47a52",       // ember (fire)
-  Leo: "#f39230",         // amber (fire)
-  Sagittarius: "#d47a52", // ember
-  Taurus: "#8a9e66",      // moss (earth)
-  Virgo: "#8a9e66",
-  Capricorn: "#5a6e40",
-  Gemini: "#9babb9",      // mist (air)
-  Libra: "#9babb9",
-  Aquarius: "#647a90",
-  Cancer: "#9b86a0",      // wisteria (water)
-  Scorpio: "#82648a",
-  Pisces: "#9b86a0",
+  Aries: "#C4602F",       // ember (fire)
+  Leo: "#6C3CCC",         // amber (fire)
+  Sagittarius: "#C4602F", // ember
+  Taurus: "#4F7A4A",      // moss (earth)
+  Virgo: "#4F7A4A",
+  Capricorn: "#4F7A4A",
+  Gemini: "#543F96",      // mist (air)
+  Libra: "#543F96",
+  Aquarius: "#4A6FA5",
+  Cancer: "#D23F8C",      // wisteria (water)
+  Scorpio: "#D23F8C",
+  Pisces: "#D23F8C",
 };
 
-const CORE_COLOR = "#f39230"; // amber-sun
+const CORE_COLOR = "#6C3CCC"; // amber-sun
 
 interface PhysicsNode {
   id: string;
@@ -295,7 +295,7 @@ function HiveDashboardInner() {
             <div className="lg:col-span-2 rounded-2xl border border-forest-border bg-forest-card/30 overflow-hidden">
               <HiveGraph nodes={graph.nodes} edges={graph.edges} />
               <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-1.5 px-4 pb-4 -mt-2">
-                {([["#f39230", "Fire"], ["#8a9e66", "Earth"], ["#9babb9", "Air"], ["#9b86a0", "Water"]] as [string, string][]).map(([c, l]) => (
+                {([["#6C3CCC", "Fire"], ["#4F7A4A", "Earth"], ["#543F96", "Air"], ["#D23F8C", "Water"]] as [string, string][]).map(([c, l]) => (
                   <span key={l} className="inline-flex items-center gap-2 font-body text-[11px] text-text-secondary">
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}66` }} />
                     {l}
@@ -380,14 +380,14 @@ function CountsRow({ counts }: { counts: Counts }) {
   // Aged-pigment accents: each figure carries the hue of what it counts,
   // desaturated enough to stay quiet until you look at it.
   const items: Array<[string, number, string]> = [
-    ["Souls in the field", counts.consenting_users, "#f39230"],
-    ["Opted out", counts.opted_out ?? 0, "#a8b8ab"],
-    ["Chart signals", counts.chart_signals, "#9babb9"],
-    ["Components", counts.chart_components, "#9babb9"],
-    ["Cohorts", counts.pattern_cohorts, "#8a9e66"],
-    ["High-confidence", counts.high_confidence_cohorts, "#8a9e66"],
-    ["Themes", counts.pattern_themes, "#9b86a0"],
-    ["Correlations", counts.pattern_correlations, "#d47a52"],
+    ["Souls in the field", counts.consenting_users, "#6C3CCC"],
+    ["Opted out", counts.opted_out ?? 0, "#6E6659"],
+    ["Chart signals", counts.chart_signals, "#543F96"],
+    ["Components", counts.chart_components, "#543F96"],
+    ["Cohorts", counts.pattern_cohorts, "#4F7A4A"],
+    ["High-confidence", counts.high_confidence_cohorts, "#4F7A4A"],
+    ["Themes", counts.pattern_themes, "#D23F8C"],
+    ["Correlations", counts.pattern_correlations, "#C4602F"],
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -676,11 +676,11 @@ function ScoreHistogram({
     "0-39", "40-59", "60-79", "80-99", "100",
   ];
   const colorFor = (b: string) => {
-    if (b === "0-39") return "#d47a52";   // ember
-    if (b === "40-59") return "#d49a52";  // ember-warm
-    if (b === "60-79") return "#a09a72";  // moss-faded
-    if (b === "80-99") return "#9babb9";  // mist
-    return "#f39230";                     // amber-sun for 100
+    if (b === "0-39") return "#C4602F";   // ember
+    if (b === "40-59") return "#C4602F";  // ember-warm
+    if (b === "60-79") return "#A79E90";  // moss-faded
+    if (b === "80-99") return "#543F96";  // mist
+    return "#6C3CCC";                     // amber-sun for 100
   };
   return (
     <div className="space-y-2">
@@ -818,8 +818,8 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       // Vignette for depth.
       const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.72);
-      vg.addColorStop(0, "rgba(10,31,18,0)");
-      vg.addColorStop(1, "rgba(5,15,8,0.55)");
+      vg.addColorStop(0, "rgba(250,246,236,0)");
+      vg.addColorStop(1, "rgba(245,240,230,0.55)");
       ctx.fillStyle = vg;
       ctx.fillRect(0, 0, W, H);
 
@@ -828,7 +828,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       // Faint spokes to the core.
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "rgba(243,146,48,0.05)";
+      ctx.strokeStyle = "rgba(108,60,204,0.05)";
       ctx.beginPath();
       for (const n of ns) {
         if (n.data.ghost) continue;
@@ -842,7 +842,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         const a = idx[e.a];
         const b = idx[e.b];
         if (!a || !b) continue;
-        ctx.strokeStyle = `rgba(243,146,48,${Math.min(0.5, 0.16 + e.weight * 0.07)})`;
+        ctx.strokeStyle = `rgba(108,60,204,${Math.min(0.5, 0.16 + e.weight * 0.07)})`;
         ctx.lineWidth = Math.min(2.2, 0.4 + e.weight * 0.45);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -852,14 +852,14 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       // Core glow + core node.
       const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70);
-      cg.addColorStop(0, "rgba(243,146,48,0.85)");
-      cg.addColorStop(0.4, "rgba(243,146,48,0.35)");
-      cg.addColorStop(1, "rgba(243,146,48,0)");
+      cg.addColorStop(0, "rgba(108,60,204,0.85)");
+      cg.addColorStop(0.4, "rgba(108,60,204,0.35)");
+      cg.addColorStop(1, "rgba(108,60,204,0)");
       ctx.fillStyle = cg;
       ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = CORE_COLOR;
       ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "rgba(10,31,18,0.78)";
+      ctx.fillStyle = "rgba(250,246,236,0.78)";
       ctx.font = "600 11px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -877,7 +877,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
           ctx.beginPath(); ctx.arc(n.x, n.y, 7, 0, Math.PI * 2); ctx.stroke();
           continue;
         }
-        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#9babb9";
+        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#543F96";
         ctx.globalAlpha = 0.18;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(n.x, n.y, 11, 0, Math.PI * 2); ctx.fill();
@@ -886,7 +886,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         ctx.globalAlpha = 1;
         const hovered = hoverIdRef.current === n.id;
         if ((showAllLabels || hovered) && n.data.name) {
-          ctx.fillStyle = hovered ? "rgba(242,236,216,0.98)" : "rgba(242,236,216,0.8)";
+          ctx.fillStyle = hovered ? "rgba(34,32,28,0.98)" : "rgba(34,32,28,0.8)";
           ctx.font = "10px Inter, system-ui, sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "alphabetic";

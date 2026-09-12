@@ -18,14 +18,14 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 
-const FOREST = "var(--bg-deep, #050f08)";
-const PEARL = "var(--text-primary, #f2ecd8)";
-const WISTERIA = "var(--wisteria, #9b86a0)";
-const AMBER = "var(--amber, #f39230)";
-const MOSS_DIM = "var(--text-muted, #8a9e8d)";
-const BORDER = "var(--border, #1a3020)";
-const MOSS = "var(--moss, #8a9e66)";
-const EMBER = "var(--ember, #d47a52)";
+const FOREST = "var(--bg-deep, #F5F0E6)";
+const PEARL = "var(--text-primary, #22201C)";
+const WISTERIA = "var(--wisteria, #D23F8C)";
+const AMBER = "var(--amber, #6C3CCC)";
+const MOSS_DIM = "var(--text-muted, #A79E90)";
+const BORDER = "var(--border, #E2DACA)";
+const MOSS = "var(--moss, #4F7A4A)";
+const EMBER = "var(--ember, #C4602F)";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Note = {
@@ -166,7 +166,7 @@ function TrainingGround() {
   }
 
   const field: React.CSSProperties = {
-    background: "rgba(10,31,18,.5)",
+    background: "rgba(250,246,236,.5)",
     border: `1px solid ${BORDER}`,
     borderRadius: 10,
     padding: "8px 11px",
@@ -223,7 +223,7 @@ function TrainingGround() {
             padding: 16,
             border: `1px solid ${BORDER}`,
             borderRadius: 14,
-            background: "rgba(10,31,18,.4)",
+            background: "rgba(250,246,236,.4)",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 12,
@@ -285,7 +285,7 @@ function TrainingGround() {
             minHeight: 280,
             maxHeight: "52vh",
             overflowY: "auto",
-            background: "radial-gradient(120% 50% at 50% 0%, rgba(243,146,48,0.06), transparent 60%)",
+            background: "radial-gradient(120% 50% at 50% 0%, rgba(108,60,204,0.06), transparent 60%)",
           }}
         >
           {messages.length === 0 && (
@@ -374,9 +374,9 @@ function TrainingGround() {
             onClick={send}
             disabled={sending || !input.trim()}
             style={{
-              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(243,146,48,0.5)"}`,
-              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(243,146,48,0.14)",
-              color: sending || !input.trim() ? "var(--text-muted, #8a9e8d)" : AMBER,
+              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(108,60,204,0.5)"}`,
+              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(108,60,204,0.14)",
+              color: sending || !input.trim() ? "var(--text-muted, #A79E90)" : AMBER,
               borderRadius: 12,
               padding: "0 22px",
               fontSize: 12,
