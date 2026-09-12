@@ -119,12 +119,11 @@ export default function LoginPage() {
           <div
             className="w-24 h-24 mb-5 entry-sun entry-rise"
             style={{
-              filter:
-                "drop-shadow(0 0 32px rgba(90,49,174, 0.42)) drop-shadow(0 0 80px rgba(90,49,174, 0.18))",
+              filter: "drop-shadow(0 18px 26px rgba(84,63,150,.26))",
             }}
           >
             <Image
-              src="/solray-sun.png"
+              src="/solray-orb.png"
               unoptimized
               alt="Solray"
               width={96}
@@ -133,8 +132,12 @@ export default function LoginPage() {
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary entry-rise" style={{ fontWeight: 300, "--d": "180ms" } as React.CSSProperties}>SOLRAY</h1>
-          <p className="font-heading text-sm text-text-secondary mt-1 tracking-[0.06em] entry-rise" style={{ fontStyle: "italic", fontWeight: 300, "--d": "300ms" } as React.CSSProperties}>living by design</p>
+          <h1 className="font-heading text-2xl text-text-primary entry-rise inline-flex items-baseline" style={{ fontWeight: 700, letterSpacing: "-0.02em", "--d": "180ms" } as React.CSSProperties} aria-label="Solray">
+            <span>s</span>
+            <Image src="/solray-orb.png" alt="" width={22} height={22} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
+            <span>lray</span>
+          </h1>
+          <p className="font-body text-text-muted mt-2 entry-rise uppercase" style={{ fontSize: 11, letterSpacing: "0.22em", fontWeight: 500, "--d": "300ms" } as React.CSSProperties}>living by design</p>
           <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase entry-rise" style={{ "--d": "420ms" } as React.CSSProperties}>{t("login.cosmic_intelligence")}</p>
         </div>
 
@@ -170,7 +173,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
+            className="w-full font-body font-bold py-3.5 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
+            style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
           >
             {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}
           </button>
