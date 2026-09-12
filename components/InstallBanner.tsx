@@ -107,7 +107,7 @@ export default function InstallBanner() {
   return (
     <div
       style={{
-        background: "linear-gradient(180deg, rgba(243,146,48,0.06) 0%, rgb(var(--rgb-bg-dark)) 100%)",
+        background: "linear-gradient(180deg, rgba(90,49,174,0.06) 0%, rgb(var(--rgb-bg-dark)) 100%)",
         borderBottom: "1px solid rgb(var(--rgb-border))",
       }}
     >
@@ -132,8 +132,8 @@ export default function InstallBanner() {
             onClick={handleAdd}
             className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-md transition-colors"
             style={{
-              background: "rgba(243,146,48,0.12)",
-              border: "1px solid rgba(243,146,48,0.5)",
+              background: "rgba(90,49,174,0.12)",
+              border: "1px solid rgba(90,49,174,0.5)",
               color: "var(--amber)",
               fontWeight: 500,
             }}

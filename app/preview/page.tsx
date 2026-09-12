@@ -153,9 +153,9 @@ export default function PreviewPage() {
           width: 100%;
           background: transparent;
           border: none;
-          border-bottom: 1px solid #1a3020;
+          border-bottom: 1px solid #E2DACA;
           padding: 12px 0;
-          color: #f2ecd8;
+          color: #22201C;
           font-family: "Inter", sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
@@ -163,29 +163,29 @@ export default function PreviewPage() {
         }
         .preview-input:focus {
           outline: none;
-          border-bottom-color: #f39230;
+          border-bottom-color: #5A31AE;
         }
         .preview-input::placeholder {
-          color: #8a9e8d;
+          color: #6E6659;
         }
         .preview-dropdown {
           position: absolute;
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: #0a1f12;
-          border: 1px solid #1a3020;
+          background: #FAF6EC;
+          border: 1px solid #E2DACA;
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 8px 24px rgba(34,32,28,0.08);
         }
         .preview-dropdown-item {
           display: block;
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #f2ecd8;
+          color: #22201C;
           font-family: "Inter", sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -195,12 +195,12 @@ export default function PreviewPage() {
         }
         .preview-dropdown-item:hover,
         .preview-dropdown-item:focus {
-          background: rgba(243, 146, 48, 0.15);
-          color: #f39230;
+          background: rgba(90,49,174, 0.15);
+          color: #5A31AE;
           outline: none;
         }
         .preview-dropdown-item + .preview-dropdown-item {
-          border-top: 1px solid #1a3020;
+          border-top: 1px solid #E2DACA;
         }
         .pulse-orb {
           animation: pulse 2s ease-in-out infinite;
@@ -365,9 +365,9 @@ export default function PreviewPage() {
                 className="pulse-orb w-24 h-24 rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle at 40% 35%, #f3923055, #0a1f1200 70%)",
-                  border: "1px solid rgba(243,146,48,0.2)",
-                  boxShadow: "0 0 40px rgba(243,146,48,0.1)",
+                    "radial-gradient(circle at 40% 35%, #5A31AE55, #FAF6EC00 70%)",
+                  border: "1px solid rgba(90,49,174,0.2)",
+                  boxShadow: "0 0 40px rgba(90,49,174,0.1)",
                 }}
               />
               <p className="font-body text-sm text-text-secondary">
@@ -458,7 +458,7 @@ export default function PreviewPage() {
           className="fixed bottom-0 left-0 right-0 px-6 pb-10 pt-8"
           style={{
             background:
-              "linear-gradient(to top, #050f08, #050f08 50%, transparent)",
+              "linear-gradient(to top, #F5F0E6, #F5F0E6 50%, transparent)",
           }}
         >
           <div className="max-w-sm mx-auto">

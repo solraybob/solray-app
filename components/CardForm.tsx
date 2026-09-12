@@ -90,9 +90,9 @@ export default function CardForm({
     width: "100%",
     padding: "14px 16px",
     borderRadius: 8,
-    border: "1px solid rgba(138, 158, 141, 0.3)",
+    border: "1px solid rgba(110,102,89, 0.3)",
     background: "rgb(var(--rgb-card) / 0.55)",
-    color: "var(--text-primary, #f2ecd8)",
+    color: "var(--text-primary, #22201C)",
     fontSize: 16,
     letterSpacing: "0.06em",
     outline: "none",
@@ -103,7 +103,7 @@ export default function CardForm({
       className="rounded-sm p-6 mt-2"
       style={{
         background: "rgb(var(--rgb-card) / 0.4)",
-        border: "1px solid rgba(243, 146, 48, 0.18)",
+        border: "1px solid rgba(90,49,174, 0.18)",
       }}
     >
       <div
@@ -135,7 +135,7 @@ export default function CardForm({
       </div>
 
       {error && (
-        <p className="mt-3 text-[13px]" style={{ color: "var(--ember, #d47a52)" }}>
+        <p className="mt-3 text-[13px]" style={{ color: "var(--ember, #C4602F)" }}>
           {error}
         </p>
       )}
@@ -144,7 +144,7 @@ export default function CardForm({
         onClick={submit}
         disabled={busy}
         className="w-full mt-5 py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-60"
-        style={{ background: "var(--amber, #f39230)", color: "var(--bg-deep, #050f08)", fontWeight: 600 }}
+        style={{ background: "var(--amber, #5A31AE)", color: "var(--bg-deep, #F5F0E6)", fontWeight: 600 }}
       >
         {busy ? t("subscribe.card_saving") : t("subscribe.card_save")}
       </button>

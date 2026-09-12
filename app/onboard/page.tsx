@@ -51,10 +51,10 @@ function BlueprintLoader() {
       <div
         className="w-20 h-20 rounded-full mb-10"
         style={{
-          background: "radial-gradient(circle at 40% 35%, #f3923055, #0a1f1200 70%)",
-          border: "1px solid rgba(243,146,48,0.2)",
+          background: "radial-gradient(circle at 40% 35%, #5A31AE55, #FAF6EC00 70%)",
+          border: "1px solid rgba(90,49,174,0.2)",
           animation: "pulse 2s ease-in-out infinite",
-          boxShadow: "0 0 40px rgba(243,146,48,0.1)",
+          boxShadow: "0 0 40px rgba(90,49,174,0.1)",
         }}
       />
       <div className="space-y-4 w-full max-w-xs">
@@ -77,7 +77,7 @@ function BlueprintLoader() {
               <p
                 className="font-body text-sm"
                 style={{
-                  color: i === visibleCount - 1 ? "#f2ecd8" : "#8a9e8d",
+                  color: i === visibleCount - 1 ? "#22201C" : "#6E6659",
                 }}
               >
                 {text}
@@ -330,7 +330,7 @@ export default function OnboardPage() {
             className="w-24 h-24 mb-4 entry-sun"
             style={{
               filter:
-                "drop-shadow(0 0 32px rgba(243, 146, 48, 0.42)) drop-shadow(0 0 80px rgba(243, 146, 48, 0.18))",
+                "drop-shadow(0 0 32px rgba(90,49,174, 0.42)) drop-shadow(0 0 80px rgba(90,49,174, 0.18))",
             }}
           >
             <Image
@@ -393,7 +393,7 @@ export default function OnboardPage() {
                       className="sex-card"
                       style={{
                         borderColor: active ? "var(--amber)" : "var(--border)",
-                        background: active ? "rgba(243,146,48,0.08)" : "transparent",
+                        background: active ? "rgba(90,49,174,0.08)" : "transparent",
                         color: active ? "var(--text-primary)" : "var(--text-muted)",
                       }}
                     >
@@ -567,34 +567,34 @@ export default function OnboardPage() {
           width: 100%;
           background: transparent;
           border: none;
-          border-bottom: 1px solid #1a3020;
+          border-bottom: 1px solid #E2DACA;
           padding: 12px 0;
-          color: #f2ecd8;
+          color: #22201C;
           font-family: 'Inter', sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
         }
         .onboard-input:focus {
-          border-bottom-color: #f39230;
+          border-bottom-color: #5A31AE;
         }
         .onboard-input::placeholder {
-          color: #8a9e8d;
+          color: #6E6659;
         }
         .sex-card {
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 28px 12px;
-          border: 1px solid #1a3020;
+          border: 1px solid #E2DACA;
           border-radius: 14px;
           background: transparent;
           transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.15s ease;
           cursor: pointer;
         }
         .sex-card:hover {
-          border-color: rgba(243,146,48,0.55);
-          color: #f2ecd8;
+          border-color: rgba(90,49,174,0.55);
+          color: #22201C;
         }
         .sex-card:active {
           transform: scale(0.98);
@@ -604,19 +604,19 @@ export default function OnboardPage() {
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: #0a1f12;
-          border: 1px solid #1a3020;
+          background: #FAF6EC;
+          border: 1px solid #E2DACA;
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+          box-shadow: 0 8px 24px rgba(34,32,28,0.08);
         }
         .city-dropdown-item {
           display: block;
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #f2ecd8;
+          color: #22201C;
           font-family: 'Inter', sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -626,12 +626,12 @@ export default function OnboardPage() {
         }
         .city-dropdown-item:hover,
         .city-dropdown-item:focus {
-          background: rgba(243,146,48,0.15);
-          color: #f39230;
+          background: rgba(90,49,174,0.15);
+          color: #5A31AE;
           outline: none;
         }
         .city-dropdown-item + .city-dropdown-item {
-          border-top: 1px solid #1a3020;
+          border-top: 1px solid #E2DACA;
         }
       `}</style>
     </div>

@@ -132,7 +132,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                     className="object-cover"
                     unoptimized
                   />
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(5,15,8,0.55) 0%, rgba(5,15,8,0.80) 100%)" }} />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(245,240,230,0.55) 0%, rgba(245,240,230,0.80) 100%)" }} />
                   {/* Content over image */}
                   <div style={{ position: "relative", zIndex: 10, padding: "16px" }}>
                     {/* Label row */}

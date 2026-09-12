@@ -22,47 +22,80 @@
    per-page tuning required.
    ─────────────────────────────────────────────────────────────────────────── */
 :root {
+  /* one typeface, one download: the body variable points at the heading one */
+  --font-body: var(--font-heading);
   /* DARK theme (default) — RGB triplets */
-  --rgb-bg-deep:        5  15   8;     /* #050f08 */
-  --rgb-bg-dark:        7  21  16;     /* #071510 */
-  --rgb-card:          10  31  18;     /* #0a1f12 */
-  --rgb-border:        26  48  32;     /* #1a3020 */
-  --rgb-amber:        243 146  48;     /* #f39230 — hero accent, theme-stable */
-  --rgb-text-primary: 242 236 216;     /* #f2ecd8 */
-  --rgb-text-secondary:168 184 171;    /* #a8b8ab */
-  --rgb-text-muted:   138 158 141;     /* #8a9e8d */
+  --rgb-bg-deep:        245 240 230;     /* #F5F0E6 */
+  --rgb-bg-dark:        250 246 236;     /* #FAF6EC */
+  --rgb-card:          250 246 236;     /* #FAF6EC */
+  --rgb-border:        226 218 202;     /* #E2DACA */
+  --rgb-amber:         90  49 174;     /* #5A31AE — hero accent, theme-stable */
+  --rgb-text-primary:  34  32  28;     /* #22201C */
+  --rgb-text-secondary: 92  85  72;    /* #5C5548 */
+  --rgb-text-muted:   110 102  89;     /* #6E6659 */
 
-  --rgb-ember:        212 122  82;     /* #d47a52 */
-  --rgb-moss:         138 158 102;     /* #8a9e66 */
-  --rgb-mist:         155 171 185;     /* #9babb9 */
-  --rgb-indigo:       106 134 146;     /* #6a8692 */
-  --rgb-wisteria:     155 134 160;     /* #9b86a0 */
-  --rgb-pearl:        236 228 207;     /* #ece4cf */
+  --rgb-ember:        196  96  47;     /* #C4602F */
+  --rgb-moss:         163  74  34;     /* #A34A22 */
+  --rgb-mist:          84  63 150;     /* #543F96 */
+  --rgb-indigo:        74  46 158;     /* #4A2E9E */
+  --rgb-wisteria:     176  46 114;     /* #B02E72 */
+  --rgb-pearl:        250 246 236;     /* #22201C */
 
   /* Fixed-header scrim opacity. 0.8 reads as glass over the dark forest;
      light mode needs more body (0.94) or dark cards scrolling underneath
      show through as a muddy band. */
-  --header-alpha: 0.8;
+  --header-alpha: 1;
   /* Spinner track. 0.4 border is enough contrast on forest; on pearl the
      tan hairline disappears at 40%, so light mode runs it at full. */
-  --spinner-track-alpha: 0.4;
+  --spinner-track-alpha: 1;
 
   /* Legacy hex aliases — kept so any inline style still resolving to
      these names continues to render the dark default. */
-  --bg-deep:        #050f08;
-  --bg-dark:        #071510;
-  --card:           #0a1f12;
-  --border:         #1a3020;
-  --amber:          #f39230;
-  --text-primary:   #f2ecd8;
-  --text-secondary: #a8b8ab;
-  --text-muted:     #8a9e8d;
-  --ember:          #d47a52;
-  --moss:           #8a9e66;
-  --mist:           #9babb9;
-  --indigo:         #6a8692;
-  --wisteria:       #9b86a0;
-  --pearl:          #ece4cf;
+  --bg-deep:        #F5F0E6;
+  --bg-dark:        #FAF6EC;
+  --card:           #FAF6EC;
+  --border:         #E2DACA;
+  --amber:          #5A31AE;
+  --text-primary:   #22201C;
+  --text-secondary: #5C5548;
+  --text-muted:     #6E6659;
+  --ember:          #C4602F;
+  --moss:           #A34A22;
+  --mist:           #543F96;
+  --indigo:         #4A2E9E;
+  --wisteria:       #B02E72;
+  --pearl:          #FAF6EC;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   DARK: the same palette after sunset. Not the old forest green, and not pure
+   black either: the ink the cream theme writes with becomes the ground, the
+   cream becomes the ink, and the orb accents lift a step so they hold at low
+   luminance. One product, two hours of the day.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --rgb-bg-deep:         22  20  17;   /* #161411 the new black, warm */
+  --rgb-bg-dark:         28  26  22;   /* #1C1A16 */
+  --rgb-card:            31  29  24;   /* #1F1D18 */
+  --rgb-border:          58  53  45;   /* #3A352D hairline */
+  --rgb-amber:          154 113 246;   /* #9A71F6 orb violet, lifted */
+  --rgb-text-primary:   245 240 230;   /* #F5F0E6 the cream, writing */
+  --rgb-text-secondary: 198 189 173;   /* #C6BDAD */
+  --rgb-text-muted:     154 145 130;   /* #9A9182 */
+  --rgb-ember:          230 141  94;   /* #E68D5E coral */
+  --rgb-moss:           226 133  90;   /* #E2855A */
+  --rgb-mist:           166 146 232;   /* #A692E8 */
+  --rgb-indigo:         146 124 236;   /* #927CEC */
+  --rgb-wisteria:       238 122 178;   /* #EE7AB2 orb pink */
+  --rgb-pearl:           31  29  24;
+
+  --header-alpha: 0.86;
+  --spinner-track-alpha: 0.4;
+
+  --bg-deep: #161411;  --bg-dark: #1C1A16;  --card: #1F1D18;  --border: #3A352D;
+  --amber: #9A71F6;    --text-primary: #F5F0E6; --text-secondary: #C6BDAD;
+  --text-muted: #9A9182; --ember: #E68D5E; --moss: #E2855A; --mist: #A692E8;
+  --indigo: #927CEC;   --wisteria: #EE7AB2; --pearl: #1F1D18;
 }
 
 :root[data-theme="light"] {
@@ -70,39 +103,39 @@
      lighter than the page bg so layered content keeps a soft edge
      without needing a hard border. Accents (moss/mist/indigo/wisteria)
      are pushed darker so 13px body text on pearl still passes WCAG AA. */
-  --rgb-bg-deep:       236 228 207;     /* #ece4cf — pearl page bg */
-  --rgb-bg-dark:       224 214 189;     /* #e0d6bd — header strip */
-  --rgb-card:          245 239 222;     /* #f5efde — lifted card */
-  --rgb-border:        201 189 160;     /* #c9bda0 — warm tan hairline */
-  --rgb-amber:         208 110  20;     /* #d06e14 — deeper amber on cream */
-  --rgb-text-primary:  16  28  21;      /* #101c15 — near-black forest */
-  --rgb-text-secondary:74  90  72;      /* #4a5a48 */
-  --rgb-text-muted:   107 121 105;      /* #6b7969 */
+  --rgb-bg-deep:       245 240 230;     /* #22201C — pearl page bg */
+  --rgb-bg-dark:       250 246 236;     /* #E2DACA — header strip */
+  --rgb-card:          250 246 236;     /* #FAF6EC — lifted card */
+  --rgb-border:        226 218 202;     /* #E2DACA — warm tan hairline */
+  --rgb-amber:          90  49 174;     /* #5A31AE — deeper amber on cream */
+  --rgb-text-primary:   34  32  28;      /* #22201C — near-black forest */
+  --rgb-text-secondary: 92  85  72;      /* #5C5548 */
+  --rgb-text-muted:   110 102  89;      /* #6E6659 */
 
-  --rgb-ember:        180  90  56;      /* #b45a38 */
-  --rgb-moss:          90 110  64;      /* #5a6e40 */
-  --rgb-mist:         100 122 144;      /* #647a90 */
-  --rgb-indigo:        60  92 110;      /* #3c5c6e */
-  --rgb-wisteria:     130 100 138;      /* #82648a */
-  --rgb-pearl:        245 239 222;      /* #f5efde — also the card tone */
+  --rgb-ember:        196  96  47;      /* #C4602F */
+  --rgb-moss:          163  74  34;      /* #5a6e40 */
+  --rgb-mist:          84  63 150;      /* #4A2E9E */
+  --rgb-indigo:         74  46 158;      /* #4A2E9E */
+  --rgb-wisteria:     176  46 114;      /* #B02E72 */
+  --rgb-pearl:        250 246 236;      /* #FAF6EC — also the card tone */
 
-  --header-alpha: 0.94;
+  --header-alpha: 1;
   --spinner-track-alpha: 1;
 
-  --bg-deep:        #ece4cf;
-  --bg-dark:        #e0d6bd;
-  --card:           #f5efde;
-  --border:         #c9bda0;
-  --amber:          #d06e14;
-  --text-primary:   #101c15;
-  --text-secondary: #4a5a48;
-  --text-muted:     #6b7969;
-  --ember:          #b45a38;
-  --moss:           #5a6e40;
-  --mist:           #647a90;
-  --indigo:         #3c5c6e;
-  --wisteria:       #82648a;
-  --pearl:          #f5efde;
+  --bg-deep:        #F5F0E6;
+  --bg-dark:        #FAF6EC;
+  --card:           #FAF6EC;
+  --border:         #E2DACA;
+  --amber:          #5A31AE;
+  --text-primary:   #22201C;
+  --text-secondary: #5C5548;
+  --text-muted:     #6E6659;
+  --ember:          #C4602F;
+  --moss:           #A34A22;
+  --mist:           #543F96;
+  --indigo:         #4A2E9E;
+  --wisteria:       #B02E72;
+  --pearl:          #FAF6EC;
 }
 
 * {
@@ -116,7 +149,7 @@
 html, body {
   background-color: rgb(var(--rgb-bg-deep));
   color: rgb(var(--rgb-text-primary));
-  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Stop the mobile browser's native pull-to-refresh and scroll-chaining.
@@ -142,7 +175,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  border: 2px solid rgba(243, 146, 48, 0.25);
+  border: 2px solid rgba(90,49,174, 0.25);
   border-top-color: var(--amber);
 }
 .solray-ptr-spinner.is-refreshing {
@@ -171,13 +204,16 @@ body {
     pointer-events: none;
     z-index: 0;
     background:
-      radial-gradient(circle at 50% 30%, rgba(243, 146, 48, 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(155, 134, 160, 0.03) 0%, transparent 60%);
+      radial-gradient(circle at 50% 30%, rgba(90, 49, 174, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(176, 46, 114, 0.02) 0%, transparent 60%);
   }
 }
 
 h1, h2, h3 {
-  font-family: var(--font-heading), 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -.038em;
+  line-height: 1.08;
 }
 
 /* Scrollbar styling */
@@ -187,7 +223,7 @@ h1, h2, h3 {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(var(--rgb-bg-dark));
+  background: rgb(var(--rgb-bg-deep));
 }
 
 ::-webkit-scrollbar-thumb {
@@ -248,9 +284,9 @@ html {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #0a1f12 0%,
+    #FAF6EC 0%,
     #112a18 40%,
-    #0a1f12 100%
+    #FAF6EC 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -307,7 +343,7 @@ html {
   content: "";
   position: absolute; top: 0; bottom: 0; left: -60%;
   width: 40%;
-  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  background: linear-gradient(105deg, transparent 0%, rgba(34,32,28, 0.35) 50%, transparent 100%);
   transform: skewX(-18deg);
   opacity: 0;
 }
@@ -316,8 +352,8 @@ html {
 
 /* Inputs wake up under the hand */
 .entry-input:focus {
-  border-color: rgba(243, 146, 48, 0.55) !important;
-  box-shadow: 0 0 0 3px rgba(243, 146, 48, 0.08), 0 0 24px rgba(243, 146, 48, 0.06);
+  border-color: rgba(90,49,174, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(90,49,174, 0.08), 0 0 24px rgba(90,49,174, 0.06);
   outline: none;
 }
 
@@ -393,34 +429,34 @@ html {
    higher specificity, leaving the member's theme untouched.
    ======================================================================== */
 :root[data-entry-night][data-theme="light"] {
-  --rgb-bg-deep:        5  15   8;
-  --rgb-bg-dark:        7  21  16;
-  --rgb-card:          10  31  18;
-  --rgb-border:        26  48  32;
-  --rgb-amber:        243 146  48;
-  --rgb-text-primary: 242 236 216;
-  --rgb-text-secondary:168 184 171;
-  --rgb-text-muted:   138 158 141;
-  --rgb-ember:        212 122  82;
-  --rgb-moss:         138 158 102;
-  --rgb-mist:         155 171 185;
-  --rgb-indigo:       106 134 146;
-  --rgb-wisteria:     155 134 160;
-  --rgb-pearl:        236 228 207;
-  --header-alpha: 0.8;
-  --spinner-track-alpha: 0.4;
-  --bg-deep:        #050f08;
-  --bg-dark:        #071510;
-  --card:           #0a1f12;
-  --border:         #1a3020;
-  --amber:          #f39230;
-  --text-primary:   #f2ecd8;
-  --text-secondary: #a8b8ab;
-  --text-muted:     #8a9e8d;
-  --ember:          #d47a52;
-  --moss:           #8a9e66;
-  --mist:           #9babb9;
-  --indigo:         #6a8692;
-  --wisteria:       #9b86a0;
-  --pearl:          #ece4cf;
+  --rgb-bg-deep:        245 240 230;
+  --rgb-bg-dark:        250 246 236;
+  --rgb-card:          250 246 236;
+  --rgb-border:        226 218 202;
+  --rgb-amber:         90  49 174;
+  --rgb-text-primary:  34  32  28;
+  --rgb-text-secondary: 92  85  72;
+  --rgb-text-muted:   110 102  89;
+  --rgb-ember:        196  96  47;
+  --rgb-moss:         163  74  34;
+  --rgb-mist:          84  63 150;
+  --rgb-indigo:        74  46 158;
+  --rgb-wisteria:     176  46 114;
+  --rgb-pearl:        250 246 236;
+  --header-alpha: 1;
+  --spinner-track-alpha: 1;
+  --bg-deep:        #F5F0E6;
+  --bg-dark:        #FAF6EC;
+  --card:           #FAF6EC;
+  --border:         #E2DACA;
+  --amber:          #5A31AE;
+  --text-primary:   #22201C;
+  --text-secondary: #5C5548;
+  --text-muted:     #6E6659;
+  --ember:          #C4602F;
+  --moss:           #A34A22;
+  --mist:           #543F96;
+  --indigo:         #4A2E9E;
+  --wisteria:       #B02E72;
+  --pearl:          #FAF6EC;
 }

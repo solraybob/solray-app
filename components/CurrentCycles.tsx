@@ -139,7 +139,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
   return (
     <div
       className="rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
-      style={{ border: "1px solid rgba(26,48,32,0.6)" }}
+      style={{ border: "1px solid rgba(226,218,202,0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >
       {/* Photo header, locked height, never grows. NIGHT_SURFACE pins the

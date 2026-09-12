@@ -157,7 +157,7 @@ function FirstMirrorContent() {
               <button
                 onClick={() => askOracle()}
                 className="w-full text-left px-5 py-4 rounded-2xl border border-amber-sun/35 font-body text-[15px] transition-all hover:border-amber-sun/60 active:scale-[0.99]"
-                style={{ color: "var(--amber)", background: "rgba(243,146,48,0.05)" }}
+                style={{ color: "var(--amber)", background: "rgba(90,49,174,0.05)" }}
               >
                 {t("first_mirror.chip_own")}
               </button>

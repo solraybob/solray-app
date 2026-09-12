@@ -302,13 +302,13 @@ interface SoulMapRadarChartProps {
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire:     "#d47a52", // ember-red
-  Earth:    "#8a9e66", // moss
-  Air:      "#9babb9", // mist
-  Water:    "#6a8692", // slate
+  Fire:     "#C4602F", // ember-red
+  Earth:    "#A34A22", // moss
+  Air:      "#543F96", // mist
+  Water:    "#4A2E9E", // slate
   Cardinal: "var(--amber)", // ember (initiating, outward)
-  Fixed:    "#9b86a0", // wisteria (holding, inward)
-  Mutable:  "#8a9e8d", // sage (adapting, fluid)
+  Fixed:    "#B02E72", // wisteria (holding, inward)
+  Mutable:  "#6E6659", // sage (adapting, fluid)
 };
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
@@ -317,7 +317,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
   const isDark = theme !== "light";
   // Grid lines: dark forest hairlines on the dark theme; a soft sage-grey on the
   // pearl theme so the radar grid stays subtle instead of heavy dark lines.
-  const gridStroke = isDark ? "#1a3020" : "#9aa89c";
+  const gridStroke = isDark ? "#E2DACA" : "#9aa89c";
   const progress = useAnimatedProgress(0);
 
   const OUTER = 112;
@@ -386,7 +386,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       <polygon
         points={heptGridPolygon(cx, cy, (50 / 100) * OUTER)}
         fill="none"
-        stroke="#8a9e8d"
+        stroke="#6E6659"
         strokeWidth={1}
         strokeDasharray="4 3"
         opacity={0.30}
@@ -395,9 +395,9 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       {/* Main moss polygon */}
       <polygon
         points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
-        fill="#8a9e66"
+        fill="#A34A22"
         fillOpacity={0.22 * progress}
-        stroke="#8a9e66"
+        stroke="#A34A22"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeOpacity={progress}
@@ -415,7 +415,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cy={y}
               r={5.5}
               fill="none"
-              stroke="#8a9e66"
+              stroke="#A34A22"
               strokeWidth={0.5}
               opacity={progress * 0.4}
             />
@@ -424,7 +424,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cx={x}
               cy={y}
               r={3}
-              fill="#8a9e66"
+              fill="#A34A22"
               opacity={progress * 0.9}
             />
           </g>
@@ -432,12 +432,12 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       })}
 
       {/* Center dot */}
-      <circle cx={cx} cy={cy} r={2} fill="#f39230" opacity={0.3} />
+      <circle cx={cx} cy={cy} r={2} fill="#5A31AE" opacity={0.3} />
 
       {/* Axis labels, colored by element/modality */}
       {SOUL_AXIS_LABELS.map((label, i) => {
         const [lx, ly] = getPoint7(cx, cy, OUTER + 32, i);
-        const color = ELEMENT_COLORS[label] || "#8a9e8d";
+        const color = ELEMENT_COLORS[label] || "#6E6659";
         return (
           <text
             key={label}
@@ -463,7 +463,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
 
 const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
   trine:          { symbol: "△",  label: "Trine",          color: "#2a9d8f", major: true },
-  sextile:        { symbol: "⚹",  label: "Sextile",        color: "#8a9e8d", major: true },
+  sextile:        { symbol: "⚹",  label: "Sextile",        color: "#6E6659", major: true },
   conjunction:    { symbol: "☌",  label: "Conjunction",    color: "var(--amber)", major: true },
   opposition:     { symbol: "☍",  label: "Opposition",     color: "#e05c5c", major: true },
   square:         { symbol: "□",  label: "Square",         color: "#d4813a", major: true },
@@ -545,7 +545,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
             height="12"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#8a9e8d"
+            stroke="#6E6659"
             strokeWidth="2"
             className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
           >
@@ -569,7 +569,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
           height="16"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#8a9e8d"
+          stroke="#6E6659"
           strokeWidth="2"
           className={`transition-transform duration-200 ${sectionOpen ? "rotate-180" : ""}`}
         >
@@ -598,7 +598,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                   height="12"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#8a9e8d"
+                  stroke="#6E6659"
                   strokeWidth="2"
                   className={`transition-transform duration-200 flex-shrink-0 ${minorOpen ? "rotate-180" : ""}`}
                 >
@@ -620,10 +620,10 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 
 // Section accent colors, mapped to the Solray extended palette
 const SECTION_ACCENTS: Record<string, string> = {
-  "Natal Chart":     "#f39230", // ember
+  "Natal Chart":     "#5A31AE", // ember
   "Astrocartography": "var(--mist)", // mist
-  "Human Design":    "#8a9e66", // moss
-  "Gene Keys":       "#6a8692", // slate
+  "Human Design":    "#A34A22", // moss
+  "Gene Keys":       "#4A2E9E", // slate
 };
 
 function CollapsibleSection({
@@ -637,7 +637,7 @@ function CollapsibleSection({
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(defaultOpen);
-  const accent = SECTION_ACCENTS[title] || "#8a9e8d";
+  const accent = SECTION_ACCENTS[title] || "#6E6659";
   const sectionTitleKey: Record<string, string> = {
     "Natal Chart": "profile.natal_chart",
     "Astrocartography": "profile.astrocartography",
@@ -669,7 +669,7 @@ function CollapsibleSection({
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#8a9e8d"
+            stroke="#6E6659"
             strokeWidth="2"
             className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           >
@@ -702,7 +702,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--mist)", borderColor: "rgba(155,171,185,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--mist)", borderColor: "rgba(84,63,150,0.6)" }}>
       {children}
     </span>
   );
@@ -710,7 +710,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--wisteria)", borderColor: "rgba(155,134,160,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--wisteria)", borderColor: "rgba(176,46,114,0.6)" }}>
       {children}
     </span>
   );
@@ -1084,7 +1084,7 @@ export default function ProfilePage() {
                   {/* Soft single-tone ring, no gradient */}
                   <div
                     className="absolute -inset-[2px] rounded-full"
-                    style={{ border: "1px solid rgba(243,146,48,0.35)", zIndex: -1 }}
+                    style={{ border: "1px solid rgba(90,49,174,0.35)", zIndex: -1 }}
                   />
                   <div
                     className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading text-forest-deep font-semibold overflow-hidden relative bg-forest-deep"
@@ -1099,7 +1099,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center border border-forest-border"
-                    style={{ background: "var(--card)", color: "#8a9e8d" }}
+                    style={{ background: "var(--card)", color: "#6E6659" }}
                     title={t("profile.change_picture")}
                   >
                     <IconCamera />
@@ -1114,7 +1114,7 @@ export default function ProfilePage() {
                 </div>
                 {/* Upload status */}
                 {avatarSaving === "saving" && (
-                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#8a9e8d" }}>{t("profile.photo_saving")}</p>
+                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6E6659" }}>{t("profile.photo_saving")}</p>
                 )}
                 {avatarSaving === "saved" && (
                   <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>{t("profile.photo_saved")}</p>
@@ -1218,7 +1218,7 @@ export default function ProfilePage() {
                       disabled={soulMapSharing}
                       aria-label={t("profile.share_soul_map")}
                       className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center border transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                      style={{ borderColor: "rgba(138,158,141,0.40)", color: "var(--moss)", background: "transparent" }}
+                      style={{ borderColor: "rgba(110,102,89,0.40)", color: "var(--moss)", background: "transparent" }}
                     >
                       {soulMapSharing ? (
                         <span className="inline-block w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: "currentColor", borderTopColor: "transparent" }} />
@@ -1251,7 +1251,7 @@ export default function ProfilePage() {
                         {SOUL_AXIS_KEYS.map((key, i) => {
                           const val = profile.radar[key];
                           const label = SOUL_AXIS_LABELS[i];
-                          const barColor = ELEMENT_COLORS[label] || "#8a9e8d";
+                          const barColor = ELEMENT_COLORS[label] || "#6E6659";
                           return (
                             <div key={key} className="flex items-center gap-2">
                               <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
@@ -1839,7 +1839,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       <CollapsibleSection title="Gene Keys" defaultOpen={false}>
         <div className="space-y-5 mt-2">
           {Object.values(chart.gene_keys).filter(Boolean).map((gk) => (
-            <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(106,134,146,0.08)", border: "1px solid rgba(106,134,146,0.28)" }}>
+            <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(74,46,158,0.08)", border: "1px solid rgba(74,46,158,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-body tracking-wider uppercase" style={{ color: "var(--mist)" }}>{tx(gk!.name, lang)}</span>
@@ -1855,7 +1855,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label={tx("Shadow", lang)} value={tx(gk!.shadow, lang)} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
                 <GKPill label={tx("Gift", lang)} value={tx(gk!.gift, lang)} color="" style={{ color: "var(--mist)" }} />
-                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #9b86a0, #9babb9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #B02E72, #543F96)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

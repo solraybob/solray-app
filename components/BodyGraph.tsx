@@ -84,15 +84,15 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
 // coding (throat / heart / sacral read as warm fire, spleen as moss, root
 // as slate) survives desaturation and harmonises with the forest field.
 const CENTER_COLOR: Record<CenterKey, string> = {
-  Head:        "#9b86a0", // wisteria
-  Ajna:        "#9babb9", // mist
-  Throat:      "#d47a52", // ember
-  G:           "#ece4cf", // pearl
-  Heart:       "#d47a52", // ember
-  Sacral:      "#d47a52", // ember
-  Spleen:      "#8a9e66", // moss
+  Head:        "#B02E72", // wisteria
+  Ajna:        "#543F96", // mist
+  Throat:      "#C4602F", // ember
+  G:           "#22201C", // pearl
+  Heart:       "#C4602F", // ember
+  Sacral:      "#C4602F", // ember
+  Spleen:      "#A34A22", // moss
   SolarPlexus: "var(--wisteria)", // wisteria
-  Root:        "#6a8692", // slate
+  Root:        "#4A2E9E", // slate
 };
 
 // External label positions (outside the shape, in surrounding whitespace).
@@ -272,7 +272,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
   const isDark = theme !== "light";
   // Center labels: muted sage on the dark theme, deep forest-green on the light
   // theme so they read clearly against the pearl ground.
-  const labelFill = isDark ? "#a8b8ab" : "#1f3a28";
+  const labelFill = isDark ? "#5C5548" : "#1f3a28";
   // Extended viewBox gives the external labels breathing room on all sides.
   const vbX = -10;
   const vbY = -4;
@@ -361,7 +361,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y1={p1.y}
             x2={p2.x}
             y2={p2.y}
-            stroke="rgba(243,146,48,0.75)"
+            stroke="rgba(90,49,174,0.75)"
             strokeWidth={3}
             strokeLinecap="round"
           />
@@ -391,7 +391,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
           y={g.y}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#050f08"
+          fill="#F5F0E6"
           style={{
             fontFamily: "Inter, system-ui, sans-serif",
             fontSize: "10px",

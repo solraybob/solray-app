@@ -148,9 +148,9 @@ function getEnergyNote(label: string, value: number): string {
 // Extended palette, aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
-  Mental:    "#9babb9", // mist
+  Mental:    "#543F96", // mist
   Emotional: "var(--ember)", // ember
-  Physical:  "#8a9e66", // moss
+  Physical:  "#A34A22", // moss
   Intuitive: "var(--wisteria)", // wisteria
 };
 
@@ -188,7 +188,7 @@ function EnergyBar({
   onAsk: (label: string, pct: number) => void;
 }) {
   const { t } = useT();
-  const color = ENERGY_COLORS[label] || "#f39230";
+  const color = ENERGY_COLORS[label] || "#5A31AE";
   const pct = toDisplayPct(value);
   const displayLabel = t(`today.${label.toLowerCase()}`);
 
@@ -264,21 +264,21 @@ function EnergyBar({
 //   Jupiter       → moss        (expansion, growth, abundance)
 //   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
-  Sun:     "#f39230",  // amber-sun, hero
-  Moon:    "#9babb9",  // mist
+  Sun:     "#5A31AE",  // amber-sun, hero
+  Moon:    "#543F96",  // mist
   Mercury: "var(--pearl)",  // pearl
-  Venus:   "#9b86a0",  // wisteria
-  Mars:    "#d47a52",  // ember
+  Venus:   "#B02E72",  // wisteria
+  Mars:    "#C4602F",  // ember
   Jupiter: "var(--moss)",  // moss
-  Saturn:  "#6a8692",  // indigo
-  Uranus:  "#9babb9",  // mist (paired with Moon)
+  Saturn:  "#4A2E9E",  // indigo
+  Uranus:  "#543F96",  // mist (paired with Moon)
   Neptune: "var(--wisteria)",  // wisteria (paired with Venus)
-  Pluto:   "#6a8692",  // indigo (paired with Saturn)
+  Pluto:   "#4A2E9E",  // indigo (paired with Saturn)
 };
 
 function PlanetCard({ planet }: { planet: Planet }) {
   const { t } = useT();
-  const color = PLANET_COLORS[planet.name] || "#8a9e8d";
+  const color = PLANET_COLORS[planet.name] || "#6E6659";
   const planetLabel = t(`planets.${planet.name.toLowerCase()}`);
   const signLabel = t(`signs.${planet.sign.toLowerCase()}`);
   return (
@@ -423,7 +423,7 @@ function HeroImageCard({
   return (
     <div
       className="rounded-2xl overflow-hidden relative"
-      style={{ border: "1px solid rgba(26,48,32,0.6)" }}
+      style={{ border: "1px solid rgba(226,218,202,0.6)" }}
     >
       {/* Image + toggle area. The onClick toggles open/close on the
           hero. The share button below is a SIBLING of this div, not a
@@ -454,13 +454,13 @@ function HeroImageCard({
             transition: "opacity 0.45s ease",
           }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.78) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(34,32,28,0.085) 42%, rgba(34,32,28,0.088) 100%)" }} />
 
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-none">
           <h1
             className="font-heading text-[26px] leading-[1.22] text-center"
-            style={{ color: "var(--text-primary)", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,0.85), 0 1px 5px rgba(0,0,0,0.95)" }}
+            style={{ color: "var(--text-primary)", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(34,32,28,0.085), 0 1px 5px rgba(34,32,28,0.085)" }}
           >
             {dayTitle}
           </h1>
@@ -468,7 +468,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1 pointer-events-none">
-          <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(242,236,216,0.85)", fontWeight: 500 }}>
+          <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(34,32,28,0.85)", fontWeight: 500 }}>
             {t("today.weather")}
           </p>
           <svg
@@ -479,7 +479,7 @@ function HeroImageCard({
               transition: "transform 0.3s ease",
             }}
           >
-            <path d="M1 1L8 8L15 1" stroke="#f39230" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1L8 8L15 1" stroke="#5A31AE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       </div>
@@ -496,8 +496,8 @@ function HeroImageCard({
         className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
         style={{
           ...NIGHT_SURFACE,
-          background: "rgba(5,15,8,0.55)",
-          border: "1px solid rgba(243,146,48,0.35)",
+          background: "rgba(245,240,230,0.55)",
+          border: "1px solid rgba(90,49,174,0.35)",
           backdropFilter: "blur(6px)",
           WebkitBackdropFilter: "blur(6px)",
         }}
@@ -505,7 +505,7 @@ function HeroImageCard({
         {sharing ? (
           <span
             className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
-            style={{ borderColor: "rgba(243,146,48,0.35)", borderTopColor: "var(--amber)" }}
+            style={{ borderColor: "rgba(90,49,174,0.35)", borderTopColor: "var(--amber)" }}
           />
         ) : (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
@@ -571,13 +571,13 @@ function PendingTodayState({ planets }: { planets: Planet[] }) {
       <div
         className="rounded-sm p-7 mb-8"
         style={{
-          background: "rgba(10, 31, 18, 0.6)",
-          border: "1px solid rgba(243, 146, 48, 0.14)",
+          background: "rgba(250,246,236, 0.6)",
+          border: "1px solid rgba(90,49,174, 0.14)",
         }}
       >
         <p
           className="font-body text-[12px] tracking-[0.3em] uppercase mb-5"
-          style={{ color: "var(--amber, #f39230)", opacity: 0.85 }}
+          style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
         >
           {t("today.your_reading")}
         </p>
@@ -721,9 +721,9 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #0d2114 0%, #071510 60%, #050f08 100%)",
-          border: "1px solid rgba(243,146,48,0.34)",
-          boxShadow: "0 0 70px rgba(243,146,48,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          background: "radial-gradient(125% 90% at 50% 0%, #0d2114 0%, #FAF6EC 60%, #F5F0E6 100%)",
+          border: "1px solid rgba(90,49,174,0.34)",
+          boxShadow: "0 0 70px rgba(90,49,174,0.14), 0 30px 90px rgba(34,32,28,0.085)",
           animation: "bkRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -736,14 +736,14 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
 
         {/* the real Solray sun, beating */}
         <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(243,146,48,0.5)", animation: "bkPulse 2.6s ease-out infinite" }} />
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(90,49,174,0.5)", animation: "bkPulse 2.6s ease-out infinite" }} />
           <Image
             src="/solray-sun.png"
             alt="Solray"
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bkBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(243,146,48,0.5))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bkBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(90,49,174,0.5))" }}
           />
         </div>
 
@@ -758,12 +758,12 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
         </p>
 
         {/* divider in the Oracle's wisteria, hinting where Go deeper leads */}
-        <div style={{ width: 36, height: 1, background: "rgba(155,134,160,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgba(176,46,114,0.45)", margin: "24px auto 22px" }} />
 
         <button
           onClick={onAsk}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
         >
           {t("insight.go_deeper")}
         </button>
@@ -886,9 +886,9 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #161427 0%, #0c1622 55%, #050f08 100%)",
-          border: "1px solid rgba(155,134,160,0.34)",
-          boxShadow: "0 0 70px rgba(155,134,160,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          background: "radial-gradient(125% 90% at 50% 0%, #161427 0%, #0c1622 55%, #F5F0E6 100%)",
+          border: "1px solid rgba(176,46,114,0.34)",
+          boxShadow: "0 0 70px rgba(176,46,114,0.14), 0 30px 90px rgba(34,32,28,0.085)",
           animation: "skRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -901,11 +901,11 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
 
         {/* a soft moon, the sky returning */}
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(155,134,160,0.5)", animation: "skPulse 2.8s ease-out infinite" }} />
-          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: "radial-gradient(circle at 38% 35%, #cfc4d2 0%, #9b86a0 60%, #6a5b70 100%)", animation: "skGlow 3s ease-in-out infinite", boxShadow: "0 0 24px rgba(155,134,160,0.45)" }} />
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(176,46,114,0.5)", animation: "skPulse 2.8s ease-out infinite" }} />
+          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: "radial-gradient(circle at 38% 35%, #cfc4d2 0%, #B02E72 60%, #6a5b70 100%)", animation: "skGlow 3s ease-in-out infinite", boxShadow: "0 0 24px rgba(176,46,114,0.45)" }} />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#9b86a0", marginBottom: 14 }}>
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#B02E72", marginBottom: 14 }}>
           {t("sky_echo.eyebrow")}
         </p>
         <h2 className="font-heading text-text-primary" style={{ fontSize: "1.55rem", lineHeight: 1.25, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 16 }}>
@@ -915,12 +915,12 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
           &ldquo;{echo.excerpt}&rdquo;
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(155,134,160,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgba(176,46,114,0.45)", margin: "24px auto 22px" }} />
 
         <button
           onClick={() => onGoDeeper(sentence, echo.excerpt)}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
         >
           {t("insight.go_deeper")}
         </button>
@@ -987,9 +987,9 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #101a26 0%, #0a141d 55%, #050f08 100%)",
-          border: "1px solid rgba(155,171,185,0.34)",
-          boxShadow: "0 0 70px rgba(155,171,185,0.14), 0 30px 90px rgba(0,0,0,0.55)",
+          background: "radial-gradient(125% 90% at 50% 0%, #101a26 0%, #0a141d 55%, #F5F0E6 100%)",
+          border: "1px solid rgba(84,63,150,0.34)",
+          boxShadow: "0 0 70px rgba(84,63,150,0.14), 0 30px 90px rgba(34,32,28,0.085)",
           animation: "lnRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -999,17 +999,17 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
         >×</button>
 
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(155,171,185,0.5)", animation: "lnPulse 2.8s ease-out infinite" }} />
-          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: moonBg, animation: "lnGlow 3s ease-in-out infinite", boxShadow: isFull ? "0 0 26px rgba(233,228,214,0.55)" : "0 0 22px rgba(155,171,185,0.30)" }} />
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(84,63,150,0.5)", animation: "lnPulse 2.8s ease-out infinite" }} />
+          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: moonBg, animation: "lnGlow 3s ease-in-out infinite", boxShadow: isFull ? "0 0 26px rgba(233,228,214,0.55)" : "0 0 22px rgba(84,63,150,0.30)" }} />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#9babb9", marginBottom: 12 }}>
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#543F96", marginBottom: 12 }}>
           {typeLabel}
         </p>
         <h2 className="font-heading text-text-primary" style={{ fontSize: "1.9rem", lineHeight: 1.15, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
           {tx(event.sign, lang)}
         </h2>
-        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#9babb9", marginBottom: 4 }}>
+        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#543F96", marginBottom: 4 }}>
           {t("lunar.illuminating")} {event.house}
         </p>
         {event.house_meaning && (
@@ -1021,12 +1021,12 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
           {event.note}
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(155,171,185,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgba(84,63,150,0.45)", margin: "24px auto 22px" }} />
 
         <button
           onClick={onGoDeeper}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
         >
           {t("insight.go_deeper")}
         </button>
@@ -1103,9 +1103,9 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #2a1c0c 0%, #160f06 55%, #050f08 100%)",
-          border: "1px solid rgba(243,146,48,0.36)",
-          boxShadow: "0 0 70px rgba(243,146,48,0.16), 0 30px 90px rgba(0,0,0,0.55)",
+          background: "radial-gradient(125% 90% at 50% 0%, #2a1c0c 0%, #160f06 55%, #F5F0E6 100%)",
+          border: "1px solid rgba(90,49,174,0.36)",
+          boxShadow: "0 0 70px rgba(90,49,174,0.16), 0 30px 90px rgba(34,32,28,0.085)",
           animation: "bdRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -1116,14 +1116,14 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
 
         {/* the real Solray sun, returning home, beating like the breakthrough */}
         <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(243,146,48,0.5)", animation: "bdPulse 2.6s ease-out infinite" }} />
+          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(90,49,174,0.5)", animation: "bdPulse 2.6s ease-out infinite" }} />
           <Image
             src="/solray-sun.png"
             alt="Solray"
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bdBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(243,146,48,0.5))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bdBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(90,49,174,0.5))" }}
           />
         </div>
 
@@ -1142,12 +1142,12 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
           {t("solar.body")}
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(243,146,48,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgba(90,49,174,0.45)", margin: "24px auto 22px" }} />
 
         <button
           onClick={onGoDeeper}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #9b86a0, #5a4a5e)", color: "#f5f0f6", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(155,134,160,0.25)" }}
+          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
         >
           {t("insight.go_deeper")}
         </button>
@@ -1793,13 +1793,13 @@ export default function TodayPage() {
                     className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                     style={{
                       background: "transparent",
-                      border: "1px solid rgba(243,146,48,0.30)",
+                      border: "1px solid rgba(90,49,174,0.30)",
                     }}
                   >
                     {energySharing ? (
                       <span
                         className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
-                        style={{ borderColor: "rgba(243,146,48,0.30)", borderTopColor: "var(--amber)" }}
+                        style={{ borderColor: "rgba(90,49,174,0.30)", borderTopColor: "var(--amber)" }}
                       />
                     ) : (
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)", opacity: 0.85 }}>
@@ -1908,8 +1908,8 @@ export default function TodayPage() {
               onClick={() => window.location.reload()}
               className="inline-block px-8 py-3 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all"
               style={{
-                background: "var(--amber, #f39230)",
-                color: "var(--bg-deep, #050f08)",
+                background: "var(--amber, #5A31AE)",
+                color: "var(--bg-deep, #F5F0E6)",
               }}
             >
               {t("common.retry")}

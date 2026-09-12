@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Zen_Kaku_Gothic_New } from "next/font/google";
 import "./globals.css";
 
 // Self-hosted, preloaded, swap-display fonts. Replaces the render-blocking
@@ -8,16 +8,13 @@ import "./globals.css";
 // same-origin and pins metrics so there is no FOUT flash or layout shift.
 // The CSS variables below feed --font-heading / --font-body, which both
 // globals.css and inline styles already reference.
-const cormorant = Cormorant_Garamond({
+// One typeface across the whole product: the connector's Zen Kaku Gothic New
+// at 400/500/700/900. It feeds --font-heading and --font-body, the two
+// variables globals.css and every inline style already reference.
+const zen = Zen_Kaku_Gothic_New({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "700", "900"],
   variable: "--font-heading",
-  display: "swap",
-});
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
   display: "swap",
 });
 import { AuthProvider } from "@/lib/auth-context";
@@ -85,7 +82,7 @@ export default function RootLayout({
     // mutates <html data-theme="..."> before React hydrates. Without it,
     // React would log a hydration mismatch on every cold load for users
     // who chose the non-default theme on a previous visit.
-    <html lang="en" className={`${cormorant.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${zen.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
         <script dangerouslySetInnerHTML={{ __html: installPromptCapture }} />

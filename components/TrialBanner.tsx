@@ -83,12 +83,12 @@ export default function TrialBanner() {
     <div
       style={{
         background: urgent
-          ? "linear-gradient(180deg, rgba(212,122,82,0.10) 0%, rgb(var(--rgb-bg-dark)) 100%)"
-          : "linear-gradient(180deg, rgba(243,146,48,0.08) 0%, rgb(var(--rgb-bg-dark)) 100%)",
+          ? "linear-gradient(180deg, rgba(196,96,47,0.10) 0%, rgb(var(--rgb-bg-dark)) 100%)"
+          : "linear-gradient(180deg, rgba(90,49,174,0.08) 0%, rgb(var(--rgb-bg-dark)) 100%)",
         borderBottom: "1px solid rgb(var(--rgb-border))",
         borderTop: urgent
-          ? "2px solid rgba(212,122,82,0.55)"
-          : "2px solid rgba(243,146,48,0.35)",
+          ? "2px solid rgba(196,96,47,0.55)"
+          : "2px solid rgba(90,49,174,0.35)",
       }}
     >
       <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between gap-4">
@@ -96,7 +96,7 @@ export default function TrialBanner() {
         <div className="flex items-center gap-4 min-w-0">
           <span
             className="font-body text-[12px] tracking-[0.22em] uppercase shrink-0"
-            style={{ color: urgent ? "#d47a52" : "var(--amber)", opacity: 1, fontWeight: 500 }}
+            style={{ color: urgent ? "#C4602F" : "var(--amber)", opacity: 1, fontWeight: 500 }}
           >
             {t("trial.label")}
           </span>
@@ -114,20 +114,20 @@ export default function TrialBanner() {
             onClick={() => router.push("/subscribe")}
             className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg transition-colors"
             style={{
-              background: urgent ? "rgba(212,122,82,0.15)" : "rgba(243,146,48,0.12)",
-              border: urgent ? "1px solid rgba(212,122,82,0.6)" : "1px solid rgba(243,146,48,0.5)",
-              color: urgent ? "#d47a52" : "var(--amber)",
+              background: urgent ? "rgba(196,96,47,0.15)" : "rgba(90,49,174,0.12)",
+              border: urgent ? "1px solid rgba(196,96,47,0.6)" : "1px solid rgba(90,49,174,0.5)",
+              color: urgent ? "#C4602F" : "var(--amber)",
               fontWeight: 500,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(212,122,82,0.22)"
-                : "rgba(243,146,48,0.18)";
+                ? "rgba(196,96,47,0.22)"
+                : "rgba(90,49,174,0.18)";
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(212,122,82,0.15)"
-                : "rgba(243,146,48,0.12)";
+                ? "rgba(196,96,47,0.15)"
+                : "rgba(90,49,174,0.12)";
             }}
           >
             {t("trial.add_card")}
@@ -150,7 +150,7 @@ export default function TrialBanner() {
           style={{
             height: "100%",
             width: `${progress * 100}%`,
-            background: urgent ? "rgba(212,122,82,0.75)" : "rgba(243,146,48,0.6)",
+            background: urgent ? "rgba(196,96,47,0.75)" : "rgba(90,49,174,0.6)",
             transition: "width 0.6s ease",
           }}
         />

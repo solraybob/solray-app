@@ -130,14 +130,14 @@ export default function EntrySky() {
       const n1x = w * (0.3 + 0.08 * Math.sin(t * 0.05));
       const n1y = h * (0.28 + 0.07 * Math.cos(t * 0.04));
       const g1 = ctx.createRadialGradient(n1x, n1y, 0, n1x, n1y, nr);
-      g1.addColorStop(0, "rgba(243,146,48,0.07)");
+      g1.addColorStop(0, "rgba(90,49,174,0.07)");
       g1.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, w, h);
       const n2x = w * (0.72 + 0.07 * Math.cos(t * 0.045));
       const n2y = h * (0.7 + 0.08 * Math.sin(t * 0.055));
       const g2 = ctx.createRadialGradient(n2x, n2y, 0, n2x, n2y, nr * 0.9);
-      g2.addColorStop(0, "rgba(155,134,160,0.06)");
+      g2.addColorStop(0, "rgba(176,46,114,0.06)");
       g2.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g2;
       ctx.fillRect(0, 0, w, h);
@@ -173,8 +173,8 @@ export default function EntrySky() {
         const fade = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;
         const len = 80;
         const grad = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x - shoot.vx * len, shoot.y - shoot.vy * len);
-        grad.addColorStop(0, `rgba(242,236,216,${(0.8 * fade).toFixed(3)})`);
-        grad.addColorStop(1, "rgba(242,236,216,0)");
+        grad.addColorStop(0, `rgba(34,32,28,${(0.8 * fade).toFixed(3)})`);
+        grad.addColorStop(1, "rgba(34,32,28,0)");
         ctx.strokeStyle = grad;
         ctx.lineWidth = 1;
         ctx.beginPath();

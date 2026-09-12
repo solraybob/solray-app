@@ -44,7 +44,7 @@ async function captureToBlob(opts: CaptureOptions): Promise<Blob> {
   // not ship it unless the user actually taps Share.
   const html2canvas = (await import("html2canvas")).default;
   const common = {
-    backgroundColor: opts.background || "#050f08", // forest deep
+    backgroundColor: opts.background || "#F5F0E6", // forest deep
     useCORS: true,
     logging: false,
   } as const;

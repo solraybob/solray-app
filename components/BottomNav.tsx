@@ -40,7 +40,7 @@ const navItems = [
   {
     href: "/souls",
     labelKey: "nav.souls",
-    color: "#6a8692", // indigo
+    color: "#4A2E9E", // indigo
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -97,12 +97,12 @@ export default function BottomNav() {
               href={item.href}
               onClick={onTap}
               className="flex flex-col items-center gap-1 py-3 px-2 transition-all duration-200 active:opacity-60"
-              style={{ color: isActive ? item.color : "#6a8068" }}
+              style={{ color: isActive ? item.color : "#A34A22" }}
             >
               {item.icon}
               <span
                 className="text-[11px] font-body tracking-wider uppercase"
-                style={{ color: isActive ? item.color : "#6a8068" }}
+                style={{ color: isActive ? item.color : "#A34A22" }}
               >
                 {t(item.labelKey)}
               </span>

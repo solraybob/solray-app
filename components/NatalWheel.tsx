@@ -48,7 +48,7 @@ interface NatalWheelProps {
 
 const ASPECT_LINE: Record<string, { color: string; dash?: string }> = {
   conjunction: { color: "var(--amber)" },
-  opposition:  { color: "#6a8692", dash: "6 3" },
+  opposition:  { color: "#4A2E9E", dash: "6 3" },
   trine:       { color: "var(--moss)" },
   square:      { color: "var(--ember)", dash: "3 3" },
   sextile:     { color: "var(--mist)" },
@@ -61,25 +61,25 @@ const MAX_ORB = 6;
 const MAX_LINES = 24;
 
 const PLANET_COLOR: Record<string, string> = {
-  Sun:       "#f39230",
-  Moon:      "#ece4cf",
-  Mercury:   "#9babb9",
-  Venus:     "#9b86a0",
-  Mars:      "#d47a52",
-  Jupiter:   "#8a9e66",
-  Saturn:    "#6a8692",
-  Uranus:    "#9babb9",
-  Neptune:   "#6a8692",
-  Pluto:     "#8a9e8d",
-  NorthNode: "#8a9e8d",
-  Chiron:    "#ece4cf",
+  Sun:       "#5A31AE",
+  Moon:      "#22201C",
+  Mercury:   "#543F96",
+  Venus:     "#B02E72",
+  Mars:      "#C4602F",
+  Jupiter:   "#A34A22",
+  Saturn:    "#4A2E9E",
+  Uranus:    "#543F96",
+  Neptune:   "#4A2E9E",
+  Pluto:     "#6E6659",
+  NorthNode: "#6E6659",
+  Chiron:    "#22201C",
   ASC:       "#f0dcc0",
 };
 
 const SIGN_ELEMENT_COLOR = [
-  "#d47a52", "#8a9e66", "#9babb9", "#6a8692",
-  "#d47a52", "#8a9e66", "#9babb9", "#6a8692",
-  "#d47a52", "#8a9e66", "#9babb9", "#6a8692",
+  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
+  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
+  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
 ];
 
 export default function NatalWheel({
@@ -109,8 +109,8 @@ export default function NatalWheel({
   // mode a soft white field with deep-forest ink so the wheel sits in the
   // pearl theme instead of punching a dark hole in it.
   const inkRGB     = isDark ? "232,210,180" : "26,48,32";   // cream vs deep forest
-  const discFill   = isDark ? "url(#nwInner)" : "rgba(255,255,255,0.55)";
-  const centerFill = isDark ? "rgba(6,16,10,0.7)" : "rgba(255,255,255,0.62)";
+  const discFill   = isDark ? "url(#nwInner)" : "rgba(34,32,28,0.55)";
+  const centerFill = isDark ? "rgba(6,16,10,0.7)" : "rgba(34,32,28,0.62)";
   const haloFlood  = isDark ? "#000" : "#f7f3e9";
   const haloOpacity = isDark ? 0.85 : 0.7;
   // Pale planet glyphs (cream) vanish on a white disc; darken them in light mode.
@@ -190,7 +190,7 @@ export default function NatalWheel({
   }
 
   const planetColor = (name: string) =>
-    (!isDark && LIGHT_PLANET[name]) || PLANET_COLOR[name] || "#8a9e8d";
+    (!isDark && LIGHT_PLANET[name]) || PLANET_COLOR[name] || "#6E6659";
 
   // Full aspect web: every major aspect inside MAX_ORB, tightest first,
   // weighted by exactness.
@@ -216,8 +216,8 @@ export default function NatalWheel({
       >
         <defs>
           <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stopColor="rgba(243,146,48,0.10)" />
-            <stop offset="55%"  stopColor="rgba(106,134,146,0.06)" />
+            <stop offset="0%"   stopColor="rgba(90,49,174,0.10)" />
+            <stop offset="55%"  stopColor="rgba(74,46,158,0.06)" />
             <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
           <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
@@ -318,7 +318,7 @@ export default function NatalWheel({
             <text
               x={pos.x} y={pos.y}
               fontSize={size * 0.030}
-              fill="#f39230"
+              fill="#5A31AE"
               textAnchor="middle"
               dominantBaseline="middle"
               style={{ fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "0.18em", fontWeight: 600 }}
@@ -427,10 +427,10 @@ export default function NatalWheel({
             color: `rgba(${inkRGB},0.6)`,
           }}
         >
-          <LegendItem kind="dot"  color="#8a9e66" label="Trine" />
-          <LegendItem kind="dot"  color="#9babb9" label="Sextile" />
-          <LegendItem kind="dash" color="#d47a52" label="Square" />
-          <LegendItem kind="dash" color="#6a8692" label="Opposition" />
+          <LegendItem kind="dot"  color="#A34A22" label="Trine" />
+          <LegendItem kind="dot"  color="#543F96" label="Sextile" />
+          <LegendItem kind="dash" color="#C4602F" label="Square" />
+          <LegendItem kind="dash" color="#4A2E9E" label="Opposition" />
         </div>
       )}
     </div>

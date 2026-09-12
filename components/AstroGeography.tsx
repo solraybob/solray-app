@@ -325,9 +325,9 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => togglePlanet(planet)}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-[12px] font-body transition-all"
                 style={{
-                  border: `1px solid ${active ? color : "rgba(26,48,32,0.8)"}`,
+                  border: `1px solid ${active ? color : "rgba(226,218,202,0.8)"}`,
                   background: active ? `${color}20` : "transparent",
-                  color: active ? color : "#6a8068",
+                  color: active ? color : "#A34A22",
                 }}
               >
                 <span>{symbol}</span>
@@ -348,9 +348,9 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => toggleType(type)}
                 className="px-2.5 py-1 rounded-full text-[12px] font-body tracking-wider transition-all"
                 style={{
-                  border: `1px solid ${active ? "#f39230" : "rgba(26,48,32,0.8)"}`,
-                  background: active ? "rgba(243,146,48,0.1)" : "transparent",
-                  color: active ? "#f39230" : "#6a8068",
+                  border: `1px solid ${active ? "#5A31AE" : "rgba(226,218,202,0.8)"}`,
+                  background: active ? "rgba(90,49,174,0.1)" : "transparent",
+                  color: active ? "#5A31AE" : "#A34A22",
                 }}
               >
                 {tx(labels[type], lang)}
@@ -388,15 +388,15 @@ export default function AstroGeography({ token }: { token: string | null }) {
           {/* Legend */}
           <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" /></svg>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#5A31AE" strokeWidth="1.5" /></svg>
               <span className="text-text-secondary text-[11px] font-body">MC / ASC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#f39230" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#5A31AE" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
               <span className="text-text-secondary text-[11px] font-body">IC / DSC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#f39230" /></svg>
+              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#5A31AE" /></svg>
               <span className="text-text-secondary text-[11px] font-body">Birth place</span>
             </div>
           </div>
@@ -638,11 +638,11 @@ function FullscreenMap({
           {/* Grid lines */}
           {[-60, -30, 0, 30, 60].map(lat => (
             <line key={`lat${lat}`} x1={0} y1={latToY(lat)} x2={MAP_W} y2={latToY(lat)}
-              stroke={lat === 0 ? "#1a3020" : "#111d14"} strokeWidth={lat === 0 ? 0.8 : 0.4} />
+              stroke={lat === 0 ? "#E2DACA" : "#FAF6EC"} strokeWidth={lat === 0 ? 0.8 : 0.4} />
           ))}
           {[-120, -60, 0, 60, 120].map(lon => (
             <line key={`lon${lon}`} x1={lonToX(lon)} y1={0} x2={lonToX(lon)} y2={MAP_H}
-              stroke="#111d14" strokeWidth={0.4} />
+              stroke="#FAF6EC" strokeWidth={0.4} />
           ))}
           {visibleLines.map((line, i) => {
             const path = buildPath(line.points);
@@ -676,9 +676,9 @@ function FullscreenMap({
             const y = latToY(spot.lat);
             return (
               <g key={`fs-power-${idx}`}>
-                <circle cx={x} cy={y} r={6} fill="#f39230" opacity={0.9} />
-                <circle cx={x} cy={y} r={12} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
-                <text x={x} y={y - 14} textAnchor="middle" fill="#f39230"
+                <circle cx={x} cy={y} r={6} fill="#5A31AE" opacity={0.9} />
+                <circle cx={x} cy={y} r={12} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
+                <text x={x} y={y - 14} textAnchor="middle" fill="#5A31AE"
                   fontSize={9} fontFamily="Inter, sans-serif" fontWeight="600">
                   {spot.city}
                 </text>
@@ -686,9 +686,9 @@ function FullscreenMap({
             );
           })}
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={5} fill="#f39230" opacity={0.9} />
+            r={5} fill="#5A31AE" opacity={0.9} />
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={9} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
+            r={9} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
         </svg>
       </div>
     </div>
@@ -746,7 +746,7 @@ function MapSVG({
           y1={latToY(lat)}
           x2={MAP_W}
           y2={latToY(lat)}
-          stroke={lat === 0 ? "#1a3020" : "#111d14"}
+          stroke={lat === 0 ? "#E2DACA" : "#FAF6EC"}
           strokeWidth={lat === 0 ? 0.8 : 0.4}
         />
       ))}
@@ -757,7 +757,7 @@ function MapSVG({
           y1={0}
           x2={lonToX(lon)}
           y2={MAP_H}
-          stroke="#111d14"
+          stroke="#FAF6EC"
           strokeWidth={0.4}
         />
       ))}
@@ -820,8 +820,8 @@ function MapSVG({
           <g key={`power-${idx}`}>
             <defs>
               <radialGradient id={`power-glow-${idx}`}>
-                <stop offset="0%" stopColor="#f39230" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#f39230" stopOpacity={0} />
+                <stop offset="0%" stopColor="#5A31AE" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="#5A31AE" stopOpacity={0} />
               </radialGradient>
             </defs>
             {/* Pulsing glow background */}
@@ -835,13 +835,13 @@ function MapSVG({
               }}
             />
             {/* Core dot */}
-            <circle cx={x} cy={y} r={4} fill="#f39230" opacity={0.95} />
+            <circle cx={x} cy={y} r={4} fill="#5A31AE" opacity={0.95} />
             {/* Label */}
             <text
               x={x}
               y={y - 10}
               textAnchor="middle"
-              fill="#f39230"
+              fill="#5A31AE"
               fontSize={7}
               fontFamily="Inter, sans-serif"
               fontWeight="600"
@@ -854,8 +854,8 @@ function MapSVG({
       })}
 
       {/* Birth location marker */}
-      <circle cx={birthX} cy={birthY} r={5} fill="#f39230" opacity={0.9} />
-      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="#f39230" strokeWidth={1} opacity={0.4} />
+      <circle cx={birthX} cy={birthY} r={5} fill="#5A31AE" opacity={0.9} />
+      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
 
       {/* Tooltip */}
       {hoveredLine && (
@@ -866,7 +866,7 @@ function MapSVG({
             width={150}
             height={44}
             rx={6}
-            fill="#0a1f12"
+            fill="#FAF6EC"
             stroke={hoveredLine.color}
             strokeWidth={1}
             opacity={0.95}
@@ -884,7 +884,7 @@ function MapSVG({
           <text
             x={Math.min(tooltipPos.x + 16, MAP_W - 152)}
             y={Math.max(tooltipPos.y + 2, 35)}
-            fill="#8a9e8d"
+            fill="#6E6659"
             fontSize={8.5}
             fontFamily="Inter, sans-serif"
           >

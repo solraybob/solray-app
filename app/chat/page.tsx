@@ -1622,7 +1622,7 @@ function ChatPageInner() {
           }}
         />
         {/* Header, Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
-        <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(26,48,32,0.5)" }}>
+        <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(226,218,202,0.5)" }}>
           <div className="absolute inset-0 pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
@@ -1637,7 +1637,7 @@ function ChatPageInner() {
                 onClick={openHistory}
                 title={t("chat.previous_chats")}
                 className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors flex items-center gap-1.5"
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#B02E72"; (e.currentTarget as HTMLElement).style.color = "#B02E72"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1655,7 +1655,7 @@ function ChatPageInner() {
                 onClick={startNewChat}
                 title={t("chat.new_chat")}
                 className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors"
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#9b86a0"; (e.currentTarget as HTMLElement).style.color = "#9b86a0"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#B02E72"; (e.currentTarget as HTMLElement).style.color = "#B02E72"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
               >
                 {t("chat.new")}
@@ -1674,7 +1674,7 @@ function ChatPageInner() {
               setShowJumpButton(false);
             }}
             className="fixed z-50 active:scale-95 transition-transform"
-            style={{ bottom: "120px", left: "50%", marginLeft: "-16px", background: "rgba(18,22,21,0.72)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.28)", border: "1px solid rgba(155,134,160,0.45)" }}
+            style={{ bottom: "120px", left: "50%", marginLeft: "-16px", background: "rgba(18,22,21,0.72)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.28)", border: "1px solid rgba(176,46,114,0.45)" }}
             aria-label={t("chat.scroll_to_bottom")}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(236,231,221,0.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1699,7 +1699,7 @@ function ChatPageInner() {
                   style={{
                     width: "10px", height: "10px",
                     background: "var(--wisteria)",
-                    boxShadow: "0 0 18px rgba(155,134,160,0.55)",
+                    boxShadow: "0 0 18px rgba(176,46,114,0.55)",
                     animation: "pulse 2.4s ease-in-out infinite",
                   }}
                 />
@@ -1751,13 +1751,13 @@ function ChatPageInner() {
                       <div
                         className="rounded-2xl px-4 py-3 rounded-bl-sm"
                         style={{
-                          background: "rgba(212, 122, 82, 0.08)",
-                          border: "1px solid rgba(212, 122, 82, 0.30)",
+                          background: "rgba(196,96,47, 0.08)",
+                          border: "1px solid rgba(196,96,47, 0.30)",
                         }}
                       >
                         <p
                           className="font-body text-[11px] tracking-[0.22em] uppercase mb-1"
-                          style={{ color: "var(--ember, #d47a52)", opacity: 0.85 }}
+                          style={{ color: "var(--ember, #C4602F)", opacity: 0.85 }}
                         >
                           {t("chat.connection")}
                         </p>
@@ -1780,8 +1780,8 @@ function ChatPageInner() {
                 >
                   <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
                   <span
-                    className="font-body text-[11px] mt-2 mb-2 block tracking-[0.22em] uppercase"
-                    style={{ color: "rgb(var(--rgb-wisteria) / 0.75)" }}
+                    className="font-body text-[11px] mt-2 mb-2 block tracking-[0.3em] uppercase"
+                    style={{ color: "rgb(var(--rgb-text-muted))" }}
                   >
                     {msg.role === "user" ? t("chat.you") : t("chat.oracle")} · {formatTime(msg.timestamp)}
                   </span>
@@ -1836,8 +1836,8 @@ function ChatPageInner() {
                       }}
                       className="font-body text-[13px] leading-snug text-text-primary text-left max-w-[300px] px-4 py-2.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
                       style={{
-                        background: "rgba(155,134,160,0.06)",
-                        border: "1px solid rgba(155,134,160,0.22)",
+                        background: "rgba(176,46,114,0.06)",
+                        border: "1px solid rgba(176,46,114,0.22)",
                       }}
                     >
                       {s}
@@ -1857,10 +1857,10 @@ function ChatPageInner() {
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#c8a27a" }}>
+              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#C4602F" }}>
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: "#c8a27a", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
+                  style={{ background: "#C4602F", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
                 />
                 {t("chat.recording_tap_stop")}
               </div>
@@ -1919,7 +1919,10 @@ function ChatPageInner() {
                 </div>
               );
             })()}
-            <div className="flex gap-3 items-end">
+            <div
+              className="flex gap-3 items-end"
+              style={{ borderTop: "1px solid rgb(var(--rgb-border))", paddingTop: 10 }}
+            >
               <textarea
                 ref={inputRef}
                 rows={1}
@@ -1927,7 +1930,7 @@ function ChatPageInner() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={isRecording ? t("chat.listening_placeholder") : t("chat.speak_freely")}
-                className="flex-1 bg-forest-card border border-forest-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary font-body text-base transition-colors"
+                className="flex-1 bg-transparent border-0 px-1 py-3 text-text-primary placeholder-text-muted font-body text-base transition-colors focus:outline-none"
                 style={{
                   resize: "none",
                   overflowY: "hidden",
@@ -1941,8 +1944,8 @@ function ChatPageInner() {
                   // Theme tokens, not literals: the hardcoded dark-forest
                   // values used to stick a dark green border onto the
                   // light-mode input after focus.
-                  e.target.style.borderColor = "rgb(var(--rgb-wisteria))";
-                  e.target.style.boxShadow = "0 0 0 2px rgb(var(--rgb-wisteria) / 0.25)";
+                  e.target.style.borderColor = "transparent";
+                  e.target.style.boxShadow = "none";
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = "rgb(var(--rgb-border))";
@@ -1957,14 +1960,10 @@ function ChatPageInner() {
                   aria-pressed={isRecording}
                   className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-50 shrink-0 self-end"
                   style={{
-                    background: isRecording
-                      ? "linear-gradient(135deg, #c8a27a, #8a6a48)"
-                      : "rgb(var(--rgb-mist) / 0.12)",
-                    border: isRecording
-                      ? "1px solid rgba(200,162,122,0.6)"
-                      : "1px solid rgb(var(--rgb-mist) / 0.35)",
-                    color: isRecording ? "#f2ecd8" : "var(--mist)",
-                    boxShadow: isRecording ? "0 0 16px rgba(200,162,122,0.35)" : undefined,
+                    background: isRecording ? "rgb(var(--rgb-ember) / 0.12)" : "transparent",
+                    border: "1px solid rgb(var(--rgb-border))",
+                    color: isRecording ? "rgb(var(--rgb-ember))" : "rgb(var(--rgb-text-muted))",
+                    boxShadow: "none",
                   }}
                 >
                   {transcribing ? (
@@ -1988,22 +1987,10 @@ function ChatPageInner() {
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || sending}
-                className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 shrink-0 self-end"
-                style={{
-                  // The gradient is fixed dark wisteria in both themes, so
-                  // the glyph stays cream explicitly. text-text-primary
-                  // flipped it to near-black in light mode.
-                  background: "linear-gradient(135deg, #9b86a0, #5a4a5e)",
-                  color: "#f2ecd8",
-                }}
+                className="h-11 px-2 flex items-center justify-center transition-all duration-200 hover:opacity-70 active:scale-95 disabled:opacity-30 shrink-0 self-end font-body text-[15px] font-bold bg-transparent"
+                style={{ color: "rgb(var(--rgb-ember))" }}
               >
-                {sending ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
+                {sending ? <LoadingSpinner size="sm" /> : t("chat.send")}
               </button>
             </div>
           </div>
@@ -2035,7 +2022,7 @@ function ChatPageInner() {
                       <div key={s.sessionId} className="relative">
                         {renamingId === s.sessionId ? (
                           /* Inline rename input */
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #9b86a0" }}>
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #B02E72" }}>
                             <input
                               autoFocus
                               type="text"
@@ -2065,7 +2052,7 @@ function ChatPageInner() {
                                   ? "bg-forest-card text-text-primary"
                                   : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
                               }`}
-                              style={s.sessionId === sessionId ? { border: "1px solid #9b86a0" } : undefined}
+                              style={s.sessionId === sessionId ? { border: "1px solid #B02E72" } : undefined}
                             >
                               <p className="font-body text-text-primary text-[15px] truncate mb-0.5">
                                 {s.customName || s.date}
@@ -2079,7 +2066,7 @@ function ChatPageInner() {
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title={t("chat.rename_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#9b86a0"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#B02E72"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2092,7 +2079,7 @@ function ChatPageInner() {
                               onClick={(e) => deleteSession(e, s.sessionId)}
                               title={t("chat.delete_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#d47a52"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#C4602F"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2152,8 +2139,8 @@ function ThinkingIndicator() {
           borderRadius: "50%",
           animation: "spin 1.2s linear infinite",
           objectFit: "cover",
-          boxShadow: "0 0 24px rgba(155,134,160,0.45)",
-          filter: "drop-shadow(0 0 12px rgba(155,134,160,0.35))",
+          boxShadow: "0 0 24px rgba(176,46,114,0.45)",
+          filter: "drop-shadow(0 0 12px rgba(176,46,114,0.35))",
         }}
       />
       <p
@@ -2164,7 +2151,7 @@ function ThinkingIndicator() {
           fontStyle: "italic",
           fontWeight: 400,
           fontSize: "1rem",
-          color: "var(--text-secondary, #8a9e8d)",
+          color: "var(--text-secondary, #6E6659)",
           opacity: 0.82,
           letterSpacing: "0.01em",
           marginLeft: 4,
@@ -2178,7 +2165,7 @@ function ThinkingIndicator() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-forest-deep flex items-center justify-center"><span className="rounded-full" style={{ width: "8px", height: "8px", background: "var(--wisteria)", boxShadow: "0 0 16px rgba(155,134,160,0.5)", animation: "pulse 2.4s ease-in-out infinite" }} /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-forest-deep flex items-center justify-center"><span className="rounded-full" style={{ width: "8px", height: "8px", background: "var(--wisteria)", boxShadow: "0 0 16px rgba(176,46,114,0.5)", animation: "pulse 2.4s ease-in-out infinite" }} /></div>}>
       <ChatPageInner />
     </Suspense>
   );

@@ -45,11 +45,11 @@ export default function VerifyEmailBanner({
     <div
       className="px-4 py-3 flex items-center justify-between gap-3"
       style={{
-        background: "rgba(243,146,48,0.08)",
-        borderBottom: "1px solid rgba(243,146,48,0.15)",
+        background: "rgba(90,49,174,0.08)",
+        borderBottom: "1px solid rgba(90,49,174,0.15)",
       }}
     >
-      <p className="text-xs" style={{ color: "var(--amber, #f39230)" }}>
+      <p className="text-xs" style={{ color: "var(--amber, #5A31AE)" }}>
         {sent
           ? t("verify_banner.sent")
           : t("verify_banner.prompt")}
@@ -61,7 +61,7 @@ export default function VerifyEmailBanner({
             disabled={sending}
             className="text-xs px-3 py-1 rounded-sm transition-opacity"
             style={{
-              background: "var(--amber, #f39230)",
+              background: "var(--amber, #5A31AE)",
               color: "var(--bg-deep)",
               opacity: sending ? 0.5 : 1,
             }}

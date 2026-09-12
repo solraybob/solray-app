@@ -45,7 +45,7 @@ function VerifyEmailInner() {
         {status === "loading" && (
           <>
             <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin mx-auto mb-6" />
-            <p className="text-sm" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
+            <p className="text-sm" style={{ color: "var(--text-secondary, #6E6659)" }}>
               {t("verify.verifying")}
             </p>
           </>
@@ -57,7 +57,7 @@ function VerifyEmailInner() {
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{ background: "rgba(138,158,102,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8a9e66" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A34A22" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -67,10 +67,10 @@ function VerifyEmailInner() {
             >
               {t("verify.verified")}
             </h1>
-            <p className="text-sm" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
+            <p className="text-sm" style={{ color: "var(--text-secondary, #6E6659)" }}>
               {message}
             </p>
-            <p className="text-xs mt-4" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
+            <p className="text-xs mt-4" style={{ color: "var(--text-secondary, #6E6659)" }}>
               {t("verify.redirecting")}
             </p>
           </>
@@ -80,9 +80,9 @@ function VerifyEmailInner() {
           <>
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: "rgba(212,122,82,0.15)" }}
+              style={{ background: "rgba(196,96,47,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d47a52" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C4602F" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -93,13 +93,13 @@ function VerifyEmailInner() {
             >
               {t("verify.failed_title")}
             </h1>
-            <p className="text-sm mb-6" style={{ color: "var(--text-secondary, #8a9e8d)" }}>
+            <p className="text-sm mb-6" style={{ color: "var(--text-secondary, #6E6659)" }}>
               {message}
             </p>
             <button
               onClick={() => router.push("/today")}
               className="px-6 py-2.5 rounded-sm text-sm"
-              style={{ background: "var(--amber, #f39230)", color: "var(--bg-deep)" }}
+              style={{ background: "var(--amber, #5A31AE)", color: "var(--bg-deep)" }}
             >
               {t("verify.go_to_app")}
             </button>

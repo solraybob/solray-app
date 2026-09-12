@@ -22,7 +22,7 @@ import { useT } from "@/lib/i18n";
 const navItems = [
   { href: "/today",   labelKey: "nav.today",   color: "var(--amber)" },
   { href: "/chat",    labelKey: "nav.chat",    color: "var(--wisteria)" },
-  { href: "/souls",   labelKey: "nav.souls",   color: "#6a8692" },
+  { href: "/souls",   labelKey: "nav.souls",   color: "#4A2E9E" },
   { href: "/profile", labelKey: "nav.profile", color: "var(--moss)" },
 ];
 
@@ -48,7 +48,7 @@ export default function DesktopHeader() {
         <Link href="/today" className="flex items-center gap-3 group">
           <div
             className="w-8 h-8 transition-transform group-hover:scale-110"
-            style={{ filter: "drop-shadow(0 0 12px rgba(243,146,48,0.4))" }}
+            style={{ filter: "drop-shadow(0 0 12px rgba(90,49,174,0.4))" }}
           >
             <Image src="/solray-sun.png" alt="" width={32} height={32} className="w-full h-full object-contain" />
           </div>
@@ -71,7 +71,7 @@ export default function DesktopHeader() {
                 className="px-4 py-2 rounded-lg transition-colors"
                 style={{
                   color: isActive ? item.color : "var(--text-secondary)",
-                  background: isActive ? "rgba(255,255,255,0.04)" : "transparent",
+                  background: isActive ? "rgba(34,32,28,0.04)" : "transparent",
                 }}
               >
                 <span className="font-body text-[13px] tracking-[0.15em] uppercase">

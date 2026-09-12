@@ -44,7 +44,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
         width: "1080px",
         height: "1920px",
         position: "relative",
-        background: "#050f08", // forest deep, hardcoded for screenshot context
+        background: "#F5F0E6", // forest deep, hardcoded for screenshot context
         overflow: "hidden",
         fontFamily: "'Cormorant Garamond', Georgia, serif",
       }}
@@ -68,7 +68,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to bottom, rgba(5,15,8,0.0) 0%, rgba(5,15,8,0.45) 40%, rgba(5,15,8,0.95) 75%, rgba(5,15,8,1) 100%)",
+              "linear-gradient(to bottom, rgba(245,240,230,0.0) 0%, rgba(245,240,230,0.45) 40%, rgba(245,240,230,0.95) 75%, rgba(245,240,230,1) 100%)",
           }}
         />
       </div>
@@ -85,7 +85,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
-          color: "rgba(243, 146, 48, 0.85)",
+          color: "rgba(90,49,174, 0.85)",
           fontWeight: 400,
         }}
       >
@@ -101,14 +101,14 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           right: "0",
           padding: "0 80px",
           textAlign: "center",
-          color: "#f2ecd8",
+          color: "#22201C",
           fontStyle: "italic",
           fontWeight: 300,
           fontSize: "108px",
           lineHeight: 1.1,
           letterSpacing: "-0.01em",
           transform: "translateY(-30%)",
-          textShadow: "0 2px 24px rgba(0,0,0,0.6)",
+          textShadow: "0 2px 24px rgba(34,32,28,0.08)",
         }}
       >
         {data.dayTitle}
@@ -123,7 +123,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           transform: "translateX(-50%)",
           width: "60px",
           height: "1px",
-          background: "rgba(243, 146, 48, 0.35)",
+          background: "rgba(90,49,174, 0.35)",
         }}
       />
 
@@ -143,7 +143,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
             fontSize: "60px",
             fontWeight: 300,
             letterSpacing: "0.18em",
-            color: "#f2ecd8",
+            color: "#22201C",
             marginBottom: "14px",
           }}
         >
@@ -226,10 +226,10 @@ export interface EnergyBarsCardData {
 }
 
 const ENERGY_COLORS_FOR_CARD = {
-  Mental:    "#9babb9", // mist
-  Emotional: "#d47a52", // ember
-  Physical:  "#8a9e66", // moss
-  Intuitive: "#9b86a0", // wisteria
+  Mental:    "#543F96", // mist
+  Emotional: "#C4602F", // ember
+  Physical:  "#A34A22", // moss
+  Intuitive: "#B02E72", // wisteria
 } as const;
 
 /**
@@ -257,7 +257,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
       style={{
         width: "1080px",
         height: "1920px",
-        background: "#050f08",
+        background: "#F5F0E6",
         position: "relative",
         overflow: "hidden",
         fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -275,7 +275,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
-          color: "rgba(243, 146, 48, 0.85)",
+          color: "rgba(90,49,174, 0.85)",
         }}
       >
         {data.dateLabel}
@@ -294,7 +294,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           fontWeight: 300,
           fontStyle: "italic",
           letterSpacing: "-0.01em",
-          color: "#f2ecd8",
+          color: "#22201C",
         }}
       >
         Today&apos;s Vibe
@@ -331,7 +331,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                     fontSize: "30px",
                     letterSpacing: "0.28em",
                     textTransform: "uppercase",
-                    color: "#a8b8ab",
+                    color: "#5C5548",
                     fontWeight: 400,
                   }}
                 >
@@ -342,7 +342,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "60px",
                     fontWeight: 300,
-                    color: "#f2ecd8",
+                    color: "#22201C",
                     lineHeight: 1,
                   }}
                 >
@@ -350,7 +350,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                   <span
                     style={{
                       fontSize: "30px",
-                      color: "#a8b8ab",
+                      color: "#5C5548",
                       opacity: 0.6,
                       marginLeft: "6px",
                     }}
@@ -392,7 +392,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           transform: "translateX(-50%)",
           width: "60px",
           height: "1px",
-          background: "rgba(243, 146, 48, 0.35)",
+          background: "rgba(90,49,174, 0.35)",
         }}
       />
       <div
@@ -410,7 +410,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
             fontSize: "60px",
             fontWeight: 300,
             letterSpacing: "0.18em",
-            color: "#f2ecd8",
+            color: "#22201C",
             marginBottom: "14px",
           }}
         >
@@ -469,7 +469,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
       style={{
         width: "1080px",
         height: "1920px",
-        background: "#050f08",
+        background: "#F5F0E6",
         position: "relative",
         overflow: "hidden",
         fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -481,7 +481,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 40%, rgba(243,146,48,0.10) 0%, rgba(243,146,48,0) 55%)",
+            "radial-gradient(circle at 50% 40%, rgba(90,49,174,0.10) 0%, rgba(90,49,174,0) 55%)",
         }}
       />
 
@@ -497,7 +497,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
-          color: "rgba(243, 146, 48, 0.85)",
+          color: "rgba(90,49,174, 0.85)",
         }}
       >
         You are invited
@@ -530,7 +530,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             fontSize: "128px",
             fontWeight: 300,
             letterSpacing: "0.15em",
-            color: "#f2ecd8",
+            color: "#22201C",
             lineHeight: 1,
           }}
         >
@@ -543,7 +543,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             fontWeight: 300,
             fontSize: "52px",
             letterSpacing: "0.04em",
-            color: "rgba(242, 236, 216, 0.7)",
+            color: "rgba(34,32,28, 0.7)",
             marginTop: "18px",
           }}
         >
@@ -564,7 +564,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           fontSize: "50px",
           fontWeight: 300,
           lineHeight: 1.35,
-          color: "rgba(242, 236, 216, 0.78)",
+          color: "rgba(34,32,28, 0.78)",
         }}
       >
         Read your chart against today,
@@ -583,12 +583,12 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
               fontSize: "44px",
               fontWeight: 300,
               letterSpacing: "0.12em",
-              color: "#f2ecd8",
+              color: "#22201C",
               marginBottom: "18px",
             }}
           >
             join with code{" "}
-            <span style={{ color: "rgba(243,146,48,0.95)", letterSpacing: "0.18em" }}>{code}</span>
+            <span style={{ color: "rgba(90,49,174,0.95)", letterSpacing: "0.18em" }}>{code}</span>
           </div>
         ) : null}
         <div
