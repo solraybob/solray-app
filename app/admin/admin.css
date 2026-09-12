@@ -84,3 +84,25 @@
    which is fine for a rule and unreadable for a label. */
 .sa-root [class*="text-text-muted"] { color: rgb(110 102 89) !important; }
 .sa-root [class*="opacity-"] { opacity: 1 !important; }
+
+
+/* ── the whole surface, not just the page box ────────────────────────────
+   The member app's <body> is forest and, above 1024px, carries 4rem of top
+   padding for a fixed header that does not render here, plus a vignette and
+   dark scrollbars. On an operator page that showed as black above and beside
+   the content. The body is marked while an admin page is mounted (see
+   AdminNav) and unmarked when it unmounts, so nothing leaks into the app. */
+body.sa-body, body:has(.sa-root) {
+  background-color: #F5F0E6 !important;
+  color: #22201C;
+  padding-top: 0 !important;
+}
+html:has(.sa-root) { background-color: #F5F0E6; }
+body.sa-body::before, body:has(.sa-root)::before { content: none !important; }
+body.sa-body::-webkit-scrollbar-track,
+body:has(.sa-root) ::-webkit-scrollbar-track { background: #F5F0E6; }
+body.sa-body::-webkit-scrollbar-thumb,
+body:has(.sa-root) ::-webkit-scrollbar-thumb { background: #E2DACA; }
+
+/* the inset the body used to carry, now on the page itself */
+.sa-root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }

@@ -8,6 +8,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "https://solray-backend-production.up.railway.app").trim()).trim();
 
@@ -24,6 +25,16 @@ const SECTIONS: { href: string; label: string; external?: boolean }[] = [
 
 export default function AdminNav() {
   const path = usePathname() || "";
+
+  // The member app paints <body> in forest and, on desktop, pads it 4rem for a
+  // fixed header that does not render on /admin. That left a dark band above
+  // and around the operator pages. Marking the body while an admin page is
+  // mounted lets admin.css take the whole surface, and removes the mark on the
+  // way out so the member app is untouched.
+  useEffect(() => {
+    document.body.classList.add("sa-body");
+    return () => document.body.classList.remove("sa-body");
+  }, []);
   return (
     <div className="sa-bar">
       <a className="sa-word" href="https://solray.ai" aria-label="Solray">
