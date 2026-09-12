@@ -154,7 +154,7 @@ export default function EntrySky() {
         ctx.fill();
       }
 
-      if (!shoot && now > nextShootAt) {
+      if (false && !shoot && now > nextShootAt) {  // the moving star is out, Bob 2026-09-12
         shoot = {
           x: Math.random() > 0.5 ? -20 : w * 0.4,
           y: h * (0.05 + Math.random() * 0.3),
