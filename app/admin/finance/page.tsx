@@ -153,9 +153,6 @@ function FinancePage() {
             <p className="font-body text-text-secondary text-[13px] mt-1">Revenue and AI cost are live. Infra figures come from Railway env (FINANCE_*).</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <a href="/admin/hub" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-indigo/40 text-indigo hover:border-indigo transition-colors">Analytics</a>
-            <a href="/admin/marketing" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-ember/40 text-ember hover:border-ember transition-colors">Marketing</a>
-            <a href="/admin/akashic-record" className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-moss/40 text-moss hover:border-moss transition-colors">Akashic</a>
             <button onClick={() => void load()} className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors">{loading ? "Reading…" : "Refresh"}</button>
           </div>
         </header>

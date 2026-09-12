@@ -228,36 +228,6 @@ function HiveDashboardInner() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="/admin/consciousness"
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors"
-            >
-              Consciousness
-            </a>
-            <a
-              href="/admin/training"
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-wisteria/40 text-wisteria hover:border-wisteria transition-colors"
-            >
-              Training
-            </a>
-            <a
-              href="/admin/hub"
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-indigo/40 text-indigo hover:border-indigo transition-colors"
-            >
-              Analytics
-            </a>
-            <a
-              href="/admin/finance"
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-amber-sun/40 text-amber-sun hover:border-amber-sun transition-colors"
-            >
-              Finance
-            </a>
-            <a
-              href="/admin/marketing"
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-ember/40 text-ember hover:border-ember transition-colors"
-            >
-              Marketing
-            </a>
             <button
               onClick={() => void load()}
               className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
