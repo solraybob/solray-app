@@ -16,10 +16,10 @@
   --rgb-border:         226 218 202;   /* #E2DACA hairline */
   --rgb-amber:          108  60 204;   /* #6C3CCC orb violet, the accent */
   --rgb-text-primary:    34  32  28;   /* #22201C ink */
-  --rgb-text-secondary: 110 102  89;   /* #6E6659 */
-  --rgb-text-muted:     167 158 144;   /* #A79E90 */
+  --rgb-text-secondary:  92  85  72;   /* #5C5548 */
+  --rgb-text-muted:     110 102  89;   /* #6E6659 */
   --rgb-ember:          196  96  47;   /* #C4602F burnt coral */
-  --rgb-moss:            79 122  74;   /* #4F7A4A */
+  --rgb-moss:            63 106  60;   /* #3F6A3C */
   --rgb-mist:           110 102  89;
   --rgb-indigo:          84  63 150;   /* #543F96 deep orb violet */
   --rgb-wisteria:       210  63 140;   /* #D23F8C orb pink */
@@ -27,13 +27,13 @@
 
   /* hex aliases, for anything still reading the flat names */
   --bg-deep: #F5F0E6;  --bg-dark: #FAF6EC;  --card: #FAF6EC;  --border: #E2DACA;
-  --amber: #6C3CCC;    --text-primary: #22201C; --text-secondary: #6E6659;
-  --text-muted: #A79E90; --ember: #C4602F; --moss: #4F7A4A; --mist: #6E6659;
+  --amber: #6C3CCC;    --text-primary: #22201C; --text-secondary: #5C5548;
+  --text-muted: #6E6659; --ember: #C4602F; --moss: #3F6A3C; --mist: #6E6659;
   --indigo: #543F96;   --wisteria: #D23F8C; --pearl: #FAF6EC;
 
   /* connector names */
-  --paper: #F5F0E6; --paper-2: #FAF6EC; --ink: #22201C; --ink2: #6E6659;
-  --ink3: #A79E90;  --hair: #E2DACA;    --violet: #6C3CCC; --pink: #F06CB4;
+  --paper: #F5F0E6; --paper-2: #FAF6EC; --ink: #22201C; --ink2: #5C5548;
+  --ink3: #6E6659;  --hair: #E2DACA;    --violet: #6C3CCC; --pink: #F06CB4;
 
   --font-heading: var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
   --font-body:    var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
@@ -78,3 +78,9 @@
   transition: border-color .3s, color .3s, background .3s; }
 .sa-link:hover { border-color: var(--ink3); color: var(--ink); }
 .sa-link[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+
+/* Contrast: hairlines stay light, text never does. #A79E90 on paper is 2.3:1,
+   which is fine for a rule and unreadable for a label. */
+.sa-root [class*="text-text-muted"] { color: rgb(110 102 89) !important; }
+.sa-root [class*="opacity-"] { opacity: 1 !important; }
