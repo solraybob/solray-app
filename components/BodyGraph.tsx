@@ -1,5 +1,7 @@
 "use client";
 
+import { useTheme } from "@/lib/theme-context";
+
 /**
  * BodyGraph: Human Design bodygraph. June 2026 redesign (Bob-approved mockup
  * solray_chart_redesign.html).
@@ -160,17 +162,21 @@ function CenterShape({
   y,
   defined,
   color,
+  openStroke,
+  openWidth,
 }: {
   type: CenterKey;
   x: number;
   y: number;
   defined: boolean;
   color: string;
+  openStroke: string;
+  openWidth: number;
 }) {
   const fill = defined ? color : "transparent";
   const fillOpacity = defined ? 0.94 : 0;
-  const stroke = defined ? color : "rgb(var(--rgb-border))";
-  const strokeWidth = 1.3;
+  const stroke = defined ? color : openStroke;
+  const strokeWidth = defined ? 1.3 : openWidth;
   const size = 40;
   // No halo. The wheel lost its glow layer and so did the Soul Map;
   // a blurred copy of each centre underneath it was the last one left.
@@ -271,8 +277,16 @@ function CenterShape({
 }
 
 export default function BodyGraph({ definedCenters, definedChannels, size = 280 }: BodyGraphProps) {
-  // Every colour here is a token now, so the graph needs no theme branch.
+  // Drawn for the ground it sits on, not recoloured for it. A pale line on a
+  // warm black reads thinner than the same line in ink on paper, so the dark
+  // treatment carries more weight and a brighter outline, rather than the same
+  // geometry with the colours swapped.
+  const { theme } = useTheme();
+  const isDark = theme !== "light";
   const labelFill = "rgb(var(--rgb-text-secondary))";
+  const chanW = isDark ? 3.6 : 3;
+  const openStroke = isDark ? "rgb(var(--rgb-text-muted) / 0.85)" : "rgb(var(--rgb-border))";
+  const openWidth = isDark ? 1.7 : 1.3;
   // Extended viewBox gives the external labels breathing room on all sides.
   const vbX = -10;
   const vbY = -4;
@@ -350,8 +364,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y1={p1.y}
             x2={p2.x}
             y2={p2.y}
-            stroke="rgba(90,49,174,0.75)"
-            strokeWidth={3}
+            stroke="rgb(var(--rgb-amber) / 0.8)"
+            strokeWidth={chanW}
             strokeLinecap="round"
           />
         );
@@ -368,6 +382,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             y={pos.y}
             defined={definedSet.has(key)}
             color={CENTER_COLOR[key]}
+            openStroke={openStroke}
+            openWidth={openWidth}
           />
         );
       })}

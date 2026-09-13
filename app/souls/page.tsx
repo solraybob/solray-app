@@ -722,8 +722,10 @@ export default function SoulsPage() {
             under it, then the small label line. The accent eyebrow and the
             centred title were a second and a third header on one screen. */}
         <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
-          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
-            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+          <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
+            {/* The fixed DesktopHeader carries the mark from lg up, so this
+                one steps aside there rather than printing solray twice. */}
+            <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
                 onClick={handleInviteShare}

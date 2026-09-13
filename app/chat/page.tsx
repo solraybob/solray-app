@@ -1635,9 +1635,11 @@ function ChatPageInner() {
                 justify-content:space-between;gap:10px}
             The mark, then the actions as 17px line icons; the words PAST and
             NEW were two more pieces of lettering competing with the answer. */}
-        <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
-          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
-            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+        <div className="w-full max-w-lg lg:max-w-[620px] mx-auto px-5 pt-3">
+          <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
+            {/* The fixed DesktopHeader carries the mark from lg up, so this
+                one steps aside there rather than printing solray twice. */}
+            <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
                 onClick={openHistory}
@@ -1701,7 +1703,7 @@ function ChatPageInner() {
 
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 pb-48" style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}>
-          <div className="max-w-lg lg:max-w-3xl mx-auto space-y-6">
+          <div className="max-w-lg lg:max-w-[620px] mx-auto space-y-6">
 
             {/* Empty / loading anchor, visible while the greeting loads and as
                 the honest fallback when no greeting could be built (slow or
@@ -1867,7 +1869,7 @@ function ChatPageInner() {
 
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + var(--sab, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
-          <div className="max-w-lg lg:max-w-3xl mx-auto">
+          <div className="max-w-lg lg:max-w-[620px] mx-auto">
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[15px] tracking-[0.14em] uppercase font-bold" style={{ color: "rgb(var(--rgb-ember))" }}>
                 <span

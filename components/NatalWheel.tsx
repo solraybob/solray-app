@@ -113,6 +113,11 @@ export default function NatalWheel({
   // pearl page and the legend under it came out at about 2:1. Both themes now
   // take the connector palette, so the wheel is the page's own card plane with
   // the page's own ink on it.
+  // Drawn for the ground, not recoloured for it. Cream on warm black reads
+  // thinner and fainter than ink on paper at the same alpha and the same
+  // width, so the dark treatment carries its own set of both. These are the
+  // numbers, in pairs: dark first.
+  const A  = (d: number, l: number) => (isDark ? d : l);
   const inkRGB     = isDark ? "245,240,230" : "34,32,28";
   const discFill   = isDark ? "url(#nwInner)" : "rgb(var(--rgb-card))";
   const centerFill = isDark ? "rgb(var(--rgb-bg-deep))" : "rgb(var(--rgb-bg-dark))";
@@ -208,8 +213,8 @@ export default function NatalWheel({
     .sort((a, b) => a.orb - b.orb)
     .slice(0, MAX_LINES);
 
-  const ringStroke = `rgba(${inkRGB},0.32)`;
-  const ringWidth  = 1.1;
+  const ringStroke = `rgba(${inkRGB},${A(0.44, 0.32)})`;
+  const ringWidth  = A(1.25, 1.1);
 
   return (
     <div style={{ maxWidth: size, margin: "0 auto" }}>
@@ -247,10 +252,10 @@ export default function NatalWheel({
             <path
               d={s.path}
               fill={s.color}
-              fillOpacity={0.10}
+              fillOpacity={A(0.2, 0.1)}
               stroke={s.color}
-              strokeOpacity={0.22}
-              strokeWidth={0.5}
+              strokeOpacity={A(0.4, 0.22)}
+              strokeWidth={A(0.75, 0.5)}
             />
             <text
               x={s.labelPos.x}
@@ -273,8 +278,8 @@ export default function NatalWheel({
             key={`tick-${i}`}
             x1={t.a.x} y1={t.a.y}
             x2={t.b.x} y2={t.b.y}
-            stroke={`rgba(${inkRGB},${t.major ? 0.5 : 0.26})`}
-            strokeWidth={t.major ? 1.0 : 0.6}
+            stroke={`rgba(${inkRGB},${t.major ? A(0.64, 0.5) : A(0.36, 0.26)})`}
+            strokeWidth={t.major ? A(1.15, 1.0) : A(0.75, 0.6)}
           />
         ))}
 
@@ -294,8 +299,8 @@ export default function NatalWheel({
               x1={inner.x} y1={inner.y}
               x2={outer.x} y2={outer.y}
               stroke={`rgba(${inkRGB},1)`}
-              strokeOpacity={isAngle ? 0.7 : 0.32}
-              strokeWidth={isAngle ? 1.3 : 0.8}
+              strokeOpacity={isAngle ? A(0.82, 0.7) : A(0.44, 0.32)}
+              strokeWidth={isAngle ? A(1.5, 1.3) : A(0.95, 0.8)}
               strokeDasharray={isAngle ? undefined : "2 3"}
             />
           );
@@ -306,11 +311,11 @@ export default function NatalWheel({
           <text
             key={`hn-${num}`}
             x={pos.x} y={pos.y}
-            fontSize={size * 0.038}
-            fill={`rgba(${inkRGB},0.7)`}
+            fontSize={size * A(0.041, 0.038)}
+            fill={`rgba(${inkRGB},${A(0.9, 0.7)})`}
             textAnchor="middle"
             dominantBaseline="central"
-            style={{ fontFamily: "inherit", fontWeight: 500 }}
+            style={{ fontFamily: "inherit", fontWeight: A(700, 500) }}
           >
             {num}
           </text>
@@ -342,8 +347,8 @@ export default function NatalWheel({
           const cfg = ASPECT_LINE[a.aspect.toLowerCase()];
           if (!cfg) return null;
           const t = Math.max(0, Math.min(1, a.orb / MAX_ORB));
-          const w  = 1.9 - 1.3 * t;
-          const op = 0.95 - 0.68 * t;
+          const w  = A(2.3, 1.9) - 1.3 * t;
+          const op = 0.95 - A(0.5, 0.68) * t;
           return (
             <line
               key={`asp-${i}`}

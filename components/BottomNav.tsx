@@ -38,12 +38,14 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed left-0 right-0 bottom-0 lg:hidden"
+      // display lives in the class, not the style object: an inline
+      // display:flex beats the display:none that lg:hidden sets, which is why
+      // desktop was showing the top bar and this one at the same time.
+      className="fixed left-0 right-0 bottom-0 flex lg:hidden"
       style={{
         maxWidth: 480,
         margin: "0 auto",
         padding: "15px 30px calc(17px + var(--sab, 0px))",
-        display: "flex",
         justifyContent: "space-between",
         background: "rgb(var(--rgb-bg-deep))",
         borderTop: "1px solid rgb(var(--rgb-border))",

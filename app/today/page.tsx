@@ -1801,7 +1801,9 @@ export default function TodayPage() {
             label line, which made it the one page whose header was taller. */}
         <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
           <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
-            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+            {/* The fixed DesktopHeader carries the mark from lg up, so this
+                one steps aside there rather than printing solray twice. */}
+            <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
           </div>
           <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
           <p

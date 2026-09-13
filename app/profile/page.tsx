@@ -620,14 +620,15 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 function CollapsibleSection({
   title,
   children,
-  defaultOpen = false,
+  open,
+  onToggle,
 }: {
   title: string;
   children: React.ReactNode;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: (title: string) => void;
 }) {
   const { t } = useT();
-  const [open, setOpen] = useState(defaultOpen);
   const sectionTitleKey: Record<string, string> = {
     "Soul Map": "profile.soul_map",
     "Natal Chart": "profile.natal_chart",
@@ -640,11 +641,15 @@ function CollapsibleSection({
   // content underneath only when it is asked for. These were four bordered
   // cards, each with an accent colour of its own and a "tap to open" line
   // under the title, which made four objects out of one list.
+  //
+  // Open state is owned by the page, not by each fold, so exactly one of the
+  // four can be open. With four independent folds the page could become a
+  // single scroll of everything, which is the opposite of what a fold is for.
   return (
     <div style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => onToggle(title)}
         aria-expanded={open}
         className="w-full text-left flex items-center justify-between gap-4 font-body uppercase"
         style={{
@@ -749,6 +754,10 @@ export default function ProfilePage() {
   const [avatarSaving, setAvatarSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const soulMapRef = useRef<HTMLDivElement | null>(null);
+  // One section at a time. Soul Map is the one that opens on arrival.
+  const [openSection, setOpenSection] = useState<string | null>("Soul Map");
+  const toggleSection = (title: string) =>
+    setOpenSection((cur) => (cur === title ? null : title));
   const [soulMapSharing, setSoulMapSharing] = useState(false);
 
   const handleSoulMapShare = async () => {
@@ -977,8 +986,10 @@ export default function ProfilePage() {
             under it, then the small label line. The accent eyebrow and the
             centred title were a second and a third header on one screen. */}
         <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
-          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
-            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+          <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
+            {/* The fixed DesktopHeader carries the mark from lg up, so this
+                one steps aside there rather than printing solray twice. */}
+            <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
                 className="sol-ico"
@@ -1166,7 +1177,7 @@ export default function ProfilePage() {
                   legend repeating them underneath. */}
               {profile ? (
                 <div style={{ marginTop: 26 }}>
-                  <CollapsibleSection title="Soul Map" defaultOpen>
+                  <CollapsibleSection title="Soul Map" open={openSection === "Soul Map"} onToggle={toggleSection}>
                     <div ref={soulMapRef}>
                       <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
@@ -1196,7 +1207,7 @@ export default function ProfilePage() {
               )}
 
               {/* Full Blueprint, merged from chart page */}
-              {profile && <BlueprintSections token={token} aspects={profile.aspects} />}
+              {profile && <BlueprintSections token={token} aspects={profile.aspects} openSection={openSection} onToggleSection={toggleSection} />}
 
               {/* Subscription + Sign Out moved into /profile/settings (the gear
                   in the header is the single canonical entry point now). */}
@@ -1500,7 +1511,7 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
   );
 }
 
-function BlueprintSections({ token, aspects }: { token: string | null; aspects: NatalAspect[] }) {
+function BlueprintSections({ token, aspects, openSection, onToggleSection }: { token: string | null; aspects: NatalAspect[]; openSection: string | null; onToggleSection: (title: string) => void }) {
   const { t, lang } = useT();
   const es = lang.startsWith("es");
   // token gates the cached-blueprint read below
@@ -1566,7 +1577,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
   return (
     <>
       {/* Natal Chart */}
-      <CollapsibleSection title="Natal Chart" defaultOpen={false}>
+      <CollapsibleSection title="Natal Chart" open={openSection === "Natal Chart"} onToggle={onToggleSection}>
         <div className="mt-2">
           {/* Wheel */}
           <div className="mb-5">
@@ -1680,7 +1691,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       </CollapsibleSection>
 
       {/* Human Design */}
-      <CollapsibleSection title="Human Design" defaultOpen={false}>
+      <CollapsibleSection title="Human Design" open={openSection === "Human Design"} onToggle={onToggleSection}>
         <div className="space-y-4 mt-2">
           {/* Bodygraph */}
           <div className="mb-2">
@@ -1765,7 +1776,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
       </CollapsibleSection>
 
       {/* Gene Keys */}
-      <CollapsibleSection title="Gene Keys" defaultOpen={false}>
+      <CollapsibleSection title="Gene Keys" open={openSection === "Gene Keys"} onToggle={onToggleSection}>
         {/* One hairline row per key, the same grammar as the folds that hold
             them. These were tinted lilac cards with a lilac border, a lilac
             eyebrow, and three words in three different colours, one of them a
