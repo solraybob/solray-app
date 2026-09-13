@@ -139,7 +139,11 @@
     "energy_ask_intuitive": "Mi energía intuitiva está al {pct}% hoy. ¿Qué me intenta decir mi instinto que no estoy escuchando?",
     "energy_ask_aria": "Pregunta a tu Ser Superior sobre tu energía {label} al {pct} por ciento",
     "balance_ring": "El anillo punteado es el equilibrio",
-    "error_no_sky": "No se pudo alcanzar el cielo ahora mismo. Revisa tu conexión e inténtalo de nuevo."
+    "error_no_sky": "No se pudo alcanzar el cielo ahora mismo. Revisa tu conexión e inténtalo de nuevo.",
+    "energy_high": "Alta",
+    "energy_steady": "Estable",
+    "energy_low": "Baja",
+    "kick_today": "hoy"
   },
   "chat": {
     "placeholder": "Habla desde donde estás.",
@@ -225,7 +229,7 @@
     "search_placeholder": "Nombre, @usuario o correo",
     "pending_requests": "Solicitudes Pendientes",
     "connections": "Conexiones",
-    "no_connections": "Aún no hay conexiones de dos vías. Invita a alguien arriba para compartir lecturas juntos.",
+    "no_connections": "Aún no hay nadie. Añade a alguien a la lectura de arriba, o búscale en Solray.",
     "no_users_found": "No se encontraron usuarios. Es posible que aún no tengan cuenta.",
     "connect": "Conectar",
     "sent": "Enviado",
@@ -294,7 +298,10 @@
     "error_field": "No se pudo alcanzar el campo. Inténtalo en un momento.",
     "error_signal": "La señal no llegó. Intenta una vez más.",
     "error_drifted": "Algo se desvió del camino. Inténtalo de nuevo.",
-    "error_partial_chart": "No se pudo traer su carta completa, leyendo desde lo básico."
+    "error_partial_chart": "No se pudo traer su carta completa, leyendo desde lo básico.",
+    "connected": "conectado",
+    "saved": "guardado",
+    "wants_to_connect": "quiere conectar"
   },
   "profile": {
     "title": "Perfil",
@@ -378,11 +385,11 @@
     "searching": "Buscando..."
   },
   "nav": {
-    "today": "Hoy",
+    "today": "Ahora",
     "chat": "Oráculo",
     "chart": "Carta",
-    "souls": "Almas",
-    "profile": "Perfil"
+    "souls": "Dinámicas",
+    "profile": "Tú"
   },
   "trial": {
     "label": "Prueba",

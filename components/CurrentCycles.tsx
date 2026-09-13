@@ -77,7 +77,7 @@ const CYCLE_TITLE_MAP: Record<string, string> = {
   "Uranus meets your ASC": "Your outer self breaks free",
 };
 
-function humanizeCycleTitle(title: string): string {
+export function humanizeCycleTitle(title: string): string {
   // Exact match first
   if (CYCLE_TITLE_MAP[title]) return CYCLE_TITLE_MAP[title];
   // Partial match
@@ -292,9 +292,12 @@ function CycleCardSkeleton() {
 
 interface CurrentCyclesProps {
   token: string | null;
+  /** Today names this section in its own index row, so the component's
+   *  header would be the same words twice. */
+  hideHeading?: boolean;
 }
 
-export default function CurrentCycles({ token }: CurrentCyclesProps) {
+export default function CurrentCycles({ token, hideHeading = false }: CurrentCyclesProps) {
   const { t, lang } = useT();
   const [cycles, setCycles] = useState<Cycle[] | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingCycle[]>([]);
@@ -369,12 +372,14 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
   const handleNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1));
 
   return (
-    <div className="mb-8">
+    <div className={hideHeading ? "" : "mb-8"}>
       {/* Section header with pagination */}
       <div className="flex items-center justify-between mb-4">
-        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
-          {t("cycles.current_cycles")}
-        </p>
+        {hideHeading ? <span /> : (
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
+            {t("cycles.current_cycles")}
+          </p>
+        )}
         {!loading && total > 1 && (
           <div className="flex items-center gap-3">
             <button

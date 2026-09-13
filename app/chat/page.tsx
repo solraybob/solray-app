@@ -9,7 +9,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
-import { Orb } from "@/components/Wordmark";
+import { Orb, Wordmark } from "@/components/Wordmark";
 
 interface Message {
   id: string;
@@ -1622,34 +1622,60 @@ function ChatPageInner() {
             background: "transparent",
           }}
         />
-        {/* The masthead, mundane's grammar: the day on the left, the two
-            things you can do on the right, one hairline under it. No photo,
-            no scrim, no second title. The nav already says Oracle. */}
-        <div style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}>
-          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 pb-3 flex items-baseline justify-between gap-4">
-            <span
-              className="font-body uppercase"
-              style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
-            >
-              {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
-            </span>
-            <span className="flex items-baseline gap-5">
+        {/* mundane's Mirror header, to the value:
+              .head{display:flex;justify-content:space-between;align-items:baseline}
+              .mark{font-weight:800;font-size:17px;line-height:1;letter-spacing:-.045em}
+              .rule{height:1px;background:var(--line);margin-top:12px}
+              .ico{width:34px;height:34px;border:none;background:none;border-radius:50%;
+                display:flex;align-items:center;justify-content:center;color:var(--ink3);
+                transition:color .18s ease,background .18s ease}
+              .ico svg{width:17px;height:17px}  .ico:active{background:rgba(34,32,28,.06)}
+              .convlab{font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+                color:var(--ink3);margin-top:12px;display:flex;
+                justify-content:space-between;gap:10px}
+            The mark, then the actions as 17px line icons; the words PAST and
+            NEW were two more pieces of lettering competing with the answer. */}
+        <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
+          <div className="flex items-baseline justify-between">
+            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+            <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
                 onClick={openHistory}
                 title={t("chat.previous_chats")}
-                className="font-body uppercase bg-transparent"
-                style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+                aria-label={t("chat.previous_chats")}
+                className="sol-ico"
               >
-                {t("chat.past")}
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+                  <path d="M3 5h14M3 10h14M3 15h9" />
+                </svg>
               </button>
               <button
                 onClick={startNewChat}
                 title={t("chat.new_chat")}
-                className="font-body uppercase bg-transparent"
-                style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+                aria-label={t("chat.new_chat")}
+                className="sol-ico"
               >
-                {t("chat.new")}
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+                  <path d="M10 4v12M4 10h12" />
+                </svg>
               </button>
+            </span>
+          </div>
+          <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
+          <div
+            className="font-body uppercase"
+            style={{
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "rgb(var(--rgb-text-muted))",
+              marginTop: 12,
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <span style={{ color: "rgb(var(--rgb-text-secondary))" }}>
+              {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
             </span>
           </div>
         </div>

@@ -5,12 +5,11 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import CurrentCycles from "@/components/CurrentCycles";
+import { humanizeCycleTitle } from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
-import DepthSlides from "@/components/DepthSlides";
-import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
+import { ShareCardOffscreen } from "@/components/ShareCard";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
@@ -111,6 +110,36 @@ function getDominantPlanet(astrologyTag: string): string {
   return "sun"; // default
 }
 
+// The card carries the opening of the reading, not all of it; "Go deeper"
+// is what hands the whole thing to the Oracle.
+function firstLines(reading?: string): string {
+  if (!reading) return "";
+  const first = reading.split(/\n\n+/)[0].trim();
+  if (first.length <= 220) return first;
+  const cut = first.slice(0, 220);
+  const stop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf(", "));
+  return (stop > 120 ? cut.slice(0, stop + 1) : cut.trimEnd()) + (stop > 120 ? "" : "\u2026");
+}
+
+interface DeckCycle {
+  transit_planet: string;
+  natal_point: string;
+  aspect: string;
+  phase: "applying" | "separating";
+  peak: string;
+  title: string;
+  summary: string | null;
+}
+
+// One line naming the day: the aspect the reading is built on, and where the
+// Moon is. This replaces a separate moon card and a separate tag chip.
+function skyLine(f: { tags: { astrology: string }; planets: Planet[] }): string {
+  const moon = f.planets.find((pl) => pl.name === "Moon");
+  const parts = [f.tags.astrology];
+  if (moon) parts.push(`Moon in ${moon.sign}`);
+  return parts.join("  ·  ");
+}
+
 // The wash for the day's ruling planet
 function getHeroWash(astrologyTag: string): string {
   const planet = getDominantPlanet(astrologyTag);
@@ -150,110 +179,7 @@ function getEnergyNote(label: string, value: number): string {
 
 // Extended palette, aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
-const ENERGY_COLORS: Record<string, string> = {
-  Mental:    "rgb(var(--rgb-mist))", // mist
-  Emotional: "var(--ember)", // ember
-  Physical:  "rgb(var(--rgb-ember))", // moss
-  Intuitive: "var(--wisteria)", // wisteria
-};
 
-// Prompts seeded into chat when a bar is tapped. Phrased as the user
-// asking their Higher Self, keeps the question in first-person voice.
-const ENERGY_PROMPTS: Record<string, (pct: number) => string> = {
-  Mental:    (p) => `My mental energy is at ${p}% today. What's shaping it, and how should I work with it?`,
-  Emotional: (p) => `My emotional energy is at ${p}% today. What's underneath this, and what does it need from me?`,
-  Physical:  (p) => `My physical energy is at ${p}% today. How should I move, rest, or pace myself?`,
-  Intuitive: (p) => `My intuitive energy is at ${p}% today. What is my gut trying to tell me I'm not listening to?`,
-};
-
-// Display-layer transform: remap the 1-10 score onto a 12-93% visual range.
-// The previous mapping (50 + score*4.5) compressed every real day into a
-// 54-95% band, so a heavy Saturn-square day and a flowing trine day looked
-// nearly identical. Verified against 200 production charts: scores genuinely
-// span 1-10 in the wild, so the bar now uses the full height. score*9 + 3
-// puts a neutral 6 at 57% (calm, present), a hard 3 at 30%, a charged 9 at
-// 84%. Per-point visual distance doubles (9pts vs 4.5). Display only, the
-// underlying astrology is untouched.
-function toDisplayPct(value: number): number {
-  const clamped = Math.max(1, Math.min(10, value));
-  return Math.round(clamped * 9 + 3);
-}
-
-function EnergyBar({
-  label,
-  value,
-  delayMs,
-  onAsk,
-}: {
-  label: string;
-  value: number;
-  delayMs: number;
-  onAsk: (label: string, pct: number) => void;
-}) {
-  const { t } = useT();
-  const color = ENERGY_COLORS[label] || "rgb(var(--rgb-amber))";
-  const pct = toDisplayPct(value);
-  const displayLabel = t(`today.${label.toLowerCase()}`);
-
-  // Animation is driven by pure CSS @keyframes (see globals.css), not React
-  // state. The fill div gets `--pct` as a CSS variable; the keyframe
-  // animates width from 0 → var(--pct). Width-based (not transform-based)
-  // draw, because transform scaleX was too subtle / getting coalesced away
-  // somewhere in the iOS Safari paint pipeline on cached loads. Width is
-  // less performant but unambiguous.
-  //
-  // Two-phase arrival: label row fades in first (all rows together, no
-  // per-row stagger), then the line ink-draws from left with a soft-decel
-  // curve, staggered per row by delayMs.
-  const labelFadeMs = 400;
-  const drawMs      = 900;
-  const drawDelay   = 300 + delayMs;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onAsk(label, pct)}
-      aria-label={`${displayLabel} ${pct}%`}
-      className="group block w-full text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-sun/40 rounded-sm"
-    >
-      {/* Label row, fades in as a unit, no per-row stagger here. */}
-      <div
-        className="flex items-baseline justify-between mb-2"
-        style={{
-          animation: `solrayLabelFade ${labelFadeMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) both`,
-        }}
-      >
-        <span className="font-body text-[14px] font-normal tracking-[0.22em] uppercase text-text-secondary">
-          {displayLabel}
-        </span>
-        <span
-          className="font-heading text-[17px] text-text-secondary"
-          style={{ fontFeatureSettings: '"lnum"' }}
-        >
-          {pct}
-        </span>
-      </div>
-
-      {/* Track, matches MoonCycleBar grammar (h-1.5, rounded-full). No dot;
-          the user asked for the line alone. The fill is width-sized via a
-          CSS variable so the keyframe can animate from 0 → --pct. */}
-      <div className="relative w-full h-1.5 bg-forest-border/50 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full"
-          style={{
-            // CSS custom property consumed by the @keyframes `to` block.
-            // Cast needed because React's CSSProperties type doesn't know
-            // about arbitrary custom properties.
-            ["--pct" as any]: `${pct}%`,
-            width: `${pct}%`,
-            background: `linear-gradient(to right, ${color}, transparent)`,
-            animation: `solrayInkDraw ${drawMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) ${drawDelay}ms both`,
-          }}
-        />
-      </div>
-    </button>
-  );
-}
 
 // Planet card for the cosmic ticker strip.
 // Mapped onto the aged-pigment palette, grouped by modern rulership
@@ -380,32 +306,35 @@ function SkeletonToday() {
   );
 }
 
-// Hero card with the day title
-function HeroImageCard({
+// THE DAY. The reading is the product, so the reading is the page: a title
+// at the display weight, one quiet line naming the configuration, and the
+// text itself, on paper. No card, no wash, no photograph, and nothing to tap
+// before you can read it. This block used to be a bordered hero with the
+// reading folded away behind a chevron, which put decoration in front of the
+// one thing a member pays for.
+function TheDay({
   dayTitle,
   heroWash,
   reading,
+  skyLine,
 }: {
   dayTitle: string;
   heroWash: string;
   reading?: string;
+  skyLine: string;
 }) {
   const { t, lang } = useT();
-  const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
 
-  // Build the date label once per render: "Saturday, 3 May"
   const dateLabel = new Date().toLocaleDateString(lang === "en" ? "en-GB" : lang, {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 
-  const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // don't toggle the open/close on share tap
-    if (sharing) return;
-    if (!shareCardRef.current) return;
+  const handleShare = async () => {
+    if (sharing || !shareCardRef.current) return;
     setSharing(true);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
@@ -423,111 +352,310 @@ function HeroImageCard({
   };
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden relative"
-      style={{ border: "1px solid rgb(var(--rgb-border))" }}
-    >
-      {/* Image + toggle area. The onClick toggles open/close on the
-          hero. The share button below is a SIBLING of this div, not a
-          descendant, so its click cannot bubble up to the toggle. The
-          previous version had the button nested inside this div and
-          relied on e.stopPropagation, which was unreliable across
-          touch environments because the streaming-tick rate could
-          interfere and iOS sometimes fires both touchend and click
-          on different elements. Sibling structure removes the race. */}
-      <div
-        className="relative w-full h-[160px] cursor-pointer"
-        style={{ background: `${heroWash}, rgb(var(--rgb-card))` }}
-        onClick={() => setOpen(v => !v)}
-      >
-        {/* Day title centered */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-none">
-          <h1
-            className="font-heading text-[26px] leading-[1.14] text-center"
-            style={{ color: "rgb(var(--rgb-text-primary))", fontWeight: 900, letterSpacing: "-.038em", maxWidth: "18ch" }}
-          >
-            {dayTitle}
-          </h1>
-        </div>
-
-        {/* Today's Weather label + arrow */}
-        <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1 pointer-events-none">
-          <p className="font-body text-[15px] tracking-[0.18em] uppercase font-bold" style={{ color: "rgb(var(--rgb-text-muted))", fontWeight: 700 }}>
-            {t("today.weather")}
-          </p>
-          <svg
-            width="12" height="8" viewBox="0 0 16 10" fill="none"
-            style={{
-              opacity: 0.6,
-              transform: open ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.3s ease",
-            }}
-          >
-            <path d="M1 1L8 8L15 1" stroke="rgb(var(--rgb-amber))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      </div>
-
-      {/* Share button. Sibling of the click-toggling div, absolutely
-          positioned over the hero's top-right corner. The outer card
-          wrapper is now `position: relative` so this absolute lands
-          where it should. Cannot bubble to a parent onClick because
-          there is no parent onClick. Codex UX hook 6. */}
-      <button
-        onClick={handleShare}
-        aria-label={t("today.share")}
-        disabled={sharing}
-        className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
+    <div>
+      <h1
+        className="font-heading text-text-primary"
         style={{
-          background: "rgb(var(--rgb-card) / 0.82)",
-          border: "1px solid rgb(var(--rgb-border))",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
+          fontSize: "clamp(1.55rem, 6.6vw, 2.05rem)",
+          fontWeight: 900,
+          letterSpacing: "-.042em",
+          lineHeight: 1.08,
+          maxWidth: "15ch",
         }}
       >
-        {sharing ? (
-          <span
-            className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
-            style={{ borderColor: "rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-amber))" }}
-          />
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
-            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
-            <polyline points="16 6 12 2 8 6" />
-            <line x1="12" y1="2" x2="12" y2="15" />
-          </svg>
-        )}
-      </button>
+        {dayTitle}
+      </h1>
 
-      {/* Off-screen share-card render target. Ships only the DOM
-          when the parent hero is mounted; html2canvas captures it
-          on demand. Position fixed at -99999px keeps it invisible
-          but renders so html2canvas can measure. */}
-      <ShareCardOffscreen
-        data={{ dayTitle, heroWash, dateLabel }}
-        containerRef={shareCardRef}
-      />
+      <p
+        className="font-body uppercase"
+        style={{
+          marginTop: 14,
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          color: "rgb(var(--rgb-text-muted))",
+        }}
+      >
+        {skyLine}
+      </p>
 
-      {/* Expandable reading */}
-      {open && reading && (
-        <div
-          className="px-5 pt-5 pb-6"
-          style={{ background: "rgb(var(--rgb-card))" }}
-          onClick={e => e.stopPropagation()}
-        >
+      {reading && (
+        <div style={{ marginTop: 26, maxWidth: "26em" }}>
           {reading.split(/\n\n+/).map((para, i) => (
             <p
               key={i}
-              className={`font-body text-text-secondary text-[17px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
+              className="font-body text-text-primary"
+              style={{ fontSize: 17, lineHeight: 1.72, marginTop: i > 0 ? "1.1em" : 0 }}
             >
               {para.trim()}
             </p>
           ))}
         </div>
       )}
+
+      <button
+        onClick={handleShare}
+        disabled={sharing}
+        className="font-body uppercase disabled:opacity-50"
+        style={{
+          marginTop: 24,
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          color: "rgb(var(--rgb-text-muted))",
+          background: "transparent",
+        }}
+      >
+        {sharing ? t("common.loading") : t("today.share")}
+      </button>
+
+      <ShareCardOffscreen
+        data={{ dayTitle, heroWash, dateLabel }}
+        containerRef={shareCardRef}
+      />
     </div>
   );
 }
+
+// THE DECK, taken from mundane's Now screen to the value:
+//
+//   .deck{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+//     scrollbar-width:none;margin:0 calc(var(--m) * -1);padding:22px var(--m) 20px;
+//     align-items:center}
+//   .card{scroll-snap-align:center;flex:0 0 calc(100% - 40px);display:flex;
+//     flex-direction:column;align-items:center;text-align:center;
+//     justify-content:center;min-height:min(430px,55vh);background:#FCF9F3;
+//     border:1px solid rgba(34,32,28,.07);border-radius:24px;padding:26px 22px 22px;
+//     box-shadow:0 14px 34px rgba(70,45,20,.10), 0 3px 8px rgba(70,45,20,.05)}
+//   .card{--orb:clamp(92px,13vh,110px)}
+//   .card-sun / .sunwrap{position:relative;margin-top:10px;display:grid;place-items:center;
+//     width:calc(var(--orb)*1.46);height:calc(var(--orb)*1.46)}  .sunwrap>*{grid-area:1/1}
+//   .rings viewBox 0 0 250 250: r=94 @.30, r=106 @.18, r=113 @.10, stroke #D98A7A, width 1
+//   .orb{width:var(--orb);height:var(--orb);border-radius:50%;
+//     box-shadow:0 12px 44px rgba(222,122,42,.28), 0 0 0 9px rgba(245,240,230,.55);
+//     animation:breathe 9s ease-in-out infinite}
+//   .card .kick{font-size:11.5px;letter-spacing:.2em;color:var(--ink3);margin-bottom:2px}
+//   .card h2{font-size:26px;font-weight:700;letter-spacing:-.022em;line-height:1.08;margin-top:2px}
+//   .card p{font-size:15px;color:var(--ink2);line-height:1.48;margin-top:9px;max-width:19em}
+//   .card .act{width:100%;margin-top:22px}
+//   .card .btn{width:100%;border:1.5px solid var(--ink);border-radius:999px;
+//     background:none;color:var(--ink);font-size:15px;font-weight:700;
+//     letter-spacing:.06em;padding:14px}
+//   .dots i{width:9px;height:9px;border-radius:50%;border:1.4px solid rgba(34,32,28,.24)}
+//   .dots i.here{transform:scale(1.15);box-shadow:0 0 0 3.5px rgba(34,32,28,.075)}
+//
+// Two substitutions, both because our page has two grounds: the card fill and
+// edge are our own card and hairline tokens, and mundane's warm brown shadow
+// is our scrim, which is ink on paper and black after sunset.
+function DeckCard({
+  kick,
+  title,
+  body,
+  action,
+  onAction,
+}: {
+  kick: string;
+  title: string;
+  body: string;
+  action: string;
+  onAction: () => void;
+}) {
+  return (
+    <article
+      style={{
+        scrollSnapAlign: "center",
+        flex: "0 0 calc(100% - 40px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        justifyContent: "center",
+        minHeight: "min(580px, 68vh)",
+        background: "rgb(var(--rgb-card))",
+        border: "1px solid rgb(var(--rgb-border) / 0.6)",
+        borderRadius: 24,
+        padding: "26px 22px 22px",
+        ["--orb" as any]: "clamp(104px, 15vh, 134px)",
+        boxShadow: "0 14px 34px rgb(var(--rgb-scrim) / 0.10), 0 3px 8px rgb(var(--rgb-scrim) / 0.05)",
+      }}
+    >
+      <span
+        className="font-body uppercase"
+        style={{ fontSize: 11.5, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))", marginBottom: 2 }}
+      >
+        {kick}
+      </span>
+
+      {/* mundane's sunwrap: three rings and the orb on one grid cell. Ours is
+          the orb PNG rather than mundane's CSS gradient, because that file IS
+          the mark; every measurement around it is mundane's. */}
+      <div
+        style={{
+          position: "relative",
+          marginTop: 10,
+          display: "grid",
+          placeItems: "center",
+          width: "calc(var(--orb) * 1.46)",
+          height: "calc(var(--orb) * 1.46)",
+          flex: "0 0 auto",
+        }}
+      >
+        <svg
+          viewBox="0 0 250 250"
+          aria-hidden
+          style={{ gridArea: "1/1", pointerEvents: "none", width: "calc(var(--orb) * 1.46)", height: "calc(var(--orb) * 1.46)" }}
+        >
+          <circle cx="125" cy="125" r="94" fill="none" stroke="#D98A7A" strokeOpacity=".30" strokeWidth="1" />
+          <circle cx="125" cy="125" r="106" fill="none" stroke="#D98A7A" strokeOpacity=".18" strokeWidth="1" />
+          <circle cx="125" cy="125" r="113" fill="none" stroke="#D98A7A" strokeOpacity=".10" strokeWidth="1" />
+        </svg>
+        <Image
+          src="/solray-orb.png"
+          alt=""
+          width={160}
+          height={160}
+          unoptimized
+          style={{
+            gridArea: "1/1",
+            width: "var(--orb)",
+            height: "var(--orb)",
+            objectFit: "contain",
+            borderRadius: "50%",
+            boxShadow: "0 12px 44px rgba(222,122,42,.28), 0 0 0 9px rgb(var(--rgb-card) / .55)",
+            animation: "cardBreathe 9s ease-in-out infinite",
+          }}
+        />
+      </div>
+      <h2
+        className="font-heading text-text-primary"
+        style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-.022em", lineHeight: 1.08, marginTop: 2 }}
+      >
+        {title}
+      </h2>
+      <p
+        className="font-body"
+        style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))", lineHeight: 1.48, marginTop: 9, maxWidth: "19em" }}
+      >
+        {body}
+      </p>
+      <div style={{ width: "100%", marginTop: 22 }}>
+        <button
+          onClick={onAction}
+          className="font-body active:scale-[0.98] transition-transform"
+          style={{
+            width: "100%",
+            border: "1.5px solid rgb(var(--rgb-text-primary))",
+            borderRadius: 999,
+            background: "none",
+            color: "rgb(var(--rgb-text-primary))",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            padding: 14,
+          }}
+        >
+          {action}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function SkyNowFold({ planets }: { planets: Planet[] }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full text-left flex items-center justify-between gap-4 font-body uppercase"
+        style={{
+          paddingBlock: 15,
+          background: "transparent",
+          fontSize: 11.5,
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          color: "rgb(var(--rgb-text-muted))",
+        }}
+      >
+        {t("today.sky_now")}
+        <span
+          aria-hidden
+          style={{ fontSize: 12, lineHeight: 1, transform: open ? "rotate(180deg)" : "none", transition: "transform .3s ease" }}
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div className="-mx-5 px-5 overflow-x-auto" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 14 }}>
+          <div className="flex gap-2.5" style={{ width: "max-content" }}>
+            {planets.map((planet) => (
+              <PlanetCard key={planet.name} planet={planet} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Deck({ children, count }: { children: React.ReactNode; count: number }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [here, setHere] = useState(0);
+  const onScroll = () => {
+    const el = ref.current;
+    if (!el) return;
+    const card = el.clientWidth - 40 + 16;            // flex-basis + gap
+    setHere(Math.max(0, Math.min(count - 1, Math.round(el.scrollLeft / card))));
+  };
+  return (
+    <div>
+      <div
+        ref={ref}
+        onScroll={onScroll}
+        style={{
+          display: "flex",
+          gap: 16,
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          margin: "0 -20px",
+          padding: "22px 20px 20px",
+          alignItems: "center",
+        }}
+      >
+        {children}
+      </div>
+      {count > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 11, marginTop: 2 }}>
+          {Array.from({ length: count }).map((_, i) => (
+            <i
+              key={i}
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: "50%",
+                display: "block",
+                boxSizing: "border-box",
+                border: "1.4px solid rgb(var(--rgb-text-primary) / 0.24)",
+                background: i === here ? "rgb(var(--rgb-amber))" : "none",
+                borderColor: i === here ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-text-primary) / 0.24)",
+                transform: i === here ? "scale(1.15)" : "none",
+                boxShadow: i === here ? "0 0 0 3.5px rgb(var(--rgb-text-primary) / 0.075)" : "none",
+                transition: "background .25s ease, border-color .25s ease, transform .25s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 // Symbol lookup, shared between the two extraction paths.
 const PLANET_SYMBOLS: Record<string, string> = {
@@ -1143,6 +1271,7 @@ export default function TodayPage() {
   const skyEchoFetched = useRef(false);
   const [showLunar, setShowLunar] = useState(false);
   const lunarChecked = useRef(false);
+  const [cycles, setCycles] = useState<DeckCycle[]>([]);
   const [birthDate, setBirthDate] = useState<string | null>(null);
   const [showBirthday, setShowBirthday] = useState(false);
   const birthdayChecked = useRef(false);
@@ -1157,8 +1286,6 @@ export default function TodayPage() {
   // ShareOffscreenWrapper at the bottom of this page; html2canvas
   // captures it on demand when the user taps the share icon next to
   // "Today's Vibe."
-  const energyShareRef = useRef<HTMLDivElement | null>(null);
-  const [energySharing, setEnergySharing] = useState(false);
 
   const todayDateLabel = new Date().toLocaleDateString(dateLocale, {
     weekday: "long",
@@ -1166,24 +1293,6 @@ export default function TodayPage() {
     month: "long",
   });
 
-  const handleEnergyShare = async () => {
-    if (energySharing) return;
-    if (!energyShareRef.current) return;
-    setEnergySharing(true);
-    try {
-      const { shareOrDownloadCard } = await import("@/lib/share-card");
-      await shareOrDownloadCard({
-        node: energyShareRef.current,
-        filename: `solray-vibe-${todayDateLabel.replace(/[, ]+/g, "-").toLowerCase()}.png`,
-        title: "Solray, Today's Vibe",
-        text: "Today's energy",
-      });
-    } catch (err) {
-      console.warn("[share] energy bars failed", err);
-    } finally {
-      setEnergySharing(false);
-    }
-  };
 
   // The Conscious Oracle's breakthrough: fetch once per mount. The endpoint
   // returns the most recent unsurfaced insight and marks it surfaced, so it
@@ -1268,6 +1377,27 @@ export default function TodayPage() {
       } catch (_) {}
     }
     setShowBreakthrough(false);
+  };
+
+  // The long-range transits, fetched here rather than inside a card component,
+  // because on this screen they ARE the cards.
+  useEffect(() => {
+    if (!token) return;
+    let off = false;
+    (async () => {
+      try {
+        const r = await apiFetch("/transits/long-range", {}, token);
+        if (!off) setCycles(Array.isArray(r?.cycles) ? r.cycles.slice(0, 4) : []);
+      } catch (_) { /* the deck simply carries one card */ }
+    })();
+    return () => { off = true; };
+  }, [token]);
+
+  const askOracle = (topic: string, question: string) => {
+    try {
+      sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic, question }));
+    } catch (_) {}
+    router.push("/chat");
   };
 
   const openInsightInChat = () => {
@@ -1444,21 +1574,6 @@ export default function TodayPage() {
 
   // Tap an energy bar → seed a first-person question into chat and navigate.
   // Uses the same sessionStorage pattern as AskButton on the profile page.
-  const handleEnergyAsk = (label: string, pct: number) => {
-    const promptBuilder = ENERGY_PROMPTS[label];
-    const question = promptBuilder
-      ? promptBuilder(pct)
-      : `What does my ${label.toLowerCase()} energy at ${pct}% mean for today?`;
-    try {
-      sessionStorage.setItem(
-        "solray_chat_prompt",
-        JSON.stringify({ topic: `${label} energy`, question })
-      );
-    } catch (_) {
-      // ignore, navigation still works, just without the seeded prompt
-    }
-    router.push("/chat");
-  };
 
   const today = new Date().toLocaleDateString(dateLocale, {
     weekday: "long",
@@ -1677,181 +1792,110 @@ export default function TodayPage() {
       )}
       <div
         className="min-h-[100dvh] bg-forest-deep"
-        style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}
       >
-        {/* Header, tag on top row, title + date on row below. Prevents overlap on small screens. */}
-        <div className="border-b border-forest-border/50">
-          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "var(--amber)" }}>
-              {t("today.living_by_design")}
-            </p>
-            <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-              <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
-              <span className="font-body text-text-secondary text-[14px]">{today}</span>
-            </div>
+        {/* Masthead, the Oracle's: two things over one hairline. The eyebrow,
+            the centred wordmark and the separate title row were three headers
+            stacked on each other. */}
+        <div style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}>
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 pb-3 flex items-baseline justify-between gap-4">
+            <Wordmark size={21} className="text-text-primary" />
+            <span
+              className="font-body uppercase"
+              style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: "rgb(var(--rgb-text-muted))" }}
+            >
+              {today}
+            </span>
           </div>
         </div>
 
         {loading ? (
-          // Beautiful skeleton instead of spinner
           <SkeletonToday />
         ) : forecast && forecast._pending === true ? (
-          // AI reading not yet generated for today, but the live sky IS
-          // available. Honest "your reading is being written" state with
-          // the real planet positions visible. Never shows invented
-          // tags, energy, or reading copy.
           <PendingTodayState planets={forecast.planets} />
         ) : forecast ? (
           <>
-            {/* HERO IMAGE CARD, card style, with padding like CurrentCycles */}
             <div
-              className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 transition-all duration-700"
+              className="max-w-lg lg:max-w-3xl mx-auto px-5"
               style={{
-                opacity: visibleSections >= 1 ? 1 : 0,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "calc(100dvh - 150px - env(safe-area-inset-top))",
               }}
             >
-              <HeroImageCard
-                dayTitle={forecast.day_title}
-                heroWash={getHeroWash(forecast.tags.astrology)}
-                reading={forecast.reading}
-              />
-            </div>
-
-            {/* MOON CYCLE BAR, below hero */}
-            <div className="max-w-lg lg:max-w-3xl mx-auto px-5 mt-4">
-              <MoonCycleBar planets={forecast.planets} />
-            </div>
-
-            {/* Sky-stamp recall surfaces as a full-screen takeover (SkyEchoModal),
-                not an inline card, so nothing renders here. */}
-
-            {/* Below fold content */}
-            <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
-              {/* Subtle offline/error notice */}
               {error && (
-                <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
-                  <p className="text-text-muted text-[14px] font-body text-center">{t(error)}</p>
-                </div>
+                <p className="font-body text-text-muted" style={{ fontSize: 14, marginTop: 18 }}>{t(error)}</p>
               )}
 
-              {/* ENERGY BARS, the daily ritual. Hairline ink-lines,
-                  each row fades in on its own clock at 80ms stagger. */}
-              <div className="mt-14 mb-12">
-                {/* Parallel label to "Today's Weather" on the hero card,
-                    with a quiet share icon at the right edge so the
-                    energy reading is shareable as a Spotify-Wrapped
-                    style card. */}
-                <div
-                  className="flex items-center justify-between mb-7 transition-opacity duration-700"
-                  style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
-                >
-                  <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
-                    {t("today.vibe")}
-                  </p>
-                  <button
-                    onClick={handleEnergyShare}
-                    aria-label={t("today.share_vibe")}
-                    disabled={energySharing}
-                    className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid rgba(90,49,174,0.30)",
-                    }}
-                  >
-                    {energySharing ? (
-                      <span
-                        className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
-                        style={{ borderColor: "rgba(90,49,174,0.30)", borderTopColor: "var(--amber)" }}
-                      />
-                    ) : (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)", opacity: 0.85 }}>
-                        <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
-                        <polyline points="16 6 12 2 8 6" />
-                        <line x1="12" y1="2" x2="12" y2="15" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                <div className="space-y-[22px]">
-                  <EnergyBar
-                    label="Mental"
-                    value={forecast.energy.mental}
-                    delayMs={120}
-                    onAsk={handleEnergyAsk}
+              {/* mundane's Now screen: the quiet line under the rule, then the
+                  deck, then the dots. The line is the day's configuration,
+                  which is what changes every morning. */}
+              {/* mundane's .creed, which is centred and balanced, not left-set:
+                  .creed{font-size:13px;line-height:1.45;color:var(--ink3);
+                    margin:12px auto 0;text-align:center;max-width:26em;
+                    text-wrap:balance}
+                  One step up in size, because this line is the day's fact and
+                  carries more weight here than a creed does there. */}
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.45,
+                  color: "rgb(var(--rgb-text-muted))",
+                  margin: "12px auto 0",
+                  textAlign: "center",
+                  maxWidth: "26em",
+                  textWrap: "balance",
+                } as React.CSSProperties}
+              >
+                {skyLine(forecast)}
+              </p>
+
+              {/* .deckwrap{flex:1 1 auto;min-height:0;display:flex;
+                  flex-direction:column;justify-content:center} */}
+              <div
+                className="transition-opacity duration-700"
+                style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "center", opacity: visibleSections >= 1 ? 1 : 0 }}
+              >
+                <Deck count={1 + cycles.length}>
+                  <DeckCard
+                    kick={t("today.kick_today")}
+                    title={forecast.day_title}
+                    body={firstLines(forecast.reading)}
+                    action={t("insight.go_deeper")}
+                    onAction={() =>
+                      askOracle(
+                        forecast.day_title,
+                        `Today you told me: "${forecast.day_title}". ${forecast.reading} I want to go deeper into this. What do you see?`
+                      )
+                    }
                   />
-                  <EnergyBar
-                    label="Emotional"
-                    value={forecast.energy.emotional}
-                    delayMs={200}
-                    onAsk={handleEnergyAsk}
-                  />
-                  <EnergyBar
-                    label="Physical"
-                    value={forecast.energy.physical}
-                    delayMs={280}
-                    onAsk={handleEnergyAsk}
-                  />
-                  <EnergyBar
-                    label="Intuitive"
-                    value={forecast.energy.intuitive}
-                    delayMs={360}
-                    onAsk={handleEnergyAsk}
-                  />
-                </div>
+                  {cycles.map((c) => (
+                    <DeckCard
+                      key={`${c.transit_planet}-${c.natal_point}-${c.aspect}`}
+                      kick={c.phase === "applying" ? t("cycles.applying") : t("cycles.separating")}
+                      title={humanizeCycleTitle(c.title)}
+                      body={c.summary || ""}
+                      action={t("insight.go_deeper")}
+                      onAction={() =>
+                        askOracle(
+                          c.title,
+                          `${humanizeCycleTitle(c.title)} is ${c.phase === "applying" ? "building" : "separating"}, peaking ${c.peak}. ${c.summary || ""} What is this asking of me?`
+                        )
+                      }
+                    />
+                  ))}
+                </Deck>
               </div>
 
-
-
-              {/* TODAY'S DIMENSIONS (DEPTH SLIDES) */}
+              {/* Sky now, folded away at the foot of the screen. mundane's
+                  disclosure grammar: a quiet uppercase label over a hairline,
+                  the content underneath only when it is asked for. */}
               <div
-                className="mb-12 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 3 ? 1 : 0,
-                  transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
-                }}
+                className="transition-opacity duration-700"
+                style={{ marginTop: 18, flex: "0 0 auto", opacity: visibleSections >= 2 ? 1 : 0 }}
               >
-                <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-4 font-bold">
-                  {t("today.dimensions")}
-                </p>
-                <DepthSlides
-                  tags={forecast.tags}
-                  tagDetails={forecast.tag_details}
-                />
-              </div>
-
-              {/* CURRENT CYCLES */}
-              <div
-                className="mb-12 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 4 ? 1 : 0,
-                  transform: visibleSections >= 4 ? "translateY(0)" : "translateY(8px)",
-                }}
-              >
-                <CurrentCycles token={token} />
-              </div>
-
-              {/* PLANET STRIP, live cosmic ticker */}
-              <div
-                className="mb-6 transition-all duration-700"
-                style={{
-                  opacity: visibleSections >= 5 ? 1 : 0,
-                  transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
-                }}
-              >
-                <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">
-                  {t("today.sky_now")}
-                </p>
-                {/* Scrollable ticker */}
-                <div
-                  className="-mx-5 px-5 overflow-x-auto"
-                  style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
-                >
-                  <div className="flex gap-2.5 pb-3" style={{ width: "max-content" }}>
-                    {forecast.planets.map((planet) => (
-                      <PlanetCard key={planet.name} planet={planet} />
-                    ))}
-                  </div>
-                </div>
+                <SkyNowFold planets={forecast.planets} />
               </div>
             </div>
           </>
@@ -1870,8 +1914,8 @@ export default function TodayPage() {
               onClick={() => window.location.reload()}
               className="inline-block px-8 py-3 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
               style={{
-                background: "var(--amber, #5A31AE)",
-                color: "var(--bg-deep, #F5F0E6)",
+                background: "rgb(var(--rgb-text-primary))",
+                color: "rgb(var(--rgb-bg-deep))",
               }}
             >
               {t("common.retry")}
@@ -1881,20 +1925,6 @@ export default function TodayPage() {
 
       </div>
 
-      {/* Off-screen render of the Energy Bars share card. Mounts only
-          when forecast data is loaded; html2canvas captures it on
-          demand when the share button on the "Today's Vibe" header is
-          tapped. Sibling of the page chrome so refs land cleanly. */}
-      {forecast && forecast._pending !== true && (
-        <ShareOffscreenWrapper containerRef={energyShareRef}>
-          <EnergyBarsCard
-            data={{
-              dateLabel: todayDateLabel,
-              energy: (forecast as ForecastData).energy,
-            }}
-          />
-        </ShareOffscreenWrapper>
-      )}
     </ProtectedRoute>
   );
 }

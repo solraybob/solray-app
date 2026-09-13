@@ -352,7 +352,7 @@ export default function SettingsPage() {
     <ProtectedRoute>
       <div
         className="min-h-[100dvh] bg-forest-deep"
-        style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}
       >
         {/* Header, back arrow on left, SETTINGS centered */}
         <div className="border-b border-forest-border/50">

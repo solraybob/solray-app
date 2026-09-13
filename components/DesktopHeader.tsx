@@ -21,10 +21,10 @@ import { Wordmark } from "@/components/Wordmark";
  */
 
 const navItems = [
-  { href: "/today",   labelKey: "nav.today",   color: "var(--amber)" },
-  { href: "/chat",    labelKey: "nav.chat",    color: "var(--wisteria)" },
-  { href: "/souls",   labelKey: "nav.souls",   color: "rgb(var(--rgb-mist))" },
-  { href: "/profile", labelKey: "nav.profile", color: "var(--moss)" },
+  { href: "/today",   labelKey: "nav.today" },
+  { href: "/chat",    labelKey: "nav.chat" },
+  { href: "/souls",   labelKey: "nav.souls" },
+  { href: "/profile", labelKey: "nav.profile" },
 ];
 
 const NAV_ROUTES = ["/today", "/chat", "/souls", "/profile", "/chart"];
@@ -60,7 +60,7 @@ export default function DesktopHeader() {
                 href={item.href}
                 className="px-4 py-2 rounded-lg transition-colors"
                 style={{
-                  color: isActive ? item.color : "var(--text-secondary)",
+                  color: isActive ? "rgb(var(--rgb-text-primary))" : "var(--text-secondary)",
                   background: isActive ? "rgba(34,32,28,0.04)" : "transparent",
                 }}
               >

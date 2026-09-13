@@ -6,9 +6,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import InviteCodeCard from "@/components/InviteCodeCard";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/Wordmark";
 
 // Types
 interface SearchResult {
@@ -120,9 +120,6 @@ function partnerChart(p: BondPartner): { sun_sign: string | null; hd_type: strin
 }
 
 // Generate a short session code
-function generateSessionCode(): string {
-  return Math.random().toString(36).slice(2, 9).toUpperCase();
-}
 
 // Deduplicate connected souls by the underlying user id
 // (both sides of a connection may appear in the list)
@@ -140,11 +137,10 @@ interface SoulActionsProps {
   soul: ConnectedSoul;
   onClose: () => void;
   onSoloReading: () => void;
-  onGroupReading: () => void;
   onViewProfile: () => void;
 }
 
-function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfile }: SoulActionsProps) {
+function SoulActions({ soul, onClose, onSoloReading, onViewProfile }: SoulActionsProps) {
   const { t } = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -195,79 +191,12 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
               <span className="font-body text-indigo text-[14px]">{t("souls.open")}</span>
             </div>
           </button>
-          <button
-            onClick={onGroupReading}
-            className="w-full text-left px-5 py-4 bg-indigo/5 border border-indigo/30 rounded-2xl transition-all hover:bg-mist/10"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.group_reading")}</p>
-                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t("souls.group_reading_sub").replace("{name}", soul.soul.name)}</p>
-              </div>
-              <span className="font-body text-indigo text-[14px]">{t("souls.share")}</span>
-            </div>
-          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// Group session share sheet
-interface GroupShareProps {
-  soul: ConnectedSoul;
-  sessionCode: string;
-  onEnterSession: () => void;
-  onClose: () => void;
-}
-
-function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupShareProps) {
-  const { t } = useT();
-  const [copied, setCopied] = useState(false);
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://app.solray.ai"}/group/${sessionCode}`;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback: select the text
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
-        <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
-        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("souls.group_reading")}</h2>
-        <p className="font-body text-text-secondary text-[17px] mb-6 leading-relaxed">
-          {t("souls.group_share_intro").replace("{name}", soul.soul.name)}
-        </p>
-
-        <div className="bg-forest-card border border-forest-border rounded-xl px-4 py-3 mb-3 font-mono text-xs text-text-secondary break-all">
-          {shareUrl}
-        </div>
-
-        <div className="space-y-3">
-          <button
-            onClick={handleCopy}
-            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[17px] tracking-widest transition-all hover:bg-mist/20"
-          >
-            {copied ? t("souls.copied") : t("souls.copy_link_for").replace("{name}", soul.soul.name)}
-          </button>
-          <button
-            onClick={onEnterSession}
-            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[17px] tracking-widest transition-all hover:opacity-90"
-          >
-            {t("souls.enter_session")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Main page
 export default function SoulsPage() {
@@ -330,7 +259,7 @@ export default function SoulsPage() {
   const [inviteSent, setInviteSent] = useState<Set<string>>(new Set());
   const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
   const [activeSoul, setActiveSoul] = useState<ConnectedSoul | null>(null);
-  const [groupSession, setGroupSession] = useState<{ soul: ConnectedSoul; code: string } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   // Inline error surface, softer than alert(), matches Japanese-way quiet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -543,26 +472,47 @@ export default function SoulsPage() {
     router.push("/chat?compat=1");
   };
 
-  // Start a group session
-  const startGroupSession = (soul: ConnectedSoul) => {
-    setActiveSoul(null);
-    const code = generateSessionCode();
-    // Store the session mapping
-    const sessions = JSON.parse(localStorage.getItem("solray_group_sessions") || "{}");
-    sessions[code] = {
-      connection_id: soul.connection_id,
-      soul_name: soul.soul.name,
-      soul_id: soul.soul.id,
-      created_at: Date.now(),
-    };
-    localStorage.setItem("solray_group_sessions", JSON.stringify(sessions));
-    setGroupSession({ soul, code });
-  };
 
-  const enterGroupSession = (code: string) => {
-    setGroupSession(null);
-    router.push(`/group/${code}`);
-  };
+
+  // One list for the grid. Connected souls come first, then the people you
+  // saved yourself; they were three sections on the page and are one set of
+  // equal things, which is what a grid is for.
+  const connectionCards = [
+    ...connectedSouls.map((c) => ({
+      key: `soul-${c.connection_id}`,
+      name: c.soul.name,
+      photo: c.soul.profile_photo || null,
+      connected: true,
+      detail: [c.soul.sun_sign ? `☉ ${c.soul.sun_sign}` : null, c.soul.hd_type]
+        .filter(Boolean)
+        .join(" · ") || t("souls.connected"),
+      onOpen: () => setActiveSoul(c),
+    })),
+    ...savedPeople.map((person) => ({
+      key: `saved-${person.id}`,
+      name: person.name,
+      photo: null as string | null,
+      connected: false,
+      detail: [person.profile?.sun_sign ? `☉ ${person.profile.sun_sign}` : null, person.profile?.hd_type]
+        .filter(Boolean)
+        .join(" · ") || t("souls.saved"),
+      onOpen: () => {
+        const partner: BondPartner = { kind: "saved", person };
+        if (bondLens === "family") {
+          setBondPartners((prev) =>
+            prev.some((b) => b.kind === "saved" && b.person.id === person.id)
+              ? prev
+              : prev.length < 5
+              ? [...prev, partner]
+              : prev
+          );
+        } else {
+          setBondPartners([partner]);
+        }
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      },
+    })),
+  ];
 
   // Persist a newly-added person and add them to the bond partners
   const handlePersonAdded = (person: SavedPerson) => {
@@ -765,32 +715,22 @@ export default function SoulsPage() {
     <ProtectedRoute>
       <div
         className="min-h-[100dvh] bg-forest-deep"
-        style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}
       >
-        {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
-        <div className="border-b border-forest-border/50">
-          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-mist))" }}>
-              {t("souls.your_field")}
-            </p>
-            <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 900, fontSize: "21px" }}
-              >
-                SOULS
-              </h1>
-              {/* Invite share button. Generates a beautiful 1080x1920
-                  card the user can DM to a friend who isn't on Solray
-                  yet, "[Inviter] invited you to read the dynamic
-                  between you." Codex UX hook 4: highest-ceiling viral
-                  surface in the app. */}
+        {/* mundane's .head, the one the Mirror and Now already use: the mark
+            on the left, the actions as 17px line glyphs on the right, one rule
+            under it, then the small label line. The accent eyebrow and the
+            centred title were a second and a third header on one screen. */}
+        <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
+          <div className="flex items-baseline justify-between">
+            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+            <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
                 onClick={handleInviteShare}
                 aria-label={t("souls.share_invitation")}
+                title={t("souls.share_invitation")}
                 disabled={inviteSharing}
-                className="w-7 h-7 rounded-full flex items-center justify-center border border-indigo/30 text-indigo transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-                style={{ background: "transparent" }}
+                className="sol-ico disabled:opacity-50"
               >
                 {inviteSharing ? (
                   <span
@@ -798,28 +738,33 @@ export default function SoulsPage() {
                     style={{ borderColor: "currentColor", borderTopColor: "transparent" }}
                   />
                 ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}>
-                    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 10.5V16a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 16 16v-5.5" />
+                    <path d="M13 5.5 10 2.5 7 5.5M10 2.5v10" />
                   </svg>
                 )}
               </button>
-            </div>
+            </span>
           </div>
+          <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
+          <p
+            className="font-body uppercase"
+            style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))", marginTop: 12 }}
+          >
+            {t("souls.your_field")}
+          </p>
         </div>
 
-        <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-5 space-y-6 animate-fade-in">
-          {/* Page intro: exact same style as the chat greeting */}
-          <div className="flex flex-col items-center text-center pt-2 pb-2">
-            <p
-              className="font-heading text-text-secondary leading-relaxed max-w-[280px]"
-              style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.01em" }}
-            >
-              {t("souls.intro")}
-            </p>
-            <div className="mt-5 w-12 h-px bg-forest-border/60" />
-          </div>
+        <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-6 space-y-6 animate-fade-in">
+          {/* The intro is prose, so it is set as prose: the Oracle's answer
+              measurements, left, capped at 26em. It was a centred 900-weight
+              block with its own divider, which read as a second headline. */}
+          <p
+            className="font-body"
+            style={{ fontSize: 17, lineHeight: 1.62, color: "rgb(var(--rgb-text-secondary))", maxWidth: "26em", marginTop: 2 }}
+          >
+            {t("souls.intro")}
+          </p>
 
           {/* Hero: Read the Bond */}
           <BondCard
@@ -846,222 +791,235 @@ export default function SoulsPage() {
             reading={readingBond}
           />
 
-          {/* Bring someone in. Below the Bond card now: the primary reading
-              comes first, the invite nudge follows. Foldable, souls theme. */}
-          <InviteCodeCard />
 
-          {/* Search, for deeper two-way connections with Solray users */}
-          <div>
-            <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-2 font-bold">{t("souls.find_a_soul")}</p>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => handleSearch(e.target.value)}
-                placeholder={t("souls.search_placeholder")}
-                className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgb(var(--rgb-mist))";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74, 102, 112,0.15)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "";
-                  e.currentTarget.style.boxShadow = "";
-                }}
-              />
-              {searching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <LoadingSpinner size="sm" />
-                </div>
-              )}
-            </div>
-
-            {/* Search results */}
-            {searchResults.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {searchResults.map(user => (
-                  <div key={user.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
-                    <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                      <span className="font-heading text-base text-text-primary">{user.name?.[0]?.toUpperCase() || "·"}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-text-primary text-sm font-semibold truncate">{user.name}</p>
-                      <p className="text-text-secondary text-xs font-body">
-                        @{user.username}
-                        {user.sun_sign && ` · ☉ ${user.sun_sign}`}
-                        {user.hd_type && ` · ${user.hd_type}`}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleSendInvite(user.username)}
-                      disabled={sendingInvite === user.username || inviteSent.has(user.username)}
-                      className="shrink-0 px-3 py-1.5 bg-indigo/10 border border-indigo/30 text-indigo rounded-lg text-xs font-body transition-all hover:bg-mist/20 disabled:opacity-40"
-                    >
-                      {sendingInvite === user.username ? (
-                        <LoadingSpinner size="sm" />
-                      ) : inviteSent.has(user.username) ? (
-                        t("souls.sent")
-                      ) : (
-                        t("souls.connect")
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-              <p className="text-text-secondary text-xs font-body mt-2 px-1">{t("souls.no_users_found")}</p>
-            )}
-          </div>
-
-          {/* Quiet inline error surface, replaces alert() popups */}
-          {errorMessage && (
-            <div
-              className="rounded-xl px-4 py-3 font-body text-[15px] transition-opacity"
-              style={{
-                background: "rgba(196, 98, 58, 0.08)",
-                border: "1px solid rgba(196, 98, 58, 0.25)",
-                color: "var(--ember)",
-              }}
-              role="status"
-              aria-live="polite"
-            >
-              {errorMessage}
-            </div>
-          )}
-
+          {/* CONNECTIONS. mundane's .pair grid of .card.small, which is how it
+              lays out a set of equal things:
+                .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+                .card.small{padding:14px 15px;border-radius:18px;display:flex;
+                  flex-direction:column;gap:7px;align-items:flex-start;text-align:left}
+                .card.small b{font-size:15.5px;font-weight:700;letter-spacing:-.015em}
+                .card.small em{font-size:12px;color:var(--ink3)}
+                .card .cdot{width:11px;height:11px;border-radius:50%;
+                  border:1.5px solid rgba(34,32,28,.24);background:none}
+              The people you are connected with and the people you have saved,
+              one list. They were three separate sections with a search field
+              and an invite card between them. */}
           {loading ? (
             <div className="flex justify-center pt-8">
               <LoadingSpinner size="md" />
             </div>
           ) : (
             <>
-              {/* Pending requests */}
+              {/* Requests still need an answer, so they stay above, quietly. */}
               {pendingInvites.length > 0 && (
                 <div>
-                  <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.pending_requests")}</p>
+                  <p
+                    className="font-body uppercase"
+                    style={{ fontSize: 11.5, letterSpacing: "0.2em", fontWeight: 700, color: "rgb(var(--rgb-text-muted))", marginBottom: 10 }}
+                  >
+                    {t("souls.pending_requests")}
+                  </p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
                       <div
                         key={invite.invite_id}
-                        className="flex items-center gap-3 px-4 py-3 border rounded-2xl"
+                        className="flex items-center gap-3"
                         style={{
-                          background: "linear-gradient(135deg, rgb(var(--rgb-indigo) / 0.08) 0%, rgb(var(--rgb-card)) 60%)",
-                          borderColor: "rgba(74,46,158,0.25)",
+                          background: "rgb(var(--rgb-card))",
+                          border: "1px solid rgb(var(--rgb-border))",
+                          borderRadius: 18,
+                          padding: "12px 15px",
                         }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                          <span className="font-heading text-lg text-text-primary">{invite.requester.name?.[0]?.toUpperCase() || "·"}</span>
-                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-body text-text-primary text-sm font-semibold truncate">{invite.requester.name}</p>
-                          <p className="text-text-secondary text-xs font-body">
-                            @{invite.requester.username}
-                            {invite.requester.sun_sign && ` · ☉ ${invite.requester.sun_sign}`}
+                          <p className="font-body text-text-primary truncate" style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: "-.015em" }}>
+                            {invite.requester.name}
+                          </p>
+                          <p className="font-body truncate" style={{ fontSize: 12, color: "rgb(var(--rgb-text-muted))", marginTop: 3 }}>
+                            {invite.requester.sun_sign ? `☉ ${invite.requester.sun_sign}` : t("souls.wants_to_connect")}
                           </p>
                         </div>
-                        <div className="flex gap-2 shrink-0">
-                          <button
-                            onClick={() => handleInviteResponse(invite.invite_id, false)}
-                            disabled={respondingInvite === invite.invite_id}
-                            className="px-3 py-1.5 border border-forest-border text-text-secondary rounded-lg text-xs font-body transition-all hover:border-ember/40 hover:text-ember"
-                          >
-                            {t("souls.decline")}
-                          </button>
-                          <button
-                            onClick={() => handleInviteResponse(invite.invite_id, true)}
-                            disabled={respondingInvite === invite.invite_id}
-                            className="px-3 py-1.5 text-text-primary rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
-                            style={{
-                              background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
-                            }}
-                          >
-                            {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : t("souls.accept")}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleInviteResponse(invite.invite_id, true)}
+                          className="font-body shrink-0"
+                          style={{
+                            border: "1.5px solid rgb(var(--rgb-text-primary))", borderRadius: 999,
+                            background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))",
+                            fontSize: 13, fontWeight: 700, padding: "8px 16px",
+                          }}
+                        >
+                          {t("souls.accept")}
+                        </button>
+                        <button
+                          onClick={() => handleInviteResponse(invite.invite_id, false)}
+                          aria-label={t("souls.decline")}
+                          className="sol-ico shrink-0"
+                          style={{ width: 28, height: 28 }}
+                        >
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+                            <path d="M5 5l10 10M15 5L5 15" />
+                          </svg>
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Connected souls */}
               <div>
-                {connectedSouls.length > 0 ? (
-                  <>
-                    <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.connections")}</p>
-                    <div className="space-y-3">
-                      {connectedSouls.map(connection => (
-                        <SoulCard
-                          key={connection.connection_id}
-                          connection={connection}
-                          onOpen={() => setActiveSoul(connection)}
-                        />
-                      ))}
-                    </div>
-                  </>
+                <p
+                  className="font-body uppercase"
+                  style={{ fontSize: 11.5, letterSpacing: "0.2em", fontWeight: 700, color: "rgb(var(--rgb-text-muted))" }}
+                >
+                  {t("souls.connections")}
+                </p>
+
+                {connectionCards.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+                    {connectionCards.map((c) => (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={c.onOpen}
+                        className="active:scale-[0.98] transition-transform"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          textAlign: "left",
+                          gap: 7,
+                          padding: "14px 15px",
+                          borderRadius: 18,
+                          background: "rgb(var(--rgb-card))",
+                          border: "1px solid rgb(var(--rgb-border))",
+                          boxShadow: "0 8px 20px rgb(var(--rgb-scrim) / .06)",
+                          minWidth: 0,
+                        }}
+                      >
+                        {c.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={c.photo}
+                            alt=""
+                            style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flex: "0 0 auto" }}
+                          />
+                        ) : (
+                          <span
+                            aria-hidden
+                            style={{
+                              width: 11, height: 11, borderRadius: "50%", boxSizing: "border-box", flex: "0 0 auto",
+                              border: "1.5px solid rgb(var(--rgb-text-primary) / .24)",
+                              background: c.connected ? "rgb(var(--rgb-amber))" : "none",
+                              borderColor: c.connected ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-text-primary) / .24)",
+                              marginTop: 5, marginBottom: 5,
+                            }}
+                          />
+                        )}
+                        <b
+                          className="font-heading text-text-primary"
+                          style={{
+                            fontSize: 15.5, fontWeight: 700, letterSpacing: "-.015em",
+                            display: "block", width: "100%", overflow: "hidden",
+                            textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {c.name}
+                        </b>
+                        <em
+                          className="font-body"
+                          style={{
+                            fontStyle: "normal", fontSize: 12, color: "rgb(var(--rgb-text-muted))",
+                            display: "block", width: "100%", overflow: "hidden",
+                            textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {c.detail}
+                        </em>
+                      </button>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-center pt-4 pb-2">
-                    <p className="font-body text-text-secondary text-[15px] max-w-xs mx-auto">
-                      {t("souls.no_connections")}
-                    </p>
+                  <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))", marginTop: 12, maxWidth: "26em" }}>
+                    {t("souls.no_connections")}
+                  </p>
+                )}
+
+                {/* Finding someone new is an action, not a section with a title
+                    and a field sitting open on the page. */}
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen((v) => !v)}
+                  className="font-body"
+                  style={{
+                    background: "none", border: "none", padding: "14px 0 0",
+                    fontSize: 13, color: "rgb(var(--rgb-text-muted))",
+                    textDecoration: "underline", textUnderlineOffset: 3,
+                    textDecorationColor: "rgb(var(--rgb-text-primary) / .2)",
+                  }}
+                >
+                  {t("souls.find_a_soul")}
+                </button>
+
+                {searchOpen && (
+                  <div style={{ marginTop: 12 }}>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={e => handleSearch(e.target.value)}
+                      placeholder={t("souls.search_placeholder")}
+                      autoFocus
+                      className="w-full font-body text-text-primary"
+                      style={{
+                        background: "rgb(var(--rgb-card))",
+                        border: "1px solid rgb(var(--rgb-border))",
+                        borderRadius: 18,
+                        padding: "13px 15px",
+                        fontSize: 15,
+                      }}
+                    />
+                    {searching && (
+                      <div className="pt-3 flex justify-center"><LoadingSpinner size="sm" /></div>
+                    )}
+                    {searchResults.length > 0 && (
+                      <div className="space-y-2" style={{ marginTop: 10 }}>
+                        {searchResults.map(user => (
+                          <div
+                            key={user.id}
+                            className="flex items-center gap-3"
+                            style={{
+                              background: "rgb(var(--rgb-card))",
+                              border: "1px solid rgb(var(--rgb-border))",
+                              borderRadius: 18,
+                              padding: "12px 15px",
+                            }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-body text-text-primary truncate" style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: "-.015em" }}>
+                                {user.name}
+                              </p>
+                              <p className="font-body truncate" style={{ fontSize: 12, color: "rgb(var(--rgb-text-muted))", marginTop: 3 }}>
+                                {[user.sun_sign ? `☉ ${user.sun_sign}` : null, user.username ? `@${user.username}` : null].filter(Boolean).join("  ·  ")}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleSendInvite(user.username)}
+                              disabled={sendingInvite === user.username}
+                              className="font-body shrink-0 disabled:opacity-40"
+                              style={{
+                                border: "1.5px solid rgb(var(--rgb-text-primary))", borderRadius: 999,
+                                background: "none", color: "rgb(var(--rgb-text-primary))",
+                                fontSize: 13, fontWeight: 700, padding: "8px 16px",
+                              }}
+                            >
+                              {sendingInvite === user.username ? "…" : t("souls.connect")}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* Your People: the saved (server-synced) people, surfaced on the
-                  page itself below Connections for quick access. Tapping one
-                  selects them into the current bond; they are also available
-                  from the add-person picker. */}
-              {savedPeople.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.your_people")}</p>
-                  <div className="space-y-3">
-                    {savedPeople.map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const partner: BondPartner = { kind: "saved", person: p };
-                            if (bondLens === "family") {
-                              setBondPartners(prev =>
-                                prev.some(b => b.kind === "saved" && b.person.id === p.id)
-                                  ? prev
-                                  : (prev.length < 5 ? [...prev, partner] : prev)
-                              );
-                            } else {
-                              setBondPartners([partner]);
-                            }
-                            if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-forest-border flex items-center justify-center shrink-0">
-                            <span className="font-heading text-base text-text-primary">{p.name?.[0]?.toUpperCase() || "·"}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
-                            <p className="text-text-secondary text-[15px] font-body truncate">
-                              {p.profile?.sun_sign && <>☉ {p.profile.sun_sign}</>}
-                              {p.profile?.sun_sign && p.profile?.hd_type && " · "}
-                              {p.profile?.hd_type}
-                            </p>
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={t("souls.remove_name").replace("{name}", p.name)}
-                          onClick={() => handlePersonRemove(p.id)}
-                          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-text-secondary hover:text-ember transition-colors"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -1072,7 +1030,6 @@ export default function SoulsPage() {
             soul={activeSoul}
             onClose={() => setActiveSoul(null)}
             onSoloReading={() => openSoloReading(activeSoul)}
-            onGroupReading={() => startGroupSession(activeSoul)}
             onViewProfile={() => {
               // The /profile/[id] page handles both public (full chart)
               // and private (name + photo only) cases via the
@@ -1084,14 +1041,6 @@ export default function SoulsPage() {
         )}
 
         {/* Group session share sheet */}
-        {groupSession && (
-          <GroupShareSheet
-            soul={groupSession.soul}
-            sessionCode={groupSession.code}
-            onEnterSession={() => enterGroupSession(groupSession.code)}
-            onClose={() => setGroupSession(null)}
-          />
-        )}
 
         {/* Partner picker sheet */}
         {partnerPickerOpen && (
@@ -1174,12 +1123,17 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
     <div
       className="rounded-3xl p-6 relative overflow-hidden"
       style={{
-        background: "linear-gradient(155deg, rgb(var(--rgb-indigo) / 0.10) 0%, rgb(var(--rgb-card) / 0.95) 55%, rgb(var(--rgb-card)) 100%)",
-        border: "1px solid rgba(74,46,158,0.25)",
-        boxShadow: "0 20px 60px -30px rgba(74,46,158,0.35)",
+        background: "rgb(var(--rgb-card))",
+        border: "1px solid rgb(var(--rgb-border))",
+        boxShadow: "0 14px 34px rgb(var(--rgb-scrim) / 0.08)",
       }}
     >
-      <p className="font-body text-[14px] tracking-[0.22em] uppercase text-indigo mb-1 font-bold">{t("souls.dynamics")}</p>
+      <p
+        className="font-body uppercase mb-1"
+        style={{ fontSize: 11.5, letterSpacing: "0.2em", fontWeight: 700, color: "rgb(var(--rgb-text-muted))" }}
+      >
+        {t("souls.dynamics")}
+      </p>
       <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 900, letterSpacing: "-0.01em" }}>
         {t("souls.where_charts_meet")}
       </h2>
@@ -1298,10 +1252,16 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         type="button"
         onClick={onRead}
         disabled={partners.length === 0 || reading}
-        className="w-full py-3.5 rounded-xl font-body font-semibold text-[17px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        className="w-full font-body transition-all active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
-          background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
-          color: "var(--text-primary)",
+          border: "1.5px solid rgb(var(--rgb-text-primary))",
+          borderRadius: 999,
+          background: "rgb(var(--rgb-text-primary))",
+          color: "rgb(var(--rgb-bg-deep))",
+          fontSize: 15,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          padding: 14,
         }}
       >
         {reading ? <LoadingSpinner size="sm" /> : isFamily && partners.length > 1 ? t("souls.read_family") : t("souls.read_dynamic")}

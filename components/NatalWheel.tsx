@@ -108,11 +108,16 @@ export default function NatalWheel({
   // Theme-aware palette. In dark mode the original forest treatment; in light
   // mode a soft white field with deep-forest ink so the wheel sits in the
   // pearl theme instead of punching a dark hole in it.
-  const inkRGB     = isDark ? "232,210,180" : "26,48,32";   // cream vs deep forest
-  const discFill   = isDark ? "url(#nwInner)" : "rgba(34,32,28,0.55)";
-  const centerFill = isDark ? "rgba(6,16,10,0.7)" : "rgba(34,32,28,0.62)";
-  const haloFlood  = "rgb(var(--rgb-bg-deep))";
-  const haloOpacity = isDark ? 0.85 : 0.7;
+  // These were still the old forest values: light mode was drawing deep-green
+  // ink on a 55% black disc, which is why the wheel punched a dark hole in the
+  // pearl page and the legend under it came out at about 2:1. Both themes now
+  // take the connector palette, so the wheel is the page's own card plane with
+  // the page's own ink on it.
+  const inkRGB     = isDark ? "245,240,230" : "34,32,28";
+  const discFill   = isDark ? "url(#nwInner)" : "rgb(var(--rgb-card))";
+  const centerFill = isDark ? "rgb(var(--rgb-bg-deep))" : "rgb(var(--rgb-bg-dark))";
+  const haloFlood  = isDark ? "rgb(var(--rgb-bg-deep))" : "rgb(var(--rgb-card))";
+  const haloOpacity = isDark ? 0.85 : 0.8;
   // Pale planet glyphs (cream) vanish on a white disc; darken them in light mode.
   const LIGHT_PLANET: Record<string, string> = { Moon: "rgb(var(--rgb-text-secondary))", Chiron: "rgb(var(--rgb-text-secondary))", ASC: "rgb(var(--rgb-ember))" };
 
@@ -216,13 +221,13 @@ export default function NatalWheel({
       >
         <defs>
           <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stopColor="rgba(90,49,174,0.10)" />
-            <stop offset="55%"  stopColor="rgba(74,46,158,0.06)" />
+            <stop offset="0%"   stopColor="rgb(var(--rgb-mist))" stopOpacity="0.08" />
+            <stop offset="55%"  stopColor="rgb(var(--rgb-mist))" stopOpacity="0.04" />
             <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
           <radialGradient id="nwInner" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stopColor="rgba(8,20,14,0.88)" />
-            <stop offset="100%" stopColor="rgba(6,16,10,0.78)" />
+            <stop offset="0%"   stopColor="rgb(var(--rgb-card))" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="rgb(var(--rgb-bg-deep))" stopOpacity="0.9" />
           </radialGradient>
           {/* Soft halo behind glyphs so they lift off the busy field. */}
           <filter id="nwGlyph" x="-60%" y="-60%" width="220%" height="220%">
@@ -421,10 +426,10 @@ export default function NatalWheel({
           style={{
             gap: "10px 18px",
             marginTop: 18,
-            fontSize: 12, fontWeight: 700,
+            fontSize: 11.5, fontWeight: 700,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: `rgba(${inkRGB},0.6)`,
+            color: "rgb(var(--rgb-text-muted))",
           }}
         >
           <LegendItem kind="dot"  color="rgb(var(--rgb-ember))" label="Trine" />

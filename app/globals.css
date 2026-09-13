@@ -275,7 +275,7 @@ html {
    every phone we've seen, with no risk of the last row bleeding
    underneath. Use on any scrollable page wrapper that shows BottomNav. */
 .pb-bottom-nav {
-  padding-bottom: calc(120px + env(safe-area-inset-bottom, 16px));
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 16px));
 }
 
 @keyframes spin {
@@ -482,3 +482,30 @@ html {
   --wisteria:       #B02E72;
   --pearl:          #FDFBF5;
 }
+
+/* mundane's card orb: @keyframes breathe{0%,100%{transform:scale(1);filter:saturate(1)}
+   50%{transform:scale(1.035);filter:saturate(1.06)}} */
+@keyframes cardBreathe {
+  0%, 100% { transform: scale(1); filter: saturate(1); }
+  50%      { transform: scale(1.035); filter: saturate(1.06); }
+}
+
+/* mundane's .ico: a 34px round hit target carrying a 17px line glyph, in the
+   quiet ink, with a faint wash on press and nothing else. */
+.sol-ico {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: rgb(var(--rgb-text-muted));
+  transition: color .18s ease, background .18s ease;
+}
+.sol-ico svg { width: 17px; height: 17px; display: block; }
+.sol-ico:hover { color: rgb(var(--rgb-text-primary)); }
+.sol-ico:active { background: rgb(var(--rgb-text-primary) / 0.06); }

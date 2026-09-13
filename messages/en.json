@@ -183,7 +183,11 @@
     "energy_ask_aria": "Ask your Higher Self about your {label} energy at {pct} percent",
     "balance_ring": "The dashed ring is balance",
     "sky_quiet_body": "We couldn't reach the daily reading. Check your connection and try again.",
-    "try_again": "Try again"
+    "try_again": "Try again",
+    "energy_high": "High",
+    "energy_steady": "Steady",
+    "energy_low": "Low",
+    "kick_today": "today"
   },
   "moon": {
     "moon_in": "Moon in",
@@ -316,7 +320,7 @@
     "search_placeholder": "Name, @username, or email",
     "pending_requests": "Pending Requests",
     "connections": "Connections",
-    "no_connections": "No two-way connections yet. Invite someone above to share readings together.",
+    "no_connections": "Nobody here yet. Add someone to the reading above, or find them on Solray.",
     "no_users_found": "No users found. They may not have an account yet.",
     "connect": "Connect",
     "sent": "Sent",
@@ -385,7 +389,10 @@
     "error_field": "Couldn't reach the field. Try again in a moment.",
     "error_signal": "The signal didn't reach. Try once more.",
     "error_drifted": "Something drifted off course. Try again.",
-    "error_partial_chart": "Couldn't pull their full chart, reading from the basics."
+    "error_partial_chart": "Couldn't pull their full chart, reading from the basics.",
+    "connected": "connected",
+    "saved": "saved",
+    "wants_to_connect": "wants to connect"
   },
   "profile": {
     "title": "Profile",
@@ -469,11 +476,11 @@
     "searching": "Searching..."
   },
   "nav": {
-    "today": "Today",
+    "today": "Now",
     "chat": "Oracle",
     "chart": "Chart",
-    "souls": "Souls",
-    "profile": "Profile"
+    "souls": "Dynamics",
+    "profile": "You"
   },
   "trial": {
     "label": "Trial",

@@ -9,8 +9,7 @@
  * drawn as full-bodied amber lines between the two centers they connect.
  *
  * Two upgrades over the prior clean version:
- *   1. Defined centers carry a soft same-color glow so they lift off the
- *      field (filter #bgGlow), matching the wheel's glyph treatment.
+ *   1. Defined centers are solid, undefined ones are hairline outlines.
  *   2. Activated gate numbers now show on each defined center, placed at the
  *      edge of the center pointing toward the partner it channels to (the
  *      gate's real position), derived from the user's actual definedChannels
@@ -28,7 +27,6 @@
  * external labels.
  */
 
-import { useTheme } from "@/lib/theme-context";
 
 type CenterKey = "Head" | "Ajna" | "Throat" | "G" | "Heart" | "Sacral" | "Spleen" | "SolarPlexus" | "Root";
 
@@ -84,15 +82,18 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
 // coding (throat / heart / sacral read as warm fire, spleen as moss, root
 // as slate) survives desaturation and harmonises with the forest field.
 const CENTER_COLOR: Record<CenterKey, string> = {
-  Head:        "rgb(var(--rgb-wisteria))", // wisteria
-  Ajna:        "rgb(var(--rgb-mist))", // mist
-  Throat:      "rgb(var(--rgb-ember))", // ember
-  G:           "rgb(var(--rgb-text-primary))", // pearl
-  Heart:       "rgb(var(--rgb-ember))", // ember
-  Sacral:      "rgb(var(--rgb-ember))", // ember
-  Spleen:      "rgb(var(--rgb-ember))", // moss
-  SolarPlexus: "var(--wisteria)", // wisteria
-  Root:        "rgb(var(--rgb-mist))", // slate
+  Head:        "rgb(var(--rgb-wisteria))",
+  Ajna:        "rgb(var(--rgb-mist))",
+  Throat:      "rgb(var(--rgb-ember))",
+  // G was text-primary, which is cream on the dark theme and near-black on
+  // the light one: a defined G came out as a black diamond on paper. Every
+  // centre is a hue now, so neither theme can turn one into ink.
+  G:           "rgb(var(--rgb-amber))",
+  Heart:       "rgb(var(--rgb-ember))",
+  Sacral:      "rgb(var(--rgb-ember))",
+  Spleen:      "rgb(var(--rgb-ember))",
+  SolarPlexus: "rgb(var(--rgb-wisteria))",
+  Root:        "rgb(var(--rgb-mist))",
 };
 
 // External label positions (outside the shape, in surrounding whitespace).
@@ -168,10 +169,12 @@ function CenterShape({
 }) {
   const fill = defined ? color : "transparent";
   const fillOpacity = defined ? 0.94 : 0;
-  const stroke = defined ? color : "rgba(168,184,171,0.55)";
+  const stroke = defined ? color : "rgb(var(--rgb-border))";
   const strokeWidth = 1.3;
   const size = 40;
-  const glow = defined ? "url(#bgGlow)" : undefined;
+  // No halo. The wheel lost its glow layer and so did the Soul Map;
+  // a blurred copy of each centre underneath it was the last one left.
+  const glow = undefined;
 
   if (type === "Head") {
     return (
@@ -268,10 +271,7 @@ function CenterShape({
 }
 
 export default function BodyGraph({ definedCenters, definedChannels, size = 280 }: BodyGraphProps) {
-  const { theme } = useTheme();
-  const isDark = theme !== "light";
-  // Center labels: muted sage on the dark theme, deep forest-green on the light
-  // theme so they read clearly against the pearl ground.
+  // Every colour here is a token now, so the graph needs no theme branch.
   const labelFill = "rgb(var(--rgb-text-secondary))";
   // Extended viewBox gives the external labels breathing room on all sides.
   const vbX = -10;
@@ -337,17 +337,6 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
       aria-label="Human Design bodygraph"
     >
-      <defs>
-        {/* Soft same-color halo so defined centers lift off the field. */}
-        <filter id="bgGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3.5" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
       {/* Channel lines behind the centers, full-bodied amber */}
       {Array.from(centerPairs).map((key) => {
         const [a, b] = key.split("|") as [CenterKey, CenterKey];
