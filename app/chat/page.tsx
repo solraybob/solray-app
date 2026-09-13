@@ -1618,49 +1618,38 @@ function ChatPageInner() {
             top: 0, left: 0, right: 0, bottom: 0,
             pointerEvents: "none",
             zIndex: 0,
-            background: "radial-gradient(120% 55% at 50% 0%, rgba(216,162,74,0.07), transparent 60%)",
+            background: "transparent",
           }}
         />
-        {/* Header, Souls reference pattern: tag left, ORACLE absolute center, chat buttons right */}
-        <div className="relative overflow-hidden" style={{ borderBottom: "1px solid rgba(226,218,202,0.5)" }}>
-          <div className="absolute inset-0 pointer-events-none">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60" alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.07 }} />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(var(--rgb-bg-deep) / 0.5) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
-          </div>
-          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3 relative z-10">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--wisteria)" }}>
-              {t("chat.higher_self")}
-            </p>
-            <div className="relative flex items-center justify-between" style={{ height: "26px" }}>
+        {/* The masthead, mundane's grammar: the day on the left, the two
+            things you can do on the right, one hairline under it. No photo,
+            no scrim, no second title. The nav already says Oracle. */}
+        <div style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}>
+          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 pb-3 flex items-baseline justify-between gap-4">
+            <span
+              className="font-body uppercase"
+              style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+            >
+              {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+            <span className="flex items-baseline gap-5">
               <button
                 onClick={openHistory}
                 title={t("chat.previous_chats")}
-                className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors flex items-center gap-1.5"
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#B02E72"; (e.currentTarget as HTMLElement).style.color = "#B02E72"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
+                className="font-body uppercase bg-transparent"
+                style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
-                </svg>
                 {t("chat.past")}
               </button>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
-              >
-                ORACLE
-              </h1>
               <button
                 onClick={startNewChat}
                 title={t("chat.new_chat")}
-                className="px-3 py-1 rounded-lg bg-forest-card border border-forest-border font-body text-text-secondary text-[12px] tracking-widest transition-colors"
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#B02E72"; (e.currentTarget as HTMLElement).style.color = "#B02E72"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ""; (e.currentTarget as HTMLElement).style.color = ""; }}
+                className="font-body uppercase bg-transparent"
+                style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
               >
                 {t("chat.new")}
               </button>
-            </div>
+            </span>
           </div>
         </div>
 
@@ -1693,19 +1682,10 @@ function ChatPageInner() {
                 user and asserts nothing about their chart, so it is never a
                 blank screen and never a fabrication. */}
             {messages.length === 0 && (
-              <div className="flex flex-col items-center text-center pt-4 pb-10 animate-fade-in">
-                <span
-                  className="rounded-full mb-8"
-                  style={{
-                    width: "10px", height: "10px",
-                    background: "var(--wisteria)",
-                    boxShadow: "0 0 18px rgba(176,46,114,0.55)",
-                    animation: "pulse 2.4s ease-in-out infinite",
-                  }}
-                />
+              <div className="pt-2 pb-8 animate-fade-in">
                 <p
-                  className="font-heading italic text-text-primary/75 leading-relaxed max-w-[300px]"
-                  style={{ fontSize: "1.35rem", fontWeight: 300, letterSpacing: "0.01em" }}
+                  className="font-body text-text-secondary"
+                  style={{ fontSize: 17, lineHeight: 1.62, maxWidth: "26em" }}
                 >
                   {t("chat.empty_invocation")}
                 </p>
@@ -1724,16 +1704,16 @@ function ChatPageInner() {
               //    when they open chat: a full-width poetic moment, not UI.
               if (msg.id === "greeting") {
                 return (
-                  <div key={msg.id} className="flex flex-col items-center text-center pt-4 pb-4 animate-fade-in">
-                    {/* The greeting text, Cormorant Garamond, italic, large */}
+                  <div key={msg.id} className="pt-2 pb-4 animate-fade-in">
+                    {/* The Oracle's opening, set as an answer: left, ink, 17px
+                        at 1.62, the way the Mirror sets its own first line. */}
                     <p
-                      className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
-                      style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+                      className="font-body text-text-primary"
+                      style={{ fontSize: 17, lineHeight: 1.62, maxWidth: "26em" }}
                     >
                       {isStreaming ? displayContent : msg.content}
-                      {isStreaming && <span className="inline-block w-0.5 h-4 bg-wisteria/60 ml-0.5 animate-pulse" />}
+                      {isStreaming && <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle" />}
                     </p>
-                    <div className="mt-5 w-12 h-px bg-forest-border/60" />
                   </div>
                 );
               }
@@ -1826,7 +1806,7 @@ function ChatPageInner() {
             {suggestions.length > 0 && !soulBlueprint &&
               !messages.some((m) => m.role === "user") &&
               !sending && !streamingId && (
-                <div className="flex flex-col gap-2 items-center pt-2 pb-1 animate-fade-in">
+                <div className="flex flex-col gap-0 items-start pt-2 pb-1 animate-fade-in" style={{ borderTop: "1px solid rgb(var(--rgb-border))", marginTop: 18 }}>
                   {suggestions.map((s) => (
                     <button
                       key={s}
@@ -1834,10 +1814,15 @@ function ChatPageInner() {
                         if (Date.now() - suggestionsArmedAt.current < 450) return;
                         sendMessage(s);
                       }}
-                      className="font-body text-[13px] leading-snug text-text-primary text-left max-w-[300px] px-4 py-2.5 rounded-2xl transition-all hover:opacity-90 active:scale-[0.99]"
+                      className="font-body text-left w-full transition-opacity hover:opacity-70 active:scale-[0.995] bg-transparent"
                       style={{
-                        background: "rgba(176,46,114,0.06)",
-                        border: "1px solid rgba(176,46,114,0.22)",
+                        background: "transparent",
+                        border: 0,
+                        borderBottom: "1px solid rgb(var(--rgb-border))",
+                        padding: "14px 2px",
+                        fontSize: 15,
+                        lineHeight: 1.5,
+                        color: "rgb(var(--rgb-text-secondary))",
                       }}
                     >
                       {s}
@@ -1854,7 +1839,7 @@ function ChatPageInner() {
         </div>
 
         {/* Input */}
-        <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
+        <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#A34A22" }}>
