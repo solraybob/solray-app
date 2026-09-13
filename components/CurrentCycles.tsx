@@ -15,10 +15,10 @@ const PLANET_CYCLE_WASH: Record<string, string> = {
   Venus:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(176,46,114,.20), transparent 74%)",
   Mars:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(163,74,34,.22), transparent 74%)",
   Jupiter: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(230,141,94,.22), transparent 74%)",
-  Saturn:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(110,102,89,.22), transparent 74%)",
+  Saturn:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.15), transparent 74%)",
   Uranus:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(90,49,174,.20), transparent 74%)",
   Neptune: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.22), transparent 74%)",
-  Pluto:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(34,32,28,.18), transparent 74%)",
+  Pluto:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(176,46,114,.15), transparent 74%)",
   default: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(84,63,150,.18), transparent 74%)",
 };
 

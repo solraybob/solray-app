@@ -27,10 +27,10 @@ const PLANET_HERO_WASH: Record<string, string> = {
   venus:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(176,46,114,.22), transparent 72%)",
   mars:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(163,74,34,.24), transparent 72%)",
   jupiter: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(230,141,94,.24), transparent 72%)",
-  saturn:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(110,102,89,.24), transparent 72%)",
+  saturn:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.16), transparent 72%)",
   uranus:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(90,49,174,.22), transparent 72%)",
   neptune: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.24), transparent 72%)",
-  pluto:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(34,32,28,.20), transparent 72%)",
+  pluto:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(176,46,114,.16), transparent 72%)",
   default: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(84,63,150,.20), transparent 72%)",
 };
 

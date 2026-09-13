@@ -481,8 +481,9 @@ function SubscribeContent() {
             onClick={() => router.push("/today")}
             className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
             style={{
-              color: "var(--bg-deep, #F5F0E6)",
-              background: "var(--amber, #5A31AE)",
+              color: "rgb(var(--rgb-bg-deep))",
+              background: "rgb(var(--rgb-text-primary))",
+              border: "1.5px solid rgb(var(--rgb-text-primary))",
             }}
           >
             {t("subscribe.continue_to_app")}
@@ -712,8 +713,8 @@ function NativeMembershipView() {
             className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50 font-bold"
             style={{
               color: "rgb(var(--rgb-bg-deep))",
-              background: "var(--amber, #5A31AE)",
-              border: "1px solid var(--amber, #5A31AE)",
+              background: "rgb(var(--rgb-text-primary))",
+              border: "1.5px solid rgb(var(--rgb-text-primary))",
             }}
           >
             {loading ? t("subscribe.opening") : t("subscribe.start_free_trial")}
@@ -853,7 +854,7 @@ function TrialOffer({
                   width: 4,
                   height: 4,
                   borderRadius: 999,
-                  background: "var(--amber, #5A31AE)",
+                  background: "rgb(var(--rgb-text-primary))", border: "1.5px solid rgb(var(--rgb-text-primary))",
                   opacity: 0.75,
                 }}
               />

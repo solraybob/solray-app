@@ -13,17 +13,24 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const PALETTE: [string, number][] = [
-  ["242,236,216", 0.55],
-  ["243,146,48", 0.16],
-  ["155,134,160", 0.14],
-  ["155,171,185", 0.15],
+const PALETTE_DARK: [string, number][] = [
+  ["245,240,230", 0.55], ["230,141,94", 0.16], ["166,146,232", 0.14], ["238,122,178", 0.15],
 ];
-
-function starColor(): string {
+const PALETTE_LIGHT: [string, number][] = [
+  ["110,102,89", 0.50], ["163,74,34", 0.18], ["90,49,174", 0.16], ["176,46,114", 0.16],
+];
+function groundIsDark(): boolean {
+  if (typeof window === "undefined") return false;
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--rgb-bg-deep").trim();
+  const [r, g, b] = v.split(/[\s,]+/).map(Number);
+  if (![r, g, b].every((n) => Number.isFinite(n))) return false;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 128;
+}
+function starColor(dark: boolean): string {
+  const palette = dark ? PALETTE_DARK : PALETTE_LIGHT;
   let r = Math.random();
-  for (const [rgb, w] of PALETTE) if ((r -= w) <= 0) return rgb;
-  return PALETTE[0][0];
+  for (const [rgb, w] of palette) if ((r -= w) <= 0) return rgb;
+  return palette[0][0];
 }
 
 export default function EntrySky() {
@@ -67,6 +74,7 @@ export default function EntrySky() {
     if (!ctx) return;
 
     let w = 0, h = 0, dpr = 1;
+    let dark = groundIsDark();
     type Star = {
       x: number; y: number; r: number; rgb: string;
       base: number; amp: number; phase: number; speed: number;
@@ -90,7 +98,7 @@ export default function EntrySky() {
           x: Math.random() * w,
           y: Math.random() * h,
           r: (0.45 + Math.random() * 1.25) * depth,
-          rgb: starColor(),
+          rgb: starColor(dark),
           base: 0.16 + Math.random() * 0.42,
           amp: 0.08 + Math.random() * 0.4,
           phase: Math.random() * Math.PI * 2,
@@ -101,6 +109,12 @@ export default function EntrySky() {
       });
     };
     seed();
+
+    const themeWatch = new MutationObserver(() => {
+      const next = groundIsDark();
+      if (next !== dark) { dark = next; seed(); }
+    });
+    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
     let shoot: { x: number; y: number; vx: number; vy: number; life: number; max: number } | null = null;
     let nextShootAt = performance.now() + 6000 + Math.random() * 8000;
@@ -130,14 +144,14 @@ export default function EntrySky() {
       const n1x = w * (0.3 + 0.08 * Math.sin(t * 0.05));
       const n1y = h * (0.28 + 0.07 * Math.cos(t * 0.04));
       const g1 = ctx.createRadialGradient(n1x, n1y, 0, n1x, n1y, nr);
-      g1.addColorStop(0, "rgba(90,49,174,0.07)");
+      g1.addColorStop(0, dark ? "rgba(154,113,246,0.10)" : "rgba(252,180,156,0.20)");
       g1.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, w, h);
       const n2x = w * (0.72 + 0.07 * Math.cos(t * 0.045));
       const n2y = h * (0.7 + 0.08 * Math.sin(t * 0.055));
       const g2 = ctx.createRadialGradient(n2x, n2y, 0, n2x, n2y, nr * 0.9);
-      g2.addColorStop(0, "rgba(176,46,114,0.06)");
+      g2.addColorStop(0, dark ? "rgba(238,122,178,0.09)" : "rgba(176,46,114,0.055)");
       g2.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g2;
       ctx.fillRect(0, 0, w, h);
@@ -223,6 +237,7 @@ export default function EntrySky() {
     };
     window.addEventListener("resize", onResize, { passive: true });
     return () => {
+      themeWatch.disconnect();
       if (raf) cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("resize", onResize);
