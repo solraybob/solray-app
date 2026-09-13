@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 // mundane's nav, to the value. From mundane-site/app.html:
 //
 //   .nav{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;
-//     padding:15px var(--m) calc(17px + env(safe-area-inset-bottom));
+//     padding:15px var(--m) calc(17px + var(--sab, 0px));
 //     display:flex;justify-content:space-between;background:var(--paper);
 //     border-top:1px solid var(--line);z-index:20}
 //   .nav button{font-size:13px;letter-spacing:.13em;text-transform:uppercase;
@@ -42,7 +42,7 @@ export default function BottomNav() {
       style={{
         maxWidth: 480,
         margin: "0 auto",
-        padding: "15px 30px calc(17px + env(safe-area-inset-bottom))",
+        padding: "15px 30px calc(17px + var(--sab, 0px))",
         display: "flex",
         justifyContent: "space-between",
         background: "rgb(var(--rgb-bg-deep))",

@@ -470,7 +470,7 @@ function DeckCard({
         alignItems: "center",
         textAlign: "center",
         justifyContent: "center",
-        minHeight: "min(580px, 68vh)",
+        minHeight: "min(520px, 58vh)",
         background: "rgb(var(--rgb-card))",
         border: "1px solid rgb(var(--rgb-border) / 0.6)",
         borderRadius: 24,
@@ -809,7 +809,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
         alignItems: "center", justifyContent: "center",
-        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        padding: "max(var(--sat, 0px), 20px) 22px max(var(--sab, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
         background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "bkFade .4s ease both",
@@ -974,7 +974,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
         alignItems: "center", justifyContent: "center",
-        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        padding: "max(var(--sat, 0px), 20px) 22px max(var(--sab, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
         background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "skFade .4s ease both",
@@ -1068,7 +1068,7 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
         alignItems: "center", justifyContent: "center",
-        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        padding: "max(var(--sat, 0px), 20px) 22px max(var(--sab, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
         background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "lnFade .4s ease both",
@@ -1181,7 +1181,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
       style={{
         position: "fixed", inset: 0, height: "100dvh", zIndex: 9999, display: "flex",
         alignItems: "center", justifyContent: "center",
-        padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
+        padding: "max(var(--sat, 0px), 20px) 22px max(var(--sab, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
         background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "bdFade .4s ease both",
@@ -1792,21 +1792,24 @@ export default function TodayPage() {
       )}
       <div
         className="min-h-[100dvh] bg-forest-deep"
-        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}
       >
-        {/* Masthead, the Oracle's: two things over one hairline. The eyebrow,
-            the centred wordmark and the separate title row were three headers
-            stacked on each other. */}
-        <div style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}>
-          <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 pb-3 flex items-baseline justify-between gap-4">
-            <Wordmark size={21} className="text-text-primary" />
-            <span
-              className="font-body uppercase"
-              style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: "rgb(var(--rgb-text-muted))" }}
-            >
-              {today}
-            </span>
+        {/* The same head as the Oracle, Dynamics and You, to the pixel: the
+            mark at 17, a 34px action row so a page with icons and a page
+            without are the same height, the inset rule, then the small label
+            line. Now used to carry a 21px mark over a full-bleed rule and no
+            label line, which made it the one page whose header was taller. */}
+        <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
+          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
+            <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
           </div>
+          <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
+          <p
+            className="font-body uppercase"
+            style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))", marginTop: 12 }}
+          >
+            {today}
+          </p>
         </div>
 
         {loading ? (
@@ -1820,7 +1823,7 @@ export default function TodayPage() {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                minHeight: "calc(100dvh - 150px - env(safe-area-inset-top))",
+                minHeight: "calc(100dvh - 132px - var(--sat, 0px))",
               }}
             >
               {error && (

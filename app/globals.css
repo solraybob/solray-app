@@ -23,6 +23,13 @@
 :root {
   /* one typeface, one download: the body variable points at the heading one */
   --font-body: var(--font-heading);
+  /* Safe-area insets, measured once at first paint by the inline script in
+     layout.tsx and pinned here. Read env() nowhere else: a mobile browser
+     changes it as its own chrome collapses, which moved the header and the
+     bottom bar on every scroll. 0 is the right default, both for a browser,
+     whose chrome already holds that space, and for a render without JS. */
+  --sat: 0px;
+  --sab: 0px;
   /* LIGHT theme (default) — RGB triplets */
   --rgb-bg-deep:        245 240 230;     /* #F5F0E6 */
   --rgb-bg-dark:       239 233 220;     /* #EFE9DC */
@@ -175,9 +182,10 @@ html, body {
    status bar, so a per-page header can never regress behind it again. Fixed
    overlays (breakthrough modals, EntrySky, BottomNav, PullToRefresh spinner)
    position to the viewport and are unaffected. On desktop the inset is 0 and
-   the media query below overrides this with 4rem for the fixed DesktopHeader. */
+   the media query below overrides this with 4rem for the fixed DesktopHeader.
+   The value is --sat, frozen at first paint, not a live env(): see :root. */
 body {
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--sat, 0px);
 }
 
 /* Pull-to-refresh spinner (see components/PullToRefresh.tsx). */
@@ -265,17 +273,17 @@ html {
 
 /* Bottom nav safe area */
 .nav-safe {
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+  padding-bottom: var(--sab, 0px);
 }
 
 /* Clearance for pages that sit behind the fixed BottomNav.
    BottomNav renders 60-80px of content depending on text line-height,
-   plus env(safe-area-inset-bottom) on notch phones (up to 34px). 120px
+   plus the bottom inset on notch phones (up to 34px). 120px
    base + env gives 40-56px of honest breathing room above the icons on
    every phone we've seen, with no risk of the last row bleeding
    underneath. Use on any scrollable page wrapper that shows BottomNav. */
 .pb-bottom-nav {
-  padding-bottom: calc(96px + env(safe-area-inset-bottom, 16px));
+  padding-bottom: calc(96px + var(--sab, 0px));
 }
 
 @keyframes spin {

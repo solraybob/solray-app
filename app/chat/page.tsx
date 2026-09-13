@@ -1608,7 +1608,7 @@ function ChatPageInner() {
 
   return (
     <ProtectedRoute>
-      <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "calc(100dvh - env(safe-area-inset-top))", overflow: "hidden" }}>
+      <div className="bg-forest-deep flex flex-col" style={{ position: "relative", height: "calc(100dvh - var(--sat, 0px))", overflow: "hidden" }}>
         {/* Calm ambient background: a soft amber glow over forest, drawn with
             CSS instead of a 1200px remote image so opening the Oracle never
             waits on a decorative download on the critical path. */}
@@ -1636,7 +1636,7 @@ function ChatPageInner() {
             The mark, then the actions as 17px line icons; the words PAST and
             NEW were two more pieces of lettering competing with the answer. */}
         <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
             <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
@@ -1866,7 +1866,7 @@ function ChatPageInner() {
         </div>
 
         {/* Input */}
-        <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
+        <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + var(--sab, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[15px] tracking-[0.14em] uppercase font-bold" style={{ color: "rgb(var(--rgb-ember))" }}>

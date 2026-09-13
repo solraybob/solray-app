@@ -170,7 +170,7 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
         aria-hidden
         style={{
           position: "fixed",
-          top: "calc(env(safe-area-inset-top, 0px) + 16px)",
+          top: "calc(var(--sat, 0px) + 16px)",
           left: "50%",
           width: 28,
           height: 28,

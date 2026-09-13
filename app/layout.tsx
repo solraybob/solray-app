@@ -37,6 +37,22 @@ import NativePushBootstrap from "@/components/NativePushBootstrap";
 // light mode on a previous visit. Tiny, safe, self-contained.
 const themeFoucKiller = `(function(){try{var t=localStorage.getItem('solray-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
 
+// Freeze the safe-area insets at first paint.
+//
+// A mobile browser changes env(safe-area-inset-*) as its own chrome collapses:
+// Safari reports 0 at the top while the address bar is expanded and the notch
+// height once it shrinks on scroll, and the same at the bottom for its toolbar.
+// Because body carries padding-top: env(safe-area-inset-top), that turned every
+// scroll into the header growing and the bottom bar moving, on every page.
+//
+// The inset is a property of the device, not of the scroll position, so it is
+// measured once here and pinned to --sat / --sab. In a browser that reads 0,
+// which is right, because the browser's own chrome already holds that space.
+// In the installed app and the Capacitor shell it reads the real notch, which
+// is also right, and it no longer moves. Orientation genuinely changes it, so
+// that one event re-measures.
+const safeAreaFreeze = `(function(){try{function m(){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';document.documentElement.appendChild(d);var c=getComputedStyle(d);var t=parseFloat(c.paddingTop)||0;var b=parseFloat(c.paddingBottom)||0;d.parentNode.removeChild(d);var r=document.documentElement.style;r.setProperty('--sat',t+'px');r.setProperty('--sab',b+'px');}m();window.addEventListener('orientationchange',function(){setTimeout(m,250);});}catch(e){}})();`;
+
 // Capture the PWA install prompt the instant the browser offers it. Chromium
 // fires `beforeinstallprompt` once, early, and only the page that calls
 // preventDefault + stashes the event can later trigger the native "Add to home
@@ -96,6 +112,7 @@ export default function RootLayout({
     <html lang="en" className={`${zen.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeFoucKiller }} />
+        <script dangerouslySetInnerHTML={{ __html: safeAreaFreeze }} />
         <script dangerouslySetInnerHTML={{ __html: installPromptCapture }} />
       </head>
       <body className="bg-forest-deep min-h-screen text-text-primary">

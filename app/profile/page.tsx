@@ -970,14 +970,14 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <div
         className="min-h-[100dvh] bg-forest-deep"
-        style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}
       >
         {/* mundane's .head, the one the Mirror and Now already use: the mark
             on the left, the actions as 17px line glyphs on the right, one rule
             under it, then the small label line. The accent eyebrow and the
             centred title were a second and a third header on one screen. */}
         <div className="w-full max-w-lg lg:max-w-3xl mx-auto px-5 pt-3">
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
             <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
               <button
