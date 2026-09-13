@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useT } from "@/lib/i18n";
-import { NIGHT_SURFACE } from "@/lib/night";
 
 interface DepthSlidesProps {
   tags: {
@@ -22,9 +20,8 @@ const SLIDES = [
   {
     key: "astrology" as const,
     labelKey: "depth.the_sky",
-    color: "var(--amber)",
-    // Warm candlelight amber, golden glow matching the color
-    image: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=800&q=60",
+    rgb: "var(--rgb-amber)",
+    wash: "radial-gradient(ellipse 80% 140% at 50% 0%, rgba(252,180,156,.24), transparent 74%)",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="4"/>
@@ -38,9 +35,8 @@ const SLIDES = [
   {
     key: "human_design" as const,
     labelKey: "depth.your_design",
-    color: "var(--mist)", // mist, mental blueprint, cool geometric
-    // Earth from space, the cosmic blueprint of a body
-    image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
+    rgb: "var(--rgb-mist)",
+    wash: "radial-gradient(ellipse 80% 140% at 50% 0%, rgba(74,46,158,.20), transparent 74%)",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="7" r="3"/>
@@ -51,9 +47,8 @@ const SLIDES = [
   {
     key: "gene_keys" as const,
     labelKey: "depth.your_keys",
-    color: "var(--wisteria)", // wisteria, mystical keys, transformative
-    // Moon, the inner world, mystery, threshold
-    image: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
+    rgb: "var(--rgb-wisteria)",
+    wash: "radial-gradient(ellipse 80% 140% at 50% 0%, rgba(176,46,114,.20), transparent 74%)",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
@@ -102,7 +97,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
           }}
           onScroll={handleScroll}
         >
-          {SLIDES.map(({ key, labelKey, icon, color, image }) => {
+          {SLIDES.map(({ key, labelKey, icon, rgb, wash }) => {
             const label = t(labelKey);
             const headline = tags[key] || "";
             const detail = tagDetails?.[key] || "";
@@ -116,35 +111,24 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                 style={{
                   width: "calc(100vw - 40px)",
                   scrollSnapAlign: "start",
-                  border: `1px solid ${isOpen ? color : `${color}35`}`,
+                  border: `1px solid ${isOpen ? `rgb(${rgb})` : "rgb(var(--rgb-border))"}`,
                   borderRadius: "14px",
                   overflow: "hidden",
                 }}
               >
-                {/* Photo header, absolute Image fill, guaranteed full coverage.
-                    NIGHT_SURFACE pins dark tokens so lettering over the photo
-                    stays cream in light mode. */}
-                <div style={{ position: "relative", minHeight: "110px", ...NIGHT_SURFACE }}>
-                  <Image
-                    src={image}
-                    alt={label}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(245,240,230,0.55) 0%, rgba(245,240,230,0.80) 100%)" }} />
-                  {/* Content over image */}
+                <div style={{ position: "relative", minHeight: "110px", background: `${wash}, rgb(var(--rgb-card))` }}>
+                  {/* Content */}
                   <div style={{ position: "relative", zIndex: 10, padding: "16px" }}>
                     {/* Label row */}
                     <div className="flex items-center gap-2 mb-3">
-                      <span style={{ color }}>{icon}</span>
-                      <span className="font-body text-[12px] uppercase tracking-[0.22em]" style={{ color }}>
+                      <span style={{ color: `rgb(${rgb})` }}>{icon}</span>
+                      <span className="font-body text-[14px] uppercase tracking-[0.22em] font-bold" style={{ color: `rgb(${rgb})`, fontWeight: 700 }}>
                         {label}
                       </span>
                       <span
                         className="ml-auto"
                         style={{
-                          color: isOpen ? color : `${color}70`,
+                          color: `rgb(${rgb} / ${isOpen ? 1 : 0.7})`,
                           fontSize: "0.85rem",
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 0.3s ease",
@@ -155,21 +139,21 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
                       </span>
                     </div>
                     {/* Headline */}
-                    <p className="font-body text-[15px] font-medium leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                    <p className="font-body text-[17px] font-medium leading-relaxed" style={{ color: "var(--text-primary)" }}>
                       {headline}
                     </p>
                   </div>
                 </div>
 
-                {/* Expanded reading, forest green panel below photo */}
+                {/* Expanded reading, on the card plane */}
                 {isOpen && (
-                  <div style={{ background: "rgb(var(--rgb-card))", padding: "16px", borderTop: `1px solid ${color}25` }}>
+                  <div style={{ background: "rgb(var(--rgb-card))", padding: "16px", borderTop: "1px solid rgb(var(--rgb-border))" }}>
                     <p
-                      className="font-body text-[15px] leading-relaxed"
+                      className="font-body text-[17px] leading-relaxed"
                       style={{
                         color: "var(--text-secondary)",
                         opacity: detail ? 1 : 0.5,
-                        fontStyle: detail ? "normal" : "italic",
+                        fontWeight: detail ? 500 : 700,
                       }}
                     >
                       {detail || t("depth.coming_soon")}
@@ -191,7 +175,7 @@ export default function DepthSlides({ tags, tagDetails }: DepthSlidesProps) {
               width: i === activeIndex ? 16 : 6,
               height: 6,
               borderRadius: 9999,
-              background: i === activeIndex ? s.color : "rgb(var(--rgb-border) / 0.8)",
+              background: i === activeIndex ? `rgb(${s.rgb})` : "rgb(var(--rgb-border))",
               transition: "all 0.3s ease",
             }}
           />

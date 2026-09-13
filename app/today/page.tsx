@@ -13,22 +13,25 @@ import DepthSlides from "@/components/DepthSlides";
 import { ShareCardOffscreen, ShareOffscreenWrapper, EnergyBarsCard } from "@/components/ShareCard";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
-import { NIGHT_SURFACE } from "@/lib/night";
+import { Wordmark } from "@/components/Wordmark";
 
-// Planet to hero image mapping
-const PLANET_HERO_IMAGES: Record<string, string> = {
-  // All verified sky/space/atmosphere images
-  sun: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80",   // dramatic storm clouds, warm light
-  moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=80",  // full moon night sky
-  mercury: "https://images.unsplash.com/photo-1537420327992-d6e192287183?w=800&q=80", // lightning storm sky
-  venus: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80&sat=-20&con=20", // same storm clouds, cooler
-  mars: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80",   // epic thunderhead clouds
-  jupiter: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80", // towering storm clouds
-  saturn: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80",  // milky way, cold
-  uranus: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",  // deep space blue
-  neptune: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80", // dark star field
-  pluto: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80",   // milky way cosmos
-  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80", // star field
+// The ruling planet colours the day, drawn from the orb rather than from a
+// stock photograph. The photographs were storm clouds and star fields behind
+// a near-black title, which is how the hero lettering became unreadable; they
+// were also six different visual languages on one screen. One wash each, the
+// orb's own pigments at a whisper, on the paper the rest of the app is made of.
+const PLANET_HERO_WASH: Record<string, string> = {
+  sun:     "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(252,180,156,.30), transparent 72%)",
+  moon:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(84,63,150,.22), transparent 72%)",
+  mercury: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.20), transparent 72%)",
+  venus:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(176,46,114,.22), transparent 72%)",
+  mars:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(163,74,34,.24), transparent 72%)",
+  jupiter: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(230,141,94,.24), transparent 72%)",
+  saturn:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(110,102,89,.24), transparent 72%)",
+  uranus:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(90,49,174,.22), transparent 72%)",
+  neptune: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.24), transparent 72%)",
+  pluto:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(34,32,28,.20), transparent 72%)",
+  default: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(84,63,150,.20), transparent 72%)",
 };
 
 interface Planet {
@@ -108,10 +111,10 @@ function getDominantPlanet(astrologyTag: string): string {
   return "sun"; // default
 }
 
-// Get hero image URL for dominant planet
-function getHeroImageUrl(astrologyTag: string): string {
+// The wash for the day's ruling planet
+function getHeroWash(astrologyTag: string): string {
   const planet = getDominantPlanet(astrologyTag);
-  return PLANET_HERO_IMAGES[planet] || PLANET_HERO_IMAGES.default;
+  return PLANET_HERO_WASH[planet] || PLANET_HERO_WASH.default;
 }
 
 // Dynamic energy note based on value and dimension
@@ -148,9 +151,9 @@ function getEnergyNote(label: string, value: number): string {
 // Extended palette, aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
-  Mental:    "#4A2E9E", // mist
+  Mental:    "rgb(var(--rgb-mist))", // mist
   Emotional: "var(--ember)", // ember
-  Physical:  "#A34A22", // moss
+  Physical:  "rgb(var(--rgb-ember))", // moss
   Intuitive: "var(--wisteria)", // wisteria
 };
 
@@ -188,7 +191,7 @@ function EnergyBar({
   onAsk: (label: string, pct: number) => void;
 }) {
   const { t } = useT();
-  const color = ENERGY_COLORS[label] || "#5A31AE";
+  const color = ENERGY_COLORS[label] || "rgb(var(--rgb-amber))";
   const pct = toDisplayPct(value);
   const displayLabel = t(`today.${label.toLowerCase()}`);
 
@@ -220,11 +223,11 @@ function EnergyBar({
           animation: `solrayLabelFade ${labelFadeMs}ms cubic-bezier(0.22, 0.8, 0.36, 1) both`,
         }}
       >
-        <span className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
+        <span className="font-body text-[14px] font-normal tracking-[0.22em] uppercase text-text-secondary">
           {displayLabel}
         </span>
         <span
-          className="font-heading text-[17px] text-text-secondary/70"
+          className="font-heading text-[17px] text-text-secondary"
           style={{ fontFeatureSettings: '"lnum"' }}
         >
           {pct}
@@ -264,21 +267,21 @@ function EnergyBar({
 //   Jupiter       → moss        (expansion, growth, abundance)
 //   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
-  Sun:     "#5A31AE",  // amber-sun, hero
-  Moon:    "#4A2E9E",  // mist
+  Sun:     "rgb(var(--rgb-amber))",  // amber-sun, hero
+  Moon:    "rgb(var(--rgb-mist))",  // mist
   Mercury: "var(--pearl)",  // pearl
-  Venus:   "#B02E72",  // wisteria
-  Mars:    "#A34A22",  // ember
+  Venus:   "rgb(var(--rgb-wisteria))",  // wisteria
+  Mars:    "rgb(var(--rgb-ember))",  // ember
   Jupiter: "var(--moss)",  // moss
-  Saturn:  "#4A2E9E",  // indigo
-  Uranus:  "#4A2E9E",  // mist (paired with Moon)
+  Saturn:  "rgb(var(--rgb-mist))",  // indigo
+  Uranus:  "rgb(var(--rgb-mist))",  // mist (paired with Moon)
   Neptune: "var(--wisteria)",  // wisteria (paired with Venus)
-  Pluto:   "#4A2E9E",  // indigo (paired with Saturn)
+  Pluto:   "rgb(var(--rgb-mist))",  // indigo (paired with Saturn)
 };
 
 function PlanetCard({ planet }: { planet: Planet }) {
   const { t } = useT();
-  const color = PLANET_COLORS[planet.name] || "#6E6659";
+  const color = PLANET_COLORS[planet.name] || "rgb(var(--rgb-text-muted))";
   const planetLabel = t(`planets.${planet.name.toLowerCase()}`);
   const signLabel = t(`signs.${planet.sign.toLowerCase()}`);
   return (
@@ -291,16 +294,16 @@ function PlanetCard({ planet }: { planet: Planet }) {
           {planet.symbol}
         </span>
         {planet.retrograde && (
-          <span className="text-[12px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
+          <span className="text-[14px] font-body leading-none mt-0.5" style={{ color }}>℞</span>
         )}
       </div>
-      <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase mt-0.5">
+      <span className="font-body text-text-secondary text-[14px] tracking-widest uppercase mt-0.5 font-bold">
         {planetLabel}
       </span>
-      <span className="font-body text-text-primary text-[15px] font-medium">
+      <span className="font-body text-text-primary text-[17px] font-medium">
         {signLabel}
       </span>
-      <span className="font-body text-text-secondary/70 text-[12px]">{planet.degree}</span>
+      <span className="font-body text-text-secondary text-[14px]">{planet.degree}</span>
     </div>
   );
 }
@@ -317,8 +320,8 @@ function SkeletonToday() {
           Codex UX hook 8. */}
       <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-6 pb-1 text-center">
         <p
-          className="font-body text-[12px] tracking-[0.3em] uppercase"
-          style={{ color: "var(--amber)", opacity: 0.7 }}
+          className="font-body text-[14px] tracking-[0.3em] uppercase font-bold"
+          style={{ color: "var(--amber)" }}
         >
           {t("today.reading_sky")}
         </p>
@@ -334,7 +337,7 @@ function SkeletonToday() {
         <div className="mb-8 mt-8 space-y-4">
           {["Mental", "Emotional", "Physical", "Intuitive"].map((label) => (
             <div key={label} className="flex items-center gap-3">
-              <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40">
+              <span className="text-text-secondary text-xs font-body w-20 shrink-0 tracking-wider uppercase opacity-40 font-bold">
                 {t(`today.${label.toLowerCase()}`)}
               </span>
               <div className="flex-1 h-1.5 bg-forest-border rounded-full overflow-hidden">
@@ -377,20 +380,19 @@ function SkeletonToday() {
   );
 }
 
-// Hero image card with day title
+// Hero card with the day title
 function HeroImageCard({
   dayTitle,
-  imageSrc,
+  heroWash,
   reading,
 }: {
   dayTitle: string;
-  imageSrc: string;
+  heroWash: string;
   reading?: string;
 }) {
   const { t, lang } = useT();
   const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
 
   // Build the date label once per render: "Saturday, 3 May"
@@ -423,7 +425,7 @@ function HeroImageCard({
   return (
     <div
       className="rounded-2xl overflow-hidden relative"
-      style={{ border: "1px solid rgba(226,218,202,0.6)" }}
+      style={{ border: "1px solid rgb(var(--rgb-border))" }}
     >
       {/* Image + toggle area. The onClick toggles open/close on the
           hero. The share button below is a SIBLING of this div, not a
@@ -435,32 +437,14 @@ function HeroImageCard({
           on different elements. Sibling structure removes the race. */}
       <div
         className="relative w-full h-[160px] cursor-pointer"
-        style={NIGHT_SURFACE}
+        style={{ background: `${heroWash}, rgb(var(--rgb-card))` }}
         onClick={() => setOpen(v => !v)}
       >
-        <Image
-          src={imageSrc}
-          alt={dayTitle}
-          fill
-          className="object-cover"
-          priority
-          unoptimized
-          onLoad={() => setImgLoaded(true)}
-          style={{
-            // Gentle fade-in instead of a pop when the hero lands. The dark
-            // card and gradient are already in place, so the image breathes
-            // in over them.
-            opacity: imgLoaded ? 1 : 0,
-            transition: "opacity 0.45s ease",
-          }}
-        />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(34,32,28,0.085) 42%, rgba(34,32,28,0.088) 100%)" }} />
-
         {/* Day title centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-none">
           <h1
-            className="font-heading text-[26px] leading-[1.22] text-center"
-            style={{ color: "var(--text-primary)", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(34,32,28,0.085), 0 1px 5px rgba(34,32,28,0.085)" }}
+            className="font-heading text-[26px] leading-[1.14] text-center"
+            style={{ color: "rgb(var(--rgb-text-primary))", fontWeight: 900, letterSpacing: "-.038em", maxWidth: "18ch" }}
           >
             {dayTitle}
           </h1>
@@ -468,7 +452,7 @@ function HeroImageCard({
 
         {/* Today's Weather label + arrow */}
         <div className="absolute bottom-0 w-full flex flex-col items-center pb-3 gap-1 pointer-events-none">
-          <p className="font-body text-[13px] tracking-[0.18em] uppercase" style={{ color: "rgba(34,32,28,0.85)", fontWeight: 500 }}>
+          <p className="font-body text-[15px] tracking-[0.18em] uppercase font-bold" style={{ color: "rgb(var(--rgb-text-muted))", fontWeight: 700 }}>
             {t("today.weather")}
           </p>
           <svg
@@ -479,7 +463,7 @@ function HeroImageCard({
               transition: "transform 0.3s ease",
             }}
           >
-            <path d="M1 1L8 8L15 1" stroke="#5A31AE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1L8 8L15 1" stroke="rgb(var(--rgb-amber))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       </div>
@@ -495,9 +479,8 @@ function HeroImageCard({
         disabled={sharing}
         className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 z-10"
         style={{
-          ...NIGHT_SURFACE,
-          background: "rgba(245,240,230,0.55)",
-          border: "1px solid rgba(90,49,174,0.35)",
+          background: "rgb(var(--rgb-card) / 0.82)",
+          border: "1px solid rgb(var(--rgb-border))",
           backdropFilter: "blur(6px)",
           WebkitBackdropFilter: "blur(6px)",
         }}
@@ -505,7 +488,7 @@ function HeroImageCard({
         {sharing ? (
           <span
             className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin"
-            style={{ borderColor: "rgba(90,49,174,0.35)", borderTopColor: "var(--amber)" }}
+            style={{ borderColor: "rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-amber))" }}
           />
         ) : (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--amber)" }}>
@@ -521,7 +504,7 @@ function HeroImageCard({
           on demand. Position fixed at -99999px keeps it invisible
           but renders so html2canvas can measure. */}
       <ShareCardOffscreen
-        data={{ dayTitle, imageSrc, dateLabel }}
+        data={{ dayTitle, heroWash, dateLabel }}
         containerRef={shareCardRef}
       />
 
@@ -535,7 +518,7 @@ function HeroImageCard({
           {reading.split(/\n\n+/).map((para, i) => (
             <p
               key={i}
-              className={`font-body text-text-secondary text-[15px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
+              className={`font-body text-text-secondary text-[17px] leading-relaxed ${i > 0 ? "mt-5" : ""}`}
             >
               {para.trim()}
             </p>
@@ -576,23 +559,23 @@ function PendingTodayState({ planets }: { planets: Planet[] }) {
         }}
       >
         <p
-          className="font-body text-[12px] tracking-[0.3em] uppercase mb-5"
+          className="font-body text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
           style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
         >
           {t("today.your_reading")}
         </p>
         <p
           className="font-heading text-text-primary mb-3"
-          style={{ fontWeight: 300, fontSize: "1.4rem", lineHeight: 1.3 }}
+          style={{ fontWeight: 900, fontSize: "1.4rem", lineHeight: 1.3 }}
         >
           {t("today.pending_title")}
         </p>
-        <p className="font-body text-text-secondary text-[15px] leading-relaxed">
+        <p className="font-body text-text-secondary text-[17px] leading-relaxed">
           {t("today.pending_body")}
         </p>
       </div>
 
-      <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
+      <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">
         {t("today.sky_now")}
       </p>
       <div
@@ -700,15 +683,14 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
         alignItems: "center", justifyContent: "center",
         padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
-        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "bkFade .4s ease both",
       }}
     >
       <style>{`
         @keyframes bkFade{from{opacity:0}to{opacity:1}}
         @keyframes bkRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-        @keyframes bkBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.13)}28%{transform:scale(1)}42%{transform:scale(1.06)}55%{transform:scale(1)}}
-        @keyframes bkPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.5}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+        @keyframes orbBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.012)}}
       `}</style>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -717,13 +699,12 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
           // The modal card is always dark; pin the night palette so its
           // var(--text-*) stay light on both themes (else light mode renders
           // near-black text on the dark card, invisible).
-          ...NIGHT_SURFACE,
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #0d2114 0%, #FAF6EC 60%, #F5F0E6 100%)",
-          border: "1px solid rgba(90,49,174,0.34)",
-          boxShadow: "0 0 70px rgba(90,49,174,0.14), 0 30px 90px rgba(34,32,28,0.085)",
+          background: "rgb(var(--rgb-card))",
+          border: "1px solid rgb(var(--rgb-border))",
+          boxShadow: "0 30px 90px rgb(var(--rgb-scrim) / 0.16)",
           animation: "bkRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -731,46 +712,45 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
           onClick={onDismiss}
           aria-label="Close"
           className="absolute"
-          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+          style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         {/* the real Solray sun, beating */}
         <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(90,49,174,0.5)", animation: "bkPulse 2.6s ease-out infinite" }} />
           <Image
-            src="/solray-sun.png"
-            alt="Solray"
+            src="/solray-orb.png"
+            alt=""
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bkBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(90,49,174,0.5))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }}
           />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 14 }}>
+        <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 14 }}>
           {t("insight.of_the_day")}
         </p>
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.75rem", lineHeight: 1.2, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 14 }}>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.62rem", lineHeight: 1.12, fontWeight: 900, letterSpacing: "-.038em", marginBottom: 14 }}>
           {insight.title}
         </h2>
-        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+        <p className="font-body text-text-secondary" style={{ fontSize: 17, lineHeight: 1.62, maxWidth: "26em", margin: "0 auto" }}>
           {insight.body}
         </p>
 
         {/* divider in the Oracle's wisteria, hinting where Go deeper leads */}
-        <div style={{ width: 36, height: 1, background: "rgba(176,46,114,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgb(var(--rgb-border))", margin: "26px auto 22px" }} />
 
         <button
           onClick={onAsk}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
+          style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
         </button>
         <button
           onClick={onLater}
           className="font-body"
-          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+          style={{ marginTop: 16, fontSize: 15, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgb(var(--rgb-text-muted))", background: "transparent" }}
         >
           {t("insight.dismiss")}
         </button>
@@ -868,27 +848,25 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
         alignItems: "center", justifyContent: "center",
         padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
-        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "skFade .4s ease both",
       }}
     >
       <style>{`
         @keyframes skFade{from{opacity:0}to{opacity:1}}
         @keyframes skRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-        @keyframes skGlow{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
-        @keyframes skPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.45}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+        @keyframes orbBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.012)}}
       `}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         className="rounded-[28px]"
         style={{
-          ...NIGHT_SURFACE,
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #161427 0%, #0c1622 55%, #F5F0E6 100%)",
-          border: "1px solid rgba(176,46,114,0.34)",
-          boxShadow: "0 0 70px rgba(176,46,114,0.14), 0 30px 90px rgba(34,32,28,0.085)",
+          background: "rgb(var(--rgb-card))",
+          border: "1px solid rgb(var(--rgb-border))",
+          boxShadow: "0 30px 90px rgb(var(--rgb-scrim) / 0.16)",
           animation: "skRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
@@ -896,38 +874,37 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
           onClick={onDismiss}
           aria-label="Close"
           className="absolute"
-          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+          style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         {/* a soft moon, the sky returning */}
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(176,46,114,0.5)", animation: "skPulse 2.8s ease-out infinite" }} />
-          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: "radial-gradient(circle at 38% 35%, #cfc4d2 0%, #B02E72 60%, #6a5b70 100%)", animation: "skGlow 3s ease-in-out infinite", boxShadow: "0 0 24px rgba(176,46,114,0.45)" }} />
+          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }} />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#B02E72", marginBottom: 14 }}>
+        <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgb(var(--rgb-wisteria))", marginBottom: 14 }}>
           {t("sky_echo.eyebrow")}
         </p>
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.55rem", lineHeight: 1.25, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 16 }}>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.62rem", lineHeight: 1.12, fontWeight: 900, letterSpacing: "-.038em", marginBottom: 16 }}>
           {sentence}
         </h2>
-        <p className="font-heading italic text-text-secondary" style={{ fontSize: 16, lineHeight: 1.6, maxWidth: 340, margin: "0 auto" }}>
+        <p className="font-heading text-text-secondary" style={{ fontSize: 17, lineHeight: 1.6, maxWidth: 340, margin: "0 auto" }}>
           &ldquo;{echo.excerpt}&rdquo;
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(176,46,114,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgb(var(--rgb-border))", margin: "26px auto 22px" }} />
 
         <button
           onClick={() => onGoDeeper(sentence, echo.excerpt)}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
+          style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
         </button>
         <button
           onClick={onLater}
           className="font-body"
-          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+          style={{ marginTop: 16, fontSize: 15, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgb(var(--rgb-text-muted))", background: "transparent" }}
         >
           {t("insight.dismiss")}
         </button>
@@ -957,10 +934,6 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
 
   if (typeof document === "undefined") return null;
 
-  const moonBg = isFull
-    ? "radial-gradient(circle at 38% 35%, #fffef8 0%, #e9e4d6 55%, #aeb6ba 100%)"
-    : "radial-gradient(circle at 62% 40%, #2c2636 0%, #15131d 70%, #0a0810 100%)";
-
   return createPortal(
     <div
       role="dialog" aria-modal="true" onClick={onLater}
@@ -969,70 +942,67 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
         alignItems: "center", justifyContent: "center",
         padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
-        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "lnFade .4s ease both",
       }}
     >
       <style>{`
         @keyframes lnFade{from{opacity:0}to{opacity:1}}
         @keyframes lnRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-        @keyframes lnGlow{0%,100%{opacity:.9;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
-        @keyframes lnPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.45}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+        @keyframes orbBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.012)}}
       `}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         className="rounded-[28px]"
         style={{
-          ...NIGHT_SURFACE,
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #101a26 0%, #0a141d 55%, #F5F0E6 100%)",
-          border: "1px solid rgba(84,63,150,0.34)",
-          boxShadow: "0 0 70px rgba(84,63,150,0.14), 0 30px 90px rgba(34,32,28,0.085)",
+          background: "rgb(var(--rgb-card))",
+          border: "1px solid rgb(var(--rgb-border))",
+          boxShadow: "0 30px 90px rgb(var(--rgb-scrim) / 0.16)",
           animation: "lnRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
         <button
           onClick={onDismiss} aria-label="Close" className="absolute"
-          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+          style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 60, height: 60, borderRadius: "50%", border: "1px solid rgba(84,63,150,0.5)", animation: "lnPulse 2.8s ease-out infinite" }} />
-          <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: moonBg, animation: "lnGlow 3s ease-in-out infinite", boxShadow: isFull ? "0 0 26px rgba(233,228,214,0.55)" : "0 0 22px rgba(84,63,150,0.30)" }} />
+          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }} />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#4A2E9E", marginBottom: 12 }}>
+        <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgb(var(--rgb-mist))", marginBottom: 12 }}>
           {typeLabel}
         </p>
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.9rem", lineHeight: 1.15, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.62rem", lineHeight: 1.12, fontWeight: 900, letterSpacing: "-.038em", marginBottom: 12 }}>
           {tx(event.sign, lang)}
         </h2>
-        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#4A2E9E", marginBottom: 4 }}>
+        <p className="font-body" style={{ fontSize: 15, letterSpacing: "0.04em", color: "rgb(var(--rgb-mist))", marginBottom: 4 }}>
           {t("lunar.illuminating")} {event.house}
         </p>
         {event.house_meaning && (
-          <p className="font-body text-text-secondary" style={{ fontSize: 13, lineHeight: 1.5, maxWidth: 320, margin: "0 auto 14px", opacity: 0.8 }}>
+          <p className="font-body text-text-secondary" style={{ fontSize: 15, lineHeight: 1.5, maxWidth: 320, margin: "0 auto 14px", opacity: 0.8 }}>
             {event.house_meaning}
           </p>
         )}
-        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+        <p className="font-body text-text-secondary" style={{ fontSize: 17, lineHeight: 1.62, maxWidth: "26em", margin: "0 auto" }}>
           {event.note}
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(84,63,150,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgb(var(--rgb-border))", margin: "26px auto 22px" }} />
 
         <button
           onClick={onGoDeeper}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
+          style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
         </button>
         <button
           onClick={onLater} className="font-body"
-          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+          style={{ marginTop: 16, fontSize: 15, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgb(var(--rgb-text-muted))", background: "transparent" }}
         >
           {t("insight.dismiss")}
         </button>
@@ -1085,75 +1055,72 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
         alignItems: "center", justifyContent: "center",
         padding: "max(env(safe-area-inset-top, 0px), 20px) 22px max(env(safe-area-inset-bottom, 0px), 20px)",
         overflow: "hidden", overscrollBehavior: "contain",
-        background: "rgba(4,11,7,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        background: "rgb(var(--rgb-scrim) / 0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         animation: "bdFade .4s ease both",
       }}
     >
       <style>{`
         @keyframes bdFade{from{opacity:0}to{opacity:1}}
         @keyframes bdRise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-        @keyframes bdBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.13)}28%{transform:scale(1)}42%{transform:scale(1.06)}55%{transform:scale(1)}}
-        @keyframes bdPulse{0%{transform:translate(-50%,-50%) scale(.7);opacity:.5}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+        @keyframes orbBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.012)}}
       `}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         className="rounded-[28px]"
         style={{
-          ...NIGHT_SURFACE,
           maxWidth: 430, width: "100%", position: "relative", textAlign: "center",
           padding: "40px 28px 26px",
           maxHeight: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          background: "radial-gradient(125% 90% at 50% 0%, #2a1c0c 0%, #160f06 55%, #F5F0E6 100%)",
-          border: "1px solid rgba(90,49,174,0.36)",
-          boxShadow: "0 0 70px rgba(90,49,174,0.16), 0 30px 90px rgba(34,32,28,0.085)",
+          background: "rgb(var(--rgb-card))",
+          border: "1px solid rgb(var(--rgb-border))",
+          boxShadow: "0 30px 90px rgb(var(--rgb-scrim) / 0.16)",
           animation: "bdRise .55s cubic-bezier(.2,.75,.2,1) both",
         }}
       >
         <button
           onClick={onDismiss} aria-label="Close" className="absolute"
-          style={{ top: 14, right: 16, width: 30, height: 30, borderRadius: 999, border: "1px solid rgba(168,184,171,0.3)", color: "var(--text-secondary)", background: "transparent", fontSize: 16, lineHeight: 1 }}
+          style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         {/* the real Solray sun, returning home, beating like the breakthrough */}
         <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 18px" }}>
-          <span style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", border: "1px solid rgba(90,49,174,0.5)", animation: "bdPulse 2.6s ease-out infinite" }} />
           <Image
-            src="/solray-sun.png"
-            alt="Solray"
+            src="/solray-orb.png"
+            alt=""
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "bdBeat 1.25s ease-in-out infinite", filter: "drop-shadow(0 0 18px rgba(90,49,174,0.5))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }}
           />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 12 }}>
+        <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 12 }}>
           {t("solar.eyebrow")}
         </p>
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.75rem", lineHeight: 1.2, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.62rem", lineHeight: 1.12, fontWeight: 900, letterSpacing: "-.038em", marginBottom: 12 }}>
           {t("solar.new_year_begins")}
         </h2>
         {bornLabel && (
-          <p className="font-body" style={{ fontSize: 12.5, letterSpacing: "0.04em", color: "var(--amber)", opacity: 0.85, marginBottom: 14 }}>
+          <p className="font-body" style={{ fontSize: 14, letterSpacing: "0.04em", color: "var(--amber)", opacity: 0.85, marginBottom: 14 }}>
             {t("solar.born").replace("{date}", bornLabel)}
           </p>
         )}
-        <p className="font-body text-text-secondary" style={{ fontSize: 15.5, lineHeight: 1.62, maxWidth: 340, margin: "0 auto" }}>
+        <p className="font-body text-text-secondary" style={{ fontSize: 17, lineHeight: 1.62, maxWidth: "26em", margin: "0 auto" }}>
           {t("solar.body")}
         </p>
 
-        <div style={{ width: 36, height: 1, background: "rgba(90,49,174,0.45)", margin: "24px auto 22px" }} />
+        <div style={{ width: 36, height: 1, background: "rgb(var(--rgb-border))", margin: "26px auto 22px" }} />
 
         <button
           onClick={onGoDeeper}
           className="w-full rounded-full transition-all active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, #B02E72, #B02E72)", color: "#FAF6EC", padding: "14px", fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, boxShadow: "0 6px 24px rgba(176,46,114,0.25)" }}
+          style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
         </button>
         <button
           onClick={onLater} className="font-body"
-          style={{ marginTop: 14, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-muted)", background: "transparent" }}
+          style={{ marginTop: 16, fontSize: 15, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgb(var(--rgb-text-muted))", background: "transparent" }}
         >
           {t("insight.dismiss")}
         </button>
@@ -1715,17 +1682,12 @@ export default function TodayPage() {
         {/* Header, tag on top row, title + date on row below. Prevents overlap on small screens. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
+            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "var(--amber)" }}>
               {t("today.living_by_design")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
-              >
-                SOLRAY
-              </h1>
-              <span className="font-body text-text-secondary text-[12px]">{today}</span>
+              <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
+              <span className="font-body text-text-secondary text-[14px]">{today}</span>
             </div>
           </div>
         </div>
@@ -1750,7 +1712,7 @@ export default function TodayPage() {
             >
               <HeroImageCard
                 dayTitle={forecast.day_title}
-                imageSrc={getHeroImageUrl(forecast.tags.astrology)}
+                heroWash={getHeroWash(forecast.tags.astrology)}
                 reading={forecast.reading}
               />
             </div>
@@ -1768,7 +1730,7 @@ export default function TodayPage() {
               {/* Subtle offline/error notice */}
               {error && (
                 <div className="mt-4 px-3 py-2 rounded-lg border border-forest-border/40 bg-forest-card/30">
-                  <p className="text-text-secondary/60 text-[12px] font-body text-center">{t(error)}</p>
+                  <p className="text-text-muted text-[14px] font-body text-center">{t(error)}</p>
                 </div>
               )}
 
@@ -1783,7 +1745,7 @@ export default function TodayPage() {
                   className="flex items-center justify-between mb-7 transition-opacity duration-700"
                   style={{ opacity: visibleSections >= 2 ? 0.85 : 0 }}
                 >
-                  <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
+                  <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
                     {t("today.vibe")}
                   </p>
                   <button
@@ -1848,7 +1810,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 3 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
+                <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-4 font-bold">
                   {t("today.dimensions")}
                 </p>
                 <DepthSlides
@@ -1876,7 +1838,7 @@ export default function TodayPage() {
                   transform: visibleSections >= 5 ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">
+                <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">
                   {t("today.sky_now")}
                 </p>
                 {/* Scrollable ticker */}
@@ -1898,15 +1860,15 @@ export default function TodayPage() {
           // invented forecast content. Refresh button kicks the user
           // back into the load path so they can retry without leaving.
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-24 text-center">
-            <p className="font-heading text-text-primary text-2xl mb-4" style={{ fontWeight: 300 }}>
+            <p className="font-heading text-text-primary text-2xl mb-4" style={{ fontWeight: 900 }}>
               {t("today.sky_quiet")}
             </p>
-            <p className="text-text-secondary font-body text-[15px] leading-relaxed mb-8">
+            <p className="text-text-secondary font-body text-[17px] leading-relaxed mb-8">
               {error ? t(error) : t("today.error_no_reading")}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="inline-block px-8 py-3 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all"
+              className="inline-block px-8 py-3 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
               style={{
                 background: "var(--amber, #5A31AE)",
                 color: "var(--bg-deep, #F5F0E6)",
@@ -1997,15 +1959,15 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
         <div className="flex items-center gap-2">
           <span className="text-xl">{phaseEmoji}</span>
           <div>
-            <p className="font-body text-text-primary text-[15px] font-medium">{phaseLabel}</p>
+            <p className="font-body text-text-primary text-[17px] font-medium">{phaseLabel}</p>
             {moonSign && (
-              <p className="font-body text-text-secondary text-[12px]">{t("moon.moon_in")} {moonSignLabel}</p>
+              <p className="font-body text-text-secondary text-[14px]">{t("moon.moon_in")} {moonSignLabel}</p>
             )}
           </div>
         </div>
         <div className="text-right">
-          <p className="font-heading text-amber-sun text-[15px]">{illumination}%</p>
-          <p className="font-body text-text-secondary text-[12px]">{t("moon.illuminated")}</p>
+          <p className="font-heading text-amber-sun text-[17px]">{illumination}%</p>
+          <p className="font-body text-text-secondary text-[14px]">{t("moon.illuminated")}</p>
         </div>
       </div>
 
@@ -2031,11 +1993,11 @@ function MoonCycleBar({ planets }: { planets: Planet[] }) {
 
         {/* Phase labels */}
         <div className="flex justify-between mt-2">
-          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_new")}</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_first_q")}</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_full")}</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_third_q")}</span>
-          <span className="font-body text-text-secondary/60 text-[11px]">{t("moon.abbr_new")}</span>
+          <span className="font-body text-text-muted text-[13px]">{t("moon.abbr_new")}</span>
+          <span className="font-body text-text-muted text-[13px]">{t("moon.abbr_first_q")}</span>
+          <span className="font-body text-text-muted text-[13px]">{t("moon.abbr_full")}</span>
+          <span className="font-body text-text-muted text-[13px]">{t("moon.abbr_third_q")}</span>
+          <span className="font-body text-text-muted text-[13px]">{t("moon.abbr_new")}</span>
         </div>
       </div>
     </div>

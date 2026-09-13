@@ -90,40 +90,40 @@ export default function VoiceSection({ token }: { token: string | null }) {
   return (
     <div className="space-y-6 page-enter">
       <div className="max-w-2xl">
-        <h2 className="font-heading text-text-primary mb-2" style={{ fontSize: 24, fontWeight: 300 }}>Founder Voice Studio</h2>
-        <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+        <h2 className="font-heading text-text-primary mb-2" style={{ fontSize: 24, fontWeight: 900 }}>Founder Voice Studio</h2>
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed">
           Type a raw observation, get one polished draft per platform in Solray's voice. Each draft passes through the brand-rule linter; violations surface inline. Tap Send to Calendar to queue any draft as a scheduled event.
         </p>
       </div>
 
       <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-        <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">Raw note</p>
+        <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-3 font-bold">Raw note</p>
         <textarea
           value={rawNote}
           onChange={(e) => { setRawNote(e.target.value); setLintCheck(null); }}
           rows={5}
           placeholder="Anything. The way Mercury moves through Gemini reads like a writer pacing the room. People mistake speed for clarity. Add what you noticed; don't worry about the form."
-          className="w-full bg-forest-deep/40 border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[14px] focus:border-amber-sun outline-none resize-none"
+          className="w-full bg-forest-deep/40 border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none resize-none"
         />
 
         {lintCheck && lintCheck.length > 0 && (
           <div className="mt-3 space-y-1">
             {lintCheck.map((v, i) => (
-              <div key={i} className="font-body text-[12px]" style={{ color: "var(--ember)" }}>
-                <span className="font-mono text-[11px] mr-1">[{v.rule}]</span>
+              <div key={i} className="font-body text-[14px]" style={{ color: "var(--ember)" }}>
+                <span className="font-mono text-[13px] mr-1">[{v.rule}]</span>
                 {v.message}
               </div>
             ))}
           </div>
         )}
         {lintCheck && lintCheck.length === 0 && (
-          <p className="mt-3 font-body text-[12px]" style={{ color: "var(--moss)" }}>
+          <p className="mt-3 font-body text-[14px]" style={{ color: "var(--moss)" }}>
             Brand-rule clean.
           </p>
         )}
 
         <div className="mt-4">
-          <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">Platforms</p>
+          <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">Platforms</p>
           <div className="flex flex-wrap gap-2">
             {ALL_CHANNELS.map((c) => {
               const active = channels.includes(c);
@@ -131,11 +131,11 @@ export default function VoiceSection({ token }: { token: string | null }) {
                 <button
                   key={c}
                   onClick={() => toggleChannel(c)}
-                  className={`font-body text-[11px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full transition-all ${
+                  className={`font-body text-[13px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full transition-all ${
                     active
                       ? "bg-amber-sun text-forest-deep"
                       : "border border-forest-border text-text-secondary hover:text-text-primary"
-                  }`}
+                  } font-bold`}
                 >
                   {c}
                 </button>
@@ -148,14 +148,14 @@ export default function VoiceSection({ token }: { token: string | null }) {
           <button
             onClick={generate}
             disabled={!rawNote.trim() || channels.length === 0 || running}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all font-bold"
           >
             {running ? "Drafting" : `Generate ${channels.length} draft${channels.length === 1 ? "" : "s"}`}
           </button>
           <button
             onClick={lintRaw}
             disabled={!rawNote.trim()}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-full border border-forest-border text-text-secondary hover:text-text-primary disabled:opacity-40 transition-all"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-full border border-forest-border text-text-secondary hover:text-text-primary disabled:opacity-40 transition-all font-bold"
           >
             Lint raw
           </button>
@@ -163,12 +163,12 @@ export default function VoiceSection({ token }: { token: string | null }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>{error}</div>
+        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>{error}</div>
       )}
 
       {variants.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-heading text-text-primary" style={{ fontSize: 18, fontWeight: 300 }}>Drafts</h3>
+          <h3 className="font-heading text-text-primary" style={{ fontSize: 18, fontWeight: 700 }}>Drafts</h3>
           {variants.map((v, i) => (
             <VariantCard key={i} variant={v} onSend={() => sendToCalendar(v)} />
           ))}
@@ -182,27 +182,27 @@ function VariantCard({ variant, onSend }: { variant: Variant; onSend: () => void
   return (
     <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="font-body text-amber-sun text-[11px] tracking-[0.22em] uppercase">{variant.platform}</span>
+        <span className="font-body text-amber-sun text-[13px] tracking-[0.22em] uppercase font-bold">{variant.platform}</span>
         <button
           onClick={onSend}
-          className="font-body text-[10px] tracking-[0.22em] uppercase px-3 py-1 rounded-full bg-amber-sun/15 text-amber-sun hover:bg-amber-sun/25 transition-all"
+          className="font-body text-[12px] tracking-[0.22em] uppercase px-3 py-1 rounded-full bg-amber-sun/15 text-amber-sun hover:bg-amber-sun/25 transition-all font-bold"
         >
           Send to calendar
         </button>
       </div>
-      <p className="font-body text-text-primary text-[14px] leading-relaxed whitespace-pre-wrap mb-3">{variant.copy}</p>
-      <p className="font-body text-text-secondary text-[12px] italic leading-relaxed">{variant.why}</p>
+      <p className="font-body text-text-primary text-[15px] leading-relaxed whitespace-pre-wrap mb-3">{variant.copy}</p>
+      <p className="font-body text-text-secondary text-[14px] leading-relaxed">{variant.why}</p>
       {variant.image_prompt && (
         <div className="mt-3 pt-3 border-t border-forest-border/30">
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-1">Image prompt</p>
-          <p className="font-body text-text-secondary text-[11px] leading-relaxed">{variant.image_prompt}</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-1 font-bold">Image prompt</p>
+          <p className="font-body text-text-secondary text-[13px] leading-relaxed">{variant.image_prompt}</p>
         </div>
       )}
       {variant.lint.length > 0 && (
         <div className="mt-3 pt-3 border-t border-forest-border/30 space-y-1">
           {variant.lint.map((v, i) => (
-            <div key={i} className="font-body text-[11px]" style={{ color: "var(--ember)" }}>
-              <span className="font-mono text-[10px] mr-1">[{v.rule}]</span>
+            <div key={i} className="font-body text-[13px]" style={{ color: "var(--ember)" }}>
+              <span className="font-mono text-[12px] mr-1">[{v.rule}]</span>
               {v.message}
             </div>
           ))}

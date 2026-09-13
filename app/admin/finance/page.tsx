@@ -34,7 +34,7 @@ type Finance = {
   };
 };
 
-const AMBER = "#5A31AE", MOSS = "#A34A22", EMBER = "#A34A22", INDIGO = "#4A2E9E";
+const AMBER = "rgb(var(--rgb-amber))", MOSS = "rgb(var(--rgb-ember))", EMBER = "rgb(var(--rgb-ember))", INDIGO = "rgb(var(--rgb-mist))";
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthLabel = (ym: string) => MONTH_ABBR[(parseInt(ym.slice(5), 10) || 1) - 1] ?? ym;
 const usd = (n: number) => "$" + (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -43,9 +43,9 @@ const usd0 = (n: number) => "$" + Math.round(n ?? 0).toLocaleString();
 function Kpi({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
     <div className="rounded-xl border border-forest-border bg-forest-card p-5">
-      <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{label}</div>
-      <div className="font-heading mt-1" style={{ fontWeight: 300, fontSize: "30px", lineHeight: 1.1, color: color || "rgb(var(--rgb-text-primary))" }}>{value}</div>
-      {sub && <div className="font-body text-[12px] text-text-secondary mt-1">{sub}</div>}
+      <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{label}</div>
+      <div className="font-heading mt-1" style={{ fontWeight: 900, fontSize: "30px", lineHeight: 1.1, color: color || "rgb(var(--rgb-text-primary))" }}>{value}</div>
+      {sub && <div className="font-body text-[14px] text-text-secondary mt-1">{sub}</div>}
     </div>
   );
 }
@@ -103,8 +103,8 @@ function CostComposition({ c }: { c: Finance["cost"] }) {
     { label: "Railway", v: c.railway_usd_mo, color: INDIGO },
     { label: "Teya fees", v: c.teya_fees_30d_usd, color: AMBER },
     { label: "Domain", v: c.domain_usd_mo, color: MOSS },
-    { label: "Vercel", v: c.vercel_usd_mo, color: "#4A2E9E" },
-    { label: "Other", v: c.other_usd_mo, color: "#B02E72" },
+    { label: "Vercel", v: c.vercel_usd_mo, color: "rgb(var(--rgb-mist))" },
+    { label: "Other", v: c.other_usd_mo, color: "rgb(var(--rgb-wisteria))" },
   ].filter(p => p.v > 0);
   const total = Math.max(0.0001, parts.reduce((s, p) => s + p.v, 0));
   return (
@@ -116,7 +116,7 @@ function CostComposition({ c }: { c: Finance["cost"] }) {
       </div>
       <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3">
         {parts.map(p => (
-          <span key={p.label} className="inline-flex items-center gap-2 font-body text-[12px] text-text-secondary">
+          <span key={p.label} className="inline-flex items-center gap-2 font-body text-[14px] text-text-secondary">
             <span style={{ width: 9, height: 9, borderRadius: 2, background: p.color }} />
             {p.label} {usd(p.v)}
           </span>
@@ -148,17 +148,17 @@ function FinancePage() {
       <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
         <header className="mb-7 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun mb-1">Operations</p>
-            <h1 className="font-heading text-2xl lg:text-3xl" style={{ fontWeight: 300 }}>Finance</h1>
-            <p className="font-body text-text-secondary text-[13px] mt-1">Revenue and AI cost are live. Infra figures come from Railway env (FINANCE_*).</p>
+            <p className="font-body text-[14px] tracking-[0.22em] uppercase text-amber-sun mb-1 font-bold">Operations</p>
+            <h1 className="font-heading text-2xl lg:text-3xl" style={{ fontWeight: 900 }}>Finance</h1>
+            <p className="font-body text-text-secondary text-[15px] mt-1">Revenue and AI cost are live. Infra figures come from Railway env (FINANCE_*).</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => void load()} className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors">{loading ? "Reading…" : "Refresh"}</button>
+            <button onClick={() => void load()} className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors font-bold">{loading ? "Reading…" : "Refresh"}</button>
           </div>
         </header>
 
-        {err && <div className="mb-6 px-4 py-3 rounded-lg border border-red-700/40 text-[13px]">{err}</div>}
-        {!f && !err && <div className="font-body text-text-secondary text-[13px]">Loading…</div>}
+        {err && <div className="mb-6 px-4 py-3 rounded-lg border border-red-700/40 text-[15px]">{err}</div>}
+        {!f && !err && <div className="font-body text-text-secondary text-[15px]">Loading…</div>}
 
         {f && (
           <>
@@ -171,24 +171,24 @@ function FinancePage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <div className="rounded-xl border border-forest-border bg-forest-card p-5">
-                <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-3">Revenue collected by month</div>
+                <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-3 font-bold">Revenue collected by month</div>
                 <RevenueBars data={f.series.revenue_by_month} />
               </div>
               <div className="rounded-xl border border-forest-border bg-forest-card p-5">
-                <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-3">AI cost per day</div>
+                <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-3 font-bold">AI cost per day</div>
                 <AiCostLine data={f.series.ai_cost_by_day} />
               </div>
             </div>
 
             <div className="rounded-xl border border-forest-border bg-forest-card p-5 mb-4">
-              <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-3">Cost composition (monthly)</div>
+              <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-3 font-bold">Cost composition (monthly)</div>
               <CostComposition c={f.cost} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="rounded-xl border border-forest-border bg-forest-card p-5">
-                <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-3">Revenue</div>
-                <table className="w-full text-[13px] font-body">
+                <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-3 font-bold">Revenue</div>
+                <table className="w-full text-[15px] font-body">
                   <tbody>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">MRR (paying x ${f.revenue.price_usd})</td><td className="py-2 text-right">{usd(f.revenue.mrr_usd)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Collected, last 30d</td><td className="py-2 text-right">{usd(f.revenue.collected_30d_usd)}</td></tr>
@@ -198,8 +198,8 @@ function FinancePage() {
                 </table>
               </div>
               <div className="rounded-xl border border-forest-border bg-forest-card p-5">
-                <div className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-3">Cost breakdown (monthly)</div>
-                <table className="w-full text-[13px] font-body">
+                <div className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-3 font-bold">Cost breakdown (monthly)</div>
+                <table className="w-full text-[15px] font-body">
                   <tbody>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">AI (live, 30d)</td><td className="py-2 text-right">{usd(f.cost.ai_30d_usd)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Railway</td><td className="py-2 text-right">{usd(f.cost.railway_usd_mo)}</td></tr>

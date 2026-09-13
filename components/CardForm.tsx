@@ -93,7 +93,7 @@ export default function CardForm({
     border: "1px solid rgba(110,102,89, 0.3)",
     background: "rgb(var(--rgb-card) / 0.55)",
     color: "var(--text-primary, #22201C)",
-    fontSize: 16,
+    fontSize: 17,
     letterSpacing: "0.06em",
     outline: "none",
   };
@@ -107,7 +107,7 @@ export default function CardForm({
       }}
     >
       <div
-        className="text-[11px] tracking-[0.28em] uppercase mb-4"
+        className="text-[13px] tracking-[0.28em] uppercase mb-4 font-bold"
         style={{ color: "var(--text-secondary)" }}
       >
         {t("subscribe.card_details")}
@@ -135,7 +135,7 @@ export default function CardForm({
       </div>
 
       {error && (
-        <p className="mt-3 text-[13px]" style={{ color: "var(--ember, #A34A22)" }}>
+        <p className="mt-3 text-[15px]" style={{ color: "var(--ember, #A34A22)" }}>
           {error}
         </p>
       )}
@@ -143,14 +143,14 @@ export default function CardForm({
       <button
         onClick={submit}
         disabled={busy}
-        className="w-full mt-5 py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-60"
-        style={{ background: "var(--amber, #5A31AE)", color: "var(--bg-deep, #F5F0E6)", fontWeight: 600 }}
+        className="w-full mt-5 py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-60 font-bold"
+        style={{ background: "var(--amber, #5A31AE)", color: "var(--bg-deep, #F5F0E6)", fontWeight: 700 }}
       >
         {busy ? t("subscribe.card_saving") : t("subscribe.card_save")}
       </button>
 
       <p
-        className="mt-4 text-[11.5px] leading-relaxed"
+        className="mt-4 text-[13px] leading-relaxed"
         style={{ color: "var(--text-muted)" }}
       >
         {t("subscribe.card_privacy")}

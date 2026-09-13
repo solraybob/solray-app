@@ -19,6 +19,7 @@ import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/Wordmark";
 import {
   parseBlueprintForChart,
   HD_TYPE_MEANINGS,
@@ -79,7 +80,7 @@ export default function ConnectionProfilePage() {
         {/* Header */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-indigo))" }}>
+            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-indigo))" }}>
               {t("conn.soul")}
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -93,12 +94,7 @@ export default function ConnectionProfilePage() {
                   <polyline points="15 18 9 12 15 6"/>
                 </svg>
               </button>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
-              >
-                SOLRAY
-              </h1>
+              <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
             </div>
           </div>
         </div>
@@ -152,17 +148,17 @@ export default function ConnectionProfilePage() {
                 ) : (
                   <div
                     className="rounded-full border border-forest-border bg-forest-card/60 flex items-center justify-center font-heading text-text-primary"
-                    style={{ width: 96, height: 96, fontSize: 36, fontWeight: 300 }}
+                    style={{ width: 96, height: 96, fontSize: 36, fontWeight: 900 }}
                   >
                     {initials}
                   </div>
                 )}
                 <div className="text-center">
-                  <p className="font-heading text-text-primary" style={{ fontSize: 22, fontWeight: 300 }}>
+                  <p className="font-heading text-text-primary" style={{ fontSize: 22, fontWeight: 900 }}>
                     {profile.name}
                   </p>
                   {profile.username && (
-                    <p className="font-body text-text-secondary text-[14px] mt-1">@{profile.username}</p>
+                    <p className="font-body text-text-secondary text-[15px] mt-1">@{profile.username}</p>
                   )}
                 </div>
               </div>
@@ -195,10 +191,10 @@ function PrivateProfileNotice({ name }: { name: string }) {
   const { t } = useT();
   return (
     <div className="mt-4 mb-6 px-6 py-8 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
+      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
         {t("conn.private_title")}
       </p>
-      <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-xs mx-auto">
+      <p className="font-body text-text-secondary text-[17px] leading-relaxed max-w-xs mx-auto">
         {t("conn.private_body").replace("{name}", name)}
       </p>
     </div>
@@ -227,8 +223,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Three-line essence */}
       {(sunSign || chart?.human_design.type) && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.essence")}</p>
-          <div className="space-y-1.5 font-body text-[15px]">
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.essence")}</p>
+          <div className="space-y-1.5 font-body text-[17px]">
             {sunSign  && <Row label={t("planets.sun")}  value={sunSign}  />}
             {moonSign && <Row label={t("planets.moon")} value={moonSign} />}
             {ascSign  && <Row label={t("planets.ascendant")} value={ascSign} />}
@@ -249,7 +245,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Natal Chart */}
       {chart && chart.natal.length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.natal_chart")}</p>
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.natal_chart")}</p>
           <div className="flex justify-center">
             <NatalWheel
               planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
@@ -265,7 +261,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Human Design */}
       {chart && chart.human_design.defined_centres.length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.human_design")}</p>
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.human_design")}</p>
           <div className="flex justify-center mb-4">
             <BodyGraph
               definedCenters={chart.human_design.defined_centres}
@@ -273,7 +269,7 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
               size={260}
             />
           </div>
-          <div className="space-y-2 font-body text-[14px]">
+          <div className="space-y-2 font-body text-[15px]">
             {chart.human_design.type && (
               <DepthRow
                 label={t("conn.type")}
@@ -308,16 +304,16 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
       {/* Gene Keys */}
       {chart && Object.keys(chart.gene_keys).length > 0 && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-3">{t("conn.gene_keys")}</p>
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.gene_keys")}</p>
           <div className="space-y-3">
             {Object.entries(chart.gene_keys).map(([slot, gk]) => (
               <div key={slot} className="border-b border-forest-border/30 last:border-0 pb-3 last:pb-0">
                 <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <span className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase">{gk.name}</span>
-                  <span className="font-heading text-amber-sun" style={{ fontSize: 18, fontWeight: 300 }}>{t("conn.gate")} {gk.gate}</span>
+                  <span className="font-body text-text-secondary text-[14px] tracking-[0.18em] uppercase font-bold">{gk.name}</span>
+                  <span className="font-heading text-amber-sun" style={{ fontSize: 18, fontWeight: 700 }}>{t("conn.gate")} {gk.gate}</span>
                 </div>
                 {(gk.shadow || gk.gift) && (
-                  <p className="font-body text-text-secondary text-[13px] leading-snug">
+                  <p className="font-body text-text-secondary text-[15px] leading-snug">
                     {gk.shadow && <>{t("conn.shadow")}: {gk.shadow}</>}
                     {gk.shadow && gk.gift && <>. </>}
                     {gk.gift && <>{t("conn.gift")}: {gk.gift}</>}
@@ -345,10 +341,10 @@ function Row({ label, value }: { label: string; value: string }) {
 function DepthRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
   return (
     <div className="flex items-start gap-3 py-1">
-      <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
+      <span className="font-body text-text-secondary text-[14px] tracking-widest uppercase w-24 shrink-0 pt-0.5 font-bold">{label}</span>
       <div className="flex-1">
-        <span className="font-body text-text-primary text-[14px]">{value}</span>
-        {meaning && <p className="font-body text-text-secondary/60 text-[12px] leading-snug mt-0.5">{meaning}</p>}
+        <span className="font-body text-text-primary text-[15px]">{value}</span>
+        {meaning && <p className="font-body text-text-muted text-[14px] leading-snug mt-0.5">{meaning}</p>}
       </div>
     </div>
   );
@@ -359,11 +355,11 @@ function EmptyState({
 }: { title: string; body: string; actionLabel: string; onAction: () => void }) {
   return (
     <div className="mt-8 px-6 py-10 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>{title}</p>
-      <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-xs mx-auto mb-5">{body}</p>
+      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>{title}</p>
+      <p className="font-body text-text-secondary text-[17px] leading-relaxed max-w-xs mx-auto mb-5">{body}</p>
       <button
         onClick={onAction}
-        className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors"
+        className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors font-bold"
       >
         {actionLabel}
       </button>
@@ -486,23 +482,23 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
 
   return (
     <div className="mt-8">
-      <p className="font-body text-[12px] tracking-[0.22em] uppercase mb-3" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
+      <p className="font-body text-[14px] tracking-[0.22em] uppercase mb-3 font-bold" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
         {t("compat.between_you")}
       </p>
 
       {paywall && (
         <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5 text-center">
-          <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
+          <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
             {t("compat.paywall_title")}
           </p>
-          <p className="font-body text-text-secondary text-[14px] leading-relaxed mb-4 max-w-md mx-auto">
+          <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-4 max-w-md mx-auto">
             {t("compat.paywall_body")}
           </p>
         </div>
       )}
 
       {error && !paywall && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
+        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
           {error}
         </div>
       )}
@@ -524,8 +520,8 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
 
       {!paywall && signals && (signals.shared_gates_count ?? 0) > 0 && (
         <div className="mt-4 rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">{t("compat.structural_signals")}</p>
-          <div className="space-y-1.5 font-body text-[14px]">
+          <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-3 font-bold">{t("compat.structural_signals")}</p>
+          <div className="space-y-1.5 font-body text-[15px]">
             {signals.hd_types?.compatibility_note && (
               <Row label={t("compat.types")} value={signals.hd_types.compatibility_note} />
             )}
@@ -545,7 +541,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       {!paywall && reading && (
         <button
           onClick={() => { try { sessionStorage.removeItem(cacheKey); } catch (_) {} load(true); }}
-          className="mt-3 font-body text-[11px] tracking-[0.22em] uppercase text-amber-sun/70 hover:text-amber-sun transition-colors"
+          className="mt-3 font-body text-[13px] tracking-[0.22em] uppercase text-amber-sun hover:text-amber-sun transition-colors font-bold"
           disabled={loading}
         >
           {loading ? t("compat.refreshing") : t("compat.re_read")}
@@ -559,10 +555,10 @@ function Lens({ label, body }: { label: string; body?: string }) {
   if (!body) return null;
   return (
     <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-      <p className="font-body text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
+      <p className="font-body text-[13px] tracking-[0.22em] uppercase mb-2 font-bold" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
         {label}
       </p>
-      <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 15 }}>{body}</p>
+      <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 17 }}>{body}</p>
     </div>
   );
 }
@@ -618,24 +614,24 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
       {/* Header: same label-typography rhythm as Today's section labels */}
       <div className="flex items-center justify-between gap-4 mb-1">
         <div>
-          <p className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary">
+          <p className="font-body text-[14px] font-normal tracking-[0.22em] uppercase text-text-secondary">
             {t("compat.resonance_index")}
           </p>
-          <p className="font-body text-text-secondary/70 text-[12px] mt-1">
+          <p className="font-body text-text-secondary text-[14px] mt-1">
             {t("compat.with_name").replace("{name}", soulName)}
           </p>
         </div>
         <div className="text-right">
-          <span className="font-heading text-amber-sun" style={{ fontSize: 44, fontWeight: 300, lineHeight: 1 }}>
+          <span className="font-heading text-amber-sun" style={{ fontSize: 44, fontWeight: 900, lineHeight: 1 }}>
             {overall}
           </span>
-          <span className="font-heading text-text-secondary/70 ml-1" style={{ fontSize: 16, fontWeight: 300 }}>
+          <span className="font-heading text-text-secondary ml-1" style={{ fontSize: 17, fontWeight: 900 }}>
             / 100
           </span>
         </div>
       </div>
 
-      <p className="font-body text-text-secondary/70 text-[12px] leading-relaxed mt-3 mb-5">
+      <p className="font-body text-text-secondary text-[14px] leading-relaxed mt-3 mb-5">
         {t("compat.overlap_note")}
       </p>
 
@@ -684,15 +680,15 @@ function AxisBar({ label, hint, score, weight, color, delayMs }: {
         }}
       >
         <div className="flex items-baseline gap-2 min-w-0">
-          <span className="font-body text-[12px] font-normal tracking-[0.22em] uppercase text-text-secondary truncate">
+          <span className="font-body text-[14px] font-normal tracking-[0.22em] uppercase text-text-secondary truncate">
             {label}
           </span>
-          <span className="font-body text-text-secondary/50 text-[10px] tracking-[0.22em] uppercase tabular-nums">
+          <span className="font-body text-text-muted text-[12px] tracking-[0.22em] uppercase tabular-nums font-bold">
             {Math.round(weight * 100)}%
           </span>
         </div>
         <span
-          className="font-heading text-[17px] text-text-secondary/70 tabular-nums"
+          className="font-heading text-[17px] text-text-secondary tabular-nums"
           style={{ fontFeatureSettings: '"lnum"' }}
         >
           {pct}

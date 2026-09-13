@@ -95,14 +95,14 @@ export default function TrialBanner() {
         {/* Left: label + message */}
         <div className="flex items-center gap-4 min-w-0">
           <span
-            className="font-body text-[12px] tracking-[0.22em] uppercase shrink-0"
-            style={{ color: urgent ? "#A34A22" : "var(--amber)", opacity: 1, fontWeight: 500 }}
+            className="font-body text-[14px] tracking-[0.22em] uppercase shrink-0 font-bold"
+            style={{ color: urgent ? "rgb(var(--rgb-ember))" : "var(--amber)", opacity: 1, fontWeight: 500 }}
           >
             {t("trial.label")}
           </span>
           <p
             className="font-heading text-text-primary truncate"
-            style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "0.01em" }}
+            style={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.01em" }}
           >
             {message}
           </p>
@@ -112,11 +112,11 @@ export default function TrialBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => router.push("/subscribe")}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg transition-colors"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg transition-colors font-bold"
             style={{
               background: urgent ? "rgba(163,74,34,0.15)" : "rgba(90,49,174,0.12)",
               border: urgent ? "1px solid rgba(163,74,34,0.6)" : "1px solid rgba(90,49,174,0.5)",
-              color: urgent ? "#A34A22" : "var(--amber)",
+              color: urgent ? "rgb(var(--rgb-ember))" : "var(--amber)",
               fontWeight: 500,
             }}
             onMouseEnter={e => {

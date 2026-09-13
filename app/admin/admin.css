@@ -28,12 +28,12 @@
   /* hex aliases, for anything still reading the flat names */
   --bg-deep: #F5F0E6;  --bg-dark: #FAF6EC;  --card: #FAF6EC;  --border: #E2DACA;
   --amber: #5A31AE;    --text-primary: #22201C; --text-secondary: #5C5548;
-  --text-muted: #6E6659; --ember: #A34A22; --moss: #A34A22; --mist: #6E6659;
-  --indigo: #4A2E9E;   --wisteria: #B02E72; --pearl: #FAF6EC;
+  --text-muted: #6E6659; --ember: #A34A22; --moss: #A34A22; --mist: #4A2E9E;
+  --indigo: #4A2E9E;   --wisteria: #B02E72; --pearl: #FDFBF5;
 
   /* connector names */
-  --paper: #F5F0E6; --paper-2: #FAF6EC; --ink: #22201C; --ink2: #5C5548;
-  --ink3: #6E6659;  --hair: #E2DACA;    --violet: #5A31AE; --pink: #F06CB4;
+  --paper: #F5F0E6; --paper-2: #FDFBF5; --ink: #22201C; --ink2: #5C5548;
+  --ink3: #6E6659;  --hair: #D9CFB9;    --violet: #5A31AE; --pink: #B02E72;
 
   --font-heading: var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
   --font-body:    var(--font-connector), "Zen Kaku Gothic New", system-ui, sans-serif;
@@ -43,13 +43,15 @@
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.62;
   min-height: 100dvh;
 }
 
-/* Weights: the connector sets its headlines at 900 with tight tracking.
-   !important because several pages carry an inline fontWeight: 300 left
-   over from the Cormorant era. */
+/* Weights: the connector sets its headlines at 900 with tight tracking. The
+   inline fontWeight: 300 that these used to have to beat is gone from every
+   page now; the !important stays as a floor so a new one cannot creep back. */
 .sa-root h1 { font-weight: 900 !important; letter-spacing: -.042em; line-height: 1.05; }
 .sa-root h2 { font-weight: 900 !important; letter-spacing: -.038em; line-height: 1.08; }
 .sa-root h3 { font-weight: 700 !important; letter-spacing: -.03em; }

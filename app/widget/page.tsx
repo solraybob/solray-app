@@ -157,10 +157,10 @@ export default function WidgetPage() {
             <h1
               className="text-center leading-snug px-3"
               style={{
-                fontSize: "16px",
-                fontStyle: "italic",
-                fontWeight: 300,
-                color: "#c4a062",
+                fontSize: "18px",
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                color: "rgb(var(--rgb-text-primary))",
                 lineHeight: "1.4",
                 overflow: "hidden",
                 display: "-webkit-box",
@@ -179,9 +179,9 @@ export default function WidgetPage() {
               <span style={{ fontSize: "18px" }}>{moonPhase.emoji}</span>
               <span
                 style={{
-                  fontSize: "12px",
-                  color: "#a8a8a8",
-                  fontFamily: "system-ui, -apple-system",
+                  fontSize: "15px",
+                  fontWeight: 500,
+                  color: "rgb(var(--rgb-text-secondary))",
                 }}
               >
                 {moonPhase.label}
@@ -191,10 +191,10 @@ export default function WidgetPage() {
             {/* Branding */}
             <span
               style={{
-                fontSize: "10px",
-                color: "#6b6b6b",
-                letterSpacing: "0.05em",
-                fontFamily: "system-ui, -apple-system",
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "rgb(var(--rgb-text-muted))",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
               }}
             >

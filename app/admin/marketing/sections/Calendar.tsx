@@ -60,20 +60,20 @@ export default function CalendarSection({ token }: { token: string | null }) {
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="font-body text-text-secondary text-[13px] leading-relaxed max-w-2xl">
+          <p className="font-body text-text-secondary text-[15px] leading-relaxed max-w-2xl">
             One row per piece of marketing work. Idea, then scheduled, then published. The calendar is the planning layer; once a connection is live the same row triggers the actual post.
           </p>
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all"
+          className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all font-bold"
         >
           + New event
         </button>
       </div>
 
       {error && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
+        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
           {error}
         </div>
       )}
@@ -90,7 +90,7 @@ export default function CalendarSection({ token }: { token: string | null }) {
         <div className="space-y-4">
           {astro.length > 0 && (
             <div>
-              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">Sky next 60 days</p>
+              <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">Sky next 60 days</p>
               <div className="space-y-2">
                 {astro.map((a, i) => (
                   <AstroRow key={i} event={a} />
@@ -100,7 +100,7 @@ export default function CalendarSection({ token }: { token: string | null }) {
           )}
           {events.length > 0 && (
             <div>
-              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">Your queue</p>
+              <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">Your queue</p>
               <div className="space-y-2">
                 {events.map((e) => (
                   <EventRow key={e.id} event={e} onClick={() => setEditing(e)} />
@@ -135,14 +135,14 @@ function EventRow({ event, onClick }: { event: Event; onClick: () => void }) {
       className="w-full text-left rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4 hover:border-amber-sun/50 transition-colors flex items-center gap-4"
     >
       <div className="text-center shrink-0" style={{ minWidth: 60 }}>
-        <p className="font-heading text-text-primary leading-none" style={{ fontSize: 18, fontWeight: 300 }}>{dateStr}</p>
-        <p className="font-body text-text-secondary text-[11px] tracking-[0.18em] uppercase mt-1">{timeStr}</p>
+        <p className="font-heading text-text-primary leading-none" style={{ fontSize: 18, fontWeight: 700 }}>{dateStr}</p>
+        <p className="font-body text-text-secondary text-[13px] tracking-[0.18em] uppercase mt-1 font-bold">{timeStr}</p>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-heading text-text-primary truncate" style={{ fontSize: 16, fontWeight: 400 }}>{event.title}</p>
+        <p className="font-heading text-text-primary truncate" style={{ fontSize: 17, fontWeight: 700 }}>{event.title}</p>
         <div className="flex items-center gap-2 mt-1">
-          <span className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase">{event.channel}</span>
-          <span className="font-body text-[11px] tracking-[0.22em] uppercase" style={{ color: status.color }}>· {status.label}</span>
+          <span className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase font-bold">{event.channel}</span>
+          <span className="font-body text-[13px] tracking-[0.22em] uppercase font-bold" style={{ color: status.color }}>· {status.label}</span>
         </div>
       </div>
     </button>
@@ -152,10 +152,10 @@ function EventRow({ event, onClick }: { event: Event; onClick: () => void }) {
 function Empty() {
   return (
     <div className="rounded-2xl border border-forest-border/40 px-6 py-10 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
+      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
         Calendar is empty.
       </p>
-      <p className="font-body text-text-secondary text-[13px] max-w-md mx-auto leading-relaxed">
+      <p className="font-body text-text-secondary text-[15px] max-w-md mx-auto leading-relaxed">
         Add your first event. A new post idea, a planned ad, a launch date. Calendar entries become the queue once channels are connected.
       </p>
     </div>
@@ -179,12 +179,12 @@ function AstroRow({ event }: { event: AstroEvent }) {
   return (
     <div className="rounded-xl bg-forest-card/20 border border-forest-border/30 px-4 py-3 flex items-center gap-4">
       <div className="text-center shrink-0" style={{ minWidth: 50 }}>
-        <p className="font-heading text-text-primary leading-none" style={{ fontSize: 16, fontWeight: 300 }}>{dateStr}</p>
-        <p className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase mt-0.5">{timeStr}</p>
+        <p className="font-heading text-text-primary leading-none" style={{ fontSize: 17, fontWeight: 700 }}>{dateStr}</p>
+        <p className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase mt-0.5 font-bold">{timeStr}</p>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-body text-text-primary text-[14px] leading-snug">{event.label}</p>
-        <p className="font-body text-[10px] tracking-[0.22em] uppercase mt-0.5" style={{ color }}>
+        <p className="font-body text-text-primary text-[15px] leading-snug">{event.label}</p>
+        <p className="font-body text-[12px] tracking-[0.22em] uppercase mt-0.5 font-bold" style={{ color }}>
           {event.kind.replace("_", " ")}
         </p>
       </div>
@@ -249,10 +249,10 @@ function EventForm({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg bg-forest-deep border-t border-forest-border rounded-t-3xl p-6 max-h-[88dvh] overflow-y-auto"
       >
-        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-1">
+        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-1 font-bold">
           {event ? "Edit event" : "New event"}
         </p>
-        <h3 className="font-heading text-text-primary mb-5" style={{ fontSize: 24, fontWeight: 300 }}>
+        <h3 className="font-heading text-text-primary mb-5" style={{ fontSize: 24, fontWeight: 900 }}>
           {event ? event.title : "Plan a piece"}
         </h3>
 
@@ -262,7 +262,7 @@ function EventForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Short Mercury retrograde post"
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[17px] focus:border-amber-sun outline-none"
             />
           </Field>
 
@@ -271,7 +271,7 @@ function EventForm({
               <select
                 value={channel}
                 onChange={(e) => setChannel(e.target.value)}
-                className="w-full bg-forest-card border border-forest-border rounded-lg px-3 py-3 text-text-primary font-body text-[14px] focus:border-amber-sun outline-none"
+                className="w-full bg-forest-card border border-forest-border rounded-lg px-3 py-3 text-text-primary font-body text-[15px] focus:border-amber-sun outline-none"
               >
                 {CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -280,7 +280,7 @@ function EventForm({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-forest-card border border-forest-border rounded-lg px-3 py-3 text-text-primary font-body text-[14px] focus:border-amber-sun outline-none"
+                className="w-full bg-forest-card border border-forest-border rounded-lg px-3 py-3 text-text-primary font-body text-[15px] focus:border-amber-sun outline-none"
               >
                 {STATUSES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
@@ -292,7 +292,7 @@ function EventForm({
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary font-body text-[14px] focus:border-amber-sun outline-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary font-body text-[15px] focus:border-amber-sun outline-none"
             />
           </Field>
 
@@ -302,7 +302,7 @@ function EventForm({
               onChange={(e) => setContentDraft(e.target.value)}
               placeholder="The post copy, ad headline, email body. Whatever the live version will say."
               rows={5}
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[14px] focus:border-amber-sun outline-none resize-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none resize-none"
             />
           </Field>
 
@@ -312,13 +312,13 @@ function EventForm({
               onChange={(e) => setAssetNotes(e.target.value)}
               placeholder="Image links, video brief, references."
               rows={2}
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[14px] focus:border-amber-sun outline-none resize-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none resize-none"
             />
           </Field>
         </div>
 
         {error && (
-          <div className="mt-4 rounded-lg border px-4 py-2 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
+          <div className="mt-4 rounded-lg border px-4 py-2 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
             {error}
           </div>
         )}
@@ -327,7 +327,7 @@ function EventForm({
           <button
             onClick={save}
             disabled={saving || !title.trim()}
-            className="flex-1 font-body text-[12px] tracking-[0.22em] uppercase px-4 py-3 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all"
+            className="flex-1 font-body text-[14px] tracking-[0.22em] uppercase px-4 py-3 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all font-bold"
           >
             {saving ? "Saving" : event ? "Save changes" : "Create event"}
           </button>
@@ -335,7 +335,7 @@ function EventForm({
             <button
               onClick={remove}
               disabled={saving}
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border hover:bg-forest-card/40 transition-all"
+              className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border hover:bg-forest-card/40 transition-all font-bold"
               style={{ borderColor: "var(--ember)", color: "var(--ember)" }}
             >
               Delete
@@ -343,7 +343,7 @@ function EventForm({
           )}
           <button
             onClick={onClose}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all font-bold"
           >
             Cancel
           </button>
@@ -356,7 +356,7 @@ function EventForm({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">{label}</span>
+      <span className="block font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">{label}</span>
       {children}
     </label>
   );

@@ -16,6 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
+import { Wordmark, Orb } from "@/components/Wordmark";
 
 export default function ForgotPasswordPage() {
   const { t } = useT();
@@ -51,31 +52,29 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-8 h-8 rounded-full overflow-hidden mb-4">
-            <Image src="/logo.jpg" alt="Solray" width={32} height={32} className="w-full h-full object-cover" />
-          </div>
-          <h1 className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</h1>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase">{t("forgot.reset_password")}</p>
+          <Orb size={40} className="mb-4" />
+          <Wordmark size={30} />
+          <p className="font-body text-text-secondary text-[14px] mt-3 tracking-[0.22em] uppercase font-bold">{t("forgot.reset_password")}</p>
         </div>
 
         {submitted ? (
           <div className="text-center space-y-4">
-            <p className="font-body text-text-primary text-[16px] leading-relaxed">
+            <p className="font-body text-text-primary text-[17px] leading-relaxed">
               {t("forgot.sent_title")}
             </p>
-            <p className="font-body text-text-secondary text-[14px] leading-relaxed">
+            <p className="font-body text-text-secondary text-[15px] leading-relaxed">
               {t("forgot.sent_detail")}
             </p>
             <Link
               href="/login"
-              className="inline-block mt-6 font-body text-amber-sun text-[14px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
+              className="inline-block mt-6 font-body text-amber-sun text-[15px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity font-bold"
             >
               {t("forgot.back_to_login")}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="font-body text-text-secondary text-[15px] leading-relaxed text-center mb-4">
+            <p className="font-body text-text-secondary text-[17px] leading-relaxed text-center mb-4">
               {t("forgot.prompt")}
             </p>
 

@@ -109,10 +109,10 @@ export default function InviteCodeCard() {
         aria-expanded={open}
       >
         <span className="min-w-0">
-          <span className="block font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-0.5">
+          <span className="block font-body text-[14px] tracking-[0.22em] uppercase text-indigo mb-0.5 font-bold">
             {t("invite.bring_someone")}
           </span>
-          <span className="block font-body text-[13px] text-text-secondary leading-snug">
+          <span className="block font-body text-[15px] text-text-secondary leading-snug">
             {data.bonus_eligible
               ? t("invite.bonus_teaser").replace("{days}", String(data.inviter_bonus_days))
               : t("invite.no_bonus_teaser")}
@@ -131,7 +131,7 @@ export default function InviteCodeCard() {
 
       {open && (
         <div className="px-5 pb-5 pt-1 animate-fade-in">
-          <p className="font-body text-[14px] text-text-secondary leading-relaxed mb-4">
+          <p className="font-body text-[15px] text-text-secondary leading-relaxed mb-4">
             {data.bonus_eligible
               ? t("invite.bonus_body").replace("{days}", String(data.inviter_bonus_days))
               : t("invite.no_bonus_body")}
@@ -143,10 +143,10 @@ export default function InviteCodeCard() {
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-indigo/30 hover:border-indigo/60 transition-colors mb-3"
             aria-label={t("invite.copy_code_aria").replace("{code}", data.code)}
           >
-            <span className="font-heading text-2xl tracking-[0.18em] text-indigo" style={{ fontWeight: 300 }}>
+            <span className="font-heading text-2xl tracking-[0.18em] text-indigo" style={{ fontWeight: 900 }}>
               {data.code}
             </span>
-            <span className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary">
+            <span className="font-body text-[13px] tracking-[0.22em] uppercase text-text-secondary font-bold">
               {copied === "code" ? t("invite.copied") : t("invite.copy_code")}
             </span>
           </button>
@@ -155,20 +155,20 @@ export default function InviteCodeCard() {
             <button
               type="button"
               onClick={() => copy(data.link, "link")}
-              className="flex-1 px-4 py-2.5 rounded-full border border-forest-border/60 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary hover:text-text-primary hover:border-forest-border transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-full border border-forest-border/60 font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary hover:text-text-primary hover:border-forest-border transition-colors font-bold"
             >
               {copied === "link" ? t("invite.link_copied") : t("invite.copy_link")}
             </button>
             <button
               type="button"
               onClick={share}
-              className="flex-1 px-4 py-2.5 rounded-full border border-indigo/40 bg-indigo/10 font-body text-[12px] tracking-[0.18em] uppercase text-indigo hover:bg-indigo/20 transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-full border border-indigo/40 bg-indigo/10 font-body text-[14px] tracking-[0.18em] uppercase text-indigo hover:bg-indigo/20 transition-colors font-bold"
             >
               {t("souls.share")}
             </button>
           </div>
 
-          <p className="mt-4 font-body text-[11px] text-text-muted leading-relaxed break-all">
+          <p className="mt-4 font-body text-[13px] text-text-muted leading-relaxed break-all">
             {data.link}
           </p>
         </div>

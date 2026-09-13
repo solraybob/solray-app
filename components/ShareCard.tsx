@@ -7,7 +7,7 @@
  *
  * Design notes per Codex's UX strategy memo:
  *   - Looks like a Solray asset on someone else's feed, not a generic
- *     horoscope screenshot. Cormorant Garamond, forest deep
+ *     horoscope screenshot. Zen Kaku Gothic New on the paper
  *     background, single amber accent, generous space.
  *   - Zero private birth data. No birth date, time, location, or
  *     specific natal placement names that would identify the person.
@@ -24,9 +24,44 @@
 
 import { type RefObject } from "react";
 
+// The one lockup: lowercase, the orb standing in for the o, set at the
+// wordmark's own weight. Sized in px because these cards render at a fixed
+// 1080x1920 and are rasterised, not laid out responsively.
+function Wordmark({ size }: { size: number }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "baseline",
+        fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
+        fontSize: `${size}px`,
+        fontWeight: 700,
+        letterSpacing: "-0.02em",
+        color: "#22201C",
+        lineHeight: 1,
+      }}
+    >
+      s
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/solray-orb.png"
+        alt=""
+        style={{
+          width: `${Math.round(size * 0.52)}px`,
+          height: `${Math.round(size * 0.52)}px`,
+          objectFit: "contain",
+          margin: "0 0.01em",
+          transform: "translateY(0.02em)",
+        }}
+      />
+      lray
+    </span>
+  );
+}
+
 export interface ShareCardData {
   dayTitle: string;
-  imageSrc: string;
+  heroWash: string;
   dateLabel: string; // e.g. "Saturday, 3 May"
 }
 
@@ -44,34 +79,15 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
         width: "1080px",
         height: "1920px",
         position: "relative",
-        background: "#F5F0E6", // forest deep, hardcoded for screenshot context
+        background: "#F5F0E6", // the paper, written out: this card is rasterised
         overflow: "hidden",
         fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
       }}
     >
-      {/* Background hero image, top half, with deep gradient down to
-          forest deep. Same image used on the Today page hero. */}
-      <div style={{ position: "absolute", inset: 0, height: "60%" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={data.imageSrc}
-          alt=""
-          crossOrigin="anonymous"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom, rgba(245,240,230,0.0) 0%, rgba(245,240,230,0.45) 40%, rgba(245,240,230,0.95) 75%, rgba(245,240,230,1) 100%)",
-          }}
-        />
-      </div>
+      {/* The day's wash, the same one the Today hero carries. No photograph:
+          a stock sky behind the title was what made the lettering unreadable,
+          and it was a different visual language from everything else we make. */}
+      <div style={{ position: "absolute", inset: 0, height: "62%", background: data.heroWash }} />
 
       {/* Eyebrow: date, top-left */}
       <div
@@ -83,16 +99,16 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           textAlign: "center",
           fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "26px",
-          letterSpacing: "0.34em",
+          letterSpacing: "0.30em",
           textTransform: "uppercase",
-          color: "rgba(90,49,174, 0.85)",
-          fontWeight: 400,
+          color: "#6E6659",
+          fontWeight: 700,
         }}
       >
         {data.dateLabel}
       </div>
 
-      {/* Center: day title, oversize Cormorant italic */}
+      {/* Center: the day title, at the display weight */}
       <div
         style={{
           position: "absolute",
@@ -102,13 +118,11 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           padding: "0 80px",
           textAlign: "center",
           color: "#22201C",
-          fontStyle: "italic",
-          fontWeight: 300,
+          fontWeight: 900,
           fontSize: "108px",
-          lineHeight: 1.1,
-          letterSpacing: "-0.01em",
+          lineHeight: 1.06,
+          letterSpacing: "-0.042em",
           transform: "translateY(-30%)",
-          textShadow: "0 2px 24px rgba(34,32,28,0.08)",
         }}
       >
         {data.dayTitle}
@@ -123,7 +137,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           transform: "translateX(-50%)",
           width: "60px",
           height: "1px",
-          background: "rgba(90,49,174, 0.35)",
+          background: "#D9CFB9",
         }}
       />
 
@@ -137,24 +151,16 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           textAlign: "center",
         }}
       >
-        <div
-          style={{
-            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
-            fontSize: "60px",
-            fontWeight: 300,
-            letterSpacing: "0.18em",
-            color: "#22201C",
-            marginBottom: "14px",
-          }}
-        >
-          SOLRAY
+        <div style={{ marginBottom: "14px" }}>
+          <Wordmark size={64} />
         </div>
         <div
           style={{
             fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "24px",
             letterSpacing: "0.25em",
-            color: "rgba(168, 184, 171, 0.7)",
+            color: "#6E6659",
+            fontWeight: 700,
             textTransform: "lowercase",
           }}
         >
@@ -291,9 +297,8 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           textAlign: "center",
           fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "78px",
-          fontWeight: 300,
-          fontStyle: "italic",
-          letterSpacing: "-0.01em",
+          fontWeight: 900,
+          letterSpacing: "-0.038em",
           color: "#22201C",
         }}
       >
@@ -332,7 +337,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                     letterSpacing: "0.28em",
                     textTransform: "uppercase",
                     color: "#5C5548",
-                    fontWeight: 400,
+                    fontWeight: 500,
                   }}
                 >
                   {label}
@@ -341,7 +346,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                   style={{
                     fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
                     fontSize: "60px",
-                    fontWeight: 300,
+                    fontWeight: 700,
                     color: "#22201C",
                     lineHeight: 1,
                   }}
@@ -392,7 +397,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           transform: "translateX(-50%)",
           width: "60px",
           height: "1px",
-          background: "rgba(90,49,174, 0.35)",
+          background: "#D9CFB9",
         }}
       />
       <div
@@ -404,24 +409,16 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           textAlign: "center",
         }}
       >
-        <div
-          style={{
-            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
-            fontSize: "60px",
-            fontWeight: 300,
-            letterSpacing: "0.18em",
-            color: "#22201C",
-            marginBottom: "14px",
-          }}
-        >
-          SOLRAY
+        <div style={{ marginBottom: "14px" }}>
+          <Wordmark size={64} />
         </div>
         <div
           style={{
             fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "24px",
             letterSpacing: "0.25em",
-            color: "rgba(168, 184, 171, 0.7)",
+            color: "#6E6659",
+            fontWeight: 700,
             textTransform: "lowercase",
           }}
         >
@@ -495,9 +492,10 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           textAlign: "center",
           fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "26px",
-          letterSpacing: "0.34em",
+          letterSpacing: "0.30em",
           textTransform: "uppercase",
-          color: "rgba(90,49,174, 0.85)",
+          fontWeight: 700,
+          color: "#6E6659",
         }}
       >
         You are invited
@@ -518,32 +516,20 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/solray-sun.png"
-          alt="Solray"
+          src="/solray-orb.png"
+          alt=""
           width={300}
           height={300}
-          style={{ width: "300px", height: "300px", objectFit: "contain", marginBottom: "44px" }}
+          style={{ width: "300px", height: "300px", objectFit: "contain", marginBottom: "44px", filter: "drop-shadow(0 22px 30px rgba(84,63,150,.28))" }}
         />
+        <Wordmark size={130} />
         <div
           style={{
             fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
-            fontSize: "128px",
-            fontWeight: 300,
-            letterSpacing: "0.15em",
-            color: "#22201C",
-            lineHeight: 1,
-          }}
-        >
-          SOLRAY
-        </div>
-        <div
-          style={{
-            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
-            fontStyle: "italic",
-            fontWeight: 300,
-            fontSize: "52px",
-            letterSpacing: "0.04em",
-            color: "rgba(34,32,28, 0.7)",
+            fontWeight: 700,
+            fontSize: "48px",
+            letterSpacing: "-0.02em",
+            color: "#5C5548",
             marginTop: "18px",
           }}
         >
@@ -562,9 +548,10 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           padding: "0 120px",
           fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "50px",
-          fontWeight: 300,
-          lineHeight: 1.35,
-          color: "rgba(34,32,28, 0.78)",
+          fontWeight: 700,
+          lineHeight: 1.3,
+          letterSpacing: "-0.02em",
+          color: "#5C5548",
         }}
       >
         Read your chart against today,
@@ -581,8 +568,8 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             style={{
               fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
               fontSize: "44px",
-              fontWeight: 300,
-              letterSpacing: "0.12em",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
               color: "#22201C",
               marginBottom: "18px",
             }}
@@ -596,7 +583,8 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "26px",
             letterSpacing: "0.25em",
-            color: "rgba(168, 184, 171, 0.7)",
+            color: "#6E6659",
+            fontWeight: 700,
             textTransform: "lowercase",
           }}
         >

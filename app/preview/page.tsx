@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { Wordmark } from "@/components/Wordmark";
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -153,9 +154,9 @@ export default function PreviewPage() {
           width: 100%;
           background: transparent;
           border: none;
-          border-bottom: 1px solid #E2DACA;
+          border-bottom: 1px solid rgb(var(--rgb-border));
           padding: 12px 0;
-          color: #22201C;
+          color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
@@ -163,18 +164,18 @@ export default function PreviewPage() {
         }
         .preview-input:focus {
           outline: none;
-          border-bottom-color: #5A31AE;
+          border-bottom-color: rgb(var(--rgb-amber));
         }
         .preview-input::placeholder {
-          color: #6E6659;
+          color: rgb(var(--rgb-text-muted));
         }
         .preview-dropdown {
           position: absolute;
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: #FAF6EC;
-          border: 1px solid #E2DACA;
+          background: rgb(var(--rgb-card));
+          border: 1px solid rgb(var(--rgb-border));
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
@@ -185,7 +186,7 @@ export default function PreviewPage() {
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #22201C;
+          color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -196,11 +197,11 @@ export default function PreviewPage() {
         .preview-dropdown-item:hover,
         .preview-dropdown-item:focus {
           background: rgba(90,49,174, 0.15);
-          color: #5A31AE;
+          color: rgb(var(--rgb-amber));
           outline: none;
         }
         .preview-dropdown-item + .preview-dropdown-item {
-          border-top: 1px solid #E2DACA;
+          border-top: 1px solid rgb(var(--rgb-border));
         }
         .pulse-orb {
           animation: pulse 2s ease-in-out infinite;
@@ -221,18 +222,7 @@ export default function PreviewPage() {
       <div className="min-h-screen bg-forest-deep flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-2 px-6 pt-12 pb-8">
-          <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image
-              src="/logo.jpg"
-              alt="Solray"
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <span className="font-heading text-2xl tracking-[0.15em] text-text-primary" style={{ fontStyle: "italic", fontWeight: 300 }}>
-            SOLRAY
-          </span>
+          <Wordmark size={26} className="text-text-primary" />
         </div>
 
         {/* Main Content */}
@@ -252,7 +242,7 @@ export default function PreviewPage() {
               <div className="space-y-8">
                 {/* Birth Date */}
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body">
+                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
                     Birth Date
                   </label>
                   <input
@@ -267,7 +257,7 @@ export default function PreviewPage() {
 
                 {/* Birth Time */}
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body">
+                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
                     Birth Time
                   </label>
                   <input
@@ -284,7 +274,7 @@ export default function PreviewPage() {
 
                 {/* Birth City */}
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body">
+                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
                     Birth City
                   </label>
                   <div className="relative">
@@ -365,7 +355,7 @@ export default function PreviewPage() {
                 className="pulse-orb w-24 h-24 rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle at 40% 35%, #5A31AE55, #FAF6EC00 70%)",
+                    "radial-gradient(circle at 40% 35%, rgb(var(--rgb-amber) / 0.33), rgb(var(--rgb-card) / 0) 70%)",
                   border: "1px solid rgba(90,49,174,0.2)",
                   boxShadow: "0 0 40px rgba(90,49,174,0.1)",
                 }}
@@ -382,7 +372,7 @@ export default function PreviewPage() {
               {/* Result Card */}
               <div className="bg-forest-card border border-forest-border rounded-2xl p-8 mb-8">
                 <div className="text-center mb-8">
-                  <p className="text-text-secondary text-xs uppercase tracking-widest font-body mb-4">
+                  <p className="text-text-secondary text-xs uppercase tracking-widest font-body mb-4 font-bold">
                     Your Cosmic Blueprint
                   </p>
                   <div className="grid grid-cols-3 gap-4">
@@ -429,7 +419,7 @@ export default function PreviewPage() {
                   className="border-t pt-6 text-center"
                   style={{ borderColor: "var(--border)" }}
                 >
-                  <p className="text-xs uppercase tracking-widest text-text-secondary font-body mb-2">
+                  <p className="text-xs uppercase tracking-widest text-text-secondary font-body mb-2 font-bold">
                     Human Design Type
                   </p>
                   <p className="font-heading text-2xl text-text-primary">
@@ -458,7 +448,7 @@ export default function PreviewPage() {
           className="fixed bottom-0 left-0 right-0 px-6 pb-10 pt-8"
           style={{
             background:
-              "linear-gradient(to top, #F5F0E6, #F5F0E6 50%, transparent)",
+              "linear-gradient(to top, rgb(var(--rgb-bg-deep)), rgb(var(--rgb-bg-deep)) 50%, transparent)",
           }}
         >
           <div className="max-w-sm mx-auto">

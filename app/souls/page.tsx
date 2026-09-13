@@ -160,8 +160,8 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
             </div>
           )}
           <div>
-            <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{soul.soul.name}</h3>
-            <p className="font-body text-text-secondary text-[15px]">
+            <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{soul.soul.name}</h3>
+            <p className="font-body text-text-secondary text-[17px]">
               {soul.soul.sun_sign && (
                 <>☉ {soul.soul.sun_sign}</>
               )}
@@ -173,38 +173,38 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
         <div className="space-y-3">
           <button
             onClick={onViewProfile}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#4A2E9E]/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.view_profile")}</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.view_profile_sub").replace("{name}", soul.soul.name)}</p>
+                <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.view_profile")}</p>
+                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t("souls.view_profile_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">{t("souls.open")}</span>
+              <span className="font-body text-indigo text-[14px]">{t("souls.open")}</span>
             </div>
           </button>
           <button
             onClick={onSoloReading}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#4A2E9E]/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.your_reading")}</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.your_reading_sub").replace("{name}", soul.soul.name)}</p>
+                <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.your_reading")}</p>
+                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t("souls.your_reading_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">{t("souls.open")}</span>
+              <span className="font-body text-indigo text-[14px]">{t("souls.open")}</span>
             </div>
           </button>
           <button
             onClick={onGroupReading}
-            className="w-full text-left px-5 py-4 bg-indigo/5 border border-indigo/30 rounded-2xl transition-all hover:bg-[#4A2E9E]/10"
+            className="w-full text-left px-5 py-4 bg-indigo/5 border border-indigo/30 rounded-2xl transition-all hover:bg-mist/10"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-body text-text-primary font-semibold text-[15px]">{t("souls.group_reading")}</p>
-                <p className="font-body text-text-secondary text-[12px] mt-0.5">{t("souls.group_reading_sub").replace("{name}", soul.soul.name)}</p>
+                <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.group_reading")}</p>
+                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t("souls.group_reading_sub").replace("{name}", soul.soul.name)}</p>
               </div>
-              <span className="font-body text-indigo text-[12px]">{t("souls.share")}</span>
+              <span className="font-body text-indigo text-[14px]">{t("souls.share")}</span>
             </div>
           </button>
         </div>
@@ -241,8 +241,8 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-6 pb-12">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-6" />
-        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("souls.group_reading")}</h2>
-        <p className="font-body text-text-secondary text-[15px] mb-6 leading-relaxed">
+        <h2 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("souls.group_reading")}</h2>
+        <p className="font-body text-text-secondary text-[17px] mb-6 leading-relaxed">
           {t("souls.group_share_intro").replace("{name}", soul.soul.name)}
         </p>
 
@@ -253,13 +253,13 @@ function GroupShareSheet({ soul, sessionCode, onEnterSession, onClose }: GroupSh
         <div className="space-y-3">
           <button
             onClick={handleCopy}
-            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[15px] tracking-widest transition-all hover:bg-[#4A2E9E]/20"
+            className="w-full py-3.5 bg-indigo/10 border border-indigo/30 rounded-xl font-body text-indigo text-[17px] tracking-widest transition-all hover:bg-mist/20"
           >
             {copied ? t("souls.copied") : t("souls.copy_link_for").replace("{name}", soul.soul.name)}
           </button>
           <button
             onClick={onEnterSession}
-            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[15px] tracking-widest transition-all hover:opacity-90"
+            className="w-full py-3.5 bg-indigo text-forest-deep font-body font-semibold rounded-xl text-[17px] tracking-widest transition-all hover:opacity-90"
           >
             {t("souls.enter_session")}
           </button>
@@ -770,13 +770,13 @@ export default function SoulsPage() {
         {/* Header: matches today + chat structure. Tag on left, SOULS absolute center. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "#4A2E9E" }}>
+            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-mist))" }}>
               {t("souls.your_field")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
               <h1
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
+                style={{ fontWeight: 900, fontSize: "21px" }}
               >
                 SOULS
               </h1>
@@ -813,8 +813,8 @@ export default function SoulsPage() {
           {/* Page intro: exact same style as the chat greeting */}
           <div className="flex flex-col items-center text-center pt-2 pb-2">
             <p
-              className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
-              style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+              className="font-heading text-text-secondary leading-relaxed max-w-[280px]"
+              style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.01em" }}
             >
               {t("souls.intro")}
             </p>
@@ -852,7 +852,7 @@ export default function SoulsPage() {
 
           {/* Search, for deeper two-way connections with Solray users */}
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">{t("souls.find_a_soul")}</p>
+            <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-2 font-bold">{t("souls.find_a_soul")}</p>
             <div className="relative">
               <input
                 type="text"
@@ -861,7 +861,7 @@ export default function SoulsPage() {
                 placeholder={t("souls.search_placeholder")}
                 className="w-full bg-forest-card border border-forest-border rounded-xl px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base transition-all pr-10"
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#4A2E9E";
+                  e.currentTarget.style.borderColor = "rgb(var(--rgb-mist))";
                   e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74, 102, 112,0.15)";
                 }}
                 onBlur={(e) => {
@@ -895,7 +895,7 @@ export default function SoulsPage() {
                     <button
                       onClick={() => handleSendInvite(user.username)}
                       disabled={sendingInvite === user.username || inviteSent.has(user.username)}
-                      className="shrink-0 px-3 py-1.5 bg-indigo/10 border border-indigo/30 text-indigo rounded-lg text-xs font-body transition-all hover:bg-[#4A2E9E]/20 disabled:opacity-40"
+                      className="shrink-0 px-3 py-1.5 bg-indigo/10 border border-indigo/30 text-indigo rounded-lg text-xs font-body transition-all hover:bg-mist/20 disabled:opacity-40"
                     >
                       {sendingInvite === user.username ? (
                         <LoadingSpinner size="sm" />
@@ -918,7 +918,7 @@ export default function SoulsPage() {
           {/* Quiet inline error surface, replaces alert() popups */}
           {errorMessage && (
             <div
-              className="rounded-xl px-4 py-3 font-body text-[14px] transition-opacity"
+              className="rounded-xl px-4 py-3 font-body text-[15px] transition-opacity"
               style={{
                 background: "rgba(196, 98, 58, 0.08)",
                 border: "1px solid rgba(196, 98, 58, 0.25)",
@@ -940,7 +940,7 @@ export default function SoulsPage() {
               {/* Pending requests */}
               {pendingInvites.length > 0 && (
                 <div>
-                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.pending_requests")}</p>
+                  <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.pending_requests")}</p>
                   <div className="space-y-2">
                     {pendingInvites.map(invite => (
                       <div
@@ -972,9 +972,9 @@ export default function SoulsPage() {
                           <button
                             onClick={() => handleInviteResponse(invite.invite_id, true)}
                             disabled={respondingInvite === invite.invite_id}
-                            className="px-3 py-1.5 text-[#22201C] rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
+                            className="px-3 py-1.5 text-text-primary rounded-lg text-xs font-body font-semibold transition-all hover:opacity-90"
                             style={{
-                              background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)",
+                              background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
                             }}
                           >
                             {respondingInvite === invite.invite_id ? <LoadingSpinner size="sm" /> : t("souls.accept")}
@@ -990,7 +990,7 @@ export default function SoulsPage() {
               <div>
                 {connectedSouls.length > 0 ? (
                   <>
-                    <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.connections")}</p>
+                    <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.connections")}</p>
                     <div className="space-y-3">
                       {connectedSouls.map(connection => (
                         <SoulCard
@@ -1003,7 +1003,7 @@ export default function SoulsPage() {
                   </>
                 ) : (
                   <div className="text-center pt-4 pb-2">
-                    <p className="font-body text-text-secondary text-[14px] max-w-xs mx-auto">
+                    <p className="font-body text-text-secondary text-[15px] max-w-xs mx-auto">
                       {t("souls.no_connections")}
                     </p>
                   </div>
@@ -1016,7 +1016,7 @@ export default function SoulsPage() {
                   from the add-person picker. */}
               {savedPeople.length > 0 && (
                 <div className="mt-6">
-                  <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-3">{t("souls.your_people")}</p>
+                  <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-3 font-bold">{t("souls.your_people")}</p>
                   <div className="space-y-3">
                     {savedPeople.map((p) => (
                       <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
@@ -1042,7 +1042,7 @@ export default function SoulsPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
-                            <p className="text-text-secondary text-[13px] font-body truncate">
+                            <p className="text-text-secondary text-[15px] font-body truncate">
                               {p.profile?.sun_sign && <>☉ {p.profile.sun_sign}</>}
                               {p.profile?.sun_sign && p.profile?.hd_type && " · "}
                               {p.profile?.hd_type}
@@ -1179,8 +1179,8 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         boxShadow: "0 20px 60px -30px rgba(74,46,158,0.35)",
       }}
     >
-      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-indigo/70 mb-1">{t("souls.dynamics")}</p>
-      <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>
+      <p className="font-body text-[14px] tracking-[0.22em] uppercase text-indigo mb-1 font-bold">{t("souls.dynamics")}</p>
+      <h2 className="font-heading text-2xl text-text-primary leading-tight mb-5" style={{ fontWeight: 900, letterSpacing: "-0.01em" }}>
         {t("souls.where_charts_meet")}
       </h2>
 
@@ -1195,12 +1195,12 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           {myAvatar ? (
             <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
           ) : (
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#22201C] font-heading text-sm shrink-0"
-                 style={{ background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)" }}>
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-text-primary font-heading text-sm shrink-0"
+                 style={{ background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))" }}>
               {myName?.[0]?.toUpperCase() || "·"}
             </div>
           )}
-          <span className="font-body text-[14px] text-text-primary">{t("souls.you")}</span>
+          <span className="font-body text-[15px] text-text-primary">{t("souls.you")}</span>
         </div>
 
         {/* Selected partners */}
@@ -1210,7 +1210,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
             className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full shrink-0"
             style={{ background: "rgba(74,46,158,0.08)", border: "1px solid rgba(74,46,158,0.45)" }}
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo/50 shrink-0" aria-hidden="true">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo shrink-0" aria-hidden="true">
               <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
             </svg>
             {partnerPhoto(p) ? (
@@ -1220,7 +1220,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
                 {partnerInitial(p)}
               </div>
             )}
-            <span className="font-body text-[14px] text-text-primary max-w-[80px] truncate">{partnerName(p)}</span>
+            <span className="font-body text-[15px] text-text-primary max-w-[80px] truncate">{partnerName(p)}</span>
             <button
               type="button"
               onClick={() => onRemovePartner(i)}
@@ -1237,20 +1237,20 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           <button
             type="button"
             onClick={onPickPartner}
-            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-[#4A2E9E]/60"
+            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-mist/60"
             style={{
               background: "transparent",
               border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)",
             }}
           >
             {partners.length === 0 && (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo/50 shrink-0" aria-hidden="true">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-indigo shrink-0" aria-hidden="true">
                 <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
               </svg>
             )}
-            <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[15px] text-text-secondary shrink-0"
+            <div className="w-6 h-6 rounded-full flex items-center justify-center font-body text-[17px] text-text-secondary shrink-0"
                  style={{ border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)" }}>+</div>
-            <span className="font-body text-[14px] text-text-secondary">
+            <span className="font-body text-[15px] text-text-secondary">
               {partners.length === 0 ? t("souls.choose_someone") : isFamily ? t("souls.add_another") : ""}
             </span>
           </button>
@@ -1259,7 +1259,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 
       {/* Chart whisper, only for single partner on non-family lenses */}
       {!isFamily && partner && chart && (chart.sun_sign || chart.hd_type) && (
-        <p className="font-body text-[13px] text-text-secondary mb-5 -mt-2 pl-1">
+        <p className="font-body text-[15px] text-text-secondary mb-5 -mt-2 pl-1">
           {chart.sun_sign && <>☉ {chart.sun_sign}</>}
           {chart.sun_sign && chart.hd_type && " · "}
           {chart.hd_type && (
@@ -1270,7 +1270,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
 
       {/* Lens pills */}
       <div className="mb-6">
-        <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-2">{t("souls.lens")}</p>
+        <p className="font-body text-[13px] tracking-[0.22em] uppercase text-text-secondary mb-2 font-bold">{t("souls.lens")}</p>
         <div className="flex gap-2">
           {lenses.map((l) => {
             const active = lens === l.key;
@@ -1287,7 +1287,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
                 }}
                 title={l.hint}
               >
-                <span className="font-body text-[13px]">{l.label}</span>
+                <span className="font-body text-[15px]">{l.label}</span>
               </button>
             );
           })}
@@ -1298,9 +1298,9 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         type="button"
         onClick={onRead}
         disabled={partners.length === 0 || reading}
-        className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        className="w-full py-3.5 rounded-xl font-body font-semibold text-[17px] tracking-[0.2em] uppercase transition-all disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
-          background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)",
+          background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
           color: "var(--text-primary)",
         }}
       >
@@ -1330,7 +1330,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-5 pt-5 pb-24 max-h-[92dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
-        <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 400 }}>{t("souls.choose_someone")}</h3>
+        <h3 className="font-heading text-text-primary mb-4 px-1" style={{ fontSize: "1.1rem", fontWeight: 700 }}>{t("souls.choose_someone")}</h3>
 
         <button
           type="button"
@@ -1341,17 +1341,17 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
             border: "1px solid rgba(74,46,158,0.35)",
           }}
         >
-          <div className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-lg text-[#22201C] shrink-0"
-               style={{ background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)" }}>+</div>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-lg text-text-primary shrink-0"
+               style={{ background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))" }}>+</div>
           <div className="flex-1 text-left">
             <p className="font-body text-text-primary text-sm font-semibold">{t("souls.add_someone_new")}</p>
-            <p className="font-body text-text-secondary text-[13px]">{t("souls.birth_data_local")}</p>
+            <p className="font-body text-text-secondary text-[15px]">{t("souls.birth_data_local")}</p>
           </div>
         </button>
 
         {savedPeople.length > 0 && (
           <div className="mb-4">
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">{t("souls.your_people")}</p>
+            <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-2 px-1 font-bold">{t("souls.your_people")}</p>
             <div className="space-y-2">
               {savedPeople.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-forest-card border border-forest-border rounded-xl">
@@ -1365,7 +1365,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
-                      <p className="text-text-secondary text-[13px] font-body truncate">
+                      <p className="text-text-secondary text-[15px] font-body truncate">
                         {p.profile.sun_sign && <>☉ {p.profile.sun_sign}</>}
                         {p.profile.sun_sign && p.profile.hd_type && " · "}
                         {p.profile.hd_type}
@@ -1388,7 +1388,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 
         {connections.length > 0 && (
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2 px-1">{t("souls.connections")}</p>
+            <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-2 px-1 font-bold">{t("souls.connections")}</p>
             <div className="space-y-2">
               {connections.map((c) => (
                 <button
@@ -1406,7 +1406,7 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-body text-text-primary text-sm font-semibold truncate">{c.soul.name}</p>
-                    <p className="text-text-secondary text-[13px] font-body truncate">
+                    <p className="text-text-secondary text-[15px] font-body truncate">
                       {c.soul.sun_sign && <>☉ {c.soul.sun_sign}</>}
                       {c.soul.sun_sign && c.soul.hd_type && " · "}
                       {c.soul.hd_type}
@@ -1574,23 +1574,23 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
         <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
-        <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 400, fontStyle: "italic" }}>{t("souls.add_someone")}</h3>
-        <p className="font-body text-text-secondary text-[14px] mb-5">{t("souls.add_someone_sub")}</p>
+        <h3 className="font-heading text-text-primary mb-1" style={{ fontSize: "1.2rem", fontWeight: 700 }}>{t("souls.add_someone")}</h3>
+        <p className="font-body text-text-secondary text-[15px] mb-5">{t("souls.add_someone_sub")}</p>
 
         <div className="space-y-4">
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_name")}</label>
+            <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_name")}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("souls.name_placeholder")}
-              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
+              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors"
             />
           </div>
 
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary mb-1 block">{t("souls.label_gender")}</label>
+            <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary mb-1 block font-bold">{t("souls.label_gender")}</label>
             <div className="grid grid-cols-2 gap-2">
               {(["female", "male"] as const).map((opt) => {
                 const active = sex === opt;
@@ -1599,7 +1599,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     key={opt}
                     type="button"
                     onClick={() => setSex(opt)}
-                    className="py-2.5 rounded-xl transition-all font-body text-[14px]"
+                    className="py-2.5 rounded-xl transition-all font-body text-[15px]"
                     style={{
                       background: active ? "rgba(74,46,158,0.10)" : "transparent",
                       border: active ? "1px solid rgba(74,46,158,0.55)" : "1px solid rgb(var(--rgb-text-primary) / 0.12)",
@@ -1615,23 +1615,23 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_date")}</label>
+              <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_birth_date")}</label>
               <input
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors"
                 style={{ colorScheme: "dark" }}
               />
             </div>
             <div>
-              <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_time")}</label>
+              <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_birth_time")}</label>
               <input
                 type="time"
                 value={birthTime}
                 onChange={(e) => setBirthTime(e.target.value)}
                 disabled={timeUnknown}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors disabled:opacity-40"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors disabled:opacity-40"
                 style={{ colorScheme: "dark" }}
               />
             </div>
@@ -1639,7 +1639,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           <button
             type="button"
             onClick={() => setTimeUnknown(!timeUnknown)}
-            className={`font-body text-[13px] tracking-wider transition-colors -mt-2 ${
+            className={`font-body text-[15px] tracking-wider transition-colors -mt-2 ${
               timeUnknown ? "text-indigo" : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -1647,7 +1647,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </button>
 
           <div>
-            <label className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary">{t("souls.label_birth_city")}</label>
+            <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_birth_city")}</label>
             <div className="relative">
               <input
                 ref={cityInputRef}
@@ -1659,7 +1659,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                 }}
                 placeholder={t("onboard.city_placeholder")}
                 autoComplete="off"
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors"
                 style={{ paddingRight: cityLoading ? "2rem" : undefined }}
               />
               {cityLoading && (
@@ -1685,7 +1685,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     <button
                       key={i}
                       type="button"
-                      className="w-full text-left px-4 py-2.5 font-body text-[15px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0"
+                      className="w-full text-left px-4 py-2.5 font-body text-[17px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setBirthCity(s.display);
@@ -1702,16 +1702,16 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           </div>
 
           {error && (
-            <p className="text-ember text-[14px] font-body">{error}</p>
+            <p className="text-ember text-[15px] font-body">{error}</p>
           )}
 
           <button
             type="button"
             onClick={submit}
             disabled={!canSubmit}
-            className="w-full py-3.5 rounded-xl font-body font-semibold text-[15px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
+            className="w-full py-3.5 rounded-xl font-body font-semibold text-[17px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
             style={{
-              background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)",
+              background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
               color: "var(--text-primary)",
             }}
           >
@@ -1748,7 +1748,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
         <div
           className="w-12 h-12 rounded-full shrink-0 relative"
           style={{
-            background: "linear-gradient(135deg, #4A2E9E, #4A2E9E)",
+            background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))",
             padding: "2px",
           }}
         >
@@ -1784,7 +1784,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             )}
           </div>
         </div>
-        <span className="text-xs font-body tracking-wider opacity-70 shrink-0 whitespace-nowrap pl-1" style={{ color: "#4A2E9E" }}>
+        <span className="text-xs font-body tracking-wider opacity-70 shrink-0 whitespace-nowrap pl-1" style={{ color: "rgb(var(--rgb-mist))" }}>
           {t("souls.open_arrow")}
         </span>
       </div>

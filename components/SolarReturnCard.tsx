@@ -165,7 +165,7 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
             <path d="M12 2c.42 4.95 2.05 6.58 7 7-4.95.42-6.58 2.05-7 7-.42-4.95-2.05-6.58-7-7 4.95-.42 6.58-2.05 7-7z" />
           </svg>
           <div className="flex-1 text-left">
-            <h3 className="font-heading text-lg text-amber-sun font-light">
+            <h3 className="font-heading text-lg text-amber-sun font-medium">
               {t("solar.year_ready")}
             </h3>
             <p className="text-text-secondary text-xs font-body mt-0.5">
@@ -176,7 +176,7 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
 
         {/* Birth date subtitle */}
         <div className="mb-4">
-          <p className="text-text-secondary/80 text-sm font-body">
+          <p className="text-text-secondary text-sm font-body">
             {t("solar.born").replace("{date}", formattedDate)}
           </p>
         </div>
@@ -188,10 +188,10 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
 
         {/* CTA Button */}
         <div className="flex items-center justify-between">
-          <span className="text-amber-sun text-xs font-body tracking-wider uppercase">
+          <span className="text-amber-sun text-xs font-body tracking-wider uppercase font-bold">
             {loading ? t("common.loading") : t("solar.read_year")}
           </span>
-          <span className="text-amber-sun/70 text-sm">→</span>
+          <span className="text-amber-sun text-sm">→</span>
         </div>
       </div>
     </button>

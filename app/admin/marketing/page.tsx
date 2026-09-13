@@ -82,12 +82,12 @@ export default function MarketingPage() {
 
         {authError ? (
           <div className="max-w-lg mx-auto px-5 pt-12 text-center">
-            <p className="font-heading text-text-primary" style={{ fontSize: 22, fontWeight: 300 }}>
+            <p className="font-heading text-text-primary" style={{ fontSize: 22, fontWeight: 900 }}>
               {authError}
             </p>
             <button
               onClick={() => router.push("/today")}
-              className="mt-6 font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors"
+              className="mt-6 font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors font-bold"
             >
               Back to Today
             </button>
@@ -117,7 +117,7 @@ function Header({ userName }: { userName: string }) {
   return (
     <div className="border-b border-forest-border/50">
       <div className="max-w-6xl mx-auto px-5 pt-2 pb-3">
-        <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-amber))" }}>
+        <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-amber))" }}>
           Operations
         </p>
         <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -133,11 +133,11 @@ function Header({ userName }: { userName: string }) {
           </button>
           <h1
             className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-            style={{ fontWeight: 300, fontSize: "21px" }}
+            style={{ fontWeight: 900, fontSize: "21px" }}
           >
             MARKETING
           </h1>
-          <div className="ml-auto font-body text-text-secondary text-[12px] tracking-[0.14em] uppercase">
+          <div className="ml-auto font-body text-text-secondary text-[14px] tracking-[0.14em] uppercase font-bold">
             {userName}
           </div>
         </div>
@@ -159,11 +159,11 @@ function Tabs({ current, onChange }: { current: Tab; onChange: (t: Tab) => void 
               <button
                 key={t.id}
                 onClick={() => onChange(t.id)}
-                className={`font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full transition-all ${
+                className={`font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full transition-all ${
                   active
                     ? "bg-amber-sun text-forest-deep"
                     : "text-text-secondary hover:text-text-primary border border-transparent hover:border-forest-border"
-                }`}
+                } font-bold`}
               >
                 {t.label}
               </button>

@@ -35,7 +35,7 @@ export default function OverviewSection({ token }: { token: string | null }) {
 
   return (
     <div className="space-y-6 page-enter">
-      <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+      <p className="font-body text-text-secondary text-[15px] leading-relaxed">
         Live numbers from the Solray production database. Metrics that have no data yet show a quiet dash, never a fictional zero.
       </p>
 
@@ -49,7 +49,7 @@ export default function OverviewSection({ token }: { token: string | null }) {
         <Card label="Active in last 7 days"  value={fmt(metrics.active_users_7d)}   sub="Generated a forecast in the last week" />
       </div>
 
-      <p className="font-body text-text-secondary/60 text-[11px] tracking-[0.18em] uppercase">
+      <p className="font-body text-text-muted text-[13px] tracking-[0.18em] uppercase font-bold">
         Generated {new Date(metrics.generated_at).toLocaleString()}
       </p>
     </div>
@@ -59,14 +59,14 @@ export default function OverviewSection({ token }: { token: string | null }) {
 function Card({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5">
-      <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-3">
+      <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-3 font-bold">
         {label}
       </p>
-      <p className="font-heading text-text-primary" style={{ fontSize: 30, fontWeight: 300 }}>
+      <p className="font-heading text-text-primary" style={{ fontSize: 30, fontWeight: 900 }}>
         {value}
       </p>
       {sub && (
-        <p className="font-body text-text-secondary/70 text-[12px] mt-2 leading-snug">{sub}</p>
+        <p className="font-body text-text-secondary text-[14px] mt-2 leading-snug">{sub}</p>
       )}
     </div>
   );
@@ -85,7 +85,7 @@ function Skeleton() {
 function Banner({ kind, text }: { kind: "error" | "info"; text: string }) {
   const color = kind === "error" ? "var(--ember)" : "var(--text-secondary)";
   return (
-    <div className="rounded-2xl border px-5 py-4 font-body text-[13px]" style={{ borderColor: color, color }}>
+    <div className="rounded-2xl border px-5 py-4 font-body text-[15px]" style={{ borderColor: color, color }}>
       {text}
     </div>
   );

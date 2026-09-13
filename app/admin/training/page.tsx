@@ -22,7 +22,7 @@ const FOREST = "var(--bg-deep, #F5F0E6)";
 const PEARL = "var(--text-primary, #22201C)";
 const WISTERIA = "var(--wisteria, #B02E72)";
 const AMBER = "var(--amber, #5A31AE)";
-const MOSS_DIM = "var(--text-muted, #A79E90)";
+const MOSS_DIM = "var(--text-muted, #6E6659)";
 const BORDER = "var(--border, #E2DACA)";
 const MOSS = "var(--moss, #A34A22)";
 const EMBER = "var(--ember, #A34A22)";
@@ -171,11 +171,11 @@ function TrainingGround() {
     borderRadius: 10,
     padding: "8px 11px",
     color: PEARL,
-    fontSize: 13,
+    fontSize: 15,
     outline: "none",
   };
   const labelStyle: React.CSSProperties = {
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: "0.16em",
     textTransform: "uppercase",
     color: WISTERIA,
@@ -188,13 +188,13 @@ function TrainingGround() {
       <div style={{ maxWidth: 860, margin: "0 auto" }}>
         <header className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div style={{ marginBottom: 6, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
+            <div style={{ marginBottom: 6, fontSize: 13, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA }}>
               Training
             </div>
             <h1
               style={{
                 fontFamily: "'Cormorant Garamond', Georgia, serif",
-                fontWeight: 300,
+                fontWeight: 900,
                 fontSize: 30,
                 letterSpacing: "0.04em",
                 margin: 0,
@@ -202,7 +202,7 @@ function TrainingGround() {
             >
               Sit with her. Mark what lands.
             </h1>
-            <p style={{ color: MOSS_DIM, fontSize: 13, marginTop: 8, lineHeight: 1.5, maxWidth: 620 }}>
+            <p style={{ color: MOSS_DIM, fontSize: 15, marginTop: 8, lineHeight: 1.5, maxWidth: 620 }}>
               She reads the chart cold, no memory, no history. Ask as a master would. When a reading is
               strong or off, mark it. Your judgments become the expert corpus we train her on.
             </p>
@@ -284,7 +284,7 @@ function TrainingGround() {
           }}
         >
           {messages.length === 0 && (
-            <div style={{ color: MOSS_DIM, fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: "italic", fontSize: 17 }}>
+            <div style={{ color: MOSS_DIM, fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17 }}>
               Set a chart above, then speak to her.
             </div>
           )}
@@ -294,23 +294,23 @@ function TrainingGround() {
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontStyle: "italic",
-                    fontWeight: 300,
-                    fontSize: 16,
+                    
+                    fontWeight: 700,
+                    fontSize: 17,
                     lineHeight: 1.55,
                     color: "rgb(var(--rgb-text-secondary) / 0.85)",
                   }}
                 >
                   {m.content}
                 </div>
-                <div style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: WISTERIA, marginTop: 4 }}>You</div>
+                <div style={{ fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", color: WISTERIA, marginTop: 4 }}>You</div>
               </div>
             ) : (
               <div key={i} style={{ marginBottom: 22 }}>
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontWeight: 300,
+                    fontWeight: 700,
                     fontSize: 17,
                     lineHeight: 1.6,
                     color: "rgb(var(--rgb-text-primary) / 0.92)",
@@ -320,24 +320,24 @@ function TrainingGround() {
                   {m.content}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: WISTERIA }}>Oracle</span>
+                  <span style={{ fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", color: WISTERIA }}>Oracle</span>
                   {promoted[i] ? (
-                    <span style={{ fontSize: 11, color: promoted[i] === "strong" ? MOSS : EMBER }}>
+                    <span style={{ fontSize: 13, color: promoted[i] === "strong" ? MOSS : EMBER }}>
                       saved as {promoted[i] === "strong" ? "strong" : "off"}
                     </span>
                   ) : (
                     <>
-                      <button onClick={() => promote(i, "strong")} style={{ background: "transparent", border: "none", color: MOSS, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+                      <button onClick={() => promote(i, "strong")} style={{ background: "transparent", border: "none", color: MOSS, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
                         Strong
                       </button>
-                      <button onClick={() => promote(i, "off")} style={{ background: "transparent", border: "none", color: EMBER, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+                      <button onClick={() => promote(i, "off")} style={{ background: "transparent", border: "none", color: EMBER, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
                         Off
                       </button>
                       <input
                         value={noteDrafts[i] || ""}
                         onChange={(e) => setNoteDrafts((d) => ({ ...d, [i]: e.target.value }))}
                         placeholder="why? (optional, saved with your mark)"
-                        style={{ ...field, flex: 1, minWidth: 180, fontSize: 12, padding: "5px 9px" }}
+                        style={{ ...field, flex: 1, minWidth: 180, fontSize: 14, padding: "5px 9px" }}
                       />
                     </>
                   )}
@@ -345,10 +345,10 @@ function TrainingGround() {
               </div>
             )
           )}
-          {sending && <div style={{ color: MOSS_DIM, fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 16 }}>reading…</div>}
+          {sending && <div style={{ color: MOSS_DIM, fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17 }}>reading…</div>}
         </div>
 
-        {error && <div style={{ color: EMBER, fontSize: 12, marginTop: 10 }}>{error}</div>}
+        {error && <div style={{ color: EMBER, fontSize: 14, marginTop: 10 }}>{error}</div>}
 
         {/* Composer */}
         <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
@@ -371,10 +371,10 @@ function TrainingGround() {
             style={{
               border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(90,49,174,0.5)"}`,
               background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(90,49,174,0.14)",
-              color: sending || !input.trim() ? "var(--text-muted, #A79E90)" : AMBER,
+              color: sending || !input.trim() ? "var(--text-muted, #6E6659)" : AMBER,
               borderRadius: 12,
               padding: "0 22px",
-              fontSize: 12,
+              fontSize: 14,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               cursor: sending || !input.trim() ? "default" : "pointer",
@@ -386,24 +386,24 @@ function TrainingGround() {
 
         {/* Saved notes */}
         <div style={{ marginTop: 40 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, letterSpacing: "0.2em", textTransform: "uppercase", color: WISTERIA, marginBottom: 12 }}>
             Expert corpus ({notes.length})
           </div>
-          {notes.length === 0 && <div style={{ color: MOSS_DIM, fontSize: 13 }}>Nothing marked yet.</div>}
+          {notes.length === 0 && <div style={{ color: MOSS_DIM, fontSize: 15 }}>Nothing marked yet.</div>}
           {notes.map((n) => (
             <div key={n.id} style={{ borderTop: `1px solid ${BORDER}`, padding: "12px 0" }}>
               <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 5 }}>
-                <span style={{ fontSize: 11, color: n.verdict === "strong" ? MOSS : n.verdict === "off" ? EMBER : MOSS_DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                <span style={{ fontSize: 13, color: n.verdict === "strong" ? MOSS : n.verdict === "off" ? EMBER : MOSS_DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>
                   {n.verdict}
                 </span>
-                <span style={{ fontSize: 11, color: WISTERIA }}>{n.expert_label || "expert"}</span>
-                {n.created_at && <span style={{ fontSize: 11, color: MOSS_DIM }}>{n.created_at.slice(0, 16).replace("T", " ")}</span>}
+                <span style={{ fontSize: 13, color: WISTERIA }}>{n.expert_label || "expert"}</span>
+                {n.created_at && <span style={{ fontSize: 13, color: MOSS_DIM }}>{n.created_at.slice(0, 16).replace("T", " ")}</span>}
               </div>
-              {n.note && <div style={{ fontSize: 13, color: "rgb(var(--rgb-text-secondary) / 1)", marginBottom: 4 }}>“{n.note}”</div>}
+              {n.note && <div style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary) / 1)", marginBottom: 4 }}>“{n.note}”</div>}
               <div
                 style={{
                   fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: 14,
+                  fontSize: 15,
                   lineHeight: 1.5,
                   color: "rgb(var(--rgb-text-muted) / 1)",
                 }}

@@ -85,12 +85,12 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
       <div className="flex items-center gap-2 mb-2">
         <span className="text-lg leading-none">{planetSymbol}</span>
         <span className="text-text-primary text-sm font-body font-medium">{aspect.planet}</span>
-        <span className="text-text-secondary/70 text-xs font-body">{aspect.aspect_type}</span>
-        <span className="text-text-secondary/70 text-xs font-body">{natalSymbol}</span>
-        <span className="text-text-secondary/70 text-xs font-body">{aspect.natal_planet}</span>
+        <span className="text-text-secondary text-xs font-body">{aspect.aspect_type}</span>
+        <span className="text-text-secondary text-xs font-body">{natalSymbol}</span>
+        <span className="text-text-secondary text-xs font-body">{aspect.natal_planet}</span>
         <div className="ml-auto flex items-center gap-1">
-          <span className="text-text-secondary/60 text-[12px] font-body">orb {aspect.orb.toFixed(1)}°</span>
-          <span className="text-amber-sun/70 text-xs">→</span>
+          <span className="text-text-muted text-[14px] font-body">orb {aspect.orb.toFixed(1)}°</span>
+          <span className="text-amber-sun text-xs">→</span>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
       </p>
 
       {/* Subtle label */}
-      <p className="text-text-secondary/50 text-[12px] font-body mt-2">{t("alert.tap_to_explore")}</p>
+      <p className="text-text-muted text-[14px] font-body mt-2">{t("alert.tap_to_explore")}</p>
     </div>
   );
 }

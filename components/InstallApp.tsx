@@ -108,7 +108,7 @@ export default function InstallApp({ variant = "ghost" }: { variant?: Variant })
 
       {showHint && isIOS && (
         <div className="mt-3 rounded-lg border border-forest-border bg-forest-card px-4 py-3">
-          <p className="font-body text-text-secondary text-[13px] leading-relaxed flex items-start gap-2">
+          <p className="font-body text-text-secondary text-[15px] leading-relaxed flex items-start gap-2">
             <ShareGlyph />
             <span>{t("install.ios_hint")}</span>
           </p>

@@ -26,6 +26,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/Wordmark";
 
 interface FirstMirrorData {
   pattern: string;
@@ -112,8 +113,8 @@ function FirstMirrorContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-forest-deep">
         <div
-          className="font-body text-[11px] tracking-[0.3em] uppercase"
-          style={{ color: "var(--amber)", opacity: 0.7 }}
+          className="font-body text-[13px] tracking-[0.3em] uppercase font-bold"
+          style={{ color: "var(--amber)" }}
         >
           {t("first_mirror.reading")}
         </div>
@@ -130,18 +131,18 @@ function FirstMirrorContent() {
         <div className="flex-1 flex flex-col justify-center px-6 pb-24 animate-slide-up">
           <div className="max-w-md mx-auto w-full">
             <p
-              className="font-body text-[11px] tracking-[0.3em] uppercase mb-4 text-center"
+              className="font-body text-[13px] tracking-[0.3em] uppercase mb-4 text-center font-bold"
               style={{ color: "var(--amber)", opacity: 0.8 }}
             >
               {t("first_mirror.awake")}
             </p>
             <h1
               className="font-heading text-text-primary text-center mb-3"
-              style={{ fontWeight: 300, fontStyle: "italic", fontSize: "2rem", letterSpacing: "-0.01em" }}
+              style={{ fontWeight: 700, fontSize: "2rem", letterSpacing: "-0.01em" }}
             >
               {t("first_mirror.ask_title")}
             </h1>
-            <p className="font-body text-text-secondary/70 text-[13px] text-center mb-10">
+            <p className="font-body text-text-secondary text-[15px] text-center mb-10">
               {t("first_mirror.ask_hint")}
             </p>
             <div className="space-y-3">
@@ -149,14 +150,14 @@ function FirstMirrorContent() {
                 <button
                   key={q}
                   onClick={() => askOracle(q)}
-                  className="w-full text-left px-5 py-4 rounded-2xl border border-forest-border/80 bg-forest-card/40 font-body text-[15px] text-text-primary transition-all hover:border-amber-sun/40 active:scale-[0.99]"
+                  className="w-full text-left px-5 py-4 rounded-2xl border border-forest-border/80 bg-forest-card/40 font-body text-[17px] text-text-primary transition-all hover:border-amber-sun/40 active:scale-[0.99]"
                 >
                   {q}
                 </button>
               ))}
               <button
                 onClick={() => askOracle()}
-                className="w-full text-left px-5 py-4 rounded-2xl border border-amber-sun/35 font-body text-[15px] transition-all hover:border-amber-sun/60 active:scale-[0.99]"
+                className="w-full text-left px-5 py-4 rounded-2xl border border-amber-sun/35 font-body text-[17px] transition-all hover:border-amber-sun/60 active:scale-[0.99]"
                 style={{ color: "var(--amber)", background: "rgba(90,49,174,0.05)" }}
               >
                 {t("first_mirror.chip_own")}
@@ -164,7 +165,7 @@ function FirstMirrorContent() {
             </div>
             <button
               onClick={() => router.replace("/today")}
-              className="block mx-auto mt-8 font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary/60 hover:text-text-secondary transition-colors"
+              className="block mx-auto mt-8 font-body text-[14px] tracking-[0.18em] uppercase text-text-muted hover:text-text-secondary transition-colors font-bold"
             >
               {t("first_mirror.not_now")}
             </button>
@@ -179,16 +180,11 @@ function FirstMirrorContent() {
       {/* Header */}
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-          <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--amber)" }}>
+          <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "var(--amber)" }}>
             {t("first_mirror.title")}
           </p>
           <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-            <h1
-              className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-              style={{ fontWeight: 300, fontSize: "21px" }}
-            >
-              SOLRAY
-            </h1>
+            <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
           </div>
         </div>
       </div>
@@ -198,7 +194,7 @@ function FirstMirrorContent() {
         <div className="max-w-md mx-auto w-full space-y-12">
           <MirrorLine label={t("first_mirror.line_pattern")} body={mirror.pattern} visible={revealStage >= 1} />
           <MirrorLine label={t("first_mirror.line_shadow")} body={mirror.shadow} visible={revealStage >= 2} />
-          <MirrorLine label={t("first_mirror.line_question")} body={mirror.question} visible={revealStage >= 3} italic />
+          <MirrorLine label={t("first_mirror.line_question")} body={mirror.question} visible={revealStage >= 3} quiet />
 
           {/* Continue CTA appears after all three lines have landed */}
           <div
@@ -210,7 +206,7 @@ function FirstMirrorContent() {
           >
             <button
               onClick={() => setShowAsk(true)}
-              className="w-full py-4 rounded-full text-[11px] tracking-[0.3em] uppercase transition-all"
+              className="w-full py-4 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
               style={{
                 background: "var(--amber)",
                 color: "var(--bg-deep)",
@@ -218,7 +214,7 @@ function FirstMirrorContent() {
             >
               {t("common.continue")}
             </button>
-            <p className="text-center mt-4 font-body text-text-secondary text-[12px]" style={{ opacity: 0.7 }}>
+            <p className="text-center mt-4 font-body text-text-secondary text-[14px] text-text-muted">
               {t("first_mirror.oracle_remembers")}
             </p>
           </div>
@@ -228,7 +224,7 @@ function FirstMirrorContent() {
   );
 }
 
-function MirrorLine({ label, body, visible, italic }: { label: string; body: string; visible: boolean; italic?: boolean }) {
+function MirrorLine({ label, body, visible, quiet }: { label: string; body: string; visible: boolean; quiet?: boolean }) {
   return (
     <div
       className="transition-all duration-1000"
@@ -238,7 +234,7 @@ function MirrorLine({ label, body, visible, italic }: { label: string; body: str
       }}
     >
       <p
-        className="font-body text-[11px] tracking-[0.28em] uppercase mb-3"
+        className="font-body text-[13px] tracking-[0.28em] uppercase mb-3 font-bold"
         style={{ color: "var(--text-muted)" }}
       >
         {label}
@@ -247,9 +243,8 @@ function MirrorLine({ label, body, visible, italic }: { label: string; body: str
         className="font-heading text-text-primary leading-snug"
         style={{
           fontSize: "1.4rem",
-          fontWeight: 300,
-          fontStyle: italic ? "italic" : "normal",
-          letterSpacing: "0.005em",
+          fontWeight: quiet ? 500 : 900,
+          letterSpacing: "-.03em",
         }}
       >
         {body}

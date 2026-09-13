@@ -34,8 +34,8 @@ interface MoonPhaseSvgProps {
 export default function MoonPhaseSvg({
   phase,
   size = 22,
-  lit = "#f0dcc0",
-  dark = "#141f1a",
+  lit = "rgb(var(--rgb-text-primary))",
+  dark = "rgb(var(--rgb-border))",
   stroke = "rgba(240,220,192,0.35)",
 }: MoonPhaseSvgProps) {
   const r = size / 2 - 0.75;

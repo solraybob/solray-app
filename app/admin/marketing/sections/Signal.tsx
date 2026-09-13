@@ -135,8 +135,8 @@ export default function SignalSection({ token }: { token: string | null }) {
     <div className="space-y-6 page-enter">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="max-w-2xl">
-          <h2 className="font-heading text-text-primary mb-2" style={{ fontSize: 24, fontWeight: 300 }}>Signal Radar</h2>
-          <p className="font-body text-text-secondary text-[13px] leading-relaxed">
+          <h2 className="font-heading text-text-primary mb-2" style={{ fontSize: 24, fontWeight: 900 }}>Signal Radar</h2>
+          <p className="font-body text-text-secondary text-[15px] leading-relaxed">
             Living conversations Solray could speak to today. Higher score, higher relevance. Tap Generate Angles for AI-drafted Solray-shaped responses across platforms; tap an angle to send it to the calendar.
           </p>
         </div>
@@ -144,13 +144,13 @@ export default function SignalSection({ token }: { token: string | null }) {
           <button
             onClick={seedFromSky}
             disabled={seedingSky}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/60 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 transition-all"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/60 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 transition-all font-bold"
           >
             {seedingSky ? "Pulling sky" : "Pull 60 days of sky"}
           </button>
           <button
             onClick={() => setCreating(true)}
-            className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all"
+            className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full bg-amber-sun text-forest-deep hover:opacity-90 active:scale-[0.98] transition-all font-bold"
           >
             + Add signal
           </button>
@@ -158,13 +158,13 @@ export default function SignalSection({ token }: { token: string | null }) {
       </div>
 
       {seedReport && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--moss)", color: "var(--moss)" }}>
+        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--moss)", color: "var(--moss)" }}>
           {seedReport}
         </div>
       )}
 
       {error && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
+        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
           {error}
         </div>
       )}
@@ -221,18 +221,18 @@ function SignalCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase">{sourceLabel}</span>
-              <span className="font-mono text-amber-sun text-[12px]">{signal.score}</span>
+              <span className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase font-bold">{sourceLabel}</span>
+              <span className="font-mono text-amber-sun text-[14px]">{signal.score}</span>
               {signal.happens_at && (
-                <span className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase">
+                <span className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase font-bold">
                   · {new Date(signal.happens_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </span>
               )}
             </div>
-            <p className="font-heading text-text-primary leading-snug" style={{ fontSize: 16, fontWeight: 400 }}>{signal.title}</p>
-            {signal.body && <p className="font-body text-text-secondary text-[13px] leading-relaxed mt-1">{signal.body}</p>}
+            <p className="font-heading text-text-primary leading-snug" style={{ fontSize: 17, fontWeight: 700 }}>{signal.title}</p>
+            {signal.body && <p className="font-body text-text-secondary text-[15px] leading-relaxed mt-1">{signal.body}</p>}
             {signal.url && (
-              <a href={signal.url} target="_blank" rel="noopener noreferrer" className="font-body text-amber-sun text-[12px] hover:opacity-80 transition-opacity mt-1 inline-block break-all">
+              <a href={signal.url} target="_blank" rel="noopener noreferrer" className="font-body text-amber-sun text-[14px] hover:opacity-80 transition-opacity mt-1 inline-block break-all">
                 {signal.url}
               </a>
             )}
@@ -244,7 +244,7 @@ function SignalCard({
             <button
               onClick={onGenerate}
               disabled={isGenerating}
-              className="font-body text-[11px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full bg-amber-sun text-forest-deep disabled:opacity-50 hover:opacity-90 active:scale-[0.98] transition-all"
+              className="font-body text-[13px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full bg-amber-sun text-forest-deep disabled:opacity-50 hover:opacity-90 active:scale-[0.98] transition-all font-bold"
             >
               {isGenerating ? "Generating" : "Generate angles"}
             </button>
@@ -252,14 +252,14 @@ function SignalCard({
           {signal.angles && (
             <button
               onClick={() => setOpen(!open)}
-              className="font-body text-[11px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full border border-amber-sun/60 text-amber-sun hover:bg-amber-sun/10 transition-all"
+              className="font-body text-[13px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full border border-amber-sun/60 text-amber-sun hover:bg-amber-sun/10 transition-all font-bold"
             >
               {open ? "Hide" : `Show ${signal.angles.length} angles`}
             </button>
           )}
           <button
             onClick={onDismiss}
-            className="font-body text-[11px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all"
+            className="font-body text-[13px] tracking-[0.22em] uppercase px-3 py-1.5 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all font-bold"
           >
             Dismiss
           </button>
@@ -281,27 +281,27 @@ function AngleCard({ angle, onSend }: { angle: Angle; onSend: () => void }) {
   return (
     <div className="rounded-xl bg-forest-card/60 border border-forest-border/40 px-4 py-3">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-body text-amber-sun text-[10px] tracking-[0.22em] uppercase">{angle.platform}</span>
+        <span className="font-body text-amber-sun text-[12px] tracking-[0.22em] uppercase font-bold">{angle.platform}</span>
         <button
           onClick={onSend}
-          className="font-body text-[10px] tracking-[0.22em] uppercase px-2 py-1 rounded-full bg-amber-sun/15 text-amber-sun hover:bg-amber-sun/25 transition-all"
+          className="font-body text-[12px] tracking-[0.22em] uppercase px-2 py-1 rounded-full bg-amber-sun/15 text-amber-sun hover:bg-amber-sun/25 transition-all font-bold"
         >
           Send to calendar
         </button>
       </div>
-      <p className="font-body text-text-primary text-[14px] leading-relaxed whitespace-pre-wrap mb-2">{angle.copy}</p>
-      <p className="font-body text-text-secondary text-[11px] italic leading-relaxed">{angle.why}</p>
+      <p className="font-body text-text-primary text-[15px] leading-relaxed whitespace-pre-wrap mb-2">{angle.copy}</p>
+      <p className="font-body text-text-secondary text-[13px] leading-relaxed">{angle.why}</p>
       {angle.image_prompt && (
         <div className="mt-2 pt-2 border-t border-forest-border/30">
-          <p className="font-body text-text-secondary text-[10px] tracking-[0.22em] uppercase mb-1">Image prompt</p>
-          <p className="font-body text-text-secondary text-[11px] leading-relaxed">{angle.image_prompt}</p>
+          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-1 font-bold">Image prompt</p>
+          <p className="font-body text-text-secondary text-[13px] leading-relaxed">{angle.image_prompt}</p>
         </div>
       )}
       {angle.lint.length > 0 && (
         <div className="mt-2 pt-2 border-t border-forest-border/30 space-y-1">
           {angle.lint.map((v, i) => (
-            <div key={i} className="font-body text-[11px]" style={{ color: "var(--ember)" }}>
-              <span className="font-mono text-[10px] mr-1">[{v.rule}]</span>
+            <div key={i} className="font-body text-[13px]" style={{ color: "var(--ember)" }}>
+              <span className="font-mono text-[12px] mr-1">[{v.rule}]</span>
               {v.message}
             </div>
           ))}
@@ -314,10 +314,10 @@ function AngleCard({ angle, onSend }: { angle: Angle; onSend: () => void }) {
 function Empty() {
   return (
     <div className="rounded-2xl border border-forest-border/40 px-6 py-10 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 300 }}>
+      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
         Radar is quiet.
       </p>
-      <p className="font-body text-text-secondary text-[13px] max-w-md mx-auto leading-relaxed">
+      <p className="font-body text-text-secondary text-[15px] max-w-md mx-auto leading-relaxed">
         Add a signal manually to get started. Once X and Reddit are connected, signals will populate here automatically.
       </p>
     </div>
@@ -360,8 +360,8 @@ function SignalForm({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-forest-deep/80 backdrop-blur" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-forest-deep border-t border-forest-border rounded-t-3xl p-6 max-h-[88dvh] overflow-y-auto">
-        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-1">New signal</p>
-        <h3 className="font-heading text-text-primary mb-5" style={{ fontSize: 24, fontWeight: 300 }}>What is moving?</h3>
+        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-1 font-bold">New signal</p>
+        <h3 className="font-heading text-text-primary mb-5" style={{ fontSize: 24, fontWeight: 900 }}>What is moving?</h3>
 
         <div className="space-y-4">
           <Field label="Title">
@@ -369,7 +369,7 @@ function SignalForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Mercury enters Gemini, retrograde concerns brewing"
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[17px] focus:border-amber-sun outline-none"
             />
           </Field>
           <Field label="Body / context">
@@ -378,7 +378,7 @@ function SignalForm({
               onChange={(e) => setBody(e.target.value)}
               rows={4}
               placeholder="What's the conversation? Why does it matter? Optional."
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[14px] focus:border-amber-sun outline-none resize-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none resize-none"
             />
           </Field>
           <Field label="URL">
@@ -386,7 +386,7 @@ function SignalForm({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[14px] focus:border-amber-sun outline-none"
+              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary font-body text-[15px] focus:border-amber-sun outline-none"
             />
           </Field>
           <Field label={`Score: ${score}`}>
@@ -400,14 +400,14 @@ function SignalForm({
         </div>
 
         {error && (
-          <div className="mt-4 rounded-lg border px-4 py-2 font-body text-[13px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>{error}</div>
+          <div className="mt-4 rounded-lg border px-4 py-2 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>{error}</div>
         )}
 
         <div className="flex gap-3 mt-6">
-          <button onClick={save} disabled={saving || !title.trim()} className="flex-1 font-body text-[12px] tracking-[0.22em] uppercase px-4 py-3 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all">
+          <button onClick={save} disabled={saving || !title.trim()} className="flex-1 font-body text-[14px] tracking-[0.22em] uppercase px-4 py-3 rounded-full bg-amber-sun text-forest-deep disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all font-bold">
             {saving ? "Saving" : "Add to radar"}
           </button>
-          <button onClick={onClose} className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all">
+          <button onClick={onClose} className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-3 rounded-full border border-forest-border text-text-secondary hover:text-text-primary transition-all font-bold">
             Cancel
           </button>
         </div>
@@ -419,7 +419,7 @@ function SignalForm({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">{label}</span>
+      <span className="block font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">{label}</span>
       {children}
     </label>
   );

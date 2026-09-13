@@ -84,15 +84,15 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
 // coding (throat / heart / sacral read as warm fire, spleen as moss, root
 // as slate) survives desaturation and harmonises with the forest field.
 const CENTER_COLOR: Record<CenterKey, string> = {
-  Head:        "#B02E72", // wisteria
-  Ajna:        "#4A2E9E", // mist
-  Throat:      "#A34A22", // ember
-  G:           "#22201C", // pearl
-  Heart:       "#A34A22", // ember
-  Sacral:      "#A34A22", // ember
-  Spleen:      "#A34A22", // moss
+  Head:        "rgb(var(--rgb-wisteria))", // wisteria
+  Ajna:        "rgb(var(--rgb-mist))", // mist
+  Throat:      "rgb(var(--rgb-ember))", // ember
+  G:           "rgb(var(--rgb-text-primary))", // pearl
+  Heart:       "rgb(var(--rgb-ember))", // ember
+  Sacral:      "rgb(var(--rgb-ember))", // ember
+  Spleen:      "rgb(var(--rgb-ember))", // moss
   SolarPlexus: "var(--wisteria)", // wisteria
-  Root:        "#4A2E9E", // slate
+  Root:        "rgb(var(--rgb-mist))", // slate
 };
 
 // External label positions (outside the shape, in surrounding whitespace).
@@ -272,7 +272,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
   const isDark = theme !== "light";
   // Center labels: muted sage on the dark theme, deep forest-green on the light
   // theme so they read clearly against the pearl ground.
-  const labelFill = isDark ? "#5C5548" : "#1f3a28";
+  const labelFill = "rgb(var(--rgb-text-secondary))";
   // Extended viewBox gives the external labels breathing room on all sides.
   const vbX = -10;
   const vbY = -4;
@@ -391,11 +391,11 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
           y={g.y}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#F5F0E6"
+          fill="rgb(var(--rgb-bg-deep))"
           style={{
-            fontFamily: "Inter, system-ui, sans-serif",
-            fontSize: "10px",
-            fontWeight: 600,
+            fontFamily: "inherit",
+            fontSize: "12px",
+            fontWeight: 700,
           }}
         >
           {g.gate}
@@ -415,8 +415,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
             fill={labelFill}
             fillOpacity={0.92}
             style={{
-              fontFamily: "Inter, system-ui, sans-serif",
-              fontSize: "11.5px",
+              fontFamily: "inherit",
+              fontSize: "13px",
               fontWeight: 500,
               letterSpacing: "0.20em",
             }}

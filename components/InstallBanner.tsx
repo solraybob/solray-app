@@ -123,14 +123,14 @@ export default function InstallBanner() {
               <path d="M5 18.5h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </span>
-          <span className="font-body text-text-primary text-[13px] truncate" style={{ letterSpacing: "0.01em" }}>
+          <span className="font-body text-text-primary text-[15px] truncate" style={{ letterSpacing: "0.01em" }}>
             {t("install.banner")}
           </span>
         </button>
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleAdd}
-            className="font-body text-[11px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-md transition-colors"
+            className="font-body text-[13px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-md transition-colors font-bold"
             style={{
               background: "rgba(90,49,174,0.12)",
               border: "1px solid rgba(90,49,174,0.5)",
@@ -154,7 +154,7 @@ export default function InstallBanner() {
 
       {showHint && isIOS && (
         <div className="max-w-lg mx-auto px-5 pb-3 -mt-1">
-          <p className="font-body text-text-secondary text-[12px] leading-relaxed">{t("install.ios_hint")}</p>
+          <p className="font-body text-text-secondary text-[14px] leading-relaxed">{t("install.ios_hint")}</p>
         </div>
       )}
     </div>

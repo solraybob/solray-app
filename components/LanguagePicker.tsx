@@ -54,7 +54,7 @@ export default function LanguagePicker({ onChange, layout = "inline" }: Language
               aria-pressed={active}
             >
               <span className="font-serif text-lg">{getLanguageDisplayName(code)}</span>
-              <span className="text-xs uppercase tracking-widest opacity-70">{code}</span>
+              <span className="text-xs uppercase tracking-widest opacity-70 font-bold">{code}</span>
             </button>
           );
         })}

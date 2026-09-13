@@ -2,28 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { NIGHT_SURFACE } from "@/lib/night";
 
-// Planet-specific atmospheric images for cycle cards
-const PLANET_CYCLE_IMAGES: Record<string, string> = {
-  Sun: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=800&q=60",
-  Moon: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=60",
-  Mercury: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=60",
-  Venus: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=800&q=60",
-  Mars: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&w=800&q=60",
-  Jupiter: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=60",
-  Saturn: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=800&q=60",
-  Uranus: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=60",
-  Neptune: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=800&q=60",
-  Pluto: "https://images.unsplash.com/photo-1608178398319-48f814d0750c?auto=format&fit=crop&w=800&q=60",
-  default: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=60",
+// Each transiting planet tints its own card, drawn from the orb. Photographs
+// used to sit here; lettering over them had to be pinned to the night palette
+// to survive, which is how it went invisible when the palette changed.
+const PLANET_CYCLE_WASH: Record<string, string> = {
+  Sun:     "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(252,180,156,.26), transparent 74%)",
+  Moon:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(84,63,150,.20), transparent 74%)",
+  Mercury: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.18), transparent 74%)",
+  Venus:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(176,46,114,.20), transparent 74%)",
+  Mars:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(163,74,34,.22), transparent 74%)",
+  Jupiter: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(230,141,94,.22), transparent 74%)",
+  Saturn:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(110,102,89,.22), transparent 74%)",
+  Uranus:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(90,49,174,.20), transparent 74%)",
+  Neptune: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.22), transparent 74%)",
+  Pluto:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(34,32,28,.18), transparent 74%)",
+  default: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(84,63,150,.18), transparent 74%)",
 };
 
-function getCycleImage(planet: string): string {
-  return PLANET_CYCLE_IMAGES[planet] || PLANET_CYCLE_IMAGES.default;
+function getCycleWash(planet: string): string {
+  return PLANET_CYCLE_WASH[planet] || PLANET_CYCLE_WASH.default;
 }
 
 interface Cycle {
@@ -139,31 +139,21 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
   return (
     <div
       className="rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
-      style={{ border: "1px solid rgba(226,218,202,0.6)" }}
+      style={{ border: "1px solid rgb(var(--rgb-border))" }}
       onClick={() => setExpanded((v) => !v)}
     >
-      {/* Photo header, locked height, never grows. NIGHT_SURFACE pins the
-          dark tokens so lettering over the photo stays cream in light mode. */}
-      <div className="relative" style={{ minHeight: "160px", ...NIGHT_SURFACE }}>
-        <Image
-          src={getCycleImage(cycle.transit_planet)}
-          alt={cycle.transit_planet}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 512px"
-          unoptimized
-        />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgb(var(--rgb-bg-deep) / 0.65) 0%, rgb(var(--rgb-bg-deep) / 0.85) 100%)" }} />
+      {/* Header, locked height, never grows. */}
+      <div className="relative" style={{ minHeight: "160px", background: `${getCycleWash(cycle.transit_planet)}, rgb(var(--rgb-card))` }}>
 
         {/* Content over image */}
         <div className="relative z-10 p-5">
           {/* Title row */}
           <div className="flex items-start justify-between gap-2 mb-3">
-            <h3 className="font-heading text-text-primary leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>
+            <h3 className="font-heading text-text-primary leading-tight" style={{ fontSize: "1.08rem", fontWeight: 900, letterSpacing: "-.03em" }}>
               {humanizeCycleTitle(cycle.title)}
             </h3>
             <span
-              className="text-text-secondary/40 text-[13px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+              className="text-text-muted text-[15px] font-body shrink-0 mt-0.5 transition-transform duration-200"
               style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
             >
               ▾
@@ -178,21 +168,21 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
               <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep" style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }} />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.started, lang)}</span>
-              <span className="text-amber-sun/60 text-[11px] font-body tracking-wide">{t("cycles.peak")} {fmtDate(cycle.peak, lang)}</span>
-              <span className="text-text-secondary/40 text-[11px] font-body tracking-wide">{fmtDate(cycle.ends, lang)}</span>
+              <span className="text-text-muted text-[13px] font-body tracking-wide">{fmtDate(cycle.started, lang)}</span>
+              <span className="text-amber-sun text-[13px] font-body tracking-wide">{t("cycles.peak")} {fmtDate(cycle.peak, lang)}</span>
+              <span className="text-text-muted text-[13px] font-body tracking-wide">{fmtDate(cycle.ends, lang)}</span>
             </div>
           </div>
 
           {/* First sentence + phase badge always visible */}
           {firstSentence && (
-            <p className="text-text-secondary text-[15px] font-body leading-snug">{firstSentence}</p>
+            <p className="text-text-secondary text-[17px] font-body leading-snug">{firstSentence}</p>
           )}
           <div className="flex items-center gap-2 mt-3">
-            <span className={`text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun/70" : "border-forest-border text-text-secondary/40"}`}>
+            <span className={`text-[13px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border ${cycle.phase === "applying" ? "border-amber-sun/40 text-amber-sun" : "border-forest-border text-text-muted"} font-bold`}>
               {cycle.phase === "applying" ? t("cycles.applying") : cycle.phase === "separating" ? t("cycles.separating") : cycle.phase}
             </span>
-            <span className="text-text-secondary/30 text-[11px] font-body">{t("cycles.orb")} {cycle.orb}°</span>
+            <span className="text-text-muted text-[13px] font-body">{t("cycles.orb")} {cycle.orb}°</span>
           </div>
         </div>
       </div>
@@ -200,7 +190,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
       {/* Expanded reading, forest green panel below photo */}
       {expanded && rest && (
         <div style={{ background: "rgb(var(--rgb-card))", padding: "16px 20px", borderTop: "1px solid rgb(var(--rgb-border) / 0.8)" }}>
-          <p className="text-text-secondary/80 text-[15px] font-body leading-relaxed">{rest}</p>
+          <p className="text-text-secondary text-[17px] font-body leading-relaxed">{rest}</p>
         </div>
       )}
     </div>
@@ -236,24 +226,24 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <h4
               className="font-heading text-text-primary leading-tight"
-              style={{ fontSize: "1rem", fontWeight: 400 }}
+              style={{ fontSize: "1rem", fontWeight: 700 }}
             >
               {humanizeCycleTitle(cycle.title)}
             </h4>
             <span
-              className="text-[11px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun/50 shrink-0"
+              className="text-[13px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun shrink-0 font-bold"
             >
               {cycle.days_until_orb >= 60
                   ? t("cycles.in_months").replace("{n}", String(Math.round(cycle.days_until_orb / 30)))
                   : t("cycles.in_days").replace("{n}", String(cycle.days_until_orb))}
             </span>
           </div>
-          <p className="text-text-secondary/60 text-[13px] font-body leading-snug">
+          <p className="text-text-muted text-[15px] font-body leading-snug">
             {t("cycles.enters_orb")} {fmtDateLong(cycle.enters_orb, lang)}
           </p>
         </div>
         <span
-          className="text-text-secondary/40 text-[13px] font-body shrink-0 mt-0.5 transition-transform duration-200"
+          className="text-text-muted text-[15px] font-body shrink-0 mt-0.5 transition-transform duration-200"
           style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           ▾
@@ -262,7 +252,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
 
       {/* Always show first sentence */}
       {upFirstSentence && (
-        <p className="text-text-secondary/70 text-[15px] font-body leading-snug mt-3">
+        <p className="text-text-secondary text-[17px] font-body leading-snug mt-3">
           {upFirstSentence}
         </p>
       )}
@@ -271,14 +261,14 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
       {expanded && (
         <>
           {upRest && (
-            <p className="text-text-secondary/60 text-[15px] font-body leading-snug mt-2">
+            <p className="text-text-muted text-[17px] font-body leading-snug mt-2">
               {upRest}
             </p>
           )}
           <div className="mt-3 flex justify-end">
             <button
               onClick={handleGoDeeper}
-              className="text-[13px] font-body tracking-wider text-amber-sun/70 hover:text-amber-sun transition-colors"
+              className="text-[15px] font-body tracking-wider text-amber-sun hover:text-amber-sun transition-colors"
             >
               {t("cycles.go_deeper")}
             </button>
@@ -382,7 +372,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
     <div className="mb-8">
       {/* Section header with pagination */}
       <div className="flex items-center justify-between mb-4">
-        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
+        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
           {t("cycles.current_cycles")}
         </p>
         {!loading && total > 1 && (
@@ -390,18 +380,18 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
             <button
               onClick={handlePrev}
               disabled={activeIndex === 0}
-              className="text-text-secondary/60 hover:text-amber-sun transition-colors disabled:opacity-30"
+              className="text-text-muted hover:text-amber-sun transition-colors disabled:opacity-30"
               style={{ fontSize: "1.1rem", lineHeight: 1 }}
             >
               ‹
             </button>
-            <span className="font-body text-text-secondary/50" style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}>
+            <span className="font-body text-text-muted" style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}>
               {activeIndex + 1} / {total}
             </span>
             <button
               onClick={handleNext}
               disabled={activeIndex === total - 1}
-              className="text-text-secondary/60 hover:text-amber-sun transition-colors disabled:opacity-30"
+              className="text-text-muted hover:text-amber-sun transition-colors disabled:opacity-30"
               style={{ fontSize: "1.1rem", lineHeight: 1 }}
             >
               ›
@@ -445,7 +435,7 @@ export default function CurrentCycles({ token }: CurrentCyclesProps) {
             <div className={total > 0 ? "mt-6" : ""}>
               {/* Section label */}
               <div className="flex items-center gap-3 mb-3">
-                <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">
+                <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
                   {t("cycles.coming_up")}
                 </p>
                 <div className="flex-1 h-px bg-forest-border/30" />

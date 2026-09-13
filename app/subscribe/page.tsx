@@ -266,7 +266,7 @@ function SubscribeContent() {
       <div className="max-w-md mx-auto">
         {/* Eyebrow */}
         <p
-          className="text-[12px] tracking-[0.3em] uppercase mb-5 text-center"
+          className="text-[14px] tracking-[0.3em] uppercase mb-5 text-center font-bold"
           style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
         >
           {t("subscribe.eyebrow_subscription")}
@@ -277,7 +277,7 @@ function SubscribeContent() {
           className="text-5xl mb-5 text-center"
           style={{
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 300,
+            fontWeight: 900,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
           }}
@@ -290,8 +290,8 @@ function SubscribeContent() {
           style={{
             color: "var(--text-secondary, #6E6659)",
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontStyle: "italic",
-            fontWeight: 300,
+            
+            fontWeight: 700,
           }}
         >
           {lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
@@ -307,7 +307,7 @@ function SubscribeContent() {
         >
           <div className="flex justify-between items-center mb-6">
             <span
-              className="text-[12px] tracking-[0.3em] uppercase"
+              className="text-[14px] tracking-[0.3em] uppercase font-bold"
               style={{ color: "var(--text-secondary)" }}
             >
               {t("subscribe.status")}
@@ -431,7 +431,7 @@ function SubscribeContent() {
           )}
           {!isNative && cardSavedNote && (
             <p
-              className="text-center text-[13px]"
+              className="text-center text-[15px]"
               style={{ color: "var(--moss, #A34A22)" }}
             >
               {cardSavedNote}
@@ -445,7 +445,7 @@ function SubscribeContent() {
               to non-IAP purchasing. */}
           {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial" || lapsed) && (
             <p
-              className="text-center text-[14px] leading-relaxed"
+              className="text-center text-[15px] leading-relaxed"
               style={{ color: "var(--text-secondary, #6E6659)", opacity: 0.85 }}
             >
               {t("subscribe.managed_on_web")}
@@ -458,7 +458,7 @@ function SubscribeContent() {
             <button
               onClick={handleCancel}
               disabled={actionLoading}
-              className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
+              className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50 font-bold"
               style={{
                 color: "var(--text-secondary, #6E6659)",
                 border: "1px solid rgba(110,102,89, 0.25)",
@@ -479,7 +479,7 @@ function SubscribeContent() {
         <div className="mt-8">
           <button
             onClick={() => router.push("/today")}
-            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
+            className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
             style={{
               color: "var(--bg-deep, #F5F0E6)",
               background: "var(--amber, #5A31AE)",
@@ -519,7 +519,7 @@ function PlanPicker({
   ];
   return (
     <div className="mb-4">
-      <p className="mb-2 text-[12px] tracking-wide" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>
+      <p className="mb-2 text-[14px] tracking-wide" style={{ color: "rgb(var(--rgb-text-muted))" }}>
         {t("subscribe.plan_choose")}
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -539,15 +539,15 @@ function PlanPicker({
                 cursor: disabled ? "default" : "pointer",
               }}
             >
-              <div className="text-[13px]" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>
+              <div className="text-[15px]" style={{ color: "rgb(var(--rgb-text-muted))" }}>
                 {o.key === "yearly" ? t("subscribe.plan_yearly") : t("subscribe.plan_monthly")}
               </div>
               <div className="mt-1 flex items-baseline gap-1">
                 <span className="text-[20px] font-medium" style={{ color: "var(--ink, #22201C)" }}>{o.price}</span>
-                <span className="text-[12px]" style={{ color: "var(--pearl-dim, #9aa9a0)" }}>{o.per}</span>
+                <span className="text-[14px]" style={{ color: "rgb(var(--rgb-text-muted))" }}>{o.per}</span>
               </div>
               {o.note && (
-                <div className="mt-1 text-[11px]" style={{ color: "var(--moss, #A34A22)" }}>{o.note}</div>
+                <div className="mt-1 text-[13px]" style={{ color: "var(--moss, #A34A22)" }}>{o.note}</div>
               )}
             </button>
           );
@@ -561,8 +561,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline">
       <span
-        className="text-[12px] tracking-[0.22em] uppercase"
-        style={{ color: "var(--text-secondary)", opacity: 0.7 }}
+        className="text-[14px] tracking-[0.22em] uppercase font-bold"
+        style={{ color: "var(--text-muted)" }}
       >
         {label}
       </span>
@@ -648,7 +648,7 @@ function NativeMembershipView() {
     <div className="min-h-screen px-6 pt-20 pb-32">
       <div className="max-w-md mx-auto text-center">
         <p
-          className="text-[12px] tracking-[0.3em] uppercase mb-5"
+          className="text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
           style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
         >
           {t("subscribe.eyebrow_lbd")}
@@ -658,7 +658,7 @@ function NativeMembershipView() {
           className="text-5xl mb-5"
           style={{
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 300,
+            fontWeight: 900,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
           }}
@@ -671,8 +671,8 @@ function NativeMembershipView() {
           style={{
             color: "var(--text-secondary, #6E6659)",
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontStyle: "italic",
-            fontWeight: 300,
+            
+            fontWeight: 700,
           }}
         >
           {t("subscribe.native_blurb")}
@@ -697,9 +697,9 @@ function NativeMembershipView() {
                   background: selected ? "rgba(90,49,174, 0.10)" : "transparent",
                 }}
               >
-                <span className="block text-[11px] tracking-[0.25em] uppercase" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.label}</span>
+                <span className="block text-[13px] tracking-[0.25em] uppercase font-bold" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.label}</span>
                 <span className="block text-xl mt-1" style={{ color: "var(--text-primary, #22201C)" }}>{o.price}</span>
-                <span className="block text-[11px]" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.per}</span>
+                <span className="block text-[13px]" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.per}</span>
               </button>
             );
           })}
@@ -709,9 +709,9 @@ function NativeMembershipView() {
           <button
             onClick={handleSubscribe}
             disabled={loading}
-            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50"
+            className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50 font-bold"
             style={{
-              color: "var(--bg-deep, #0f1f17)",
+              color: "rgb(var(--rgb-bg-deep))",
               background: "var(--amber, #5A31AE)",
               border: "1px solid var(--amber, #5A31AE)",
             }}
@@ -721,7 +721,7 @@ function NativeMembershipView() {
 
           <button
             onClick={logout}
-            className="w-full py-4 rounded-full text-[12px] tracking-[0.3em] uppercase transition-colors"
+            className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
             style={{
               color: "var(--text-secondary, #6E6659)",
               border: "1px solid rgba(110,102,89, 0.25)",
@@ -732,7 +732,7 @@ function NativeMembershipView() {
           </button>
 
           {error && (
-            <p className="text-sm pt-2" style={{ color: "var(--ember, #c4684a)" }}>
+            <p className="text-sm pt-2" style={{ color: "rgb(var(--rgb-ember))" }}>
               {error}
             </p>
           )}
@@ -745,17 +745,17 @@ function NativeMembershipView() {
             browser (they are not in the WebView allow-list). */}
         <div className="mt-9 space-y-3 text-center">
           {priceLabel && (
-            <p className="text-[13px]" style={{ color: "var(--text-primary, #22201C)" }}>
+            <p className="text-[15px]" style={{ color: "var(--text-primary, #22201C)" }}>
               {t("subscribe.free_week_then")} {priceLabel} {t("subscribe.per_month")}
             </p>
           )}
           <p
-            className="text-[12px] leading-relaxed mx-auto"
+            className="text-[14px] leading-relaxed mx-auto"
             style={{ color: "var(--text-secondary, #6E6659)", opacity: 0.8, maxWidth: "22rem" }}
           >
             {t("subscribe.auto_renew_terms")}
           </p>
-          <p className="text-[12px]">
+          <p className="text-[14px]">
             <a
               href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
               target="_blank"
@@ -764,7 +764,7 @@ function NativeMembershipView() {
             >
               {t("subscribe.terms_of_use")}
             </a>
-            <span style={{ color: "var(--text-secondary, #6E6659)", opacity: 0.5 }}>{"   ·   "}</span>
+            <span style={{ color: "var(--text-muted)" }}>{"   ·   "}</span>
             <a
               href="https://solray.ai/legal"
               target="_blank"
@@ -795,7 +795,7 @@ function TrialOffer({
       <div className="max-w-md mx-auto text-center">
         {/* Eyebrow */}
         <p
-          className="text-[12px] tracking-[0.3em] uppercase mb-5"
+          className="text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
           style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
         >
           {t("subscribe.eyebrow_lbd")}
@@ -805,7 +805,7 @@ function TrialOffer({
           className="text-5xl mb-5"
           style={{
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 300,
+            fontWeight: 900,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
           }}
@@ -818,8 +818,8 @@ function TrialOffer({
           style={{
             color: "var(--text-secondary, #6E6659)",
             fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontStyle: "italic",
-            fontWeight: 300,
+            
+            fontWeight: 700,
           }}
         >
           {t("subscribe.trial_blurb")}
@@ -834,7 +834,7 @@ function TrialOffer({
           }}
         >
           <p
-            className="text-[12px] tracking-[0.3em] uppercase mb-6"
+            className="text-[14px] tracking-[0.3em] uppercase mb-6 font-bold"
             style={{ color: "var(--text-secondary)" }}
           >
             {t("subscribe.everything_included")}
@@ -880,7 +880,7 @@ function TrialOffer({
             style={{
               color: "var(--text-primary)",
               fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-              fontWeight: 300,
+              fontWeight: 700,
               fontSize: "3rem",
               lineHeight: 1,
             }}
@@ -891,7 +891,7 @@ function TrialOffer({
               style={{
                 fontSize: "1rem",
                 color: "var(--text-secondary)",
-                fontStyle: "italic",
+                
               }}
             >
               {t("subscribe.per_month")}
@@ -899,7 +899,7 @@ function TrialOffer({
           </p>
           <p
             className="text-xs mt-3 tracking-wide"
-            style={{ color: "var(--text-secondary)", opacity: 0.75 }}
+            style={{ color: "var(--text-muted)" }}
           >
             {t("subscribe.cancel_anytime")}
           </p>
@@ -960,7 +960,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className="text-[12px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full"
+      className="text-[14px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full font-bold"
       style={{
         background: c.bg,
         color: c.text,
@@ -987,7 +987,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="w-full py-4 px-8 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110"
+      className="w-full py-4 px-8 rounded-full text-[15px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110 font-bold"
       style={{
         background: color,
         color: "var(--bg-deep)",

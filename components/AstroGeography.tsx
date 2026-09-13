@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
+import { GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 
 interface LinePoint {
   lat: number;
@@ -323,11 +324,11 @@ export default function AstroGeography({ token }: { token: string | null }) {
               <button
                 key={planet}
                 onClick={() => togglePlanet(planet)}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-[12px] font-body transition-all"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-[14px] font-body transition-all"
                 style={{
                   border: `1px solid ${active ? color : "rgba(226,218,202,0.8)"}`,
                   background: active ? `${color}20` : "transparent",
-                  color: active ? color : "#A34A22",
+                  color: active ? color : "rgb(var(--rgb-ember))",
                 }}
               >
                 <span>{symbol}</span>
@@ -346,11 +347,11 @@ export default function AstroGeography({ token }: { token: string | null }) {
               <button
                 key={type}
                 onClick={() => toggleType(type)}
-                className="px-2.5 py-1 rounded-full text-[12px] font-body tracking-wider transition-all"
+                className="px-2.5 py-1 rounded-full text-[14px] font-body tracking-wider transition-all"
                 style={{
-                  border: `1px solid ${active ? "#5A31AE" : "rgba(226,218,202,0.8)"}`,
+                  border: `1px solid ${active ? "rgb(var(--rgb-amber))" : "rgba(226,218,202,0.8)"}`,
                   background: active ? "rgba(90,49,174,0.1)" : "transparent",
-                  color: active ? "#5A31AE" : "#A34A22",
+                  color: active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-ember))",
                 }}
               >
                 {tx(labels[type], lang)}
@@ -380,7 +381,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
           />
 
           {/* Expand hint */}
-          <div className="absolute bottom-3 right-3 text-text-secondary/40 text-xs font-body flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="absolute bottom-3 right-3 text-text-muted text-xs font-body flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <span>⤢</span>
             <span>Expand</span>
           </div>
@@ -388,16 +389,16 @@ export default function AstroGeography({ token }: { token: string | null }) {
           {/* Legend */}
           <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#5A31AE" strokeWidth="1.5" /></svg>
-              <span className="text-text-secondary text-[11px] font-body">MC / ASC</span>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="rgb(var(--rgb-amber))" strokeWidth="1.5" /></svg>
+              <span className="text-text-secondary text-[13px] font-body">MC / ASC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#5A31AE" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
-              <span className="text-text-secondary text-[11px] font-body">IC / DSC</span>
+              <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="rgb(var(--rgb-amber))" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+              <span className="text-text-secondary text-[13px] font-body">IC / DSC</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#5A31AE" /></svg>
-              <span className="text-text-secondary text-[11px] font-body">Birth place</span>
+              <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(var(--rgb-amber))" /></svg>
+              <span className="text-text-secondary text-[13px] font-body">Birth place</span>
             </div>
           </div>
         </div>
@@ -407,7 +408,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
             className="px-4 py-3 rounded-xl border transition-all"
             style={{ borderColor: `${hoveredLine.color}40`, background: `${hoveredLine.color}08` }}
           >
-            <p className="text-[12px] font-body tracking-wider uppercase mb-1" style={{ color: hoveredLine.color }}>
+            <p className="text-[14px] font-body tracking-wider uppercase mb-1 font-bold" style={{ color: hoveredLine.color }}>
               {PLANET_SYMBOL_OVERRIDE[hoveredLine.planet] || hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
             </p>
             <p className="text-text-secondary text-xs font-body leading-relaxed">{hoveredLine.meaning}</p>
@@ -418,7 +419,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
         {powerSpots.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary">{lang.startsWith("es") ? "Lugares de Poder" : "Power Spots"}</h3>
+              <h3 className="text-xs font-body tracking-wider uppercase text-text-secondary font-bold">{lang.startsWith("es") ? "Lugares de Poder" : "Power Spots"}</h3>
               <button
                 onClick={() => {
                   const spotNames = powerSpots.map(s => s.city).join(", ");
@@ -430,7 +431,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                   }));
                   window.location.href = "/chat";
                 }}
-                className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+                className="text-[13px] font-body tracking-wider uppercase text-amber-sun hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full font-bold"
               >
                 {lang.startsWith("es") ? "Preguntar →" : "Ask →"}
               </button>
@@ -444,7 +445,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                   <div className="flex-1">
                     <p className="text-sm font-body text-amber-400/90 mb-0.5">{spot.city}</p>
                     <p className="text-xs text-text-secondary">{spot.lines.map(l => { const [pl, ty] = l.split(" "); return `${tx(pl, lang)} ${ty}`; }).join(" + ")}</p>
-                    <p className="text-xs text-text-secondary/70 mt-1">
+                    <p className="text-xs text-text-secondary mt-1">
                       {lang.startsWith("es")
                         ? `Las energías de ${spot.lines.map(l => tx(l.split(" ")[0], lang)).join(" y ")} son fuertes aquí`
                         : spot.description}
@@ -461,7 +462,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                       }));
                       window.location.href = "/chat";
                     }}
-                    className="text-[11px] font-body tracking-wider uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+                    className="text-[13px] font-body tracking-wider uppercase text-amber-sun hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full shrink-0 mt-0.5 font-bold"
                   >
                     {lang.startsWith("es") ? "Preguntar →" : "Ask →"}
                   </button>
@@ -608,7 +609,7 @@ function FullscreenMap({
         </button>
       </div>
 
-      <div className="absolute bottom-4 left-4 text-text-secondary/40 text-[12px] font-body">
+      <div className="absolute bottom-4 left-4 text-text-muted text-[14px] font-body">
         {lang.startsWith("es") ? "Pellizca o desplaza para acercar · Arrastra para mover" : "Pinch or scroll to zoom · Drag to pan"}
       </div>
 
@@ -633,16 +634,16 @@ function FullscreenMap({
             transition: 'transform 0.1s ease',
           }}
         >
-          <rect width={MAP_W} height={MAP_H} fill="#071310" />
+          <rect width={MAP_W} height={MAP_H} fill="rgb(var(--rgb-bg-dark))" />
           <WorldMap />
           {/* Grid lines */}
           {[-60, -30, 0, 30, 60].map(lat => (
             <line key={`lat${lat}`} x1={0} y1={latToY(lat)} x2={MAP_W} y2={latToY(lat)}
-              stroke={lat === 0 ? "#E2DACA" : "#FAF6EC"} strokeWidth={lat === 0 ? 0.8 : 0.4} />
+              stroke={lat === 0 ? "rgb(var(--rgb-border))" : "rgb(var(--rgb-card))"} strokeWidth={lat === 0 ? 0.8 : 0.4} />
           ))}
           {[-120, -60, 0, 60, 120].map(lon => (
             <line key={`lon${lon}`} x1={lonToX(lon)} y1={0} x2={lonToX(lon)} y2={MAP_H}
-              stroke="#FAF6EC" strokeWidth={0.4} />
+              stroke="rgb(var(--rgb-card))" strokeWidth={0.4} />
           ))}
           {visibleLines.map((line, i) => {
             const path = buildPath(line.points);
@@ -665,7 +666,7 @@ function FullscreenMap({
               const y = 14 + row * 12;
               return (
                 <text key={`fslabel-${i}`} x={x + 3} y={y} fill={line.color}
-                  fontSize={9} fontFamily="'Cormorant Garamond', Georgia, serif" opacity={0.9}>
+                  fontSize={12} fontWeight={700} opacity={1}>
                   {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol} {line.planet}
                 </text>
               );
@@ -676,19 +677,19 @@ function FullscreenMap({
             const y = latToY(spot.lat);
             return (
               <g key={`fs-power-${idx}`}>
-                <circle cx={x} cy={y} r={6} fill="#5A31AE" opacity={0.9} />
-                <circle cx={x} cy={y} r={12} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
-                <text x={x} y={y - 14} textAnchor="middle" fill="#5A31AE"
-                  fontSize={9} fontFamily="Inter, sans-serif" fontWeight="600">
+                <circle cx={x} cy={y} r={6} fill="rgb(var(--rgb-amber))" opacity={0.9} />
+                <circle cx={x} cy={y} r={12} fill="none" stroke="rgb(var(--rgb-amber))" strokeWidth={1} opacity={0.4} />
+                <text x={x} y={y - 14} textAnchor="middle" fill="rgb(var(--rgb-amber))"
+                  fontSize={12} fontWeight={700}>
                   {spot.city}
                 </text>
               </g>
             );
           })}
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={5} fill="#5A31AE" opacity={0.9} />
+            r={5} fill="rgb(var(--rgb-amber))" opacity={0.9} />
           <circle cx={lonToX(data.birth_location.lon)} cy={latToY(data.birth_location.lat)}
-            r={9} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
+            r={9} fill="none" stroke="rgb(var(--rgb-amber))" strokeWidth={1} opacity={0.4} />
         </svg>
       </div>
     </div>
@@ -733,7 +734,7 @@ function MapSVG({
       onMouseLeave={() => setHoveredLine(null)}
     >
       {/* Ocean background */}
-      <rect width={MAP_W} height={MAP_H} fill="#071310" />
+      <rect width={MAP_W} height={MAP_H} fill="rgb(var(--rgb-bg-dark))" />
 
       {/* World map with improved paths */}
       <WorldMap />
@@ -746,7 +747,7 @@ function MapSVG({
           y1={latToY(lat)}
           x2={MAP_W}
           y2={latToY(lat)}
-          stroke={lat === 0 ? "#E2DACA" : "#FAF6EC"}
+          stroke={lat === 0 ? "rgb(var(--rgb-border))" : "rgb(var(--rgb-card))"}
           strokeWidth={lat === 0 ? 0.8 : 0.4}
         />
       ))}
@@ -757,7 +758,7 @@ function MapSVG({
           y1={0}
           x2={lonToX(lon)}
           y2={MAP_H}
-          stroke="#FAF6EC"
+          stroke="rgb(var(--rgb-card))"
           strokeWidth={0.4}
         />
       ))}
@@ -802,8 +803,8 @@ function MapSVG({
               x={x + 3}
               y={y}
               fill={line.color}
-              fontSize={10}
-              fontFamily="'Cormorant Garamond', Georgia, serif"
+              fontSize={12}
+              fontFamily={GLYPH_FONT_FAMILY}
               opacity={0.85}
             >
               {PLANET_SYMBOL_OVERRIDE[line.planet] || line.symbol}
@@ -820,8 +821,8 @@ function MapSVG({
           <g key={`power-${idx}`}>
             <defs>
               <radialGradient id={`power-glow-${idx}`}>
-                <stop offset="0%" stopColor="#5A31AE" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#5A31AE" stopOpacity={0} />
+                <stop offset="0%" stopColor="rgb(var(--rgb-amber))" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="rgb(var(--rgb-amber))" stopOpacity={0} />
               </radialGradient>
             </defs>
             {/* Pulsing glow background */}
@@ -835,15 +836,15 @@ function MapSVG({
               }}
             />
             {/* Core dot */}
-            <circle cx={x} cy={y} r={4} fill="#5A31AE" opacity={0.95} />
+            <circle cx={x} cy={y} r={4} fill="rgb(var(--rgb-amber))" opacity={0.95} />
             {/* Label */}
             <text
               x={x}
               y={y - 10}
               textAnchor="middle"
-              fill="#5A31AE"
-              fontSize={7}
-              fontFamily="Inter, sans-serif"
+              fill="rgb(var(--rgb-amber))"
+              fontSize={11}
+              fontFamily="inherit"
               fontWeight="600"
               opacity={0.7}
             >
@@ -854,8 +855,8 @@ function MapSVG({
       })}
 
       {/* Birth location marker */}
-      <circle cx={birthX} cy={birthY} r={5} fill="#5A31AE" opacity={0.9} />
-      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="#5A31AE" strokeWidth={1} opacity={0.4} />
+      <circle cx={birthX} cy={birthY} r={5} fill="rgb(var(--rgb-amber))" opacity={0.9} />
+      <circle cx={birthX} cy={birthY} r={8} fill="none" stroke="rgb(var(--rgb-amber))" strokeWidth={1} opacity={0.4} />
 
       {/* Tooltip */}
       {hoveredLine && (
@@ -866,7 +867,7 @@ function MapSVG({
             width={150}
             height={44}
             rx={6}
-            fill="#FAF6EC"
+            fill="rgb(var(--rgb-card))"
             stroke={hoveredLine.color}
             strokeWidth={1}
             opacity={0.95}
@@ -875,8 +876,8 @@ function MapSVG({
             x={Math.min(tooltipPos.x + 16, MAP_W - 152)}
             y={Math.max(tooltipPos.y - 14, 19)}
             fill={hoveredLine.color}
-            fontSize={10}
-            fontFamily="Inter, sans-serif"
+            fontSize={12}
+            fontFamily="inherit"
             fontWeight="600"
           >
             {PLANET_SYMBOL_OVERRIDE[hoveredLine.planet] || hoveredLine.symbol} {hoveredLine.planet} {hoveredLine.type}
@@ -884,9 +885,9 @@ function MapSVG({
           <text
             x={Math.min(tooltipPos.x + 16, MAP_W - 152)}
             y={Math.max(tooltipPos.y + 2, 35)}
-            fill="#6E6659"
-            fontSize={8.5}
-            fontFamily="Inter, sans-serif"
+            fill="rgb(var(--rgb-text-muted))"
+            fontSize={12}
+            fontFamily="inherit"
           >
             {(hoveredLine.meaning || "").slice(0, 38)}
           </text>
@@ -906,7 +907,7 @@ function MapSVG({
 // Real world map from Natural Earth 110m data
 function WorldMap() {
   return (
-    <g fill="#2d5438" stroke="#0a1a10" strokeWidth={0.3} strokeLinejoin="round">
+    <g fill="rgb(var(--rgb-border))" stroke="rgb(var(--rgb-text-muted) / 0.45)" strokeWidth={0.3} strokeLinejoin="round">
       {WORLD_PATHS.map((d, i) => (
         <path key={i} d={d} />
       ))}

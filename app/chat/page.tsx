@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
+import { Orb } from "@/components/Wordmark";
 
 interface Message {
   id: string;
@@ -235,12 +236,12 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
 
 function MessageContent({ content, showCursor, isUser }: { content: string; showCursor?: boolean; isUser?: boolean }) {
   // Transcript style: no bubble, no border, no background. The user
-  // message reads as the question (italic, quieter); the Oracle's
+  // message reads as the question (the quiet ink tier); the Oracle's
   // reply reads as the answer (full presence, primary color). Same
   // font size on both so the page reads as a continuous conversation
   // the way Claude.ai does, not a chat app.
   const wrapClass = isUser
-    ? "font-body italic text-text-secondary leading-relaxed"
+    ? "font-body text-text-secondary leading-relaxed"
     : "font-body text-text-primary leading-relaxed";
 
   // While streaming, render plain text. react-markdown re-parses the entire
@@ -265,16 +266,16 @@ function MessageContent({ content, showCursor, isUser }: { content: string; show
             <strong className="font-semibold">{children}</strong>
           ),
           h1: ({ children }) => (
-            <h1 className="font-heading text-xl text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 400 }}>{children}</h1>
+            <h1 className="font-heading text-xl text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 700 }}>{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 400 }}>{children}</h2>
+            <h2 className="font-heading text-lg text-text-primary mb-2 mt-3 first:mt-0" style={{ fontWeight: 700 }}>{children}</h2>
           ),
           h3: ({ children }) => (
             <h3 className="font-heading text-base text-amber-sun mb-1 mt-2 first:mt-0">{children}</h3>
           ),
           em: ({ children }) => (
-            <em className="italic">{children}</em>
+            <em className="">{children}</em>
           ),
           ul: ({ children }) => (
             <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>
@@ -1628,7 +1629,7 @@ function ChatPageInner() {
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-3 pb-3 flex items-baseline justify-between gap-4">
             <span
               className="font-body uppercase"
-              style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+              style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
             >
               {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
             </span>
@@ -1637,7 +1638,7 @@ function ChatPageInner() {
                 onClick={openHistory}
                 title={t("chat.previous_chats")}
                 className="font-body uppercase bg-transparent"
-                style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+                style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
               >
                 {t("chat.past")}
               </button>
@@ -1645,7 +1646,7 @@ function ChatPageInner() {
                 onClick={startNewChat}
                 title={t("chat.new_chat")}
                 className="font-body uppercase bg-transparent"
-                style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+                style={{ fontSize: 13, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
               >
                 {t("chat.new")}
               </button>
@@ -1720,7 +1721,7 @@ function ChatPageInner() {
 
               // Error messages render with distinct styling so the user
               // is never misled into thinking transport-level error copy
-              // came from the Oracle. Non-italic, ember-tinted, smaller,
+              // came from the Oracle. Ember-tinted, smaller,
               // labelled. Replaces the previous mockReplies fallback that
               // styled fortune-cookie strings as if the Oracle had said
               // them.
@@ -1736,16 +1737,16 @@ function ChatPageInner() {
                         }}
                       >
                         <p
-                          className="font-body text-[11px] tracking-[0.22em] uppercase mb-1"
+                          className="font-body text-[13px] tracking-[0.22em] uppercase mb-1 font-bold"
                           style={{ color: "var(--ember, #A34A22)", opacity: 0.85 }}
                         >
                           {t("chat.connection")}
                         </p>
-                        <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                        <p className="font-body text-text-primary text-[17px] leading-relaxed">
                           {msg.content}
                         </p>
                       </div>
-                      <span className="font-body text-text-secondary text-[12px] mt-1 px-1">
+                      <span className="font-body text-text-secondary text-[14px] mt-1 px-1">
                         {formatTime(msg.timestamp)}
                       </span>
                     </div>
@@ -1760,7 +1761,7 @@ function ChatPageInner() {
                 >
                   <MessageContent content={displayContent} showCursor={isStreaming} isUser={msg.role === "user"} />
                   <span
-                    className="font-body text-[11px] mt-2 mb-2 block tracking-[0.3em] uppercase"
+                    className="font-body text-[13px] mt-2 mb-2 block tracking-[0.3em] uppercase font-bold"
                     style={{ color: "rgb(var(--rgb-text-muted))" }}
                   >
                     {msg.role === "user" ? t("chat.you") : t("chat.oracle")} · {formatTime(msg.timestamp)}
@@ -1770,14 +1771,14 @@ function ChatPageInner() {
                       <button
                         onClick={() => copyMessage(msg.id, msg.content)}
                         aria-label={t("chat.copy_reply")}
-                        className="flex items-center gap-1.5 text-text-secondary/60 hover:text-text-secondary transition-colors"
+                        className="flex items-center gap-1.5 text-text-muted hover:text-text-secondary transition-colors"
                       >
                         {copiedId === msg.id ? (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         ) : (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
                         )}
-                        <span className="font-body text-[10px] tracking-[0.18em] uppercase">{copiedId === msg.id ? t("chat.copied") : t("chat.copy")}</span>
+                        <span className="font-body text-[12px] tracking-[0.18em] uppercase font-bold">{copiedId === msg.id ? t("chat.copied") : t("chat.copy")}</span>
                       </button>
                       <button
                         onClick={() => markResonance(msg.id, msg.content)}
@@ -1786,8 +1787,8 @@ function ChatPageInner() {
                         className="flex items-center gap-1.5 transition-colors"
                         style={{ color: resonatedIds.has(msg.id) ? "rgb(var(--rgb-wisteria))" : undefined }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill={resonatedIds.has(msg.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" /></svg>
-                        <span className={`font-body text-[10px] tracking-[0.18em] uppercase ${resonatedIds.has(msg.id) ? "" : "text-text-secondary/60"}`}>{resonatedIds.has(msg.id) ? t("chat.landed") : t("chat.this_landed")}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={resonatedIds.has(msg.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={resonatedIds.has(msg.id) ? "" : "text-text-muted"}><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" /></svg>
+                        <span className={`font-body text-[12px] tracking-[0.18em] uppercase ${resonatedIds.has(msg.id) ? "" : "text-text-muted"} font-bold`}>{resonatedIds.has(msg.id) ? t("chat.landed") : t("chat.this_landed")}</span>
                       </button>
                     </div>
                   )}
@@ -1820,7 +1821,7 @@ function ChatPageInner() {
                         border: 0,
                         borderBottom: "1px solid rgb(var(--rgb-border))",
                         padding: "14px 2px",
-                        fontSize: 15,
+                        fontSize: 17,
                         lineHeight: 1.5,
                         color: "rgb(var(--rgb-text-secondary))",
                       }}
@@ -1842,16 +1843,16 @@ function ChatPageInner() {
         <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#A34A22" }}>
+              <div className="flex items-center gap-2 mb-2 font-body text-[15px] tracking-[0.14em] uppercase font-bold" style={{ color: "rgb(var(--rgb-ember))" }}>
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: "#A34A22", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
+                  style={{ background: "rgb(var(--rgb-ember))", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
                 />
                 {t("chat.recording_tap_stop")}
               </div>
             )}
             {transcribing && !isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase text-text-secondary">
+              <div className="flex items-center gap-2 mb-2 font-body text-[15px] tracking-[0.14em] uppercase text-text-secondary font-bold">
                 <LoadingSpinner size="sm" />
                 {t("chat.transcribing")}
               </div>
@@ -1868,7 +1869,7 @@ function ChatPageInner() {
               const m = voiceError.match(/^(.*?)\{action\}(.+?)\{\/action\}(.*)$/);
               if (!m) {
                 return (
-                  <div className="mb-2 font-body text-[13px] text-text-secondary">{voiceError}</div>
+                  <div className="mb-2 font-body text-[15px] text-text-secondary">{voiceError}</div>
                 );
               }
               const [, before, label, after] = m;
@@ -1892,7 +1893,7 @@ function ChatPageInner() {
                 }, 300);
               };
               return (
-                <div className="mb-2 font-body text-[13px] text-text-secondary">
+                <div className="mb-2 font-body text-[15px] text-text-secondary">
                   {before}
                   <button
                     onClick={openInSafari}
@@ -1972,7 +1973,7 @@ function ChatPageInner() {
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || sending}
-                className="h-11 px-2 flex items-center justify-center transition-all duration-200 hover:opacity-70 active:scale-95 disabled:opacity-30 shrink-0 self-end font-body text-[15px] font-bold bg-transparent"
+                className="h-11 px-2 flex items-center justify-center transition-all duration-200 hover:opacity-70 active:scale-95 disabled:opacity-30 shrink-0 self-end font-body text-[17px] font-bold bg-transparent"
                 style={{ color: "rgb(var(--rgb-ember))" }}
               >
                 {sending ? <LoadingSpinner size="sm" /> : t("chat.send")}
@@ -1990,7 +1991,7 @@ function ChatPageInner() {
             >
               {/* Fixed header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
-                <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("chat.previous_chats")}</h2>
+                <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("chat.previous_chats")}</h2>
                 <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -2000,14 +2001,14 @@ function ChatPageInner() {
               {/* Scrollable list */}
               <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
-                  <p className="font-body text-text-secondary text-[15px] text-center py-6">{t("chat.no_previous")}</p>
+                  <p className="font-body text-text-secondary text-[17px] text-center py-6">{t("chat.no_previous")}</p>
                 ) : (
                   <div className="space-y-2">
                     {pastSessions.map((s) => (
                       <div key={s.sessionId} className="relative">
                         {renamingId === s.sessionId ? (
                           /* Inline rename input */
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid #B02E72" }}>
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid rgb(var(--rgb-wisteria))" }}>
                             <input
                               autoFocus
                               type="text"
@@ -2019,11 +2020,11 @@ function ChatPageInner() {
                               }}
                               onBlur={() => commitRename(s.sessionId)}
                               placeholder={s.date}
-                              className="flex-1 bg-transparent text-text-primary font-body text-[15px] outline-none placeholder-text-secondary"
+                              className="flex-1 bg-transparent text-text-primary font-body text-[17px] outline-none placeholder-text-secondary"
                             />
                             <button
                               onMouseDown={(e) => { e.preventDefault(); commitRename(s.sessionId); }}
-                              className="font-body text-[12px]" style={{ color: "var(--wisteria)" }}
+                              className="font-body text-[14px]" style={{ color: "var(--wisteria)" }}
                             >
                               {t("common.save")}
                             </button>
@@ -2037,12 +2038,12 @@ function ChatPageInner() {
                                   ? "bg-forest-card text-text-primary"
                                   : "border-forest-border bg-forest-card text-text-secondary hover:text-text-primary"
                               }`}
-                              style={s.sessionId === sessionId ? { border: "1px solid #B02E72" } : undefined}
+                              style={s.sessionId === sessionId ? { border: "1px solid rgb(var(--rgb-wisteria))" } : undefined}
                             >
-                              <p className="font-body text-text-primary text-[15px] truncate mb-0.5">
+                              <p className="font-body text-text-primary text-[17px] truncate mb-0.5">
                                 {s.customName || s.date}
                               </p>
-                              <p className="font-body text-text-secondary text-[13px] truncate">
+                              <p className="font-body text-text-secondary text-[15px] truncate">
                                 {s.messages.find((m) => m.role === "user")?.content || t("chat.no_messages")}
                               </p>
                             </button>
@@ -2051,7 +2052,7 @@ function ChatPageInner() {
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title={t("chat.rename_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#B02E72"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgb(var(--rgb-wisteria))"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2064,7 +2065,7 @@ function ChatPageInner() {
                               onClick={(e) => deleteSession(e, s.sessionId)}
                               title={t("chat.delete_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#A34A22"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgb(var(--rgb-ember))"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2115,26 +2116,15 @@ function ThinkingIndicator() {
 
   return (
     <div className="flex flex-col items-start gap-3 animate-fade-in pl-2">
-      <img
-        src="/logo.jpg"
-        alt="thinking"
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          animation: "spin 1.2s linear infinite",
-          objectFit: "cover",
-          boxShadow: "0 0 24px rgba(176,46,114,0.45)",
-          filter: "drop-shadow(0 0 12px rgba(176,46,114,0.35))",
-        }}
-      />
+      {/* the orb, breathing, not the old logo spinning like a coin */}
+      <Orb size={40} style={{ animation: "orbBreathe 11s ease-in-out infinite" }} />
       <p
         key={idx}
         className="animate-fade-in"
         style={{
           fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-          fontStyle: "italic",
-          fontWeight: 400,
+          
+          fontWeight: 700,
           fontSize: "1rem",
           color: "var(--text-secondary, #6E6659)",
           opacity: 0.82,

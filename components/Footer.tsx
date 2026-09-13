@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="font-heading text-sm tracking-widest uppercase text-text-secondary mb-4">
+            <h3 className="font-heading text-sm tracking-widest uppercase text-text-secondary mb-4 font-bold">
               Solray
             </h3>
             <p className="text-text-secondary text-sm leading-relaxed">
@@ -29,7 +29,7 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4">
+            <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4 font-bold">
               {t("footer.legal")}
             </h4>
             <nav className="space-y-2">
@@ -47,7 +47,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4">
+            <h4 className="font-heading text-xs tracking-widest uppercase text-text-secondary mb-4 font-bold">
               {t("footer.contact")}
             </h4>
             <nav className="space-y-2">

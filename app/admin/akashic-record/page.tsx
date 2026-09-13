@@ -81,21 +81,21 @@ type AuditLowest = {
 // Sun-sign element families → colour. Aligns with the extended palette so
 // the graph reads as Solray, not as a generic D3 demo.
 const ELEMENT_COLOR: Record<string, string> = {
-  Aries: "#A34A22",       // ember (fire)
-  Leo: "#5A31AE",         // amber (fire)
-  Sagittarius: "#A34A22", // ember
-  Taurus: "#A34A22",      // moss (earth)
-  Virgo: "#A34A22",
-  Capricorn: "#A34A22",
-  Gemini: "#4A2E9E",      // mist (air)
-  Libra: "#4A2E9E",
-  Aquarius: "#4A2E9E",
-  Cancer: "#B02E72",      // wisteria (water)
-  Scorpio: "#B02E72",
-  Pisces: "#B02E72",
+  Aries: "rgb(var(--rgb-ember))",       // ember (fire)
+  Leo: "rgb(var(--rgb-amber))",         // amber (fire)
+  Sagittarius: "rgb(var(--rgb-ember))", // ember
+  Taurus: "rgb(var(--rgb-ember))",      // moss (earth)
+  Virgo: "rgb(var(--rgb-ember))",
+  Capricorn: "rgb(var(--rgb-ember))",
+  Gemini: "rgb(var(--rgb-mist))",      // mist (air)
+  Libra: "rgb(var(--rgb-mist))",
+  Aquarius: "rgb(var(--rgb-mist))",
+  Cancer: "rgb(var(--rgb-wisteria))",      // wisteria (water)
+  Scorpio: "rgb(var(--rgb-wisteria))",
+  Pisces: "rgb(var(--rgb-wisteria))",
 };
 
-const CORE_COLOR = "#5A31AE"; // amber-sun
+const CORE_COLOR = "rgb(var(--rgb-amber))"; // amber-sun
 
 interface PhysicsNode {
   id: string;
@@ -217,20 +217,20 @@ function HiveDashboardInner() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
         <header className="mb-8 flex items-center justify-between gap-4">
           <div>
-            <p className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun mb-1">
+            <p className="font-body text-[14px] tracking-[0.22em] uppercase text-amber-sun mb-1 font-bold">
               The Collective
             </p>
-            <h1 className="font-heading text-2xl lg:text-3xl text-text-primary" style={{ fontWeight: 300 }}>
+            <h1 className="font-heading text-2xl lg:text-3xl text-text-primary" style={{ fontWeight: 900 }}>
               Akashic Record
             </h1>
-            <p className="font-body text-text-secondary text-[13px] mt-1">
+            <p className="font-body text-text-secondary text-[15px] mt-1">
               Each soul is a node. Lines connect souls who share chart frequencies. Dim points are souls who have not joined the field.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => void load()}
-              className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
+              className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors font-bold"
             >
               {loading ? "Reading…" : "Refresh"}
             </button>
@@ -238,10 +238,10 @@ function HiveDashboardInner() {
         </header>
 
         {error && (
-          <div className="mb-6 px-4 py-3 rounded-lg border border-red-700/40 text-[13px]">
+          <div className="mb-6 px-4 py-3 rounded-lg border border-red-700/40 text-[15px]">
             {error}
             {debug && (
-              <div className="font-mono text-[11px] text-text-secondary mt-2 break-all">
+              <div className="font-mono text-[13px] text-text-secondary mt-2 break-all">
                 {debug}
               </div>
             )}
@@ -265,19 +265,19 @@ function HiveDashboardInner() {
             <div className="lg:col-span-2 rounded-2xl border border-forest-border bg-forest-card/30 overflow-hidden">
               <HiveGraph nodes={graph.nodes} edges={graph.edges} />
               <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-1.5 px-4 pb-4 -mt-2">
-                {([["#5A31AE", "Fire"], ["#A34A22", "Earth"], ["#4A2E9E", "Air"], ["#B02E72", "Water"]] as [string, string][]).map(([c, l]) => (
-                  <span key={l} className="inline-flex items-center gap-2 font-body text-[11px] text-text-secondary">
+                {([["rgb(var(--rgb-amber))", "Fire"], ["rgb(var(--rgb-ember))", "Earth"], ["rgb(var(--rgb-mist))", "Air"], ["rgb(var(--rgb-wisteria))", "Water"]] as [string, string][]).map(([c, l]) => (
+                  <span key={l} className="inline-flex items-center gap-2 font-body text-[13px] text-text-secondary">
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}66` }} />
                     {l}
                   </span>
                 ))}
-                <span className="font-body text-[11px] text-text-muted">Hover to pause and read</span>
+                <span className="font-body text-[13px] text-text-muted">Hover to pause and read</span>
               </div>
             </div>
             <div className="space-y-5">
               <Panel title="Cohorts emerging">
                 {graph.top_cohorts.length === 0 ? (
-                  <p className="font-body text-text-secondary text-[12px]">
+                  <p className="font-body text-text-secondary text-[14px]">
                     No cohorts yet. The Akashic Record needs at least 10 people sharing one
                     chart trait before a cohort can form. Hit Discover Cohorts
                     once the user count grows.
@@ -285,7 +285,7 @@ function HiveDashboardInner() {
                 ) : (
                   <ul className="space-y-3">
                     {graph.top_cohorts.map((c) => (
-                      <li key={c.name} className="text-[12px] font-body">
+                      <li key={c.name} className="text-[14px] font-body">
                         <div className="flex items-center justify-between">
                           <span className="text-text-primary">{c.name.replaceAll("=", ": ").replaceAll("_", " ")}</span>
                           <span className="text-text-secondary tabular-nums">
@@ -332,7 +332,7 @@ function HiveDashboardInner() {
                   />
                 </div>
                 {actionMsg && (
-                  <p className="font-mono text-[11px] text-text-secondary mt-3 break-all leading-relaxed">
+                  <p className="font-mono text-[13px] text-text-secondary mt-3 break-all leading-relaxed">
                     {actionMsg}
                   </p>
                 )}
@@ -350,14 +350,14 @@ function CountsRow({ counts }: { counts: Counts }) {
   // Aged-pigment accents: each figure carries the hue of what it counts,
   // desaturated enough to stay quiet until you look at it.
   const items: Array<[string, number, string]> = [
-    ["Souls in the field", counts.consenting_users, "#5A31AE"],
-    ["Opted out", counts.opted_out ?? 0, "#6E6659"],
-    ["Chart signals", counts.chart_signals, "#4A2E9E"],
-    ["Components", counts.chart_components, "#4A2E9E"],
-    ["Cohorts", counts.pattern_cohorts, "#A34A22"],
-    ["High-confidence", counts.high_confidence_cohorts, "#A34A22"],
-    ["Themes", counts.pattern_themes, "#B02E72"],
-    ["Correlations", counts.pattern_correlations, "#A34A22"],
+    ["Souls in the field", counts.consenting_users, "rgb(var(--rgb-amber))"],
+    ["Opted out", counts.opted_out ?? 0, "rgb(var(--rgb-text-muted))"],
+    ["Chart signals", counts.chart_signals, "rgb(var(--rgb-mist))"],
+    ["Components", counts.chart_components, "rgb(var(--rgb-mist))"],
+    ["Cohorts", counts.pattern_cohorts, "rgb(var(--rgb-ember))"],
+    ["High-confidence", counts.high_confidence_cohorts, "rgb(var(--rgb-ember))"],
+    ["Themes", counts.pattern_themes, "rgb(var(--rgb-wisteria))"],
+    ["Correlations", counts.pattern_correlations, "rgb(var(--rgb-ember))"],
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -369,8 +369,8 @@ function CountsRow({ counts }: { counts: Counts }) {
           onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = `${hue}55`; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = ""; }}
         >
-          <p className="font-body text-[10px] tracking-[0.22em] uppercase text-text-secondary">{label}</p>
-          <p className="font-heading mt-1 tabular-nums" style={{ fontSize: 26, fontWeight: 300, color: val > 0 ? hue : "var(--text-muted)" }}>
+          <p className="font-body text-[12px] tracking-[0.22em] uppercase text-text-secondary font-bold">{label}</p>
+          <p className="font-heading mt-1 tabular-nums" style={{ fontSize: 26, fontWeight: 900, color: val > 0 ? hue : "var(--text-muted)" }}>
             {val}
           </p>
         </div>
@@ -382,7 +382,7 @@ function CountsRow({ counts }: { counts: Counts }) {
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-forest-border bg-forest-card/30 px-5 py-5">
-      <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-4">{title}</p>
+      <p className="font-body text-[13px] tracking-[0.22em] uppercase text-text-secondary mb-4 font-bold">{title}</p>
       {children}
     </div>
   );
@@ -393,7 +393,7 @@ function ActionButton({ label, onClick, pending }: { label: string; onClick: () 
     <button
       onClick={onClick}
       disabled={pending}
-      className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors text-left disabled:opacity-50"
+      className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2.5 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors text-left disabled:opacity-50 font-bold"
     >
       {pending ? "Running…" : label}
     </button>
@@ -428,32 +428,32 @@ function OracleVoiceHealthSection({
     <section className="mt-12 rounded-2xl border border-forest-border bg-forest-card/30 px-6 py-6">
       <header className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <p className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun mb-1">
+          <p className="font-body text-[14px] tracking-[0.22em] uppercase text-amber-sun mb-1 font-bold">
             Behind the voice
           </p>
-          <h2 className="font-heading text-xl text-text-primary" style={{ fontWeight: 300 }}>
+          <h2 className="font-heading text-xl text-text-primary" style={{ fontWeight: 700 }}>
             Oracle Voice Health
           </h2>
-          <p className="font-body text-text-secondary text-[13px] mt-1">
+          <p className="font-body text-text-secondary text-[15px] mt-1">
             A second pair of eyes on every reply. Rolling {audit?.window_days ?? 7} days, scored against the voice rules.
           </p>
         </div>
         <button
           onClick={onRefresh}
-          className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors"
+          className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg border border-forest-border hover:border-amber-sun/50 transition-colors font-bold"
         >
           {loading ? "Reading…" : "Refresh"}
         </button>
       </header>
 
       {error && (
-        <p className="font-mono text-[11px] text-text-secondary break-all leading-relaxed">
+        <p className="font-mono text-[13px] text-text-secondary break-all leading-relaxed">
           Audit unavailable: {error}
         </p>
       )}
 
       {!error && audit && audit.total_audited === 0 && (
-        <p className="font-body text-text-secondary text-[13px]">
+        <p className="font-body text-text-secondary text-[15px]">
           No audited replies yet in the last 7 days. Once the Oracle responds to
           someone with OPENAI_API_KEY set in production, the first row will land
           within a few seconds.
@@ -472,7 +472,7 @@ function OracleVoiceHealthSection({
           {/* Score distribution histogram */}
           <div className="lg:col-span-2 space-y-5">
             <div>
-              <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-3">
+              <p className="font-body text-[13px] tracking-[0.22em] uppercase text-text-secondary mb-3 font-bold">
                 Score distribution
               </p>
               <ScoreHistogram buckets={audit.score_buckets} total={audit.total_audited} />
@@ -480,17 +480,17 @@ function OracleVoiceHealthSection({
 
             {/* Top violations */}
             <div>
-              <p className="font-body text-[11px] tracking-[0.22em] uppercase text-text-secondary mb-3">
+              <p className="font-body text-[13px] tracking-[0.22em] uppercase text-text-secondary mb-3 font-bold">
                 Top recurring violations
               </p>
               {audit.top_violations.length === 0 ? (
-                <p className="font-body text-text-secondary text-[12px]">
+                <p className="font-body text-text-secondary text-[14px]">
                   Clean. No flagged violations in this window.
                 </p>
               ) : (
                 <ul className="space-y-2">
                   {audit.top_violations.slice(0, 8).map((v) => (
-                    <li key={v.tag} className="text-[12px] font-body flex items-center justify-between gap-3">
+                    <li key={v.tag} className="text-[14px] font-body flex items-center justify-between gap-3">
                       <span className="text-text-primary font-mono">{v.tag}</span>
                       <span className="text-text-secondary tabular-nums">{v.count}</span>
                     </li>
@@ -507,13 +507,13 @@ function OracleVoiceHealthSection({
         <div className="mt-6 pt-6 border-t border-forest-border">
           <button
             onClick={onToggleLowest}
-            className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun hover:opacity-80 transition-opacity"
+            className="font-body text-[14px] tracking-[0.22em] uppercase text-amber-sun hover:opacity-80 transition-opacity font-bold"
           >
             {showLowest ? "Hide" : "Show"} {lowest.count} lowest-scoring replies
           </button>
           {showLowest && (
             <>
-            <p className="font-body italic text-text-secondary text-[11px] mt-3 mb-4 leading-relaxed">
+            <p className="font-body text-text-secondary text-[13px] mt-3 mb-4 leading-relaxed">
               Privacy posture: scores, violation tags, and the auditor&apos;s notes
               are visible by default because they describe Oracle behavior, not
               user content. The actual user message and Oracle reply text stay
@@ -551,7 +551,7 @@ function AuditRow({
         <span className="font-heading text-text-primary tabular-nums" style={{ fontSize: 18 }}>
           {item.score}
         </span>
-        <span className="font-mono text-[10px] text-text-secondary">
+        <span className="font-mono text-[12px] text-text-secondary">
           {new Date(item.created_at).toLocaleString()}
         </span>
       </div>
@@ -560,7 +560,7 @@ function AuditRow({
           {item.violations.map((v) => (
             <span
               key={v}
-              className="inline-block font-mono text-[10px] px-2 py-0.5 rounded border border-forest-border text-text-secondary"
+              className="inline-block font-mono text-[12px] px-2 py-0.5 rounded border border-forest-border text-text-secondary"
             >
               {v}
             </span>
@@ -568,7 +568,7 @@ function AuditRow({
         </div>
       )}
       {item.notes && (
-        <p className="font-body italic text-text-secondary text-[12px] mb-3">
+        <p className="font-body text-text-secondary text-[14px] mb-3">
           {item.notes}
         </p>
       )}
@@ -586,7 +586,7 @@ function AuditRow({
               : true;
             if (ok) setRevealed(true);
           }}
-          className="font-body text-[11px] tracking-[0.18em] uppercase text-amber-sun hover:opacity-80 transition-opacity"
+          className="font-body text-[13px] tracking-[0.18em] uppercase text-amber-sun hover:opacity-80 transition-opacity font-bold"
         >
           Reveal text (voice debugging)
         </button>
@@ -594,22 +594,22 @@ function AuditRow({
 
       {revealed && (
         <div className="mt-2 rounded-lg border border-amber-sun/30 bg-amber-sun/5 px-3 py-3">
-          <p className="font-body text-[10px] tracking-[0.18em] uppercase text-amber-sun mb-2">
+          <p className="font-body text-[12px] tracking-[0.18em] uppercase text-amber-sun mb-2 font-bold">
             Revealed for voice debugging
           </p>
           {item.user_message_excerpt && (
-            <p className="font-body text-[12px] text-text-secondary mb-2">
+            <p className="font-body text-[14px] text-text-secondary mb-2">
               <span className="text-text-muted mr-2">user</span>
               {item.user_message_excerpt}
             </p>
           )}
-          <p className="font-body text-[12px] text-text-primary whitespace-pre-wrap">
+          <p className="font-body text-[14px] text-text-primary whitespace-pre-wrap">
             <span className="text-text-muted mr-2">oracle</span>
             {item.reply_excerpt}
           </p>
           <button
             onClick={() => setRevealed(false)}
-            className="font-body text-[10px] tracking-[0.18em] uppercase text-text-secondary hover:opacity-80 transition-opacity mt-3"
+            className="font-body text-[12px] tracking-[0.18em] uppercase text-text-secondary hover:opacity-80 transition-opacity mt-3 font-bold"
           >
             Hide again
           </button>
@@ -622,11 +622,11 @@ function AuditRow({
 function ScoreTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-xl border border-forest-border bg-forest-deep/40 px-4 py-4">
-      <p className="font-body text-[10px] tracking-[0.22em] uppercase text-text-secondary">{label}</p>
-      <p className="font-heading text-text-primary mt-1 tabular-nums" style={{ fontSize: 28, fontWeight: 300 }}>
+      <p className="font-body text-[12px] tracking-[0.22em] uppercase text-text-secondary font-bold">{label}</p>
+      <p className="font-heading text-text-primary mt-1 tabular-nums" style={{ fontSize: 28, fontWeight: 900 }}>
         {value}
       </p>
-      {sub && <p className="font-body text-[11px] text-text-secondary mt-1">{sub}</p>}
+      {sub && <p className="font-body text-[13px] text-text-secondary mt-1">{sub}</p>}
     </div>
   );
 }
@@ -646,11 +646,11 @@ function ScoreHistogram({
     "0-39", "40-59", "60-79", "80-99", "100",
   ];
   const colorFor = (b: string) => {
-    if (b === "0-39") return "#A34A22";   // ember
-    if (b === "40-59") return "#A34A22";  // ember-warm
-    if (b === "60-79") return "#A79E90";  // moss-faded
-    if (b === "80-99") return "#4A2E9E";  // mist
-    return "#5A31AE";                     // amber-sun for 100
+    if (b === "0-39") return "rgb(var(--rgb-ember))";        // attend to this
+    if (b === "40-59") return "rgb(var(--rgb-wisteria))";    // warm
+    if (b === "60-79") return "rgb(var(--rgb-text-muted))";  // neutral
+    if (b === "80-99") return "rgb(var(--rgb-mist))";        // fine
+    return "rgb(var(--rgb-amber))";                          // a clean sweep
   };
   return (
     <div className="space-y-2">
@@ -659,7 +659,7 @@ function ScoreHistogram({
         const pct = total > 0 ? (count / total) * 100 : 0;
         return (
           <div key={b} className="flex items-center gap-3">
-            <span className="font-mono text-[11px] text-text-secondary w-12 text-right">{b}</span>
+            <span className="font-mono text-[13px] text-text-secondary w-12 text-right">{b}</span>
             <div className="flex-1 h-3 rounded-full bg-forest-deep/60 overflow-hidden">
               <div
                 className="h-full rounded-full"
@@ -670,7 +670,7 @@ function ScoreHistogram({
                 }}
               />
             </div>
-            <span className="font-mono text-[11px] text-text-secondary tabular-nums w-12">{count}</span>
+            <span className="font-mono text-[13px] text-text-secondary tabular-nums w-12">{count}</span>
           </div>
         );
       })}
@@ -847,7 +847,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
           ctx.beginPath(); ctx.arc(n.x, n.y, 7, 0, Math.PI * 2); ctx.stroke();
           continue;
         }
-        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#4A2E9E";
+        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "rgb(var(--rgb-mist))";
         ctx.globalAlpha = 0.18;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(n.x, n.y, 11, 0, Math.PI * 2); ctx.fill();

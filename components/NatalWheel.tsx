@@ -48,7 +48,7 @@ interface NatalWheelProps {
 
 const ASPECT_LINE: Record<string, { color: string; dash?: string }> = {
   conjunction: { color: "var(--amber)" },
-  opposition:  { color: "#4A2E9E", dash: "6 3" },
+  opposition:  { color: "rgb(var(--rgb-mist))", dash: "6 3" },
   trine:       { color: "var(--moss)" },
   square:      { color: "var(--ember)", dash: "3 3" },
   sextile:     { color: "var(--mist)" },
@@ -61,25 +61,25 @@ const MAX_ORB = 6;
 const MAX_LINES = 24;
 
 const PLANET_COLOR: Record<string, string> = {
-  Sun:       "#5A31AE",
-  Moon:      "#22201C",
-  Mercury:   "#4A2E9E",
-  Venus:     "#B02E72",
-  Mars:      "#A34A22",
-  Jupiter:   "#A34A22",
-  Saturn:    "#4A2E9E",
-  Uranus:    "#4A2E9E",
-  Neptune:   "#4A2E9E",
-  Pluto:     "#6E6659",
-  NorthNode: "#6E6659",
-  Chiron:    "#22201C",
-  ASC:       "#f0dcc0",
+  Sun:       "rgb(var(--rgb-amber))",
+  Moon:      "rgb(var(--rgb-text-primary))",
+  Mercury:   "rgb(var(--rgb-mist))",
+  Venus:     "rgb(var(--rgb-wisteria))",
+  Mars:      "rgb(var(--rgb-ember))",
+  Jupiter:   "rgb(var(--rgb-ember))",
+  Saturn:    "rgb(var(--rgb-mist))",
+  Uranus:    "rgb(var(--rgb-mist))",
+  Neptune:   "rgb(var(--rgb-mist))",
+  Pluto:     "rgb(var(--rgb-text-muted))",
+  NorthNode: "rgb(var(--rgb-text-muted))",
+  Chiron:    "rgb(var(--rgb-text-primary))",
+  ASC:       "rgb(var(--rgb-text-primary))",
 };
 
 const SIGN_ELEMENT_COLOR = [
-  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
-  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
-  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
+  "rgb(var(--rgb-ember))", "rgb(var(--rgb-ember))", "rgb(var(--rgb-mist))", "rgb(var(--rgb-mist))",
+  "rgb(var(--rgb-ember))", "rgb(var(--rgb-ember))", "rgb(var(--rgb-mist))", "rgb(var(--rgb-mist))",
+  "rgb(var(--rgb-ember))", "rgb(var(--rgb-ember))", "rgb(var(--rgb-mist))", "rgb(var(--rgb-mist))",
 ];
 
 export default function NatalWheel({
@@ -95,7 +95,7 @@ export default function NatalWheel({
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p className="font-body text-text-secondary/60 text-[13px] tracking-[0.15em] uppercase">
+        <p className="font-body text-text-muted text-[15px] tracking-[0.15em] uppercase font-bold">
           Wheel unavailable
         </p>
       </div>
@@ -111,10 +111,10 @@ export default function NatalWheel({
   const inkRGB     = isDark ? "232,210,180" : "26,48,32";   // cream vs deep forest
   const discFill   = isDark ? "url(#nwInner)" : "rgba(34,32,28,0.55)";
   const centerFill = isDark ? "rgba(6,16,10,0.7)" : "rgba(34,32,28,0.62)";
-  const haloFlood  = isDark ? "#000" : "#f7f3e9";
+  const haloFlood  = "rgb(var(--rgb-bg-deep))";
   const haloOpacity = isDark ? 0.85 : 0.7;
   // Pale planet glyphs (cream) vanish on a white disc; darken them in light mode.
-  const LIGHT_PLANET: Record<string, string> = { Moon: "#6f7e72", Chiron: "#6f7e72", ASC: "#b58a3a" };
+  const LIGHT_PLANET: Record<string, string> = { Moon: "rgb(var(--rgb-text-secondary))", Chiron: "rgb(var(--rgb-text-secondary))", ASC: "rgb(var(--rgb-ember))" };
 
   // Redesigned radii: houses OUTERMOST, then signs, planets, aspects, center.
   const rHouseOuter = size * 0.487;
@@ -190,7 +190,7 @@ export default function NatalWheel({
   }
 
   const planetColor = (name: string) =>
-    (!isDark && LIGHT_PLANET[name]) || PLANET_COLOR[name] || "#6E6659";
+    (!isDark && LIGHT_PLANET[name]) || PLANET_COLOR[name] || "rgb(var(--rgb-text-muted))";
 
   // Full aspect web: every major aspect inside MAX_ORB, tightest first,
   // weighted by exactness.
@@ -254,7 +254,7 @@ export default function NatalWheel({
               fillOpacity={0.95}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={size * 0.048}
+              fontSize={size * 0.055}
               style={{ fontFamily: GLYPH_FONT_FAMILY, fontWeight: 500 }}
             >
               {signText(s.i)}
@@ -301,11 +301,11 @@ export default function NatalWheel({
           <text
             key={`hn-${num}`}
             x={pos.x} y={pos.y}
-            fontSize={size * 0.032}
+            fontSize={size * 0.038}
             fill={`rgba(${inkRGB},0.7)`}
             textAnchor="middle"
             dominantBaseline="central"
-            style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500 }}
+            style={{ fontFamily: "inherit", fontWeight: 500 }}
           >
             {num}
           </text>
@@ -317,11 +317,11 @@ export default function NatalWheel({
           return (
             <text
               x={pos.x} y={pos.y}
-              fontSize={size * 0.030}
-              fill="#5A31AE"
+              fontSize={size * 0.036}
+              fill="rgb(var(--rgb-amber))"
               textAnchor="middle"
               dominantBaseline="middle"
-              style={{ fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "0.18em", fontWeight: 600 }}
+              style={{ fontFamily: "inherit", letterSpacing: "0.18em", fontWeight: 700 }}
             >
               ASC
             </text>
@@ -357,7 +357,7 @@ export default function NatalWheel({
         <circle cx={cx} cy={cy} r={rCenter} fill={centerFill} />
         <text
           x={cx} y={cy}
-          fill="#e8913c"
+          fill="rgb(var(--rgb-ember))"
           fillOpacity={0.85}
           textAnchor="middle"
           dominantBaseline="central"
@@ -389,11 +389,11 @@ export default function NatalWheel({
                 <text
                   x={pos.x + size * 0.020}
                   y={pos.y + size * 0.014}
-                  fontSize={size * 0.028}
+                  fontSize={size * 0.035}
                   fill={`rgba(${inkRGB},0.8)`}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}
+                  style={{ fontFamily: "inherit", fontWeight: 700 }}
                 >
                   Rx
                 </text>
@@ -404,7 +404,7 @@ export default function NatalWheel({
                 fill={pColor}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={size * 0.05}
+                fontSize={size * 0.056}
                 style={{ fontFamily: GLYPH_FONT_FAMILY, fontWeight: 500 }}
                 filter="url(#nwGlyph)"
               >
@@ -421,16 +421,16 @@ export default function NatalWheel({
           style={{
             gap: "10px 18px",
             marginTop: 18,
-            fontSize: 10,
+            fontSize: 12, fontWeight: 700,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: `rgba(${inkRGB},0.6)`,
           }}
         >
-          <LegendItem kind="dot"  color="#A34A22" label="Trine" />
-          <LegendItem kind="dot"  color="#4A2E9E" label="Sextile" />
-          <LegendItem kind="dash" color="#A34A22" label="Square" />
-          <LegendItem kind="dash" color="#4A2E9E" label="Opposition" />
+          <LegendItem kind="dot"  color="rgb(var(--rgb-ember))" label="Trine" />
+          <LegendItem kind="dot"  color="rgb(var(--rgb-mist))" label="Sextile" />
+          <LegendItem kind="dash" color="rgb(var(--rgb-ember))" label="Square" />
+          <LegendItem kind="dash" color="rgb(var(--rgb-mist))" label="Opposition" />
         </div>
       )}
     </div>

@@ -17,15 +17,15 @@ interface PaletteEntry {
 }
 
 const PALETTE: PaletteEntry[] = [
-  { name: "Forest deep",  cssVar: "rgb(var(--rgb-bg-deep))", dark: "#F5F0E6", light: "#FAF6EC", hint: "Background, the night under the trees." },
-  { name: "Forest card",  cssVar: "rgb(var(--rgb-card))",    dark: "#FAF6EC", light: "#FAF6EC", hint: "Cards, panels, surfaces sitting above background." },
-  { name: "Amber sun",    cssVar: "rgb(var(--rgb-amber))",   dark: "#5A31AE", light: "#5A31AE", hint: "Primary action, single warmth in the frame." },
-  { name: "Pearl",        cssVar: "rgb(var(--rgb-pearl))",   dark: "#FAF6EC", light: "#FAF6EC", hint: "Highlight, careful, never decorative." },
-  { name: "Ember",        cssVar: "rgb(var(--rgb-ember))",   dark: "#A34A22", light: "#A34A22", hint: "Mars, Aries, fire, danger states." },
-  { name: "Moss",         cssVar: "rgb(var(--rgb-moss))",    dark: "#A34A22", light: "#A34A22", hint: "Earth signs, growth, sustained presence." },
-  { name: "Mist",         cssVar: "rgb(var(--rgb-mist))",    dark: "#4A2E9E", light: "#4A2E9E", hint: "Air signs, communication, lift." },
-  { name: "Indigo",       cssVar: "rgb(var(--rgb-indigo))",  dark: "#4A2E9E", light: "#4A2E9E", hint: "Water signs, depth, after dusk." },
-  { name: "Wisteria",     cssVar: "rgb(var(--rgb-wisteria))",dark: "#B02E72", light: "#B02E72", hint: "Venus, soul-connection, the relational frequency." },
+  { name: "Forest deep",  cssVar: "rgb(var(--rgb-bg-deep))", dark: "rgb(var(--rgb-bg-deep))", light: "rgb(var(--rgb-card))", hint: "Background, the night under the trees." },
+  { name: "Forest card",  cssVar: "rgb(var(--rgb-card))",    dark: "rgb(var(--rgb-card))", light: "rgb(var(--rgb-card))", hint: "Cards, panels, surfaces sitting above background." },
+  { name: "Amber sun",    cssVar: "rgb(var(--rgb-amber))",   dark: "rgb(var(--rgb-amber))", light: "rgb(var(--rgb-amber))", hint: "Primary action, single warmth in the frame." },
+  { name: "Pearl",        cssVar: "rgb(var(--rgb-pearl))",   dark: "rgb(var(--rgb-card))", light: "rgb(var(--rgb-card))", hint: "Highlight, careful, never decorative." },
+  { name: "Ember",        cssVar: "rgb(var(--rgb-ember))",   dark: "rgb(var(--rgb-ember))", light: "rgb(var(--rgb-ember))", hint: "Mars, Aries, fire, danger states." },
+  { name: "Moss",         cssVar: "rgb(var(--rgb-moss))",    dark: "rgb(var(--rgb-ember))", light: "rgb(var(--rgb-ember))", hint: "Earth signs, growth, sustained presence." },
+  { name: "Mist",         cssVar: "rgb(var(--rgb-mist))",    dark: "rgb(var(--rgb-mist))", light: "rgb(var(--rgb-mist))", hint: "Air signs, communication, lift." },
+  { name: "Indigo",       cssVar: "rgb(var(--rgb-indigo))",  dark: "rgb(var(--rgb-mist))", light: "rgb(var(--rgb-mist))", hint: "Water signs, depth, after dusk." },
+  { name: "Wisteria",     cssVar: "rgb(var(--rgb-wisteria))",dark: "rgb(var(--rgb-wisteria))", light: "rgb(var(--rgb-wisteria))", hint: "Venus, soul-connection, the relational frequency." },
 ];
 
 const VOICE_RULES = [
@@ -88,7 +88,7 @@ const COUNTER_EXAMPLES = [
 const TYPOGRAPHY = [
   { face: "Cormorant Garamond", role: "Display + headings", weights: "300 light primarily, 400 occasional", sample: "Living by design" },
   { face: "Inter",              role: "Body + UI",          weights: "400 regular, 500 medium for emphasis", sample: "Solray reads the exact moment you arrived against the sky overhead right now." },
-  { face: "Cormorant italic 14px", role: "Quiet sub-tagline",  weights: "300 italic", sample: "living by design" },
+  { face: "Zen Kaku 14px",        role: "Quiet sub-tagline",  weights: "500",        sample: "living by design" },
 ];
 
 export default function BrandSection() {
@@ -96,7 +96,7 @@ export default function BrandSection() {
     <div className="space-y-10 page-enter">
 
       <Section title="Palette">
-        <p className="font-body text-text-secondary text-[13px] leading-relaxed mb-4 max-w-2xl">
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-4 max-w-2xl">
           Aged-pigment system. Categorical coding for sign elements and planets, all desaturated to harmonize with the forest + amber base. Use one warmth (amber) per frame; let the rest stay quiet. Each swatch carries the hex for both modes; the live preview is always the current mode.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -110,15 +110,15 @@ export default function BrandSection() {
         <div className="space-y-4">
           {TYPOGRAPHY.map((t) => (
             <div key={t.face} className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">{t.role}</p>
-              <p className="font-heading text-text-primary mb-1" style={{ fontSize: 24, fontWeight: 300 }}>{t.face}</p>
-              <p className="font-body text-text-secondary text-[12px] mb-3">{t.weights}</p>
+              <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">{t.role}</p>
+              <p className="font-heading text-text-primary mb-1" style={{ fontSize: 24, fontWeight: 900 }}>{t.face}</p>
+              <p className="font-body text-text-secondary text-[14px] mb-3">{t.weights}</p>
               <p
                 className={t.face.startsWith("Cormorant") ? "font-heading" : "font-body"}
                 style={{
                   fontSize: t.face.startsWith("Cormorant") ? 26 : 16,
-                  fontWeight: 300,
-                  fontStyle: t.face.includes("italic") ? "italic" : "normal",
+                  fontWeight: 700,
+                  fontStyle: "normal",
                   color: "var(--text-primary)",
                 }}
               >
@@ -133,22 +133,22 @@ export default function BrandSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {VOICE_RULES.map((r) => (
             <div key={r.rule} className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-              <p className="font-heading text-amber-sun mb-2" style={{ fontSize: 16, fontWeight: 400 }}>{r.rule}</p>
-              <p className="font-body text-text-secondary text-[13px] leading-relaxed">{r.body}</p>
+              <p className="font-heading text-amber-sun mb-2" style={{ fontSize: 17, fontWeight: 700 }}>{r.rule}</p>
+              <p className="font-body text-text-secondary text-[15px] leading-relaxed">{r.body}</p>
             </div>
           ))}
         </div>
       </Section>
 
       <Section title="Voice examples">
-        <p className="font-body text-text-secondary text-[13px] leading-relaxed mb-4 max-w-2xl">
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-4 max-w-2xl">
           Lines you should sound like. Not to copy, to calibrate. Each one is a single sentence doing real work without performance.
         </p>
         <div className="space-y-3">
           {VOICE_EXAMPLES.map((e, i) => (
             <div key={i} className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-              <p className="font-body text-text-secondary text-[11px] tracking-[0.22em] uppercase mb-2">{e.label}</p>
-              <p className="font-heading text-text-primary" style={{ fontSize: 18, fontWeight: 300, lineHeight: 1.4 }}>
+              <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-2 font-bold">{e.label}</p>
+              <p className="font-heading text-text-primary" style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.4 }}>
                 {e.text}
               </p>
             </div>
@@ -157,13 +157,13 @@ export default function BrandSection() {
       </Section>
 
       <Section title="What we do not sound like">
-        <p className="font-body text-text-secondary text-[13px] leading-relaxed mb-4 max-w-2xl">
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-4 max-w-2xl">
           If a sentence has the shape of any of these, rewrite.
         </p>
         <div className="space-y-2">
           {COUNTER_EXAMPLES.map((e, i) => (
             <div key={i} className="rounded-xl border px-4 py-3" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
-              <p className="font-body text-[14px] leading-relaxed" style={{ textDecoration: "line-through", textDecorationColor: "rgba(212,122,82,0.4)" }}>
+              <p className="font-body text-[15px] leading-relaxed" style={{ textDecoration: "line-through", textDecorationColor: "rgba(212,122,82,0.4)" }}>
                 {e}
               </p>
             </div>
@@ -178,7 +178,7 @@ export default function BrandSection() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-heading text-text-primary mb-4" style={{ fontSize: 22, fontWeight: 300, letterSpacing: "0.06em" }}>
+      <h2 className="font-heading text-text-primary mb-4" style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.06em" }}>
         {title}
       </h2>
       {children}
@@ -205,9 +205,9 @@ function Swatch({ entry }: { entry: PaletteEntry }) {
       <div style={{ background: entry.cssVar, height: 72 }} />
       <div className="px-3 py-3">
         <div className="flex items-baseline justify-between gap-2 mb-1">
-          <p className="font-heading text-text-primary text-[14px]" style={{ fontWeight: 400 }}>{entry.name}</p>
+          <p className="font-heading text-text-primary text-[15px]" style={{ fontWeight: 700 }}>{entry.name}</p>
         </div>
-        <p className="font-body text-text-secondary text-[11px] leading-snug mb-2">{entry.hint}</p>
+        <p className="font-body text-text-secondary text-[13px] leading-snug mb-2">{entry.hint}</p>
         <div className="flex flex-col gap-1">
           <HexRow label="Dark"  value={entry.dark}  copied={copied === entry.dark}  onCopy={() => copy(entry.dark)} />
           <HexRow label="Light" value={entry.light} copied={copied === entry.light} onCopy={() => copy(entry.light)} />
@@ -221,10 +221,10 @@ function HexRow({ label, value, copied, onCopy }: { label: string; value: string
   return (
     <button
       onClick={onCopy}
-      className="flex items-center justify-between gap-2 px-2 py-1 rounded font-mono text-[11px] hover:bg-forest-card/60 transition-colors text-left"
+      className="flex items-center justify-between gap-2 px-2 py-1 rounded font-mono text-[13px] hover:bg-forest-card/60 transition-colors text-left"
       title="Click to copy"
     >
-      <span className="font-body text-text-secondary text-[10px] tracking-[0.18em] uppercase">{label}</span>
+      <span className="font-body text-text-secondary text-[12px] tracking-[0.18em] uppercase font-bold">{label}</span>
       <span className="text-text-primary tabular-nums">
         {copied ? "Copied" : value}
       </span>

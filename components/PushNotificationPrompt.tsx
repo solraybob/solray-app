@@ -65,7 +65,7 @@ export default function PushNotificationPrompt() {
       <div className="flex gap-2 shrink-0">
         <button
           onClick={handleDismiss}
-          className="px-3 py-1.5 text-text-secondary/60 text-xs font-body hover:text-text-secondary transition-colors"
+          className="px-3 py-1.5 text-text-muted text-xs font-body hover:text-text-secondary transition-colors"
         >
           {t("common.dismiss")}
         </button>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/Wordmark";
 
 /**
  * Top header that appears on desktop (lg breakpoint and above) only.
@@ -22,7 +23,7 @@ import { useT } from "@/lib/i18n";
 const navItems = [
   { href: "/today",   labelKey: "nav.today",   color: "var(--amber)" },
   { href: "/chat",    labelKey: "nav.chat",    color: "var(--wisteria)" },
-  { href: "/souls",   labelKey: "nav.souls",   color: "#4A2E9E" },
+  { href: "/souls",   labelKey: "nav.souls",   color: "rgb(var(--rgb-mist))" },
   { href: "/profile", labelKey: "nav.profile", color: "var(--moss)" },
 ];
 
@@ -40,24 +41,13 @@ export default function DesktopHeader() {
       className="hidden lg:block fixed top-0 left-0 right-0 z-40 backdrop-blur"
       style={{
         background: "rgb(var(--rgb-bg-deep) / var(--header-alpha))",
-        borderBottom: "1px solid rgb(var(--rgb-border) / 0.6)",
+        borderBottom: "1px solid rgb(var(--rgb-border))",
       }}
     >
       <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
         {/* Brand: small sun + wordmark, lands on /today when clicked */}
-        <Link href="/today" className="flex items-center gap-3 group">
-          <div
-            className="w-8 h-8 transition-transform group-hover:scale-110"
-            style={{ filter: "drop-shadow(0 0 12px rgba(90,49,174,0.4))" }}
-          >
-            <Image src="/solray-sun.png" alt="" width={32} height={32} className="w-full h-full object-contain" />
-          </div>
-          <span
-            className="font-heading text-text-primary tracking-[0.18em]"
-            style={{ fontWeight: 300, fontSize: 16 }}
-          >
-            SOLRAY
-          </span>
+        <Link href="/today" className="flex items-center group">
+          <Wordmark size={21} className="text-text-primary transition-opacity group-hover:opacity-80" />
         </Link>
 
         {/* Right: four nav items */}
@@ -74,7 +64,7 @@ export default function DesktopHeader() {
                   background: isActive ? "rgba(34,32,28,0.04)" : "transparent",
                 }}
               >
-                <span className="font-body text-[13px] tracking-[0.15em] uppercase">
+                <span className="font-body text-[15px] tracking-[0.15em] uppercase font-bold">
                   {t(item.labelKey)}
                 </span>
               </Link>

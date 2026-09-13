@@ -57,12 +57,12 @@ function VerifyEmailInner() {
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{ background: "rgba(138,158,102,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A34A22" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--rgb-ember))" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <h1
-              className="text-2xl font-light mb-3"
+              className="text-2xl font-medium mb-3"
               style={{ fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)" }}
             >
               {t("verify.verified")}
@@ -82,13 +82,13 @@ function VerifyEmailInner() {
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{ background: "rgba(163,74,34,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A34A22" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--rgb-ember))" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </div>
             <h1
-              className="text-2xl font-light mb-3"
+              className="text-2xl font-medium mb-3"
               style={{ fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)" }}
             >
               {t("verify.failed_title")}

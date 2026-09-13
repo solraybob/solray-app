@@ -357,7 +357,7 @@ export default function SettingsPage() {
         {/* Header, back arrow on left, SETTINGS centered */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "rgb(var(--rgb-moss))" }}>
+            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-moss))" }}>
               {t("profile.section_label")}
             </p>
             <div className="relative flex items-center" style={{ height: "26px" }}>
@@ -373,7 +373,7 @@ export default function SettingsPage() {
               </button>
               <h1
                 className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
+                style={{ fontWeight: 900, fontSize: "21px" }}
               >
                 SETTINGS
               </h1>
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                       className="w-full h-full rounded-full object-cover border border-forest-border"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-full border border-forest-border bg-forest-card/60 flex items-center justify-center font-heading text-text-primary" style={{ fontSize: 26, fontWeight: 300 }}>
+                    <div className="w-full h-full rounded-full border border-forest-border bg-forest-card/60 flex items-center justify-center font-heading text-text-primary" style={{ fontSize: 26, fontWeight: 900 }}>
                       {initials}
                     </div>
                   )}
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="font-body text-[14px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
+                    className="font-body text-[15px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
                   >
                     {photo ? t("settings.replace_photo") : t("settings.upload_photo")}
                   </button>
@@ -458,17 +458,17 @@ export default function SettingsPage() {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                     placeholder={t("settings.name_placeholder")}
                   />
                 </FieldRow>
                 <FieldRow label={t("common.username")}>
                   <div className="flex items-baseline gap-1">
-                    <span className="font-body text-[16px] text-text-secondary">@</span>
+                    <span className="font-body text-[17px] text-text-secondary">@</span>
                     <input
                       value={username}
                       onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
-                      className="flex-1 font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="flex-1 font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                       placeholder={t("settings.username_placeholder")}
                       autoCapitalize="none"
                       autoCorrect="off"
@@ -577,7 +577,7 @@ export default function SettingsPage() {
                     type="date"
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
                 <FieldRow label={t("common.time")}>
@@ -585,7 +585,7 @@ export default function SettingsPage() {
                     type="time"
                     value={birthTime}
                     onChange={(e) => setBirthTime(e.target.value)}
-                    className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                   />
                 </FieldRow>
                 <FieldRow label={t("common.city")}>
@@ -600,12 +600,12 @@ export default function SettingsPage() {
                         setBirthLon(null);
                       }}
                       onFocus={() => birthCity.length >= 2 && setShowCitySuggestions(citySuggestions.length > 0)}
-                      className="w-full font-body text-[16px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
                       placeholder={t("settings.city_placeholder")}
                       autoCapitalize="words"
                     />
                     {cityLoading && (
-                      <span className="absolute right-1 top-1 text-[12px] text-text-muted">{t("settings.searching")}</span>
+                      <span className="absolute right-1 top-1 text-[14px] text-text-muted">{t("settings.searching")}</span>
                     )}
                     {showCitySuggestions && citySuggestions.length > 0 && (
                       <div
@@ -623,7 +623,7 @@ export default function SettingsPage() {
                               setShowCitySuggestions(false);
                               cityDirtyRef.current = false;
                             }}
-                            className="block w-full text-left px-3 py-2 font-body text-[15px] text-text-primary hover:bg-forest-border/40 transition-colors"
+                            className="block w-full text-left px-3 py-2 font-body text-[17px] text-text-primary hover:bg-forest-border/40 transition-colors"
                           >
                             {s.display}
                           </button>
@@ -642,7 +642,7 @@ export default function SettingsPage() {
             <Section label={t("settings.subscription")} hint={t("settings.subscription_hint")}>
               <button
                 onClick={() => router.push("/subscribe")}
-                className="font-body text-[14px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
+                className="font-body text-[15px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
               >
                 {t("common.manage_subscription")}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -655,7 +655,7 @@ export default function SettingsPage() {
             <div className="mt-12 mb-2 flex justify-center">
               <button
                 onClick={handleSignOut}
-                className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase hover:text-ember transition-colors"
+                className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase hover:text-ember transition-colors font-bold"
               >
                 {t("common.sign_out")}
               </button>
@@ -690,13 +690,13 @@ function Section({
   return (
     <section className="py-6 border-b border-forest-border/40">
       <div className="flex items-baseline justify-between mb-3">
-        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase">{label}</p>
-        {status === "saving" && <span className="font-body text-[12px] text-text-muted">{t("settings.saving")}</span>}
-        {status === "saved"  && <span className="font-body text-[12px] text-moss">{t("common.saved")}</span>}
+        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">{label}</p>
+        {status === "saving" && <span className="font-body text-[14px] text-text-muted">{t("settings.saving")}</span>}
+        {status === "saved"  && <span className="font-body text-[14px] text-moss">{t("common.saved")}</span>}
       </div>
       {children}
-      {error && <p className="mt-3 font-body text-[12px] text-ember">{error}</p>}
-      {hint  && !error && <p className="mt-3 font-body text-[13px] leading-relaxed text-text-muted">{hint}</p>}
+      {error && <p className="mt-3 font-body text-[14px] text-ember">{error}</p>}
+      {hint  && !error && <p className="mt-3 font-body text-[15px] leading-relaxed text-text-muted">{hint}</p>}
     </section>
   );
 }
@@ -704,7 +704,7 @@ function Section({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="font-body text-[12px] tracking-[0.18em] uppercase text-text-muted mb-1.5">{label}</p>
+      <p className="font-body text-[14px] tracking-[0.18em] uppercase text-text-muted mb-1.5 font-bold">{label}</p>
       {children}
     </div>
   );
@@ -718,7 +718,7 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
     >
       {status === "saving" ? t("common.saving") : t("common.save")}
     </button>
@@ -734,7 +734,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       onClick={() => onChange(!checked)}
       className="flex items-center justify-between w-full"
     >
-      <span className="font-body text-[16px] text-text-primary">{label}</span>
+      <span className="font-body text-[17px] text-text-primary">{label}</span>
       <span
         className="relative rounded-full transition-colors"
         style={{
@@ -762,7 +762,7 @@ function ThemeButton({ active, onClick, label }: { active: boolean; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 font-body text-[14px] tracking-[0.18em] uppercase py-2.5 rounded-full transition-colors"
+      className="flex-1 font-body text-[15px] tracking-[0.18em] uppercase py-2.5 rounded-full transition-colors font-bold"
       style={{
         backgroundColor: active ? "rgb(var(--rgb-amber) / 0.16)" : "transparent",
         color: active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-text-secondary))",

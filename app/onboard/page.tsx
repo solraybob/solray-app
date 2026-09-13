@@ -53,7 +53,7 @@ function BlueprintLoader() {
       <div
         className="w-20 h-20 rounded-full mb-10"
         style={{
-          background: "radial-gradient(circle at 40% 35%, #5A31AE55, #FAF6EC00 70%)",
+          background: "radial-gradient(circle at 40% 35%, rgb(var(--rgb-amber) / 0.33), rgb(var(--rgb-card) / 0) 70%)",
           border: "1px solid rgba(90,49,174,0.2)",
           animation: "pulse 2s ease-in-out infinite",
           boxShadow: "0 0 40px rgba(90,49,174,0.1)",
@@ -79,7 +79,7 @@ function BlueprintLoader() {
               <p
                 className="font-body text-sm"
                 style={{
-                  color: i === visibleCount - 1 ? "#22201C" : "#6E6659",
+                  color: i === visibleCount - 1 ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-text-muted))",
                 }}
               >
                 {text}
@@ -332,7 +332,7 @@ export default function OnboardPage() {
             <Image src="/solray-orb.png" alt="" width={20} height={20} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
             <span>lray</span>
           </span>
-          <span className="font-heading text-[12px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
+          <span className="font-heading text-[14px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontWeight: 700 }}>living by design</span>
         </div>
         {/* Progress dots */}
         <div className="flex gap-2 mt-5">
@@ -385,7 +385,7 @@ export default function OnboardPage() {
                         color: active ? "var(--text-primary)" : "var(--text-muted)",
                       }}
                     >
-                      <span className="font-heading text-2xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
+                      <span className="font-heading text-2xl" style={{ fontWeight: 900 }}>
                         {opt === "female" ? t("onboard.female") : t("onboard.male")}
                       </span>
                     </button>
@@ -514,7 +514,7 @@ export default function OnboardPage() {
                   onChange={(e) => setHiveConsent(e.target.checked)}
                   className="mt-1 w-4 h-4 accent-amber-sun cursor-pointer flex-shrink-0"
                 />
-                <span className="font-body text-[13px] leading-relaxed text-pearl/80">
+                <span className="font-body text-[15px] leading-relaxed text-pearl">
                   {t("onboard.hive_consent")}
                 </span>
               </label>
@@ -534,7 +534,7 @@ export default function OnboardPage() {
             <button
               onClick={next}
               disabled={!canProceed()}
-              className="w-full font-body font-bold py-4 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {t("common.continue")}
             </button>
@@ -542,7 +542,7 @@ export default function OnboardPage() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="w-full font-body font-bold py-4 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>
@@ -555,26 +555,26 @@ export default function OnboardPage() {
           width: 100%;
           background: transparent;
           border: none;
-          border-bottom: 1px solid #E2DACA;
+          border-bottom: 1px solid rgb(var(--rgb-border));
           padding: 12px 0;
-          color: #22201C;
+          color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
         }
         .onboard-input:focus {
-          border-bottom-color: #5A31AE;
+          border-bottom-color: rgb(var(--rgb-amber));
         }
         .onboard-input::placeholder {
-          color: #6E6659;
+          color: rgb(var(--rgb-text-muted));
         }
         .sex-card {
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 28px 12px;
-          border: 1px solid #E2DACA;
+          border: 1px solid rgb(var(--rgb-border));
           border-radius: 14px;
           background: transparent;
           transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.15s ease;
@@ -582,7 +582,7 @@ export default function OnboardPage() {
         }
         .sex-card:hover {
           border-color: rgba(90,49,174,0.55);
-          color: #22201C;
+          color: rgb(var(--rgb-text-primary));
         }
         .sex-card:active {
           transform: scale(0.98);
@@ -592,8 +592,8 @@ export default function OnboardPage() {
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: #FAF6EC;
-          border: 1px solid #E2DACA;
+          background: rgb(var(--rgb-card));
+          border: 1px solid rgb(var(--rgb-border));
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
@@ -604,7 +604,7 @@ export default function OnboardPage() {
           width: 100%;
           text-align: left;
           padding: 12px 16px;
-          color: #22201C;
+          color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 0.95rem;
           background: transparent;
@@ -615,11 +615,11 @@ export default function OnboardPage() {
         .city-dropdown-item:hover,
         .city-dropdown-item:focus {
           background: rgba(90,49,174,0.15);
-          color: #5A31AE;
+          color: rgb(var(--rgb-amber));
           outline: none;
         }
         .city-dropdown-item + .city-dropdown-item {
-          border-top: 1px solid #E2DACA;
+          border-top: 1px solid rgb(var(--rgb-border));
         }
       `}</style>
     </div>
@@ -641,13 +641,13 @@ function StepWrapper({
     <div>
       {eyebrow && (
         <p
-          className="font-body text-[11px] tracking-[0.3em] uppercase mb-3"
-          style={{ color: "var(--amber)", opacity: 0.75 }}
+          className="font-body text-[13px] tracking-[0.3em] uppercase mb-3 font-bold"
+          style={{ color: "var(--amber)" }}
         >{eyebrow}</p>
       )}
       <h2
         className="font-heading text-4xl text-text-primary mb-2 leading-tight"
-        style={{ fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}
+        style={{ fontWeight: 900, letterSpacing: "-0.01em" }}
       >{label}</h2>
       {subtitle && <p className="text-text-secondary text-sm font-body mb-8">{subtitle}</p>}
       <div className={subtitle ? "" : "mt-8"}>{children}</div>

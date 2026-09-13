@@ -29,7 +29,7 @@ function MoonIcon({ type, fill }: { type: "New Moon" | "Full Moon"; fill: string
         aria-label="Full Moon"
       >
         <circle cx="14" cy="14" r="11" fill={fill} opacity="0.92" />
-        <circle cx="14" cy="14" r="11" stroke="#4A2E9E" strokeWidth="1.2" fill="none" />
+        <circle cx="14" cy="14" r="11" stroke="rgb(var(--rgb-mist))" strokeWidth="1.2" fill="none" />
       </svg>
     );
   }
@@ -51,7 +51,7 @@ function MoonIcon({ type, fill }: { type: "New Moon" | "Full Moon"; fill: string
       />
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        stroke="#4A2E9E"
+        stroke="rgb(var(--rgb-mist))"
         strokeWidth="1.2"
         fill="none"
       />
@@ -124,7 +124,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
   const cardBg = isDark
     ? "linear-gradient(135deg, rgba(20, 38, 24, 0.95) 0%, rgba(14, 28, 18, 0.98) 100%)"
     : "linear-gradient(135deg, rgba(246, 249, 251, 0.96) 0%, rgba(236, 241, 245, 0.98) 100%)";
-  const moonFill = isDark ? "#22201C" : "#4A2E9E";
+  const moonFill = isDark ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-mist))";
 
   return (
     <div
@@ -153,12 +153,12 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="font-heading text-base leading-tight"
-              style={{ color: "var(--text-primary)", fontWeight: 400, letterSpacing: "0.01em" }}
+              style={{ color: "var(--text-primary)", fontWeight: 700, letterSpacing: "0.01em" }}
             >
               {event.type} in {event.sign}
             </span>
             <span
-              className="text-[12px] font-body tracking-wider px-2 py-0.5 rounded-full border"
+              className="text-[14px] font-body tracking-wider px-2 py-0.5 rounded-full border"
               style={{
                 color: "var(--text-secondary)",
                 borderColor: "rgba(122, 138, 154, 0.35)",
@@ -201,7 +201,7 @@ export default function LunarPhaseCard({ event }: { event: LunarEvent }) {
 
       {/* Read more / Close toggle */}
       <button
-        className="mt-2.5 text-[13px] font-body tracking-wider"
+        className="mt-2.5 text-[15px] font-body tracking-wider"
         style={{ color: "var(--text-secondary)", position: "relative", zIndex: 2, minHeight: "44px", display: "flex", alignItems: "center" }}
         onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
       >

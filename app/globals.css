@@ -1,6 +1,6 @@
-/* Fonts are now self-hosted via next/font (see app/layout.tsx), which sets
-   --font-heading (Cormorant Garamond) and --font-body (Inter). The old
-   render-blocking Google Fonts @import was removed from here. */
+/* One typeface for the whole product: Zen Kaku Gothic New, self-hosted via
+   next/font (see app/layout.tsx), which sets --font-heading. --font-body
+   points at the same face, so there is one download and one voice. */
 
 @tailwind base;
 @tailwind components;
@@ -13,22 +13,21 @@
    Tailwind's opacity modifier (e.g. bg-forest-deep/40) can compose with
    them via rgb(var(--rgb-x) / <alpha-value>).
 
-   Default = dark forest. data-theme="light" = pearl/cream, with the
-   text + structural tones inverted to forest-deep so contrast holds.
+   Default = the connector's paper. data-theme="dark" = the same palette
+   after sunset: the ink becomes the ground, the cream becomes the ink.
 
-   The aged-pigment accents (ember/moss/mist/indigo/wisteria) stay close
-   to their dark-mode values. Where they fall under WCAG AA on pearl
-   they get a single deeper variant under [data-theme="light"], no other
-   per-page tuning required.
+   Every value below is measured against its own ground. Body ink clears
+   7:1, the quiet tiers clear 4.5:1, and the accents clear 4.5:1 on both
+   the page and the card. Nothing in the product needs a per-page tweak.
    ─────────────────────────────────────────────────────────────────────────── */
 :root {
   /* one typeface, one download: the body variable points at the heading one */
   --font-body: var(--font-heading);
-  /* DARK theme (default) — RGB triplets */
+  /* LIGHT theme (default) — RGB triplets */
   --rgb-bg-deep:        245 240 230;     /* #F5F0E6 */
-  --rgb-bg-dark:        250 246 236;     /* #FAF6EC */
-  --rgb-card:          250 246 236;     /* #FAF6EC */
-  --rgb-border:        226 218 202;     /* #E2DACA */
+  --rgb-bg-dark:       239 233 220;     /* #EFE9DC */
+  --rgb-card:          253 251 245;     /* #FDFBF5 */
+  --rgb-border:        217 207 185;     /* #D9CFB9 */
   --rgb-amber:         90  49 174;     /* #5A31AE — hero accent, theme-stable */
   --rgb-text-primary:  34  32  28;     /* #22201C */
   --rgb-text-secondary: 92  85  72;    /* #5C5548 */
@@ -39,7 +38,8 @@
   --rgb-mist:           74  46 158;     /* #4A2E9E */
   --rgb-indigo:        74  46 158;     /* #4A2E9E */
   --rgb-wisteria:     176  46 114;     /* #B02E72 */
-  --rgb-pearl:        250 246 236;     /* #22201C */
+  --rgb-pearl:         253 251 245;     /* #FDFBF5 */
+  --rgb-scrim:          34  32  28;     /* the veil under a takeover */
 
   /* Fixed-header scrim opacity. 0.8 reads as glass over the dark forest;
      light mode needs more body (0.94) or dark cards scrolling underneath
@@ -52,9 +52,9 @@
   /* Legacy hex aliases — kept so any inline style still resolving to
      these names continues to render the dark default. */
   --bg-deep:        #F5F0E6;
-  --bg-dark:        #FAF6EC;
-  --card:           #FAF6EC;
-  --border:         #E2DACA;
+  --bg-dark:        #EFE9DC;
+  --card:           #FDFBF5;
+  --border:         #D9CFB9;
   --amber:          #5A31AE;
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
@@ -64,7 +64,7 @@
   --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
-  --pearl:          #FAF6EC;
+  --pearl:          #FDFBF5;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -76,8 +76,8 @@
 :root[data-theme="dark"] {
   --rgb-bg-deep:         22  20  17;   /* #161411 the new black, warm */
   --rgb-bg-dark:         28  26  22;   /* #1C1A16 */
-  --rgb-card:            31  29  24;   /* #1F1D18 */
-  --rgb-border:          58  53  45;   /* #3A352D hairline */
+  --rgb-card:            35  32  25;   /* #232019 */
+  --rgb-border:          74  67  57;   /* #4A4339 the one hairline */
   --rgb-amber:          154 113 246;   /* #9A71F6 orb violet, lifted */
   --rgb-text-primary:   245 240 230;   /* #F5F0E6 the cream, writing */
   --rgb-text-secondary: 198 189 173;   /* #C6BDAD */
@@ -87,15 +87,16 @@
   --rgb-mist:           166 146 232;   /* #A692E8 */
   --rgb-indigo:         146 124 236;   /* #927CEC */
   --rgb-wisteria:       238 122 178;   /* #EE7AB2 orb pink */
-  --rgb-pearl:           31  29  24;
+  --rgb-pearl:           35  32  25;
+  --rgb-scrim:            0   0   0;
 
   --header-alpha: 0.86;
   --spinner-track-alpha: 0.4;
 
-  --bg-deep: #161411;  --bg-dark: #1C1A16;  --card: #1F1D18;  --border: #3A352D;
+  --bg-deep: #161411;  --bg-dark: #1C1A16;  --card: #232019;  --border: #4A4339;
   --amber: #9A71F6;    --text-primary: #F5F0E6; --text-secondary: #C6BDAD;
   --text-muted: #9A9182; --ember: #E68D5E; --moss: #E2855A; --mist: #A692E8;
-  --indigo: #927CEC;   --wisteria: #EE7AB2; --pearl: #1F1D18;
+  --indigo: #927CEC;   --wisteria: #EE7AB2; --pearl: #232019;
 }
 
 :root[data-theme="light"] {
@@ -103,29 +104,30 @@
      lighter than the page bg so layered content keeps a soft edge
      without needing a hard border. Accents (moss/mist/indigo/wisteria)
      are pushed darker so 13px body text on pearl still passes WCAG AA. */
-  --rgb-bg-deep:       245 240 230;     /* #22201C — pearl page bg */
-  --rgb-bg-dark:       250 246 236;     /* #E2DACA — header strip */
-  --rgb-card:          250 246 236;     /* #FAF6EC — lifted card */
-  --rgb-border:        226 218 202;     /* #E2DACA — warm tan hairline */
+  --rgb-bg-deep:       245 240 230;     /* #F5F0E6 — the paper */
+  --rgb-bg-dark:       239 233 220;     /* #EFE9DC — the plane under the paper */
+  --rgb-card:          253 251 245;     /* #FDFBF5 — the plane above it */
+  --rgb-border:        217 207 185;     /* #D9CFB9 — the one hairline */
   --rgb-amber:          90  49 174;     /* #5A31AE — deeper amber on cream */
   --rgb-text-primary:   34  32  28;      /* #22201C — near-black forest */
   --rgb-text-secondary: 92  85  72;      /* #5C5548 */
   --rgb-text-muted:   110 102  89;      /* #6E6659 */
 
   --rgb-ember:        163  74  34;      /* #A34A22 */
-  --rgb-moss:          163  74  34;      /* #5a6e40 */
+  --rgb-moss:          163  74  34;      /* #A34A22 */
   --rgb-mist:           74  46 158;      /* #4A2E9E */
   --rgb-indigo:         74  46 158;      /* #4A2E9E */
   --rgb-wisteria:     176  46 114;      /* #B02E72 */
-  --rgb-pearl:        250 246 236;      /* #FAF6EC — also the card tone */
+  --rgb-pearl:         253 251 245;      /* #FDFBF5 — also the card tone */
+  --rgb-scrim:          34  32  28;
 
   --header-alpha: 1;
   --spinner-track-alpha: 1;
 
   --bg-deep:        #F5F0E6;
-  --bg-dark:        #FAF6EC;
-  --card:           #FAF6EC;
-  --border:         #E2DACA;
+  --bg-dark:        #EFE9DC;
+  --card:           #FDFBF5;
+  --border:         #D9CFB9;
   --amber:          #5A31AE;
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
@@ -135,7 +137,7 @@
   --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
-  --pearl:          #FAF6EC;
+  --pearl:          #FDFBF5;
 }
 
 * {
@@ -150,6 +152,14 @@ html, body {
   background-color: rgb(var(--rgb-bg-deep));
   color: rgb(var(--rgb-text-primary));
   font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
+  /* The connector sets its body at 17px/1.7 and the app now matches it.
+     Weight 500 rather than 400: Zen Kaku's regular is a light regular, and
+     on cream at small sizes it greys out. 500 is the weight the wordmark
+     and the landing body already use, so this is the product's real voice,
+     not a readability patch bolted on top. */
+  font-size: 17px;
+  line-height: 1.62;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Stop the mobile browser's native pull-to-refresh and scroll-chaining.
@@ -175,7 +185,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  border: 2px solid rgba(90,49,174, 0.25);
+  border: 2px solid rgb(var(--rgb-amber) / calc(0.25 / var(--spinner-track-alpha, 1)));
   border-top-color: var(--amber);
 }
 .solray-ptr-spinner.is-refreshing {
@@ -204,8 +214,8 @@ body {
     pointer-events: none;
     z-index: 0;
     background:
-      radial-gradient(circle at 50% 30%, rgba(90, 49, 174, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(176, 46, 114, 0.02) 0%, transparent 60%);
+      radial-gradient(circle at 50% 30%, rgb(var(--rgb-amber) / 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgb(var(--rgb-wisteria) / 0.03) 0%, transparent 60%);
   }
 }
 
@@ -214,6 +224,17 @@ h1, h2, h3 {
   font-weight: 900;
   letter-spacing: -.038em;
   line-height: 1.08;
+}
+
+/* Anything set in the display family reads as display type: 700 and the
+   tightened tracking, unless a utility or an inline weight says otherwise.
+   Base-layer rules lose to every utility class, so this is a floor, not a
+   lock. It is what stops a heading rendering at the body weight. */
+@layer base {
+  .font-heading {
+    font-weight: 700;
+    letter-spacing: -.028em;
+  }
 }
 
 /* Scrollbar styling */
@@ -227,7 +248,7 @@ h1, h2, h3 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--rgb-border));
+  background: rgb(var(--rgb-text-muted) / 0.45);
   border-radius: 2px;
 }
 
@@ -284,9 +305,9 @@ html {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #FAF6EC 0%,
-    #112a18 40%,
-    #FAF6EC 100%
+    rgb(var(--rgb-card)) 0%,
+    rgb(var(--rgb-border)) 40%,
+    rgb(var(--rgb-card)) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -343,7 +364,7 @@ html {
   content: "";
   position: absolute; top: 0; bottom: 0; left: -60%;
   width: 40%;
-  background: linear-gradient(105deg, transparent 0%, rgba(34,32,28, 0.35) 50%, transparent 100%);
+  background: linear-gradient(105deg, transparent 0%, rgb(var(--rgb-text-primary) / 0.28) 50%, transparent 100%);
   transform: skewX(-18deg);
   opacity: 0;
 }
@@ -352,8 +373,8 @@ html {
 
 /* Inputs wake up under the hand */
 .entry-input:focus {
-  border-color: rgba(90,49,174, 0.55) !important;
-  box-shadow: 0 0 0 3px rgba(90,49,174, 0.08), 0 0 24px rgba(90,49,174, 0.06);
+  border-color: rgb(var(--rgb-amber) / 0.55) !important;
+  box-shadow: 0 0 0 3px rgb(var(--rgb-amber) / 0.10), 0 0 24px rgb(var(--rgb-amber) / 0.07);
   outline: none;
 }
 
@@ -430,9 +451,9 @@ html {
    ======================================================================== */
 :root[data-entry-night][data-theme="light"] {
   --rgb-bg-deep:        245 240 230;
-  --rgb-bg-dark:        250 246 236;
-  --rgb-card:          250 246 236;
-  --rgb-border:        226 218 202;
+  --rgb-bg-dark:       239 233 220;
+  --rgb-card:          253 251 245;
+  --rgb-border:        217 207 185;
   --rgb-amber:         90  49 174;
   --rgb-text-primary:  34  32  28;
   --rgb-text-secondary: 92  85  72;
@@ -442,13 +463,14 @@ html {
   --rgb-mist:           74  46 158;
   --rgb-indigo:        74  46 158;
   --rgb-wisteria:     176  46 114;
-  --rgb-pearl:        250 246 236;
+  --rgb-pearl:         253 251 245;
+  --rgb-scrim:          34  32  28;
   --header-alpha: 1;
   --spinner-track-alpha: 1;
   --bg-deep:        #F5F0E6;
-  --bg-dark:        #FAF6EC;
-  --card:           #FAF6EC;
-  --border:         #E2DACA;
+  --bg-dark:        #EFE9DC;
+  --card:           #FDFBF5;
+  --border:         #D9CFB9;
   --amber:          #5A31AE;
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
@@ -458,5 +480,5 @@ html {
   --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
-  --pearl:          #FAF6EC;
+  --pearl:          #FDFBF5;
 }

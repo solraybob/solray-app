@@ -12,6 +12,7 @@ import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme-context";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
+import { Wordmark } from "@/components/Wordmark";
 
 // Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
 // inside a collapsed section that rarely opens, so code-split it into its own
@@ -302,13 +303,13 @@ interface SoulMapRadarChartProps {
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire:     "#A34A22", // ember-red
-  Earth:    "#A34A22", // moss
-  Air:      "#4A2E9E", // mist
-  Water:    "#4A2E9E", // slate
+  Fire:     "rgb(var(--rgb-ember))", // ember-red
+  Earth:    "rgb(var(--rgb-ember))", // moss
+  Air:      "rgb(var(--rgb-mist))", // mist
+  Water:    "rgb(var(--rgb-mist))", // slate
   Cardinal: "var(--amber)", // ember (initiating, outward)
-  Fixed:    "#B02E72", // wisteria (holding, inward)
-  Mutable:  "#6E6659", // sage (adapting, fluid)
+  Fixed:    "rgb(var(--rgb-wisteria))", // wisteria (holding, inward)
+  Mutable:  "rgb(var(--rgb-text-muted))", // sage (adapting, fluid)
 };
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
@@ -317,7 +318,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
   const isDark = theme !== "light";
   // Grid lines: dark forest hairlines on the dark theme; a soft sage-grey on the
   // pearl theme so the radar grid stays subtle instead of heavy dark lines.
-  const gridStroke = isDark ? "#E2DACA" : "#9aa89c";
+  const gridStroke = "rgb(var(--rgb-border))";
   const progress = useAnimatedProgress(0);
 
   const OUTER = 112;
@@ -386,7 +387,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       <polygon
         points={heptGridPolygon(cx, cy, (50 / 100) * OUTER)}
         fill="none"
-        stroke="#6E6659"
+        stroke="rgb(var(--rgb-text-muted))"
         strokeWidth={1}
         strokeDasharray="4 3"
         opacity={0.30}
@@ -395,9 +396,9 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       {/* Main moss polygon */}
       <polygon
         points={heptPolygonPoints(animatedValues, cx, cy, OUTER)}
-        fill="#A34A22"
+        fill="rgb(var(--rgb-ember))"
         fillOpacity={0.22 * progress}
-        stroke="#A34A22"
+        stroke="rgb(var(--rgb-ember))"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeOpacity={progress}
@@ -415,7 +416,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cy={y}
               r={5.5}
               fill="none"
-              stroke="#A34A22"
+              stroke="rgb(var(--rgb-ember))"
               strokeWidth={0.5}
               opacity={progress * 0.4}
             />
@@ -424,7 +425,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               cx={x}
               cy={y}
               r={3}
-              fill="#A34A22"
+              fill="rgb(var(--rgb-ember))"
               opacity={progress * 0.9}
             />
           </g>
@@ -432,12 +433,12 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       })}
 
       {/* Center dot */}
-      <circle cx={cx} cy={cy} r={2} fill="#5A31AE" opacity={0.3} />
+      <circle cx={cx} cy={cy} r={2} fill="rgb(var(--rgb-amber))" opacity={0.3} />
 
       {/* Axis labels, colored by element/modality */}
       {SOUL_AXIS_LABELS.map((label, i) => {
         const [lx, ly] = getPoint7(cx, cy, OUTER + 32, i);
-        const color = ELEMENT_COLORS[label] || "#6E6659";
+        const color = ELEMENT_COLORS[label] || "rgb(var(--rgb-text-muted))";
         return (
           <text
             key={label}
@@ -462,13 +463,13 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
 // Natal Aspects
 
 const ASPECT_CONFIG: Record<string, { symbol: string; label: string; color: string; major: boolean }> = {
-  trine:          { symbol: "△",  label: "Trine",          color: "#2a9d8f", major: true },
-  sextile:        { symbol: "⚹",  label: "Sextile",        color: "#6E6659", major: true },
+  trine:          { symbol: "△",  label: "Trine",          color: "rgb(var(--rgb-mist))", major: true },
+  sextile:        { symbol: "⚹",  label: "Sextile",        color: "rgb(var(--rgb-mist))", major: true },
   conjunction:    { symbol: "☌",  label: "Conjunction",    color: "var(--amber)", major: true },
-  opposition:     { symbol: "☍",  label: "Opposition",     color: "#e05c5c", major: true },
-  square:         { symbol: "□",  label: "Square",         color: "#d4813a", major: true },
-  quincunx:       { symbol: "⚻",  label: "Quincunx",      color: "#7c6fcd", major: true },
-  semi_sextile:   { symbol: "⚺",  label: "Semi-Sextile",  color: "#7a9e80", major: false },
+  opposition:     { symbol: "☍",  label: "Opposition",     color: "rgb(var(--rgb-ember))", major: true },
+  square:         { symbol: "□",  label: "Square",         color: "rgb(var(--rgb-ember))", major: true },
+  quincunx:       { symbol: "⚻",  label: "Quincunx",      color: "rgb(var(--rgb-wisteria))", major: true },
+  semi_sextile:   { symbol: "⚺",  label: "Semi-Sextile",  color: "rgb(var(--rgb-text-muted))", major: false },
   semi_square:    { symbol: "∠",  label: "Semi-Square",   color: "var(--text-secondary)", major: false },
   sesquiquadrate: { symbol: "⊼",  label: "Sesquiquadrate",color: "var(--text-secondary)", major: false },
   quintile:       { symbol: "Q",  label: "Quintile",       color: "var(--text-secondary)", major: false },
@@ -513,7 +514,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
               <span style={{ color: cfg.color }}>{cfg.symbol}</span>{" "}
               {tx(a.planet2, lang)}
             </span>
-            <span className="font-body text-[12px] text-text-secondary/50 ml-4">
+            <span className="font-body text-[14px] text-text-muted ml-4">
               {a.orb.toFixed(1)}°
             </span>
           </div>
@@ -534,10 +535,10 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
           <span className="text-base w-6 text-center flex-shrink-0" style={{ color: cfg.color }}>
             {cfg.symbol}
           </span>
-          <span className="font-body text-[15px] text-text-primary flex-1 text-left">
+          <span className="font-body text-[17px] text-text-primary flex-1 text-left">
             {tx(cfg.label, lang)}
           </span>
-          <span className="font-body text-[12px] text-text-secondary/70 mr-2">
+          <span className="font-body text-[14px] text-text-secondary mr-2">
             {list.length}
           </span>
           <svg
@@ -545,7 +546,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
             height="12"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#6E6659"
+            stroke="rgb(var(--rgb-text-muted))"
             strokeWidth="2"
             className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
           >
@@ -563,13 +564,13 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
         onClick={() => setSectionOpen(!sectionOpen)}
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-forest-card/50 transition-colors"
       >
-        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{t("profile.natal_aspects")}</h2>
+        <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("profile.natal_aspects")}</h2>
         <svg
           width="16"
           height="16"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#6E6659"
+          stroke="rgb(var(--rgb-text-muted))"
           strokeWidth="2"
           className={`transition-transform duration-200 ${sectionOpen ? "rotate-180" : ""}`}
         >
@@ -588,9 +589,9 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                 onClick={() => setMinorOpen(!minorOpen)}
                 className="w-full flex items-center gap-3 py-2.5 px-1 hover:bg-forest-card/30 rounded-lg transition-colors"
               >
-                <span className="text-base w-6 text-center flex-shrink-0 text-text-secondary/50">·</span>
-                <span className="font-body text-[15px] text-text-secondary flex-1 text-left">{t("profile.minor_aspects")}</span>
-                <span className="font-body text-[12px] text-text-secondary/70 mr-2">
+                <span className="text-base w-6 text-center flex-shrink-0 text-text-muted">·</span>
+                <span className="font-body text-[17px] text-text-secondary flex-1 text-left">{t("profile.minor_aspects")}</span>
+                <span className="font-body text-[14px] text-text-secondary mr-2">
                   {minorGroups.reduce((s, k) => s + grouped[k].length, 0)}
                 </span>
                 <svg
@@ -598,7 +599,7 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
                   height="12"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#6E6659"
+                  stroke="rgb(var(--rgb-text-muted))"
                   strokeWidth="2"
                   className={`transition-transform duration-200 flex-shrink-0 ${minorOpen ? "rotate-180" : ""}`}
                 >
@@ -620,10 +621,10 @@ function NatalAspects({ aspects }: { aspects: NatalAspect[] }) {
 
 // Section accent colors, mapped to the Solray extended palette
 const SECTION_ACCENTS: Record<string, string> = {
-  "Natal Chart":     "#5A31AE", // ember
+  "Natal Chart":     "rgb(var(--rgb-amber))", // ember
   "Astrocartography": "var(--mist)", // mist
-  "Human Design":    "#A34A22", // moss
-  "Gene Keys":       "#4A2E9E", // slate
+  "Human Design":    "rgb(var(--rgb-ember))", // moss
+  "Gene Keys":       "rgb(var(--rgb-mist))", // slate
 };
 
 function CollapsibleSection({
@@ -637,7 +638,7 @@ function CollapsibleSection({
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(defaultOpen);
-  const accent = SECTION_ACCENTS[title] || "#6E6659";
+  const accent = SECTION_ACCENTS[title] || "rgb(var(--rgb-text-muted))";
   const sectionTitleKey: Record<string, string> = {
     "Natal Chart": "profile.natal_chart",
     "Astrocartography": "profile.astrocartography",
@@ -655,12 +656,12 @@ function CollapsibleSection({
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span
-              className="font-body text-[12px] tracking-[0.22em] uppercase mb-1"
+              className="font-body text-[14px] tracking-[0.22em] uppercase mb-1 font-bold"
               style={{ color: accent }}
             >
               {displayTitle}
             </span>
-            <span className="font-body text-text-secondary/70 text-[13px]">
+            <span className="font-body text-text-secondary text-[15px]">
               {open ? t("common.tap_to_collapse") : t("common.tap_to_open")}
             </span>
           </div>
@@ -669,7 +670,7 @@ function CollapsibleSection({
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#6E6659"
+            stroke="rgb(var(--rgb-text-muted))"
             strokeWidth="2"
             className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           >
@@ -686,7 +687,7 @@ function CollapsibleSection({
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary/70 text-[12px] tracking-widest uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-forest-border/70 text-text-secondary text-[14px] tracking-widest uppercase font-bold">
       {children}
     </span>
   );
@@ -694,7 +695,7 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function SunTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border border-amber-sun/60 text-amber-sun text-[12px] tracking-[0.22em] uppercase">
+    <span className="font-body px-3 py-1 rounded-full border border-amber-sun/60 text-amber-sun text-[14px] tracking-[0.22em] uppercase font-bold">
       {children}
     </span>
   );
@@ -702,7 +703,7 @@ function SunTag({ children }: { children: React.ReactNode }) {
 
 function HDTypeTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--mist)", borderColor: "rgba(84,63,150,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[14px] tracking-[0.22em] uppercase font-bold" style={{ color: "var(--mist)", borderColor: "rgba(84,63,150,0.6)" }}>
       {children}
     </span>
   );
@@ -710,7 +711,7 @@ function HDTypeTag({ children }: { children: React.ReactNode }) {
 
 function ProfileTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-body px-3 py-1 rounded-full border text-[12px] tracking-[0.22em] uppercase" style={{ color: "var(--wisteria)", borderColor: "rgba(176,46,114,0.6)" }}>
+    <span className="font-body px-3 py-1 rounded-full border text-[14px] tracking-[0.22em] uppercase font-bold" style={{ color: "var(--wisteria)", borderColor: "rgba(176,46,114,0.6)" }}>
       {children}
     </span>
   );
@@ -796,7 +797,7 @@ export default function ProfilePage() {
         title: "My Soul Map, Solray",
         text: "My Soul Map on Solray. solray.ai",
         naturalSize: true,      // capture the card exactly as it appears, not a screen
-        background: "#0c1410",  // solid forest behind the translucent card
+        background: "rgb(var(--rgb-card))",  // the card plane behind the translucent layer
       });
     } catch (err) {
       console.warn("[share] soul map failed", err);
@@ -1009,16 +1010,11 @@ export default function ProfilePage() {
         {/* Header: Souls reference pattern. Tag left, SOLRAY center, edit right. */}
         <div className="border-b border-forest-border/50">
           <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[12px] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--moss)" }}>
+            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "var(--moss)" }}>
               {t("nav.profile")}
             </p>
             <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 300, fontSize: "21px" }}
-              >
-                SOLRAY
-              </h1>
+              <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
               <button
                 className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
                 title={t("common.settings")}
@@ -1048,34 +1044,26 @@ export default function ProfilePage() {
             <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
               {/* Avatar + Identity */}
               <div className="pt-6 pb-5 flex flex-col items-center gap-2 relative overflow-hidden">
-                {/* Contextual sun-sign planet image: very subtle ambient wash behind the avatar */}
+                {/* The sun sign's ruling planet colours the ground behind the
+                    avatar. Twelve stock photographs used to do this at 6 percent
+                    opacity, which cost twelve network requests to render something
+                    nobody could see, in a visual language the product no longer uses. */}
                 {profile?.sunSign && (() => {
-                  const sunSignPlanetImages: Record<string, string> = {
-                    // Fire signs
-                    Aries:       "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=60", // Mars, thunderhead
-                    Leo:         "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=60", // Sun, warm light
-                    Sagittarius: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=60", // Jupiter, storm clouds
-                    // Earth signs
-                    Taurus:      "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus, ocean
-                    Virgo:       "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury, silver haze
-                    Capricorn:   "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?w=800&q=60", // Saturn, cold stars
-                    // Air signs
-                    Gemini:      "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=60", // Mercury
-                    Libra:       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=60", // Venus
-                    Aquarius:    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // Uranus, deep space
-                    // Water signs
-                    Cancer:      "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // Moon
-                    Scorpio:     "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=800&q=60", // Pluto, dark cosmos
-                    Pisces:      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=60", // Neptune, misty sea
+                  const signWash: Record<string, string> = {
+                    Aries:       "rgba(163,74,34,.22)",   Leo:       "rgba(252,180,156,.28)",
+                    Sagittarius: "rgba(230,141,94,.22)",  Taurus:    "rgba(176,46,114,.20)",
+                    Virgo:       "rgba(74,46,158,.18)",   Capricorn: "rgba(110,102,89,.22)",
+                    Gemini:      "rgba(74,46,158,.18)",   Libra:     "rgba(176,46,114,.20)",
+                    Aquarius:    "rgba(90,49,174,.20)",   Cancer:    "rgba(84,63,150,.20)",
+                    Scorpio:     "rgba(34,32,28,.18)",    Pisces:    "rgba(74,46,158,.22)",
                   };
-                  const imgSrc = sunSignPlanetImages[profile.sunSign];
-                  if (!imgSrc) return null;
+                  const wash = signWash[profile.sunSign];
+                  if (!wash) return null;
                   return (
-                    <div className="absolute inset-x-0 -top-6 h-48 pointer-events-none">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imgSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.06 }} />
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgb(var(--rgb-bg-deep) / 0.55) 0%, rgb(var(--rgb-bg-deep) / 1) 100%)" }} />
-                    </div>
+                    <div
+                      className="absolute inset-x-0 -top-6 h-48 pointer-events-none"
+                      style={{ background: `radial-gradient(ellipse 70% 100% at 50% 0%, ${wash}, transparent 72%)` }}
+                    />
                   );
                 })()}
 
@@ -1099,7 +1087,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center border border-forest-border"
-                    style={{ background: "var(--card)", color: "#6E6659" }}
+                    style={{ background: "var(--card)", color: "rgb(var(--rgb-text-muted))" }}
                     title={t("profile.change_picture")}
                   >
                     <IconCamera />
@@ -1114,35 +1102,35 @@ export default function ProfilePage() {
                 </div>
                 {/* Upload status */}
                 {avatarSaving === "saving" && (
-                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6E6659" }}>{t("profile.photo_saving")}</p>
+                  <p className="font-body text-[14px] tracking-widest uppercase mt-2 font-bold" style={{ color: "rgb(var(--rgb-text-muted))" }}>{t("profile.photo_saving")}</p>
                 )}
                 {avatarSaving === "saved" && (
-                  <p className="font-body text-[12px] tracking-widest uppercase mt-2" style={{ color: "#6b9a72" }}>{t("profile.photo_saved")}</p>
+                  <p className="font-body text-[14px] tracking-widest uppercase mt-2 font-bold" style={{ color: "rgb(var(--rgb-text-secondary))" }}>{t("profile.photo_saved")}</p>
                 )}
                 {avatarSaving === "error" && (
-                  <p className="font-body text-[13px] tracking-widest uppercase mt-2" style={{ color: "#c87c6a", fontWeight: 600 }}>{t("profile.photo_error")}</p>
+                  <p className="font-body text-[15px] tracking-widest uppercase mt-2 font-bold" style={{ color: "rgb(var(--rgb-wisteria))", fontWeight: 700 }}>{t("profile.photo_error")}</p>
                 )}
 
                 {/* Handle (username), with relative z positioning for gradient overlay */}
                 <div className="relative z-10">
                 {editingHandle ? (
                   <div className="flex items-center gap-2">
-                    <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase">@</span>
+                    <span className="font-body text-text-secondary text-[14px] tracking-widest uppercase font-bold">@</span>
                     <input
-                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 font-body text-[15px] text-text-primary focus:outline-none focus:border-amber-sun/60"
+                      className="bg-forest-card border border-forest-border rounded-lg px-2 py-1 font-body text-[17px] text-text-primary focus:outline-none focus:border-amber-sun/60"
                       value={handleInput}
                       onChange={(e) => setHandleInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveHandle(); if (e.key === "Escape") setEditingHandle(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveHandle} disabled={savingHandle} className="font-body text-[14px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun">
                       {savingHandle ? "…" : t("common.save")}
                     </button>
-                    <button onClick={() => setEditingHandle(false)} className="font-body text-[12px] text-text-secondary">{t("common.cancel")}</button>
+                    <button onClick={() => setEditingHandle(false)} className="font-body text-[14px] text-text-secondary">{t("common.cancel")}</button>
                   </div>
                 ) : (
                   profile?.handle && (
-                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">
+                    <p className="font-body text-text-secondary text-[14px] tracking-widest uppercase font-bold">
                       @{profile.handle}
                     </p>
                   )
@@ -1155,26 +1143,26 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2">
                     <input
                       className="bg-forest-card border border-forest-border rounded-lg px-3 py-1.5 font-heading text-text-primary focus:outline-none focus:border-amber-sun/60 text-center"
-                      style={{ fontSize: "1.05rem", fontWeight: 400 }}
+                      style={{ fontSize: "1.05rem", fontWeight: 700 }}
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} disabled={savingName} className="font-body text-[12px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun/80">
+                    <button onClick={handleSaveName} disabled={savingName} className="font-body text-[14px] px-2 py-1 rounded border border-amber-sun/40 text-amber-sun">
                       {savingName ? "…" : t("common.save")}
                     </button>
-                    <button onClick={() => setEditingName(false)} className="font-body text-[12px] text-text-secondary">{t("common.cancel")}</button>
+                    <button onClick={() => setEditingName(false)} className="font-body text-[14px] text-text-secondary">{t("common.cancel")}</button>
                   </div>
                 ) : (
                     <h1
                       className="font-heading text-text-primary leading-tight text-center"
-                      style={{ fontSize: "1.05rem", fontWeight: 400, letterSpacing: "-0.01em" }}
+                      style={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.01em" }}
                     >
                       {profile?.name ? (
                         profile.name
                       ) : (
-                        <span className="text-text-secondary opacity-60 italic" style={{ fontWeight: 300 }}>
+                        <span className="text-text-secondary opacity-60 " style={{ fontWeight: 700 }}>
                           {t("profile.add_name")}
                         </span>
                       )}
@@ -1182,7 +1170,7 @@ export default function ProfilePage() {
                   )}
 
                   {saveError && (
-                    <p className="font-body text-ember text-[12px]">{saveError}</p>
+                    <p className="font-body text-ember text-[14px]">{saveError}</p>
                   )}
                 </div>
 
@@ -1198,8 +1186,8 @@ export default function ProfilePage() {
               {/* Greeting-style intro, same rhythm as chat + souls */}
               <div className="flex flex-col items-center text-center pt-2 pb-6">
                 <p
-                  className="font-heading text-text-primary/80 leading-relaxed max-w-[280px]"
-                  style={{ fontSize: "1.15rem", fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em" }}
+                  className="font-heading text-text-secondary leading-relaxed max-w-[280px]"
+                  style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.01em" }}
                 >
                   {t("profile.intro")}
                 </p>
@@ -1209,7 +1197,7 @@ export default function ProfilePage() {
               {/* Soul Map */}
               <div className="mb-6">
                 <div className="relative mb-4">
-                  <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center" style={{ color: "var(--moss)" }}>
+                  <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase text-center font-bold" style={{ color: "var(--moss)" }}>
                     {t("profile.soul_map")}
                   </p>
                   {profile ? (
@@ -1242,7 +1230,7 @@ export default function ProfilePage() {
                     <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
                       {/* Quiet caption instead of a dev-style legend */}
-                      <p className="mt-3 font-body text-text-secondary/60 text-[12px] tracking-[0.15em] uppercase text-center">
+                      <p className="mt-3 font-body text-text-muted text-[14px] tracking-[0.15em] uppercase text-center font-bold">
                         {t("today.balance_ring")}
                       </p>
 
@@ -1251,10 +1239,10 @@ export default function ProfilePage() {
                         {SOUL_AXIS_KEYS.map((key, i) => {
                           const val = profile.radar[key];
                           const label = SOUL_AXIS_LABELS[i];
-                          const barColor = ELEMENT_COLORS[label] || "#6E6659";
+                          const barColor = ELEMENT_COLORS[label] || "rgb(var(--rgb-text-muted))";
                           return (
                             <div key={key} className="flex items-center gap-2">
-                              <span className="font-body text-text-secondary/80 text-[12px] tracking-widest uppercase w-20 shrink-0" style={{ color: barColor }}>
+                              <span className="font-body text-text-secondary text-[14px] tracking-widest uppercase w-20 shrink-0 font-bold" style={{ color: barColor }}>
                                 {tx(label, lang)}
                               </span>
                               <div className="flex-1 h-1.5 rounded-full bg-forest-border/40 overflow-hidden">
@@ -1266,7 +1254,7 @@ export default function ProfilePage() {
                                   }}
                                 />
                               </div>
-                              <span className="font-body text-text-secondary/70 text-[12px] w-7 text-right shrink-0">
+                              <span className="font-body text-text-secondary text-[14px] w-7 text-right shrink-0">
                                 {val}%
                               </span>
                             </div>
@@ -1277,7 +1265,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="bg-forest-card/40 border border-forest-border/50 rounded-2xl p-8 text-center">
-                    <p className="font-body text-text-secondary text-[15px] leading-relaxed">
+                    <p className="font-body text-text-secondary text-[17px] leading-relaxed">
                       Complete your birth data to unlock your Soul Map
                     </p>
                   </div>
@@ -1360,10 +1348,10 @@ function normaliseCentreName(key: string): string {
 function HDRow({ label, value, meaning }: { label: string; value: string; meaning?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="font-body text-text-secondary text-[12px] tracking-widest uppercase w-24 shrink-0 pt-0.5">{label}</span>
+      <span className="font-body text-text-secondary text-[14px] tracking-widest uppercase w-24 shrink-0 pt-0.5 font-bold">{label}</span>
       <div className="flex-1">
-        <span className="font-body text-text-primary text-[15px]">{value}</span>
-        {meaning && <p className="font-body text-text-secondary/50 text-[12px] leading-snug mt-0.5">{meaning}</p>}
+        <span className="font-body text-text-primary text-[17px]">{value}</span>
+        {meaning && <p className="font-body text-text-muted text-[14px] leading-snug mt-0.5">{meaning}</p>}
       </div>
     </div>
   );
@@ -1372,8 +1360,8 @@ function HDRow({ label, value, meaning }: { label: string; value: string; meanin
 function GKPill({ label, value, color, style }: { label: string; value: string; color: string; style?: React.CSSProperties }) {
   return (
     <div className="text-center">
-      <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase mb-1">{label}</p>
-      <p className={`font-heading ${color}`} style={{ fontSize: "1.05rem", fontWeight: 400, ...style }}>{value}</p>
+      <p className="font-body text-text-secondary text-[14px] tracking-widest uppercase mb-1 font-bold">{label}</p>
+      <p className={`font-heading ${color}`} style={{ fontSize: "1.05rem", fontWeight: 700, ...style }}>{value}</p>
     </div>
   );
 }
@@ -1546,7 +1534,7 @@ function AskButton({ topic, question }: { topic: string; question: string }) {
   return (
     <button
       onClick={handleClick}
-      className="font-body text-[12px] tracking-[0.22em] uppercase text-amber-sun/60 hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full"
+      className="font-body text-[14px] tracking-[0.22em] uppercase text-amber-sun hover:text-amber-sun transition-colors border border-amber-sun/20 hover:border-amber-sun/50 px-2 py-0.5 rounded-full font-bold"
     >
       {t("profile.ask")}
     </button>
@@ -1605,7 +1593,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
   if (!chart) {
     return (
       <div className="mb-4 rounded-2xl border border-forest-border/50 bg-forest-card/30 px-5 py-6 text-center">
-        <p className="font-body text-text-secondary text-[15px] leading-relaxed">
+        <p className="font-body text-text-secondary text-[17px] leading-relaxed">
           {t("profile.blueprint_weaving")}
         </p>
       </div>
@@ -1672,12 +1660,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     {planetText(p.planet)}
                   </span>
                   <div className="flex-1">
-                    <p className="font-body text-text-secondary text-[12px] tracking-widest uppercase">{tx(label, lang)}</p>
-                    <p className="font-body text-text-secondary/50 text-[12px]">{subtitles[label]}</p>
+                    <p className="font-body text-text-secondary text-[14px] tracking-widest uppercase font-bold">{tx(label, lang)}</p>
+                    <p className="font-body text-text-muted text-[14px]">{subtitles[label]}</p>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
-                    <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 400 }}>{signEs}</p>
-                    <p className="font-body text-text-secondary/60 text-[12px]">{p.degree}</p>
+                    <p className="font-heading text-amber-sun leading-tight" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{signEs}</p>
+                    <p className="font-body text-text-muted text-[14px]">{p.degree}</p>
                     {questions[label] && <AskButton topic={es ? `${tx(label, lang)} en ${signEs}` : `${label} in ${p.sign}`} question={questions[label]} />}
                   </div>
                 </div>
@@ -1687,7 +1675,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {/* All planets */}
           <button
             onClick={() => setShowAll(!showAll)}
-            className="flex items-center gap-2 font-body text-text-secondary text-[12px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors"
+            className="flex items-center gap-2 font-body text-text-secondary text-[14px] tracking-widest uppercase mb-3 hover:text-text-primary transition-colors font-bold"
           >
             <span>{showAll ? t("profile.hide_planets") : t("profile.see_all_planets")}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}>
@@ -1713,11 +1701,11 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                   >
                     {planetText(p.planet)}
                   </span>
-                  <span className="font-body text-text-primary text-[15px] flex-1">{tx(p.planet, lang)}</span>
-                  <span className="font-body text-text-secondary text-[15px]">{tx(p.sign, lang)}</span>
-                  <span className="font-body text-text-secondary text-[12px]">{p.degree}</span>
-                  {p.retrograde && <span className="font-body text-amber-sun/70 text-[12px] font-semibold">Rx</span>}
-                  <span className="font-body text-text-secondary text-[12px]">H{p.house}</span>
+                  <span className="font-body text-text-primary text-[17px] flex-1">{tx(p.planet, lang)}</span>
+                  <span className="font-body text-text-secondary text-[17px]">{tx(p.sign, lang)}</span>
+                  <span className="font-body text-text-secondary text-[14px]">{p.degree}</span>
+                  {p.retrograde && <span className="font-body text-amber-sun text-[14px] font-semibold">Rx</span>}
+                  <span className="font-body text-text-secondary text-[14px]">H{p.house}</span>
                 </div>
               ))}
             </div>
@@ -1746,7 +1734,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           {chart.human_design.type && (
             <div className="pb-4 mb-1 border-b border-forest-border/40">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase">{tx("Type", lang)}</p>
+                <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase font-bold">{tx("Type", lang)}</p>
                 <AskButton
                   topic={es ? `Tipo ${tx(chart.human_design.type, lang)}` : `${chart.human_design.type} type`}
                   question={es
@@ -1754,9 +1742,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                     : `I'm a ${chart.human_design.type}. What does this mean for how I use my energy and make decisions?`}
                 />
               </div>
-              <p className="font-heading leading-tight" style={{ color: "var(--moss)", fontSize: "1.4rem", fontWeight: 300, letterSpacing: "0.04em" }}>{tx(chart.human_design.type, lang)}</p>
+              <p className="font-heading leading-tight" style={{ color: "var(--moss)", fontSize: "1.4rem", fontWeight: 900, letterSpacing: "0.04em" }}>{tx(chart.human_design.type, lang)}</p>
               {(es ? ES_HD_TYPE_MEANINGS : HD_TYPE_MEANINGS)[chart.human_design.type] && (
-                <p className="text-text-secondary/60 text-[14px] font-body leading-snug mt-1">{(es ? ES_HD_TYPE_MEANINGS : HD_TYPE_MEANINGS)[chart.human_design.type]}</p>
+                <p className="text-text-muted text-[15px] font-body leading-snug mt-1">{(es ? ES_HD_TYPE_MEANINGS : HD_TYPE_MEANINGS)[chart.human_design.type]}</p>
               )}
             </div>
           )}
@@ -1799,12 +1787,12 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             </div>
           )}
           <div>
-            <p className="text-text-secondary text-[12px] font-body tracking-[0.22em] uppercase mb-2">{t("profile.defined_centres")}</p>
+            <p className="text-text-secondary text-[14px] font-body tracking-[0.22em] uppercase mb-2 font-bold">{t("profile.defined_centres")}</p>
             <div className="flex flex-wrap gap-2">
               {chart.human_design.defined_centres.map((c) => (
                 <span
                   key={c}
-                  className="px-2.5 py-1 rounded-full text-[13px] font-body tracking-[0.05em]"
+                  className="px-2.5 py-1 rounded-full text-[15px] font-body tracking-[0.05em]"
                   style={{ color: "var(--moss)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(138,158,102,0.45)", background: "rgba(138,158,102,0.06)" }}
                 >
                   {tx(c, lang)}
@@ -1814,7 +1802,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           </div>
           {chart.human_design.undefined_centres.length > 0 && (
             <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">{t("profile.undefined_centres")}</p>
+              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2 font-bold">{t("profile.undefined_centres")}</p>
               <div className="flex flex-wrap gap-2">
                 {chart.human_design.undefined_centres.map((c) => (
                   <span key={c} className="px-2.5 py-1 bg-forest-card border border-forest-border rounded-full text-text-secondary text-xs font-body">{tx(c, lang)}</span>
@@ -1824,7 +1812,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
           )}
           {chart.human_design.key_channels.length > 0 && (
             <div>
-              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2">{t("profile.key_channels")}</p>
+              <p className="text-text-secondary text-xs font-body tracking-wider uppercase mb-2 font-bold">{t("profile.key_channels")}</p>
               <div className="space-y-1">
                 {chart.human_design.key_channels.map((ch) => (
                   <p key={ch} className="text-text-primary text-sm font-body">· {ch}</p>
@@ -1842,7 +1830,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
             <div key={gk!.name} className="rounded-2xl p-4" style={{ background: "rgba(74,46,158,0.08)", border: "1px solid rgba(74,46,158,0.28)" }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-body tracking-wider uppercase" style={{ color: "var(--mist)" }}>{tx(gk!.name, lang)}</span>
+                  <span className="text-xs font-body tracking-wider uppercase font-bold" style={{ color: "var(--mist)" }}>{tx(gk!.name, lang)}</span>
                   <span className="text-text-secondary text-xs font-body">· {tx("Gate", lang)} {gk!.gate}</span>
                 </div>
                 <AskButton
@@ -1853,9 +1841,9 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <GKPill label={tx("Shadow", lang)} value={tx(gk!.shadow, lang)} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
+                <GKPill label={tx("Shadow", lang)} value={tx(gk!.shadow, lang)} color="" style={{ color: "rgb(var(--rgb-ember))" }} />
                 <GKPill label={tx("Gift", lang)} value={tx(gk!.gift, lang)} color="" style={{ color: "var(--mist)" }} />
-                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #B02E72, #4A2E9E)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, rgb(var(--rgb-wisteria)), rgb(var(--rgb-mist)))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

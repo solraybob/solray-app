@@ -106,8 +106,8 @@ export default function LoginPage() {
             <Image src="/solray-orb.png" alt="" width={22} height={22} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
             <span>lray</span>
           </h1>
-          <p className="font-body text-text-muted mt-2 entry-rise uppercase" style={{ fontSize: 11, letterSpacing: "0.22em", fontWeight: 500, "--d": "300ms" } as React.CSSProperties}>living by design</p>
-          <p className="font-body text-text-secondary text-[12px] mt-3 tracking-[0.22em] uppercase entry-rise" style={{ "--d": "420ms" } as React.CSSProperties}>{t("login.cosmic_intelligence")}</p>
+          <p className="font-body text-text-muted mt-2 entry-rise uppercase" style={{ fontSize: 13, letterSpacing: "0.22em", fontWeight: 500, "--d": "300ms" } as React.CSSProperties}>living by design</p>
+          <p className="font-body text-text-secondary text-[14px] mt-3 tracking-[0.22em] uppercase entry-rise font-bold" style={{ "--d": "420ms" } as React.CSSProperties}>{t("login.cosmic_intelligence")}</p>
         </div>
 
         {/* Form */}
@@ -142,7 +142,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-body font-bold py-3.5 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
+            className="w-full font-body font-bold py-3.5 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
             style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
           >
             {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}

@@ -3,8 +3,12 @@
 /**
  * AstroGlyphs, zodiac sign and planet glyphs.
  *
- * The wheel (and the profile planet lists) render typographic Unicode glyphs
- * in Cormorant Garamond. Each glyph is paired with U+FE0E (VARIATION
+ * The wheel (and the profile planet lists) render typographic Unicode glyphs.
+ * Zen Kaku Gothic New is asked first so a glyph it does cover is set in the
+ * product's own face; the symbol fonts behind it catch the rest. Cormorant
+ * Garamond used to be named here and has not been loaded by the app since the
+ * type system changed, so every glyph was landing in an unspecified browser
+ * serif. Each glyph is paired with U+FE0E (VARIATION
  * SELECTOR-15, "text presentation") which suppresses emoji rendering across
  * iOS, Android, and Chrome, so ♈︎ comes out as a clean serif character and
  * never as a color pictograph. This matches the proposed spec in
@@ -64,8 +68,8 @@ export const PLANET_UNICODE: Record<string, string> = {
   Chiron:    "\u26B7", // ⚷
 };
 
-// Retrograde marker, U+211E. Placed in Inter (not Cormorant) in the wheel so
-// it reads as a typographic annotation rather than part of the glyph.
+// Retrograde marker, U+211E. Set at the body weight in the wheel so it reads
+// as a typographic annotation rather than part of the glyph.
 export const RETROGRADE_UNICODE = "\u211E";
 
 /** Returns the text-presentation sign glyph for index (0 = Aries .. 11 = Pisces). */
@@ -80,8 +84,10 @@ export function planetText(name: string): string {
   return g ? g + TEXT_VS : "";
 }
 
-/** Serif stack used for all astrological glyphs in the wheel, matching the mockup. */
-export const GLYPH_FONT_FAMILY = "'Cormorant Garamond', Georgia, serif";
+/** The stack used for every astrological glyph: the product's face first, then
+ *  the platform symbol fonts that actually carry ♈ ♃ ⚷ and friends. */
+export const GLYPH_FONT_FAMILY =
+  '"Zen Kaku Gothic New", "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", Georgia, serif';
 
 // ---------------------------------------------------------------------------
 // Zodiac sign paths (index 0 = Aries … 11 = Pisces)

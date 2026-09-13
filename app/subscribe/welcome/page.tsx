@@ -60,12 +60,12 @@ export default function SubscribeWelcome() {
           Skip link IS the way home. Always-visible, always-tappable. */}
       <div className="border-b border-forest-border/50">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-          <p className="font-body text-text-secondary/70 text-[12px] tracking-[0.22em] uppercase">
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">
             {t("subscribe.eyebrow_subscription")}
           </p>
           <button
             onClick={() => router.push("/today")}
-            className="font-body text-amber-sun text-[13px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity"
+            className="font-body text-amber-sun text-[15px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity font-bold"
           >
             {t("subscribe.continue_to_app")}
           </button>
@@ -101,23 +101,23 @@ export default function SubscribeWelcome() {
           </div>
         </div>
 
-        <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase text-center mb-3">
+        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase text-center mb-3 font-bold">
           {t("welcome.eyebrow")}
         </p>
         <h1
           className="font-heading text-text-primary text-center mb-3"
-          style={{ fontSize: 30, fontWeight: 300, letterSpacing: "0.02em" }}
+          style={{ fontSize: 30, fontWeight: 900, letterSpacing: "0.02em" }}
         >
           {t("welcome.youre_in")}
         </h1>
-        <p className="font-body text-text-secondary text-[16px] leading-relaxed text-center max-w-sm mx-auto mb-8">
+        <p className="font-body text-text-secondary text-[17px] leading-relaxed text-center max-w-sm mx-auto mb-8">
           {t("welcome.active_body")}
         </p>
 
         {/* Primary CTA, large, above the fold on every phone, can't miss */}
         <button
           onClick={() => router.push("/today")}
-          className="w-full font-body text-[14px] tracking-[0.22em] uppercase py-3.5 rounded-full transition-colors mb-3"
+          className="w-full font-body text-[15px] tracking-[0.22em] uppercase py-3.5 rounded-full transition-colors mb-3 font-bold"
           style={{
             backgroundColor: "rgb(var(--rgb-amber))",
             color: "rgb(var(--rgb-bg-deep))",
@@ -127,7 +127,7 @@ export default function SubscribeWelcome() {
         </button>
         <button
           onClick={() => router.push("/profile/settings")}
-          className="w-full font-body text-[12px] tracking-[0.22em] uppercase py-2.5 text-text-secondary/70 hover:text-text-secondary transition-colors mb-10"
+          className="w-full font-body text-[14px] tracking-[0.22em] uppercase py-2.5 text-text-secondary hover:text-text-secondary transition-colors mb-10 font-bold"
         >
           {t("welcome.manage_subscription")}
         </button>
@@ -136,22 +136,22 @@ export default function SubscribeWelcome() {
             never block the page on this; the user can leave any time. */}
         {!statusLoading && sub && (sub.card_brand || sub.price || renews) && (
           <div className="rounded-2xl border border-forest-border/60 bg-forest-card/40 px-5 py-5 mb-10">
-            <div className="space-y-3 font-body text-[15px]">
+            <div className="space-y-3 font-body text-[17px]">
               {sub.card_brand && sub.card_last_four && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("subscribe.card_on_file")}</span>
+                  <span className="text-text-secondary text-[15px] tracking-[0.18em] uppercase font-bold">{t("subscribe.card_on_file")}</span>
                   <span className="text-text-primary">{sub.card_brand} &middot; {sub.card_last_four}</span>
                 </div>
               )}
               {sub.price && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("subscribe.price")}</span>
+                  <span className="text-text-secondary text-[15px] tracking-[0.18em] uppercase font-bold">{t("subscribe.price")}</span>
                   <span className="text-text-primary">{sub.price}</span>
                 </div>
               )}
               {renews && (
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary text-[13px] tracking-[0.18em] uppercase">{t("welcome.next_renewal")}</span>
+                  <span className="text-text-secondary text-[15px] tracking-[0.18em] uppercase font-bold">{t("welcome.next_renewal")}</span>
                   <span className="text-text-primary">{renews}</span>
                 </div>
               )}
@@ -161,10 +161,10 @@ export default function SubscribeWelcome() {
 
         {/* What's unlocked, three quiet bullets, no marketing tone */}
         <div>
-          <p className="font-body text-text-secondary text-[12px] tracking-[0.22em] uppercase mb-4">
+          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-4 font-bold">
             {t("welcome.whats_open")}
           </p>
-          <ul className="space-y-3 font-body text-[15px] text-text-primary leading-relaxed">
+          <ul className="space-y-3 font-body text-[17px] text-text-primary leading-relaxed">
             <UnlockRow>{t("welcome.unlock_forecast")}</UnlockRow>
             <UnlockRow>{t("welcome.unlock_chat")}</UnlockRow>
             <UnlockRow>{t("welcome.unlock_souls")}</UnlockRow>
