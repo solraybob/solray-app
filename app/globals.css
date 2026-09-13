@@ -517,3 +517,57 @@ html {
 .sol-ico svg { width: 17px; height: 17px; display: block; }
 .sol-ico:hover { color: rgb(var(--rgb-text-primary)); }
 .sol-ico:active { background: rgb(var(--rgb-text-primary) / 0.06); }
+
+/* ── The birth wheel ───────────────────────────────────────────────────────
+   mundane's instrument, in the app's tokens. Five columns in one bordered
+   object, because a birth is one fact and not five. A row is 34 tall and the
+   lit band is the third row, so the selected index is scrollTop / 34.
+   See components/BirthWheels.tsx, which quotes the source CSS in full. */
+.sol-wheels {
+  position: relative;
+  display: flex;
+  gap: 0;
+  height: 170px;
+  overflow: hidden;
+  background: rgb(var(--rgb-card));
+  border: 1px solid rgb(var(--rgb-border));
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgb(var(--rgb-scrim) / 0.06);
+}
+.sol-wband {
+  position: absolute;
+  left: 10px; right: 10px; top: 68px; height: 34px;
+  border-radius: 10px;
+  background: rgb(var(--rgb-text-primary) / 0.05);
+  pointer-events: none;
+}
+.sol-wdiv {
+  width: 1px;
+  flex: 0 0 auto;
+  background: rgb(var(--rgb-border));
+  margin: 24px 7px;
+}
+.sol-wheel {
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  text-align: center;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  outline: none;
+}
+.sol-wheel::-webkit-scrollbar { display: none; }
+.sol-wheel:focus-visible { background: rgb(var(--rgb-text-primary) / 0.03); }
+/* Zen Kaku Gothic New has no 600, and the app's scale is 500/700/900. */
+.sol-wheel i {
+  display: block;
+  height: 34px;
+  line-height: 34px;
+  font-style: normal;
+  font-size: 17px;
+  font-weight: 700;
+  color: rgb(var(--rgb-text-primary));
+  scroll-snap-align: center;
+  transition: opacity .1s linear;
+  font-variant-numeric: tabular-nums;
+}

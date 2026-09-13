@@ -27,6 +27,7 @@ import { apiFetch } from "@/lib/api";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 import { useT } from "@/lib/i18n";
+import BirthWheels from "@/components/BirthWheels";
 
 interface CitySuggestion { display: string; lat: number; lon: number; }
 
@@ -572,22 +573,14 @@ export default function SettingsPage() {
               hint={t("settings.birth_details_hint")}
             >
               <div className="space-y-4">
-                <FieldRow label={t("common.date")}>
-                  <input
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
-                  />
-                </FieldRow>
-                <FieldRow label={t("common.time")}>
-                  <input
-                    type="time"
-                    value={birthTime}
-                    onChange={(e) => setBirthTime(e.target.value)}
-                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
-                  />
-                </FieldRow>
+                {/* The birth moment as one instrument, mundane's wheel.
+                    Two native pickers made a birth into two unrelated form
+                    fields, and on a phone each one opened a modal of its own. */}
+                <BirthWheels
+                  date={birthDate}
+                  time={birthTime}
+                  onChange={(d, tm) => { setBirthDate(d); setBirthTime(tm); }}
+                />
                 <FieldRow label={t("common.city")}>
                   <div className="relative">
                     <input

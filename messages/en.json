@@ -473,7 +473,8 @@
     "username_placeholder": "yourusername",
     "birth_city_select_hint": "Pick a city from the suggestions so we can geolocate it precisely.",
     "birth_date_time_required": "Date and time are both required.",
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "birth_wheel_prompt": "Scroll to set the moment you were born"
   },
   "nav": {
     "today": "Now",
