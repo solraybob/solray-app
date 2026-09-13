@@ -2147,7 +2147,7 @@ function ThinkingIndicator() {
         key={idx}
         className="animate-fade-in"
         style={{
-          fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+          fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
           fontStyle: "italic",
           fontWeight: 400,
           fontSize: "1rem",

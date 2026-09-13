@@ -12,13 +12,15 @@ import { isRunningInCapacitor } from "@/lib/native-push";
 const TOTAL_STEPS = 6;
 
 // Atmospheric image per step, fades in behind the question
-const STEP_IMAGES = [
-  "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=60", // 1 name: warm candlelight
-  "https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=60", // 2 sex: soft silhouette
-  "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=60", // 3 birth date: stars
-  "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=800&q=60", // 4 birth time: moon
-  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=60", // 5 birth place: earth
-  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=60", // 6 account: forest dawn
+const STEP_WASH = [
+  // first light, morning, midday, late sun, after sunset, dawn again: the
+  // orb's own colours at a whisper, so each question has its own hour.
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(252,180,156,.16), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(240,108,180,.13), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(196,96,47,.12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(90,49,174,.12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(84,63,150,.12), transparent 70%)",
 ];
 
 // Magical blueprint calculation loading screen
@@ -286,33 +288,16 @@ export default function OnboardPage() {
     <div className="min-h-screen bg-forest-deep flex flex-col" style={{ position: "relative" }}>
       {/* The living sky behind the whole journey, beneath the step images */}
       <EntrySky />
-      {/* Atmospheric step images, transition on step change */}
-      {STEP_IMAGES.map((src, i) => (
-        <img
-          key={src}
-          src={src}
-          alt=""
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            top: 0, left: 0, right: 0, bottom: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: i + 1 === step ? 0.08 : 0,
-            transition: "opacity 1s ease",
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        />
-      ))}
-      {/* Dark vignette over image */}
+      {/* One quiet wash per step, drawn from the orb, in place of the six
+          stock photographs. Paper is the ground now; a photograph under it
+          reads as another product. */}
       <div
         aria-hidden="true"
         style={{
           position: "fixed",
           inset: 0,
-          background: "radial-gradient(ellipse at center, transparent 0%, #060f08 75%)",
+          background: STEP_WASH[Math.min(step, STEP_WASH.length) - 1] || "transparent",
+          transition: "background 1s ease",
           zIndex: 0,
           pointerEvents: "none",
         }}
@@ -329,12 +314,11 @@ export default function OnboardPage() {
           <div
             className="w-24 h-24 mb-4 entry-sun"
             style={{
-              filter:
-                "drop-shadow(0 0 32px rgba(90,49,174, 0.42)) drop-shadow(0 0 80px rgba(90,49,174, 0.18))",
+              filter: "drop-shadow(0 18px 26px rgba(84,63,150,.26))",
             }}
           >
             <Image
-              src="/solray-sun.png"
+              src="/solray-orb.png"
               unoptimized
               priority
               alt="Solray"
@@ -343,7 +327,11 @@ export default function OnboardPage() {
               className="w-full h-full object-contain"
             />
           </div>
-          <span className="font-heading text-xl tracking-[0.15em] text-text-primary" style={{ fontWeight: 300 }}>SOLRAY</span>
+          <span className="font-heading text-xl text-text-primary inline-flex items-baseline" style={{ fontWeight: 700, letterSpacing: "-0.02em" }} aria-label="Solray">
+            <span>s</span>
+            <Image src="/solray-orb.png" alt="" width={20} height={20} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
+            <span>lray</span>
+          </span>
           <span className="font-heading text-[12px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontStyle: "italic", fontWeight: 300 }}>living by design</span>
         </div>
         {/* Progress dots */}
@@ -546,7 +534,7 @@ export default function OnboardPage() {
             <button
               onClick={next}
               disabled={!canProceed()}
-              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta"
+              className="w-full font-body font-bold py-4 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {t("common.continue")}
             </button>
@@ -554,7 +542,7 @@ export default function OnboardPage() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2"
+              className="w-full font-body font-bold py-4 rounded-full text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>
@@ -570,7 +558,7 @@ export default function OnboardPage() {
           border-bottom: 1px solid #E2DACA;
           padding: 12px 0;
           color: #22201C;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
@@ -617,7 +605,7 @@ export default function OnboardPage() {
           text-align: left;
           padding: 12px 16px;
           color: #22201C;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 0.95rem;
           background: transparent;
           border: none;

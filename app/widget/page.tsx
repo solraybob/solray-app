@@ -144,7 +144,7 @@ export default function WidgetPage() {
   return (
     <div
       className="min-h-screen flex flex-col justify-between p-4"
-      style={{ backgroundColor: "var(--bg-deep)", fontFamily: '"Cormorant Garamond", serif' }}
+      style={{ backgroundColor: "var(--bg-deep)", fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif' }}
     >
       {loading ? (
         <div className="flex-1 flex items-center justify-center">

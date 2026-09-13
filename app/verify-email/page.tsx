@@ -63,7 +63,7 @@ function VerifyEmailInner() {
             </div>
             <h1
               className="text-2xl font-light mb-3"
-              style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
+              style={{ fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)" }}
             >
               {t("verify.verified")}
             </h1>
@@ -89,7 +89,7 @@ function VerifyEmailInner() {
             </div>
             <h1
               className="text-2xl font-light mb-3"
-              style={{ fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)" }}
+              style={{ fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)" }}
             >
               {t("verify.failed_title")}
             </h1>

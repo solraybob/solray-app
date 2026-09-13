@@ -46,7 +46,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
         position: "relative",
         background: "#F5F0E6", // forest deep, hardcoded for screenshot context
         overflow: "hidden",
-        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
       }}
     >
       {/* Background hero image, top half, with deep gradient down to
@@ -81,7 +81,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
           left: "0",
           right: "0",
           textAlign: "center",
-          fontFamily: "'Inter', system-ui, sans-serif",
+          fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
@@ -139,7 +139,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
       >
         <div
           style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "60px",
             fontWeight: 300,
             letterSpacing: "0.18em",
@@ -151,7 +151,7 @@ export default function ShareCard({ data }: { data: ShareCardData }) {
         </div>
         <div
           style={{
-            fontFamily: "'Inter', system-ui, sans-serif",
+            fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "24px",
             letterSpacing: "0.25em",
             color: "rgba(168, 184, 171, 0.7)",
@@ -260,7 +260,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
         background: "#F5F0E6",
         position: "relative",
         overflow: "hidden",
-        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
       }}
     >
       {/* Date eyebrow */}
@@ -271,7 +271,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontFamily: "'Inter', system-ui, sans-serif",
+          fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
@@ -289,7 +289,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "78px",
           fontWeight: 300,
           fontStyle: "italic",
@@ -323,7 +323,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                   justifyContent: "space-between",
                   alignItems: "baseline",
                   marginBottom: "22px",
-                  fontFamily: "'Inter', system-ui, sans-serif",
+                  fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
                 }}
               >
                 <span
@@ -339,7 +339,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                 </span>
                 <span
                   style={{
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
                     fontSize: "60px",
                     fontWeight: 300,
                     color: "#22201C",
@@ -406,7 +406,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
       >
         <div
           style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "60px",
             fontWeight: 300,
             letterSpacing: "0.18em",
@@ -418,7 +418,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
         </div>
         <div
           style={{
-            fontFamily: "'Inter', system-ui, sans-serif",
+            fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "24px",
             letterSpacing: "0.25em",
             color: "rgba(168, 184, 171, 0.7)",
@@ -472,7 +472,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         background: "#F5F0E6",
         position: "relative",
         overflow: "hidden",
-        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
       }}
     >
       {/* Soft amber glow, the same warm light as the app. */}
@@ -493,7 +493,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontFamily: "'Inter', system-ui, sans-serif",
+          fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
@@ -526,7 +526,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         />
         <div
           style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "128px",
             fontWeight: 300,
             letterSpacing: "0.15em",
@@ -538,7 +538,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         </div>
         <div
           style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontStyle: "italic",
             fontWeight: 300,
             fontSize: "52px",
@@ -560,7 +560,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           right: 0,
           textAlign: "center",
           padding: "0 120px",
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
           fontSize: "50px",
           fontWeight: 300,
           lineHeight: 1.35,
@@ -579,7 +579,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         {code ? (
           <div
             style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif',
               fontSize: "44px",
               fontWeight: 300,
               letterSpacing: "0.12em",
@@ -593,7 +593,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
         ) : null}
         <div
           style={{
-            fontFamily: "'Inter', system-ui, sans-serif",
+            fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
             fontSize: "26px",
             letterSpacing: "0.25em",
             color: "rgba(168, 184, 171, 0.7)",

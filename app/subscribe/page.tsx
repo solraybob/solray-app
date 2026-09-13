@@ -276,7 +276,7 @@ function SubscribeContent() {
         <h1
           className="text-5xl mb-5 text-center"
           style={{
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontWeight: 300,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
@@ -289,7 +289,7 @@ function SubscribeContent() {
           className="text-base mb-14 leading-relaxed text-center"
           style={{
             color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontStyle: "italic",
             fontWeight: 300,
           }}
@@ -657,7 +657,7 @@ function NativeMembershipView() {
         <h1
           className="text-5xl mb-5"
           style={{
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontWeight: 300,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
@@ -670,7 +670,7 @@ function NativeMembershipView() {
           className="text-base mb-12 leading-relaxed"
           style={{
             color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontStyle: "italic",
             fontWeight: 300,
           }}
@@ -804,7 +804,7 @@ function TrialOffer({
         <h1
           className="text-5xl mb-5"
           style={{
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontWeight: 300,
             letterSpacing: "-0.01em",
             color: "var(--text-primary, #22201C)",
@@ -817,7 +817,7 @@ function TrialOffer({
           className="text-base mb-14 leading-relaxed"
           style={{
             color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
             fontStyle: "italic",
             fontWeight: 300,
           }}
@@ -879,7 +879,7 @@ function TrialOffer({
             className="mt-2"
             style={{
               color: "var(--text-primary)",
-              fontFamily: "var(--font-heading, 'Cormorant Garamond', Georgia, serif)",
+              fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
               fontWeight: 300,
               fontSize: "3rem",
               lineHeight: 1,

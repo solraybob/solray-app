@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Solray",
   },
   icons: {
@@ -63,7 +63,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   // No maximumScale: pinch-zoom must stay available (accessibility). iOS
   // Safari ignores a lock anyway; locking it only hurts Android + a11y.
-  themeColor: "var(--bg-deep)",
+  themeColor: "#F5F0E6",
   // viewport-fit=cover is required for env(safe-area-inset-*) to report real
   // values. Without it the insets read 0, so on Android 15 (edge-to-edge by
   // default, targetSdk 35) the WebView draws under the status bar and the

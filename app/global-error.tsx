@@ -34,16 +34,16 @@ export default function GlobalError({
         }} />
       </head>
       <body className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+        <div className="text-center p-8" style={{ fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif' }}>
           <h2 className="text-2xl font-light mb-3" style={{ letterSpacing: "0.05em", fontWeight: 300, color: "rgb(var(--rgb-text-primary) / 0.9)" }}>The cosmos shifted.</h2>
-          <p className="text-xs mb-8" style={{ letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "'Inter', sans-serif", color: "rgb(var(--rgb-text-secondary) / 0.7)" }}>
+          <p className="text-xs mb-8" style={{ letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif', color: "rgb(var(--rgb-text-secondary) / 0.7)" }}>
             We&apos;ve been notified.
           </p>
           <button
             onClick={reset}
             className="px-6 py-2 rounded-lg text-xs transition tracking-widest uppercase"
             style={{
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif',
               border: "1px solid rgb(var(--rgb-border))",
               color: "rgb(var(--rgb-text-secondary))",
             }}

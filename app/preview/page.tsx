@@ -156,7 +156,7 @@ export default function PreviewPage() {
           border-bottom: 1px solid #E2DACA;
           padding: 12px 0;
           color: #22201C;
-          font-family: "Inter", sans-serif;
+          font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 1rem;
           transition: border-color 0.2s;
           display: block;
@@ -186,7 +186,7 @@ export default function PreviewPage() {
           text-align: left;
           padding: 12px 16px;
           color: #22201C;
-          font-family: "Inter", sans-serif;
+          font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
           font-size: 0.95rem;
           background: transparent;
           border: none;
