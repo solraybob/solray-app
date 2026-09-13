@@ -81,21 +81,21 @@ type AuditLowest = {
 // Sun-sign element families → colour. Aligns with the extended palette so
 // the graph reads as Solray, not as a generic D3 demo.
 const ELEMENT_COLOR: Record<string, string> = {
-  Aries: "#C4602F",       // ember (fire)
-  Leo: "#6C3CCC",         // amber (fire)
-  Sagittarius: "#C4602F", // ember
-  Taurus: "#4F7A4A",      // moss (earth)
-  Virgo: "#4F7A4A",
-  Capricorn: "#4F7A4A",
-  Gemini: "#543F96",      // mist (air)
-  Libra: "#543F96",
-  Aquarius: "#4A6FA5",
-  Cancer: "#D23F8C",      // wisteria (water)
-  Scorpio: "#D23F8C",
-  Pisces: "#D23F8C",
+  Aries: "#A34A22",       // ember (fire)
+  Leo: "#5A31AE",         // amber (fire)
+  Sagittarius: "#A34A22", // ember
+  Taurus: "#A34A22",      // moss (earth)
+  Virgo: "#A34A22",
+  Capricorn: "#A34A22",
+  Gemini: "#4A2E9E",      // mist (air)
+  Libra: "#4A2E9E",
+  Aquarius: "#4A2E9E",
+  Cancer: "#B02E72",      // wisteria (water)
+  Scorpio: "#B02E72",
+  Pisces: "#B02E72",
 };
 
-const CORE_COLOR = "#6C3CCC"; // amber-sun
+const CORE_COLOR = "#5A31AE"; // amber-sun
 
 interface PhysicsNode {
   id: string;
@@ -265,7 +265,7 @@ function HiveDashboardInner() {
             <div className="lg:col-span-2 rounded-2xl border border-forest-border bg-forest-card/30 overflow-hidden">
               <HiveGraph nodes={graph.nodes} edges={graph.edges} />
               <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-1.5 px-4 pb-4 -mt-2">
-                {([["#6C3CCC", "Fire"], ["#4F7A4A", "Earth"], ["#543F96", "Air"], ["#D23F8C", "Water"]] as [string, string][]).map(([c, l]) => (
+                {([["#5A31AE", "Fire"], ["#A34A22", "Earth"], ["#4A2E9E", "Air"], ["#B02E72", "Water"]] as [string, string][]).map(([c, l]) => (
                   <span key={l} className="inline-flex items-center gap-2 font-body text-[11px] text-text-secondary">
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}66` }} />
                     {l}
@@ -350,14 +350,14 @@ function CountsRow({ counts }: { counts: Counts }) {
   // Aged-pigment accents: each figure carries the hue of what it counts,
   // desaturated enough to stay quiet until you look at it.
   const items: Array<[string, number, string]> = [
-    ["Souls in the field", counts.consenting_users, "#6C3CCC"],
+    ["Souls in the field", counts.consenting_users, "#5A31AE"],
     ["Opted out", counts.opted_out ?? 0, "#6E6659"],
-    ["Chart signals", counts.chart_signals, "#543F96"],
-    ["Components", counts.chart_components, "#543F96"],
-    ["Cohorts", counts.pattern_cohorts, "#4F7A4A"],
-    ["High-confidence", counts.high_confidence_cohorts, "#4F7A4A"],
-    ["Themes", counts.pattern_themes, "#D23F8C"],
-    ["Correlations", counts.pattern_correlations, "#C4602F"],
+    ["Chart signals", counts.chart_signals, "#4A2E9E"],
+    ["Components", counts.chart_components, "#4A2E9E"],
+    ["Cohorts", counts.pattern_cohorts, "#A34A22"],
+    ["High-confidence", counts.high_confidence_cohorts, "#A34A22"],
+    ["Themes", counts.pattern_themes, "#B02E72"],
+    ["Correlations", counts.pattern_correlations, "#A34A22"],
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -646,11 +646,11 @@ function ScoreHistogram({
     "0-39", "40-59", "60-79", "80-99", "100",
   ];
   const colorFor = (b: string) => {
-    if (b === "0-39") return "#C4602F";   // ember
-    if (b === "40-59") return "#C4602F";  // ember-warm
+    if (b === "0-39") return "#A34A22";   // ember
+    if (b === "40-59") return "#A34A22";  // ember-warm
     if (b === "60-79") return "#A79E90";  // moss-faded
-    if (b === "80-99") return "#543F96";  // mist
-    return "#6C3CCC";                     // amber-sun for 100
+    if (b === "80-99") return "#4A2E9E";  // mist
+    return "#5A31AE";                     // amber-sun for 100
   };
   return (
     <div className="space-y-2">
@@ -798,7 +798,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       // Faint spokes to the core.
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "rgba(108,60,204,0.05)";
+      ctx.strokeStyle = "rgba(90,49,174,0.05)";
       ctx.beginPath();
       for (const n of ns) {
         if (n.data.ghost) continue;
@@ -812,7 +812,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
         const a = idx[e.a];
         const b = idx[e.b];
         if (!a || !b) continue;
-        ctx.strokeStyle = `rgba(108,60,204,${Math.min(0.5, 0.16 + e.weight * 0.07)})`;
+        ctx.strokeStyle = `rgba(90,49,174,${Math.min(0.5, 0.16 + e.weight * 0.07)})`;
         ctx.lineWidth = Math.min(2.2, 0.4 + e.weight * 0.45);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -822,9 +822,9 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
 
       // Core glow + core node.
       const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70);
-      cg.addColorStop(0, "rgba(108,60,204,0.85)");
-      cg.addColorStop(0.4, "rgba(108,60,204,0.35)");
-      cg.addColorStop(1, "rgba(108,60,204,0)");
+      cg.addColorStop(0, "rgba(90,49,174,0.85)");
+      cg.addColorStop(0.4, "rgba(90,49,174,0.35)");
+      cg.addColorStop(1, "rgba(90,49,174,0)");
       ctx.fillStyle = cg;
       ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = CORE_COLOR;
@@ -847,7 +847,7 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
           ctx.beginPath(); ctx.arc(n.x, n.y, 7, 0, Math.PI * 2); ctx.stroke();
           continue;
         }
-        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#543F96";
+        const color = (n.data.sun_sign && ELEMENT_COLOR[n.data.sun_sign]) || "#4A2E9E";
         ctx.globalAlpha = 0.18;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(n.x, n.y, 11, 0, Math.PI * 2); ctx.fill();

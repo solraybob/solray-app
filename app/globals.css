@@ -34,9 +34,9 @@
   --rgb-text-secondary: 92  85  72;    /* #5C5548 */
   --rgb-text-muted:   110 102  89;     /* #6E6659 */
 
-  --rgb-ember:        196  96  47;     /* #C4602F */
+  --rgb-ember:        163  74  34;     /* #A34A22 */
   --rgb-moss:         163  74  34;     /* #A34A22 */
-  --rgb-mist:          84  63 150;     /* #543F96 */
+  --rgb-mist:           74  46 158;     /* #4A2E9E */
   --rgb-indigo:        74  46 158;     /* #4A2E9E */
   --rgb-wisteria:     176  46 114;     /* #B02E72 */
   --rgb-pearl:        250 246 236;     /* #22201C */
@@ -59,9 +59,9 @@
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
   --text-muted:     #6E6659;
-  --ember:          #C4602F;
+  --ember:          #A34A22;
   --moss:           #A34A22;
-  --mist:           #543F96;
+  --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
   --pearl:          #FAF6EC;
@@ -112,9 +112,9 @@
   --rgb-text-secondary: 92  85  72;      /* #5C5548 */
   --rgb-text-muted:   110 102  89;      /* #6E6659 */
 
-  --rgb-ember:        196  96  47;      /* #C4602F */
+  --rgb-ember:        163  74  34;      /* #A34A22 */
   --rgb-moss:          163  74  34;      /* #5a6e40 */
-  --rgb-mist:          84  63 150;      /* #4A2E9E */
+  --rgb-mist:           74  46 158;      /* #4A2E9E */
   --rgb-indigo:         74  46 158;      /* #4A2E9E */
   --rgb-wisteria:     176  46 114;      /* #B02E72 */
   --rgb-pearl:        250 246 236;      /* #FAF6EC — also the card tone */
@@ -130,9 +130,9 @@
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
   --text-muted:     #6E6659;
-  --ember:          #C4602F;
+  --ember:          #A34A22;
   --moss:           #A34A22;
-  --mist:           #543F96;
+  --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
   --pearl:          #FAF6EC;
@@ -437,9 +437,9 @@ html {
   --rgb-text-primary:  34  32  28;
   --rgb-text-secondary: 92  85  72;
   --rgb-text-muted:   110 102  89;
-  --rgb-ember:        196  96  47;
+  --rgb-ember:        163  74  34;
   --rgb-moss:         163  74  34;
-  --rgb-mist:          84  63 150;
+  --rgb-mist:           74  46 158;
   --rgb-indigo:        74  46 158;
   --rgb-wisteria:     176  46 114;
   --rgb-pearl:        250 246 236;
@@ -453,9 +453,9 @@ html {
   --text-primary:   #22201C;
   --text-secondary: #5C5548;
   --text-muted:     #6E6659;
-  --ember:          #C4602F;
+  --ember:          #A34A22;
   --moss:           #A34A22;
-  --mist:           #543F96;
+  --mist:           #4A2E9E;
   --indigo:         #4A2E9E;
   --wisteria:       #B02E72;
   --pearl:          #FAF6EC;

@@ -302,9 +302,9 @@ interface SoulMapRadarChartProps {
 
 // Element color mapping for Soul Map
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire:     "#C4602F", // ember-red
+  Fire:     "#A34A22", // ember-red
   Earth:    "#A34A22", // moss
-  Air:      "#543F96", // mist
+  Air:      "#4A2E9E", // mist
   Water:    "#4A2E9E", // slate
   Cardinal: "var(--amber)", // ember (initiating, outward)
   Fixed:    "#B02E72", // wisteria (holding, inward)
@@ -1855,7 +1855,7 @@ function BlueprintSections({ token, aspects }: { token: string | null; aspects: 
               <div className="grid grid-cols-3 gap-3">
                 <GKPill label={tx("Shadow", lang)} value={tx(gk!.shadow, lang)} color="" style={{ color: "rgba(220,80,60,0.8)" }} />
                 <GKPill label={tx("Gift", lang)} value={tx(gk!.gift, lang)} color="" style={{ color: "var(--mist)" }} />
-                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #B02E72, #543F96)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+                <GKPill label={tx("Siddhi", lang)} value={tx(gk!.siddhi, lang)} color="" style={{ background: "linear-gradient(135deg, #B02E72, #4A2E9E)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
               </div>
             </div>
           ))}

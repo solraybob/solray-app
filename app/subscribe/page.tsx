@@ -492,7 +492,7 @@ function SubscribeContent() {
         {error && (
           <p
             className="text-sm mt-6 text-center"
-            style={{ color: "var(--ember, #C4602F)" }}
+            style={{ color: "var(--ember, #A34A22)" }}
           >
             {error}
           </p>
@@ -910,7 +910,7 @@ function TrialOffer({
         </ActionButton>
 
         {error && (
-          <p className="text-sm mt-4" style={{ color: "var(--ember, #C4602F)" }}>
+          <p className="text-sm mt-4" style={{ color: "var(--ember, #A34A22)" }}>
             {error}
           </p>
         )}
@@ -933,9 +933,9 @@ function StatusBadge({ status }: { status: string }) {
       border: "rgba(138,158,102,0.35)",
     },
     past_due: {
-      bg: "rgba(196,96,47,0.12)",
-      text: "var(--ember, #C4602F)",
-      border: "rgba(196,96,47,0.35)",
+      bg: "rgba(163,74,34,0.12)",
+      text: "var(--ember, #A34A22)",
+      border: "rgba(163,74,34,0.35)",
     },
     cancelled: {
       bg: "rgba(110,102,89,0.08)",

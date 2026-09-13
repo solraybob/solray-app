@@ -85,11 +85,11 @@ const CENTER_POS: Record<CenterKey, { x: number; y: number }> = {
 // as slate) survives desaturation and harmonises with the forest field.
 const CENTER_COLOR: Record<CenterKey, string> = {
   Head:        "#B02E72", // wisteria
-  Ajna:        "#543F96", // mist
-  Throat:      "#C4602F", // ember
+  Ajna:        "#4A2E9E", // mist
+  Throat:      "#A34A22", // ember
   G:           "#22201C", // pearl
-  Heart:       "#C4602F", // ember
-  Sacral:      "#C4602F", // ember
+  Heart:       "#A34A22", // ember
+  Sacral:      "#A34A22", // ember
   Spleen:      "#A34A22", // moss
   SolarPlexus: "var(--wisteria)", // wisteria
   Root:        "#4A2E9E", // slate

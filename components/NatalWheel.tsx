@@ -63,12 +63,12 @@ const MAX_LINES = 24;
 const PLANET_COLOR: Record<string, string> = {
   Sun:       "#5A31AE",
   Moon:      "#22201C",
-  Mercury:   "#543F96",
+  Mercury:   "#4A2E9E",
   Venus:     "#B02E72",
-  Mars:      "#C4602F",
+  Mars:      "#A34A22",
   Jupiter:   "#A34A22",
   Saturn:    "#4A2E9E",
-  Uranus:    "#543F96",
+  Uranus:    "#4A2E9E",
   Neptune:   "#4A2E9E",
   Pluto:     "#6E6659",
   NorthNode: "#6E6659",
@@ -77,9 +77,9 @@ const PLANET_COLOR: Record<string, string> = {
 };
 
 const SIGN_ELEMENT_COLOR = [
-  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
-  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
-  "#C4602F", "#A34A22", "#543F96", "#4A2E9E",
+  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
+  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
+  "#A34A22", "#A34A22", "#4A2E9E", "#4A2E9E",
 ];
 
 export default function NatalWheel({
@@ -428,8 +428,8 @@ export default function NatalWheel({
           }}
         >
           <LegendItem kind="dot"  color="#A34A22" label="Trine" />
-          <LegendItem kind="dot"  color="#543F96" label="Sextile" />
-          <LegendItem kind="dash" color="#C4602F" label="Square" />
+          <LegendItem kind="dot"  color="#4A2E9E" label="Sextile" />
+          <LegendItem kind="dash" color="#A34A22" label="Square" />
           <LegendItem kind="dash" color="#4A2E9E" label="Opposition" />
         </div>
       )}

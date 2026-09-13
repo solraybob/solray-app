@@ -29,7 +29,7 @@ function MoonIcon({ type, fill }: { type: "New Moon" | "Full Moon"; fill: string
         aria-label="Full Moon"
       >
         <circle cx="14" cy="14" r="11" fill={fill} opacity="0.92" />
-        <circle cx="14" cy="14" r="11" stroke="#543F96" strokeWidth="1.2" fill="none" />
+        <circle cx="14" cy="14" r="11" stroke="#4A2E9E" strokeWidth="1.2" fill="none" />
       </svg>
     );
   }
@@ -51,7 +51,7 @@ function MoonIcon({ type, fill }: { type: "New Moon" | "Full Moon"; fill: string
       />
       <path
         d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c1.5 0 2.923-.33 4.2-.923C15.56 21.29 13 17.447 13 13c0-4.447 2.56-8.29 6.2-10.077A9.963 9.963 0 0 0 14 3z"
-        stroke="#543F96"
+        stroke="#4A2E9E"
         strokeWidth="1.2"
         fill="none"
       />

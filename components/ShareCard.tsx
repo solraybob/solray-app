@@ -226,8 +226,8 @@ export interface EnergyBarsCardData {
 }
 
 const ENERGY_COLORS_FOR_CARD = {
-  Mental:    "#543F96", // mist
-  Emotional: "#C4602F", // ember
+  Mental:    "#4A2E9E", // mist
+  Emotional: "#A34A22", // ember
   Physical:  "#A34A22", // moss
   Intuitive: "#B02E72", // wisteria
 } as const;

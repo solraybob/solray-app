@@ -148,7 +148,7 @@ function getEnergyNote(label: string, value: number): string {
 // Extended palette, aged pigments. Label stays in text.secondary;
 // color does the categorizing, not the type.
 const ENERGY_COLORS: Record<string, string> = {
-  Mental:    "#543F96", // mist
+  Mental:    "#4A2E9E", // mist
   Emotional: "var(--ember)", // ember
   Physical:  "#A34A22", // moss
   Intuitive: "var(--wisteria)", // wisteria
@@ -265,13 +265,13 @@ function EnergyBar({
 //   Saturn ~ Pluto → indigo     (structure, depth, dark cool)
 const PLANET_COLORS: Record<string, string> = {
   Sun:     "#5A31AE",  // amber-sun, hero
-  Moon:    "#543F96",  // mist
+  Moon:    "#4A2E9E",  // mist
   Mercury: "var(--pearl)",  // pearl
   Venus:   "#B02E72",  // wisteria
-  Mars:    "#C4602F",  // ember
+  Mars:    "#A34A22",  // ember
   Jupiter: "var(--moss)",  // moss
   Saturn:  "#4A2E9E",  // indigo
-  Uranus:  "#543F96",  // mist (paired with Moon)
+  Uranus:  "#4A2E9E",  // mist (paired with Moon)
   Neptune: "var(--wisteria)",  // wisteria (paired with Venus)
   Pluto:   "#4A2E9E",  // indigo (paired with Saturn)
 };
@@ -1003,13 +1003,13 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
           <div style={{ position: "relative", width: 60, height: 60, borderRadius: "50%", background: moonBg, animation: "lnGlow 3s ease-in-out infinite", boxShadow: isFull ? "0 0 26px rgba(233,228,214,0.55)" : "0 0 22px rgba(84,63,150,0.30)" }} />
         </div>
 
-        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#543F96", marginBottom: 12 }}>
+        <p className="font-body" style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: "#4A2E9E", marginBottom: 12 }}>
           {typeLabel}
         </p>
         <h2 className="font-heading text-text-primary" style={{ fontSize: "1.9rem", lineHeight: 1.15, fontWeight: 300, fontStyle: "italic", letterSpacing: "0.01em", marginBottom: 12 }}>
           {tx(event.sign, lang)}
         </h2>
-        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#543F96", marginBottom: 4 }}>
+        <p className="font-body" style={{ fontSize: 13, letterSpacing: "0.04em", color: "#4A2E9E", marginBottom: 4 }}>
           {t("lunar.illuminating")} {event.house}
         </p>
         {event.house_meaning && (

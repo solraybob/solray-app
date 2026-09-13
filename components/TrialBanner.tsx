@@ -83,11 +83,11 @@ export default function TrialBanner() {
     <div
       style={{
         background: urgent
-          ? "linear-gradient(180deg, rgba(196,96,47,0.10) 0%, rgb(var(--rgb-bg-dark)) 100%)"
+          ? "linear-gradient(180deg, rgba(163,74,34,0.10) 0%, rgb(var(--rgb-bg-dark)) 100%)"
           : "linear-gradient(180deg, rgba(90,49,174,0.08) 0%, rgb(var(--rgb-bg-dark)) 100%)",
         borderBottom: "1px solid rgb(var(--rgb-border))",
         borderTop: urgent
-          ? "2px solid rgba(196,96,47,0.55)"
+          ? "2px solid rgba(163,74,34,0.55)"
           : "2px solid rgba(90,49,174,0.35)",
       }}
     >
@@ -96,7 +96,7 @@ export default function TrialBanner() {
         <div className="flex items-center gap-4 min-w-0">
           <span
             className="font-body text-[12px] tracking-[0.22em] uppercase shrink-0"
-            style={{ color: urgent ? "#C4602F" : "var(--amber)", opacity: 1, fontWeight: 500 }}
+            style={{ color: urgent ? "#A34A22" : "var(--amber)", opacity: 1, fontWeight: 500 }}
           >
             {t("trial.label")}
           </span>
@@ -114,19 +114,19 @@ export default function TrialBanner() {
             onClick={() => router.push("/subscribe")}
             className="font-body text-[12px] tracking-[0.22em] uppercase px-4 py-2 rounded-lg transition-colors"
             style={{
-              background: urgent ? "rgba(196,96,47,0.15)" : "rgba(90,49,174,0.12)",
-              border: urgent ? "1px solid rgba(196,96,47,0.6)" : "1px solid rgba(90,49,174,0.5)",
-              color: urgent ? "#C4602F" : "var(--amber)",
+              background: urgent ? "rgba(163,74,34,0.15)" : "rgba(90,49,174,0.12)",
+              border: urgent ? "1px solid rgba(163,74,34,0.6)" : "1px solid rgba(90,49,174,0.5)",
+              color: urgent ? "#A34A22" : "var(--amber)",
               fontWeight: 500,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(196,96,47,0.22)"
+                ? "rgba(163,74,34,0.22)"
                 : "rgba(90,49,174,0.18)";
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLElement).style.background = urgent
-                ? "rgba(196,96,47,0.15)"
+                ? "rgba(163,74,34,0.15)"
                 : "rgba(90,49,174,0.12)";
             }}
           >
@@ -150,7 +150,7 @@ export default function TrialBanner() {
           style={{
             height: "100%",
             width: `${progress * 100}%`,
-            background: urgent ? "rgba(196,96,47,0.75)" : "rgba(90,49,174,0.6)",
+            background: urgent ? "rgba(163,74,34,0.75)" : "rgba(90,49,174,0.6)",
             transition: "width 0.6s ease",
           }}
         />

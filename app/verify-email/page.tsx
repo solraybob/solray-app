@@ -80,9 +80,9 @@ function VerifyEmailInner() {
           <>
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: "rgba(196,96,47,0.15)" }}
+              style={{ background: "rgba(163,74,34,0.15)" }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C4602F" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A34A22" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>

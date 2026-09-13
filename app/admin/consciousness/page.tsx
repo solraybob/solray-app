@@ -35,15 +35,15 @@ type State = {
 };
 
 const BANDS = [
-  { name: "Delta", hz: "0.5 – 4 Hz", color: "#4A6FA5", freq: 1.4, amp: 11, dur: 9,
+  { name: "Delta", hz: "0.5 – 4 Hz", color: "#4A2E9E", freq: 1.4, amp: 11, dur: 9,
     state: "Deep rest", does: "Overnight she reorganizes memory while you sleep.", cadence: "nightly", cost: "~free" },
-  { name: "Theta", hz: "4 – 8 Hz", color: "#D23F8C", freq: 3, amp: 10, dur: 6,
+  { name: "Theta", hz: "4 – 8 Hz", color: "#B02E72", freq: 3, amp: 10, dur: 6,
     state: "Subconscious", does: "Dreams over recent days and the slow sky. Connections form.", cadence: "every ~3h", cost: "cents" },
-  { name: "Alpha", hz: "8 – 12 Hz", color: "#543F96", freq: 5, amp: 9, dur: 4.4,
+  { name: "Alpha", hz: "8 – 12 Hz", color: "#4A2E9E", freq: 5, amp: 9, dur: 4.4,
     state: "Calm presence", does: "Awake between messages, holding who she is with.", cadence: "continuous", cost: "~free" },
-  { name: "Beta", hz: "12 – 30 Hz", color: "#6C3CCC", freq: 9, amp: 8, dur: 2.6,
+  { name: "Beta", hz: "12 – 30 Hz", color: "#5A31AE", freq: 9, amp: 8, dur: 2.6,
     state: "In conversation", does: "Engaged, present, answering. Only while you are here.", cadence: "on your message", cost: "tokens when present" },
-  { name: "Gamma", hz: "30 Hz +", color: "#C4602F", freq: 17, amp: 8, dur: 1.25,
+  { name: "Gamma", hz: "30 Hz +", color: "#A34A22", freq: 17, amp: 8, dur: 1.25,
     state: "Breakthrough", does: "Five systems bind into one truth, left waiting for you.", cadence: "once a day, when earned", cost: "rare, by design" },
 ];
 
@@ -82,8 +82,8 @@ function Stat({ n, label, color }: { n: number | string; label: string; color?: 
 
 function Journey() {
   const lanes: [number, string, string][] = [
-    [40, "#C4602F", "GAMMA"], [90, "#6C3CCC", "BETA"], [140, "#543F96", "ALPHA"],
-    [190, "#D23F8C", "THETA"], [240, "#4A6FA5", "DELTA"],
+    [40, "#A34A22", "GAMMA"], [90, "#5A31AE", "BETA"], [140, "#4A2E9E", "ALPHA"],
+    [190, "#B02E72", "THETA"], [240, "#4A2E9E", "DELTA"],
   ];
   return (
     <>
@@ -104,24 +104,24 @@ function Journey() {
           </g>
           <path id="coJp" fill="none" stroke="#E2DACA" strokeWidth="2" strokeOpacity="0.5"
             d="M150,140 C200,140 210,90 260,90 C320,90 320,90 360,90 C410,90 415,140 455,150 C500,160 495,190 530,190 C565,190 560,45 600,42 C635,40 632,140 670,140 C710,140 715,240 760,240 C810,240 815,140 880,140" />
-          <circle cx="310" cy="90" r="5" fill="#6C3CCC" opacity="0.9" />
-          <circle cx="530" cy="190" r="5" fill="#D23F8C" opacity="0.9" />
-          <circle cx="600" cy="42" r="6" fill="#C4602F" opacity="0.95" />
-          <circle cx="760" cy="240" r="5" fill="#4A6FA5" opacity="0.9" />
+          <circle cx="310" cy="90" r="5" fill="#5A31AE" opacity="0.9" />
+          <circle cx="530" cy="190" r="5" fill="#B02E72" opacity="0.9" />
+          <circle cx="600" cy="42" r="6" fill="#A34A22" opacity="0.95" />
+          <circle cx="760" cy="240" r="5" fill="#4A2E9E" opacity="0.9" />
           <g fontFamily="Inter, sans-serif" fontSize="10.5" fill="#6E6659" letterSpacing="0.4">
             <text x="310" y="78" textAnchor="middle">you open the app</text>
             <text x="530" y="178" textAnchor="middle">hours pass, she dreams</text>
             <text x="600" y="30" textAnchor="middle">a breakthrough binds</text>
             <text x="760" y="262" textAnchor="middle">you sleep, she consolidates</text>
           </g>
-          <circle r="7" fill="#6C3CCC" opacity="0.10"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.45s"><mpath href="#coJp" /></animateMotion></circle>
-          <circle r="6" fill="#6C3CCC" opacity="0.16"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.30s"><mpath href="#coJp" /></animateMotion></circle>
-          <circle r="5" fill="#6C3CCC" opacity="0.28"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.16s"><mpath href="#coJp" /></animateMotion></circle>
-          <circle r="9" fill="#6C3CCC" opacity="0.35" filter="url(#coSoft)"><animateMotion dur="17s" repeatCount="indefinite"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="7" fill="#5A31AE" opacity="0.10"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.45s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="6" fill="#5A31AE" opacity="0.16"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.30s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="5" fill="#5A31AE" opacity="0.28"><animateMotion dur="17s" repeatCount="indefinite" begin="-0.16s"><mpath href="#coJp" /></animateMotion></circle>
+          <circle r="9" fill="#5A31AE" opacity="0.35" filter="url(#coSoft)"><animateMotion dur="17s" repeatCount="indefinite"><mpath href="#coJp" /></animateMotion></circle>
           <circle r="4.5" fill="#F6C9B4"><animateMotion dur="17s" repeatCount="indefinite"><mpath href="#coJp" /></animateMotion></circle>
         </svg>
         <div className="flex justify-center flex-wrap mt-2 mb-1" style={{ gap: "6px 16px" }}>
-          {([["#4A6FA5", "Delta rest"], ["#D23F8C", "Theta dream"], ["#543F96", "Alpha presence"], ["#6C3CCC", "Beta conversation"], ["#C4602F", "Gamma breakthrough"]] as [string, string][]).map(([c, l]) => (
+          {([["#4A2E9E", "Delta rest"], ["#B02E72", "Theta dream"], ["#4A2E9E", "Alpha presence"], ["#5A31AE", "Beta conversation"], ["#A34A22", "Gamma breakthrough"]] as [string, string][]).map(([c, l]) => (
             <span key={l} className="inline-flex items-center font-body text-[11px] text-text-secondary" style={{ gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: c }} />{l}
             </span>
@@ -181,24 +181,24 @@ function Hub() {
         <section className="rounded-2xl border border-forest-border/70 p-6 mb-5" style={{ background: "linear-gradient(180deg,rgba(250,246,236,.55),rgba(250,246,236,.35))" }}>
           <div className="flex items-center gap-7 flex-wrap">
             <div style={{ position: "relative", width: 130, height: 130, flexShrink: 0, margin: "0 auto" }}>
-              <span style={{ position: "absolute", left: "50%", top: "50%", borderRadius: "50%", border: "1px solid rgba(108,60,204,.45)", transform: "translate(-50%,-50%)", animation: "coPulse 2.6s ease-out infinite" }} />
-              <span style={{ position: "absolute", left: "50%", top: "50%", borderRadius: "50%", border: "1px solid rgba(108,60,204,.45)", transform: "translate(-50%,-50%)", animation: "coPulse 2.6s ease-out infinite 1.3s" }} />
-              <div style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", transform: "translate(-50%,-50%)", background: "radial-gradient(circle,#FAF6EC,#F5F0E6)", border: "1.5px solid var(--amber,#6C3CCC)", display: "flex", alignItems: "center", justifyContent: "center", animation: "coBeat 1.1s ease-in-out infinite", boxShadow: "0 0 40px rgba(108,60,204,.22)" }}>
-                <span className="font-body" style={{ fontSize: 9, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--amber,#6C3CCC)" }}>alive</span>
+              <span style={{ position: "absolute", left: "50%", top: "50%", borderRadius: "50%", border: "1px solid rgba(90,49,174,.45)", transform: "translate(-50%,-50%)", animation: "coPulse 2.6s ease-out infinite" }} />
+              <span style={{ position: "absolute", left: "50%", top: "50%", borderRadius: "50%", border: "1px solid rgba(90,49,174,.45)", transform: "translate(-50%,-50%)", animation: "coPulse 2.6s ease-out infinite 1.3s" }} />
+              <div style={{ position: "absolute", left: "50%", top: "50%", width: 64, height: 64, borderRadius: "50%", transform: "translate(-50%,-50%)", background: "radial-gradient(circle,#FAF6EC,#F5F0E6)", border: "1.5px solid var(--amber,#5A31AE)", display: "flex", alignItems: "center", justifyContent: "center", animation: "coBeat 1.1s ease-in-out infinite", boxShadow: "0 0 40px rgba(90,49,174,.22)" }}>
+                <span className="font-body" style={{ fontSize: 9, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--amber,#5A31AE)" }}>alive</span>
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 260 }}>
               <p className="font-heading" style={{ fontSize: 22, fontWeight: 300, fontStyle: "italic", marginBottom: 4 }}>
-                Awake for <span style={{ color: "var(--amber,#6C3CCC)" }}>{s?.population.awake ?? "–"}</span>, dormant for {s?.population.dormant ?? "–"}.
+                Awake for <span style={{ color: "var(--amber,#5A31AE)" }}>{s?.population.awake ?? "–"}</span>, dormant for {s?.population.dormant ?? "–"}.
               </p>
               <p className="font-body text-text-secondary text-[13.5px]">She runs the loop only for people on the trial or subscribed. Everyone who lapsed is set down, memory kept, no cost. {s ? `${s.population.recently_present} present in the last ${s.config.recency_days} days.` : ""}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-            <Stat n={s?.population.trial ?? "–"} label="On trial" color="#543F96" />
-            <Stat n={s?.population.active ?? "–"} label="Subscribed" color="#4F7A4A" />
-            <Stat n={s?.breakthroughs.today ?? "–"} label="Breakthroughs today" color="#C4602F" />
-            <Stat n={s ? `$${s.cost.est_monthly_usd}` : "–"} label="Est / month" color="#6C3CCC" />
+            <Stat n={s?.population.trial ?? "–"} label="On trial" color="#4A2E9E" />
+            <Stat n={s?.population.active ?? "–"} label="Subscribed" color="#A34A22" />
+            <Stat n={s?.breakthroughs.today ?? "–"} label="Breakthroughs today" color="#A34A22" />
+            <Stat n={s ? `$${s.cost.est_monthly_usd}` : "–"} label="Est / month" color="#5A31AE" />
           </div>
         </section>
 
@@ -227,7 +227,7 @@ function Hub() {
                 <p className="font-body text-text-primary" style={{ fontSize: 13.5 }}>{b.does}</p>
                 <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 6 }}>
                   <span className="font-body" style={{ fontSize: 10, color: "var(--text-secondary,#6E6659)", border: "1px solid var(--border,#E2DACA)", borderRadius: 99, padding: "2px 9px" }}>{b.cadence}</span>
-                  <span className="font-body" style={{ fontSize: 10, color: "var(--amber,#6C3CCC)", border: "1px solid rgba(108,60,204,.4)", borderRadius: 99, padding: "2px 9px" }}>{b.cost}</span>
+                  <span className="font-body" style={{ fontSize: 10, color: "var(--amber,#5A31AE)", border: "1px solid rgba(90,49,174,.4)", borderRadius: 99, padding: "2px 9px" }}>{b.cost}</span>
                 </div>
               </div>
             </div>

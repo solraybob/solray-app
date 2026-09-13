@@ -173,7 +173,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
         <div className="space-y-3">
           <button
             onClick={onViewProfile}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#543F96]/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#4A2E9E]/30"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -185,7 +185,7 @@ function SoulActions({ soul, onClose, onSoloReading, onGroupReading, onViewProfi
           </button>
           <button
             onClick={onSoloReading}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#543F96]/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-[#4A2E9E]/30"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -1237,7 +1237,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           <button
             type="button"
             onClick={onPickPartner}
-            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-[#543F96]/60"
+            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-[#4A2E9E]/60"
             style={{
               background: "transparent",
               border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)",
@@ -1585,7 +1585,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("souls.name_placeholder")}
-              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#543F96] transition-colors"
+              className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
             />
           </div>
 
@@ -1620,7 +1620,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#543F96] transition-colors"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
                 style={{ colorScheme: "dark" }}
               />
             </div>
@@ -1631,7 +1631,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                 value={birthTime}
                 onChange={(e) => setBirthTime(e.target.value)}
                 disabled={timeUnknown}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#543F96] transition-colors disabled:opacity-40"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors disabled:opacity-40"
                 style={{ colorScheme: "dark" }}
               />
             </div>
@@ -1659,7 +1659,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                 }}
                 placeholder={t("onboard.city_placeholder")}
                 autoComplete="off"
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#543F96] transition-colors"
+                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-[#4A2E9E] transition-colors"
                 style={{ paddingRight: cityLoading ? "2rem" : undefined }}
               />
               {cityLoading && (

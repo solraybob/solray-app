@@ -16,9 +16,9 @@ const STEP_WASH = [
   // first light, morning, midday, late sun, after sunset, dawn again: the
   // orb's own colours at a whisper, so each question has its own hour.
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(252,180,156,.16), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(240,108,180,.13), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.13), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.12), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(196,96,47,.12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(163,74,34,.12), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(90,49,174,.12), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(84,63,150,.12), transparent 70%)",
 ];

@@ -1751,13 +1751,13 @@ function ChatPageInner() {
                       <div
                         className="rounded-2xl px-4 py-3 rounded-bl-sm"
                         style={{
-                          background: "rgba(196,96,47, 0.08)",
-                          border: "1px solid rgba(196,96,47, 0.30)",
+                          background: "rgba(163,74,34, 0.08)",
+                          border: "1px solid rgba(163,74,34, 0.30)",
                         }}
                       >
                         <p
                           className="font-body text-[11px] tracking-[0.22em] uppercase mb-1"
-                          style={{ color: "var(--ember, #C4602F)", opacity: 0.85 }}
+                          style={{ color: "var(--ember, #A34A22)", opacity: 0.85 }}
                         >
                           {t("chat.connection")}
                         </p>
@@ -1857,10 +1857,10 @@ function ChatPageInner() {
         <div className="fixed bottom-0 left-0 right-0 bg-forest-dark border-t border-forest-border px-5 pt-3" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
           <div className="max-w-lg lg:max-w-3xl mx-auto">
             {isRecording && (
-              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#C4602F" }}>
+              <div className="flex items-center gap-2 mb-2 font-body text-[13px] tracking-[0.14em] uppercase" style={{ color: "#A34A22" }}>
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: "#C4602F", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
+                  style={{ background: "#A34A22", boxShadow: "0 0 8px rgba(200,162,122,0.9)" }}
                 />
                 {t("chat.recording_tap_stop")}
               </div>
@@ -2079,7 +2079,7 @@ function ChatPageInner() {
                               onClick={(e) => deleteSession(e, s.sessionId)}
                               title={t("chat.delete_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#C4602F"}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#A34A22"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

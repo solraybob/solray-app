@@ -135,7 +135,7 @@ export default function CardForm({
       </div>
 
       {error && (
-        <p className="mt-3 text-[13px]" style={{ color: "var(--ember, #C4602F)" }}>
+        <p className="mt-3 text-[13px]" style={{ color: "var(--ember, #A34A22)" }}>
           {error}
         </p>
       )}

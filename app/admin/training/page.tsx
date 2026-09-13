@@ -20,12 +20,12 @@ import { apiFetch, ApiError } from "@/lib/api";
 
 const FOREST = "var(--bg-deep, #F5F0E6)";
 const PEARL = "var(--text-primary, #22201C)";
-const WISTERIA = "var(--wisteria, #D23F8C)";
-const AMBER = "var(--amber, #6C3CCC)";
+const WISTERIA = "var(--wisteria, #B02E72)";
+const AMBER = "var(--amber, #5A31AE)";
 const MOSS_DIM = "var(--text-muted, #A79E90)";
 const BORDER = "var(--border, #E2DACA)";
-const MOSS = "var(--moss, #4F7A4A)";
-const EMBER = "var(--ember, #C4602F)";
+const MOSS = "var(--moss, #A34A22)";
+const EMBER = "var(--ember, #A34A22)";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Note = {
@@ -280,7 +280,7 @@ function TrainingGround() {
             minHeight: 280,
             maxHeight: "52vh",
             overflowY: "auto",
-            background: "radial-gradient(120% 50% at 50% 0%, rgba(108,60,204,0.06), transparent 60%)",
+            background: "radial-gradient(120% 50% at 50% 0%, rgba(90,49,174,0.06), transparent 60%)",
           }}
         >
           {messages.length === 0 && (
@@ -369,8 +369,8 @@ function TrainingGround() {
             onClick={send}
             disabled={sending || !input.trim()}
             style={{
-              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(108,60,204,0.5)"}`,
-              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(108,60,204,0.14)",
+              border: `1px solid ${sending || !input.trim() ? BORDER : "rgba(90,49,174,0.5)"}`,
+              background: sending || !input.trim() ? "rgba(236,231,221,0.05)" : "rgba(90,49,174,0.14)",
               color: sending || !input.trim() ? "var(--text-muted, #A79E90)" : AMBER,
               borderRadius: 12,
               padding: "0 22px",
