@@ -571,3 +571,68 @@ html {
   transition: opacity .1s linear;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── The Now card, on a screen of any height ──────────────────────────────
+   The card fills the track the deck gives it, so on a short phone the thing
+   that has to give is the reading, not the fold. The title steps down and the
+   body loses lines with a real ellipsis rather than pushing the card and its
+   dots underneath the bottom bar. Heights, not widths: a phone in the hand is
+   short before it is narrow. */
+/* The orb is the first thing to give on a short screen: it is the mark, but
+   it is not the sentence. Declared here rather than inline so a height query
+   can override it, which an inline custom property would win against. */
+.sol-deck-card { --orb: clamp(62px, 12.5vh, 134px); }
+@media (max-height: 780px) { .sol-deck-card { --orb: clamp(54px, 10.5vh, 110px); } }
+@media (max-height: 700px) { .sol-deck-card { --orb: clamp(46px, 9vh, 92px); } }
+
+.sol-deck-kick {
+  font-size: 11.5px;
+  letter-spacing: 0.2em;
+  color: rgb(var(--rgb-text-muted));
+  margin-bottom: 2px;
+}
+@media (max-height: 640px) {
+  /* The dot under NOW already says which card this is. */
+  .sol-deck-kick { display: none; }
+  .sol-deck-title { font-size: 18px; }
+}
+
+.sol-deck-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.022em;
+  line-height: 1.08;
+  margin-top: 2px;
+}
+.sol-deck-body {
+  font-size: 15px;
+  color: rgb(var(--rgb-text-secondary));
+  line-height: 1.48;
+  margin-top: 9px;
+  max-width: 19em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  /* The one part of the card that gives. Everything else in there has a job:
+     the kick names the card, the orb is the mark, the title is the day, the
+     button is the way in. The reading is the opening of something the Oracle
+     finishes, so losing a line of it costs the least. */
+  flex: 0 1 auto;
+  min-height: 0;
+}
+@media (max-height: 800px) {
+  .sol-deck-body { -webkit-line-clamp: 2; }
+}
+@media (max-height: 720px) {
+  .sol-deck-title { font-size: 22px; }
+  .sol-deck-body { -webkit-line-clamp: 2; font-size: 14.5px; margin-top: 7px; }
+}
+@media (max-height: 680px) {
+  /* Below this the card is a headline and a way in. The reading does not fit
+     honestly, and half a sentence is worse than none: Go deeper is right
+     there. */
+  .sol-deck-card { --orb: clamp(40px, 7.5vh, 76px); }
+  .sol-deck-title { font-size: 20px; }
+  .sol-deck-body { display: none; }
+}

@@ -462,6 +462,7 @@ function DeckCard({
 }) {
   return (
     <article
+      className="sol-deck-card"
       style={{
         scrollSnapAlign: "center",
         flex: "0 0 calc(100% - 40px)",
@@ -470,19 +471,21 @@ function DeckCard({
         alignItems: "center",
         textAlign: "center",
         justifyContent: "center",
-        minHeight: "min(520px, 58vh)",
+        // The card fills the track the deck gives it. It used to ask for
+        // min(520px, 58vh), which is a guess at the screen: on anything
+        // shorter than the phone it was measured on, the card ran past the
+        // fold and took its dots with it.
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
         background: "rgb(var(--rgb-card))",
         border: "1px solid rgb(var(--rgb-border) / 0.6)",
         borderRadius: 24,
-        padding: "26px 22px 22px",
-        ["--orb" as any]: "clamp(104px, 15vh, 134px)",
+        padding: "clamp(14px, 2.4vh, 26px) 22px clamp(12px, 2.2vh, 22px)",
         boxShadow: "0 14px 34px rgb(var(--rgb-scrim) / 0.10), 0 3px 8px rgb(var(--rgb-scrim) / 0.05)",
       }}
     >
-      <span
-        className="font-body uppercase"
-        style={{ fontSize: 11.5, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))", marginBottom: 2 }}
-      >
+      <span className="font-body uppercase sol-deck-kick">
         {kick}
       </span>
 
@@ -526,16 +529,10 @@ function DeckCard({
           }}
         />
       </div>
-      <h2
-        className="font-heading text-text-primary"
-        style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-.022em", lineHeight: 1.08, marginTop: 2 }}
-      >
+      <h2 className="font-heading text-text-primary sol-deck-title">
         {title}
       </h2>
-      <p
-        className="font-body"
-        style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))", lineHeight: 1.48, marginTop: 9, maxWidth: "19em" }}
-      >
+      <p className="font-body sol-deck-body">
         {body}
       </p>
       <div style={{ width: "100%", marginTop: 22 }}>
@@ -611,20 +608,23 @@ function Deck({ children, count }: { children: React.ReactNode; count: number })
     setHere(Math.max(0, Math.min(count - 1, Math.round(el.scrollLeft / card))));
   };
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0 }}>
       <div
         ref={ref}
         onScroll={onScroll}
         style={{
+          flex: "1 1 0",
+          minHeight: 0,
           display: "flex",
           gap: 16,
           overflowX: "auto",
+          overflowY: "hidden",
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none",
           margin: "0 -20px",
-          padding: "22px 20px 20px",
-          alignItems: "center",
+          padding: "18px 20px 16px",
+          alignItems: "stretch",
         }}
       >
         {children}
@@ -1822,11 +1822,7 @@ export default function TodayPage() {
           <>
             <div
               className="max-w-lg lg:max-w-3xl mx-auto px-5"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "calc(100dvh - 132px - var(--sat, 0px))",
-              }}
+              style={{ display: "flex", flexDirection: "column" }}
             >
               {error && (
                 <p className="font-body text-text-muted" style={{ fontSize: 14, marginTop: 18 }}>{t(error)}</p>
@@ -1841,6 +1837,21 @@ export default function TodayPage() {
                     text-wrap:balance}
                   One step up in size, because this line is the day's fact and
                   carries more weight here than a creed does there. */}
+              {/* One screen, exactly: the day's line, then the deck, then the
+                  dots. The height is the viewport less the header above it
+                  (132), the status bar inset, and the bottom bar the page
+                  already pads for (96 plus its own inset). The deck takes what
+                  is left with flex-basis 0, so the card is given a track
+                  rather than growing to whatever its text wants and carrying
+                  the dots under the bar. Sky Now sits after this box, which is
+                  what puts it below the fold. */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "calc(100dvh - 132px - var(--sat, 0px) - 96px - var(--sab, 0px))",
+                }}
+              >
               <p
                 className="font-body"
                 style={{
@@ -1860,7 +1871,7 @@ export default function TodayPage() {
                   flex-direction:column;justify-content:center} */}
               <div
                 className="transition-opacity duration-700"
-                style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "center", opacity: visibleSections >= 1 ? 1 : 0 }}
+                style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", opacity: visibleSections >= 1 ? 1 : 0 }}
               >
                 <Deck count={1 + cycles.length}>
                   <DeckCard
@@ -1896,6 +1907,8 @@ export default function TodayPage() {
               {/* Sky now, folded away at the foot of the screen. mundane's
                   disclosure grammar: a quiet uppercase label over a hairline,
                   the content underneath only when it is asked for. */}
+              </div>
+
               <div
                 className="transition-opacity duration-700"
                 style={{ marginTop: 18, flex: "0 0 auto", opacity: visibleSections >= 2 ? 1 : 0 }}
