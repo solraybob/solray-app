@@ -8,8 +8,9 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
 import { isRunningInCapacitor } from "@/lib/native-push";
+import BirthWheels from "@/components/BirthWheels";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 // Atmospheric image per step, fades in behind the question
 const STEP_WASH = [
@@ -17,7 +18,6 @@ const STEP_WASH = [
   // orb's own colours at a whisper, so each question has its own hour.
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(252,180,156,.16), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.13), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.12), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(163,74,34,.12), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(90,49,174,.12), transparent 70%)",
   "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(84,63,150,.12), transparent 70%)",
@@ -190,10 +190,9 @@ export default function OnboardPage() {
     switch (step) {
       case 1: return name.trim().length > 0;
       case 2: return sex === "male" || sex === "female";
-      case 3: return birthDate.length === 10;
-      case 4: return timeUnknown || birthTime.length === 5;
-      case 5: return birthPlace.trim().length > 0;
-      case 6: return email.trim().length > 0 && password.length >= 6;
+      case 3: return birthDate.length === 10 && (timeUnknown || birthTime.length === 5);
+      case 4: return birthPlace.trim().length > 0;
+      case 5: return email.trim().length > 0 && password.length >= 6;
       default: return false;
     }
   };
@@ -352,7 +351,10 @@ export default function OnboardPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-24 animate-slide-up" key={step} style={{ position: "relative" }}>
+      {/* pb-40, not pb-24: the birth step is an instrument now, not a single
+          line input, and the fixed Continue button was sitting on the "I do not
+          know my birth time" line underneath it. */}
+      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-40 animate-slide-up" key={step} style={{ position: "relative" }}>
         <div className="w-full max-w-sm">
           {step === 1 && (
             <StepWrapper label={t("onboard.q_name")}>
@@ -401,31 +403,24 @@ export default function OnboardPage() {
               eyebrow={t("onboard.calibration")}
               subtitle={t("onboard.calibration_why")}
             >
-              <input
-                autoFocus
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className="onboard-input"
-                style={{ colorScheme: "dark" }}
+              {/* A birth is one fact, so it is asked once, on one instrument.
+                  It used to be two steps, a native date picker and a native
+                  time picker, which made the moment feel like two unrelated
+                  questions and opened two modals on a phone. */}
+              <BirthWheels
+                date={birthDate}
+                time={birthTime}
+                timeDisabled={timeUnknown}
+                onChange={(d, tm) => { setBirthDate(d); setBirthTime(tm); }}
               />
-            </StepWrapper>
-          )}
-
-          {step === 4 && (
-            <StepWrapper label={t("onboard.q_birth_time")}>
-              {!timeUnknown && (
-                <input
-                  autoFocus
-                  type="time"
-                  value={birthTime}
-                  onChange={(e) => setBirthTime(e.target.value)}
-                  className="onboard-input"
-                  style={{ colorScheme: "dark" }}
-                />
-              )}
               <button
-                onClick={() => setTimeUnknown(!timeUnknown)}
+                onClick={() => {
+                  const next = !timeUnknown;
+                  setTimeUnknown(next);
+                  // Noon is the honest stand-in, and it is what the backend
+                  // assumes for an unknown time.
+                  if (next) setBirthTime("12:00");
+                }}
                 className={`mt-3 text-xs font-body tracking-wider transition-colors ${
                   timeUnknown ? "text-amber-sun" : "text-text-secondary hover:text-text-primary"
                 }`}
@@ -435,7 +430,7 @@ export default function OnboardPage() {
             </StepWrapper>
           )}
 
-          {step === 5 && (
+          {step === 4 && (
             <StepWrapper label={t("onboard.q_birth_place")}>
               <div className="relative">
                 <input
@@ -488,7 +483,7 @@ export default function OnboardPage() {
             </StepWrapper>
           )}
 
-          {step === 6 && (
+          {step === 5 && (
             <StepWrapper label={`${t("onboard.welcome_name")} ${name}.`} subtitle={t("onboard.create_account")}>
               <input
                 autoFocus

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Wordmark } from "@/components/Wordmark";
+import BirthWheels from "@/components/BirthWheels";
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -241,35 +242,16 @@ export default function PreviewPage() {
 
               <div className="space-y-8">
                 {/* Birth Date */}
+                {/* The same instrument as onboarding and settings. */}
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
                     Birth Date
                   </label>
-                  <input
-                    autoFocus
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="preview-input"
-                    style={{ colorScheme: "dark" }}
+                  <BirthWheels
+                    date={birthDate}
+                    time={birthTime}
+                    onChange={(d, tm) => { setBirthDate(d); setBirthTime(tm); }}
                   />
-                </div>
-
-                {/* Birth Time */}
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
-                    Birth Time
-                  </label>
-                  <input
-                    type="time"
-                    value={birthTime}
-                    onChange={(e) => setBirthTime(e.target.value)}
-                    className="preview-input"
-                    style={{ colorScheme: "dark" }}
-                  />
-                  <p className="text-text-secondary text-xs mt-2 font-body">
-                    As precise as possible (check your birth certificate)
-                  </p>
                 </div>
 
                 {/* Birth City */}

@@ -9,6 +9,7 @@ import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { Wordmark } from "@/components/Wordmark";
+import BirthWheels from "@/components/BirthWheels";
 
 // Types
 interface SearchResult {
@@ -1575,32 +1576,27 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_birth_date")}</label>
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors"
-                style={{ colorScheme: "dark" }}
-              />
-            </div>
-            <div>
-              <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold">{t("souls.label_birth_time")}</label>
-              <input
-                type="time"
-                value={birthTime}
-                onChange={(e) => setBirthTime(e.target.value)}
-                disabled={timeUnknown}
-                className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors disabled:opacity-40"
-                style={{ colorScheme: "dark" }}
-              />
-            </div>
+          {/* The same instrument the person set their own birth on. Two
+              native pickers side by side made someone else's birth into two
+              unrelated fields, and opened two modals on a phone. */}
+          <div>
+            <label className="font-body text-[14px] tracking-[0.18em] uppercase text-text-secondary font-bold" style={{ display: "block", marginBottom: 8 }}>
+              {t("souls.label_birth_date")}
+            </label>
+            <BirthWheels
+              date={birthDate}
+              time={birthTime}
+              timeDisabled={timeUnknown}
+              onChange={(d, tm) => { setBirthDate(d); setBirthTime(tm); }}
+            />
           </div>
           <button
             type="button"
-            onClick={() => setTimeUnknown(!timeUnknown)}
+            onClick={() => {
+              const next = !timeUnknown;
+              setTimeUnknown(next);
+              if (next) setBirthTime("12:00");
+            }}
             className={`font-body text-[15px] tracking-wider transition-colors -mt-2 ${
               timeUnknown ? "text-indigo" : "text-text-secondary hover:text-text-primary"
             }`}

@@ -63,6 +63,7 @@ function Wheel({
   onIndex,
   wide,
   label,
+  disabled,
 }: {
   part: Part;
   values: string[];
@@ -70,6 +71,7 @@ function Wheel({
   onIndex: (part: Part, i: number) => void;
   wide?: boolean;
   label: string;
+  disabled?: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,7 +129,14 @@ function Wheel({
         }
       }}
       className="sol-wheel"
-      style={{ flex: wide ? "1.4 1 0" : "1 1 0" }}
+      aria-disabled={disabled || undefined}
+      style={{
+        flex: wide ? "1.4 1 0" : "1 1 0",
+        // Locked rather than hidden: the two columns stay where they are, so
+        // turning the toggle back on does not move the instrument.
+        opacity: disabled ? 0.28 : 1,
+        pointerEvents: disabled ? "none" : undefined,
+      }}
     >
       <div style={{ height: PAD }} />
       {values.map((v) => (
@@ -142,12 +151,15 @@ export default function BirthWheels({
   date,
   time,
   onChange,
+  timeDisabled,
 }: {
   /** YYYY-MM-DD, or "" when the person has not set one yet. */
   date: string;
   /** HH:MM, or "". */
   time: string;
   onChange: (date: string, time: string) => void;
+  /** Locks the hour and minute columns, for "I do not know the time". */
+  timeDisabled?: boolean;
 }) {
   const { t, lang } = useT();
   // en-GB rather than en: the app writes dates day-first everywhere else
@@ -220,7 +232,7 @@ export default function BirthWheels({
         day: "numeric",
         month: "long",
         year: "numeric",
-      }) + `, ${pad2(val.h)}:${pad2(val.i)}`
+      }) + (timeDisabled ? "" : `, ${pad2(val.h)}:${pad2(val.i)}`)
     : t("settings.birth_wheel_prompt");
 
   return (
@@ -231,8 +243,8 @@ export default function BirthWheels({
         <Wheel part="m" values={MON} index={val.m - 1} onIndex={onIndex} label={t("common.date")} />
         <Wheel part="y" values={years} index={val.y - 1900} onIndex={onIndex} wide label={t("common.date")} />
         <span className="sol-wdiv" />
-        <Wheel part="h" values={hours} index={val.h} onIndex={onIndex} label={t("common.time")} />
-        <Wheel part="i" values={mins} index={val.i} onIndex={onIndex} label={t("common.time")} />
+        <Wheel part="h" values={hours} index={val.h} onIndex={onIndex} label={t("common.time")} disabled={timeDisabled} />
+        <Wheel part="i" values={mins} index={val.i} onIndex={onIndex} label={t("common.time")} disabled={timeDisabled} />
       </div>
       <p
         className="font-body"
