@@ -648,7 +648,8 @@
     "iap_failed": "La compra no se completó. No se hizo ningún cargo.",
     "iap_verify_failed": "Aún no pudimos confirmar la compra con la tienda. Si se hizo el cargo, vuelve a abrir Solray en un rato y se aplicará.",
     "card_network_error": "No se pudo conectar con el servicio de tarjetas. Inténtalo de nuevo.",
-    "store_restored": "Tu membresía de App Store o Google Play sigue activa, así que restauramos tu acceso. No se cobró ninguna tarjeta."
+    "store_restored": "Tu membresía de App Store o Google Play sigue activa, así que restauramos tu acceso. No se cobró ninguna tarjeta.",
+    "subtitle_rejoin": "Tu membresía ha terminado. Vuelve cuando quieras y retoma donde lo dejaste."
   },
   "depth": {
     "the_sky": "El Cielo",

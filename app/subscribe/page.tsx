@@ -323,7 +323,15 @@ function SubscribeContent() {
       <div className="max-w-lg mx-auto px-5">
         <PageTitle
           title={t("subscribe.your_membership")}
-          sub={lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
+          sub={
+            lapsed
+              ? t("subscribe.subtitle_lapsed")
+              : sub.status === "trial" && !sub.has_access
+              ? t("subscribe.subtitle_expired")
+              : sub.status === "cancelled" && !sub.has_access
+              ? t("subscribe.subtitle_rejoin")
+              : statusSubtitle[sub.status || ""] || ""
+          }
         />
 
         {noticeText && <Notice text={noticeText} tone={notice === "payment_failed" ? "ember" : "muted"} />}

@@ -648,7 +648,8 @@
     "iap_failed": "The purchase did not go through. No charge was made.",
     "iap_verify_failed": "We could not confirm the purchase with the store yet. If you were charged, reopen Solray shortly and it will be applied.",
     "card_network_error": "Could not reach the card service. Try again.",
-    "store_restored": "Your App Store or Google Play membership is still active, so we restored your access. No card was charged."
+    "store_restored": "Your App Store or Google Play membership is still active, so we restored your access. No card was charged.",
+    "subtitle_rejoin": "Your membership has ended. Rejoin whenever you are ready and pick up where you left off."
   },
   "depth": {
     "the_sky": "The Sky",
