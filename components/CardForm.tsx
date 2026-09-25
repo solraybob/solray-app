@@ -90,9 +90,9 @@ export default function CardForm({
     width: "100%",
     padding: "14px 16px",
     borderRadius: 8,
-    border: "1px solid rgba(110,102,89, 0.3)",
+    border: "1px solid rgb(var(--rgb-border))",
     background: "rgb(var(--rgb-card) / 0.55)",
-    color: "var(--text-primary, #22201C)",
+    color: "rgb(var(--rgb-text-primary))",
     fontSize: 17,
     letterSpacing: "0.06em",
     outline: "none",
@@ -100,15 +100,12 @@ export default function CardForm({
 
   return (
     <div
-      className="rounded-sm p-6 mt-2"
-      style={{
-        background: "rgb(var(--rgb-card) / 0.4)",
-        border: "1px solid rgba(90,49,174, 0.18)",
-      }}
+      className="mt-2 pt-4"
+      style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}
     >
       <div
-        className="text-[13px] tracking-[0.28em] uppercase mb-4 font-bold"
-        style={{ color: "var(--text-secondary)" }}
+        className="font-body uppercase mb-4"
+        style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
       >
         {t("subscribe.card_details")}
       </div>
@@ -135,7 +132,7 @@ export default function CardForm({
       </div>
 
       {error && (
-        <p className="mt-3 text-[15px]" style={{ color: "var(--ember, #A34A22)" }}>
+        <p className="mt-3 text-[15px]" style={{ color: "rgb(var(--rgb-ember))" }}>
           {error}
         </p>
       )}
@@ -144,14 +141,14 @@ export default function CardForm({
         onClick={submit}
         disabled={busy}
         className="w-full mt-5 py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-60 font-bold"
-        style={{ background: "var(--amber, #5A31AE)", color: "var(--bg-deep, #F5F0E6)", fontWeight: 700 }}
+        style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))", fontWeight: 700 }}
       >
         {busy ? t("subscribe.card_saving") : t("subscribe.card_save")}
       </button>
 
       <p
         className="mt-4 text-[13px] leading-relaxed"
-        style={{ color: "var(--text-muted)" }}
+        style={{ color: "rgb(var(--rgb-text-muted))" }}
       >
         {t("subscribe.card_privacy")}
       </p>

@@ -23,6 +23,7 @@ import {
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
 import CardForm, { type CardSaveResult } from "@/components/CardForm";
+import { Wordmark } from "@/components/Wordmark";
 
 // ---------------------------------------------------------------------------
 // Subscribe / Manage Subscription Page
@@ -265,60 +266,16 @@ function SubscribeContent() {
     });
 
   return (
-    <div className="min-h-screen px-6 pt-20 pb-32">
-      <div className="max-w-md mx-auto">
-        {/* Eyebrow */}
-        <p
-          className="text-[14px] tracking-[0.3em] uppercase mb-5 text-center font-bold"
-          style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
-        >
-          {t("subscribe.eyebrow_subscription")}
-        </p>
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}>
+      <PageHead label={t("subscribe.eyebrow_subscription")} />
+      <div className="max-w-lg mx-auto px-5">
+        <PageTitle
+          title={t("subscribe.your_membership")}
+          sub={lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
+        />
 
-        {/* Header */}
-        <h1
-          className="text-5xl mb-5 text-center"
-          style={{
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 900,
-            letterSpacing: "-0.01em",
-            color: "var(--text-primary, #22201C)",
-          }}
-        >
-          {t("subscribe.your_membership")}
-        </h1>
-
-        <p
-          className="text-base mb-14 leading-relaxed text-center"
-          style={{
-            color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            
-            fontWeight: 700,
-          }}
-        >
-          {lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
-        </p>
-
-        {/* Status card */}
-        <div
-          className="rounded-sm p-7 mb-10"
-          style={{
-            background: "rgb(var(--rgb-card) / 0.6)",
-            border: "1px solid rgba(90,49,174, 0.14)",
-          }}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <span
-              className="text-[14px] tracking-[0.3em] uppercase font-bold"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("subscribe.status")}
-            </span>
-            <StatusBadge status={lapsed ? "expired" : sub.status || ""} />
-          </div>
-
-          <div className="space-y-3">
+        <Section label={t("subscribe.status")} right={<StatusBadge status={lapsed ? "expired" : sub.status || ""} />}>
+          <div>
             {sub.status === "trial" && sub.trial_end && (
               <DetailRow label={t("subscribe.trial_ends")} value={dateFmt(sub.trial_end)} />
             )}
@@ -344,7 +301,7 @@ function SubscribeContent() {
               />
             )}
           </div>
-        </div>
+        </Section>
 
         {/* Plan picker (web only, before the sub is charged). Monthly $23 or
             yearly $199. Switching POSTs /subscribe/plan and refreshes so the
@@ -434,8 +391,8 @@ function SubscribeContent() {
           )}
           {!isNative && cardSavedNote && (
             <p
-              className="text-center text-[15px]"
-              style={{ color: "var(--moss, #A34A22)" }}
+              className="text-[15px]"
+              style={{ color: "rgb(var(--rgb-moss))" }}
             >
               {cardSavedNote}
             </p>
@@ -448,8 +405,8 @@ function SubscribeContent() {
               to non-IAP purchasing. */}
           {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial" || lapsed) && (
             <p
-              className="text-center text-[15px] leading-relaxed"
-              style={{ color: "var(--text-secondary, #6E6659)", opacity: 0.85 }}
+              className="text-[15px] leading-relaxed"
+              style={{ color: "rgb(var(--rgb-text-secondary))" }}
             >
               {t("subscribe.managed_on_web")}
             </p>
@@ -463,8 +420,8 @@ function SubscribeContent() {
               disabled={actionLoading}
               className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50 font-bold"
               style={{
-                color: "var(--text-secondary, #6E6659)",
-                border: "1px solid rgba(110,102,89, 0.25)",
+                color: "rgb(var(--rgb-text-secondary))",
+                border: "1px solid rgb(var(--rgb-border))",
                 background: "transparent",
               }}
             >
@@ -483,11 +440,11 @@ function SubscribeContent() {
           <button
             onClick={() => router.push("/today")}
             className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
-            style={{
-              color: "rgb(var(--rgb-bg-deep))",
-              background: "rgb(var(--rgb-text-primary))",
-              border: "1.5px solid rgb(var(--rgb-text-primary))",
-            }}
+            style={
+              sub.has_access
+                ? { color: "rgb(var(--rgb-bg-deep))", background: "rgb(var(--rgb-text-primary))", border: "1.5px solid rgb(var(--rgb-text-primary))" }
+                : { color: "rgb(var(--rgb-text-secondary))", background: "transparent", border: "1px solid rgb(var(--rgb-border))" }
+            }
           >
             {t("subscribe.continue_to_app")}
           </button>
@@ -495,13 +452,70 @@ function SubscribeContent() {
 
         {error && (
           <p
-            className="text-sm mt-6 text-center"
-            style={{ color: "var(--ember, #A34A22)" }}
+            className="font-body mt-6"
+            style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}
           >
             {error}
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+
+/* mundane's .head, the one Now, the Oracle and You already use: the mark on
+   the left, one rule under it, then the small label line. This page was the
+   last one still printing an accent eyebrow over a centred 48px title, a
+   second header style that made the payment screen look like another app. */
+function PageHead({ label }: { label: string }) {
+  return (
+    <div className="w-full max-w-lg mx-auto px-5 pt-3">
+      <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
+        <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
+      </div>
+      <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
+      <p
+        className="font-body uppercase"
+        style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))", marginTop: 12 }}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function PageTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{ paddingTop: 18, paddingBottom: 28 }}>
+      <h1
+        className="font-heading"
+        style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}
+      >
+        {title}
+      </h1>
+      {sub && (
+        <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, marginTop: 10, color: "rgb(var(--rgb-text-secondary))" }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* The fold grammar used across the app: a quiet uppercase label over a
+   hairline, content under it. Replaces the bordered, purple-edged card. */
+function Section({ label, right, children }: { label: string; right?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div style={{ borderTop: "1px solid rgb(var(--rgb-border))", marginBottom: 28 }}>
+      <div
+        className="flex items-center justify-between font-body uppercase"
+        style={{ paddingBlock: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
+      >
+        <span>{label}</span>
+        {right}
+      </div>
+      {children}
     </div>
   );
 }
@@ -535,10 +549,10 @@ function PlanPicker({
               type="button"
               disabled={disabled}
               onClick={() => !active && onChoose(o.key)}
-              className="rounded-2xl border px-4 py-3 text-left transition-colors"
+              className="rounded-sm border px-4 py-3 text-left transition-colors"
               style={{
-                borderColor: active ? "var(--amber, #5A31AE)" : "var(--line, rgba(34,32,28,.12))",
-                background: active ? "rgba(90,49,174,.10)" : "transparent",
+                borderColor: active ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-border))",
+                background: active ? "rgb(var(--rgb-card))" : "transparent",
                 opacity: disabled ? 0.6 : 1,
                 cursor: disabled ? "default" : "pointer",
               }}
@@ -547,11 +561,11 @@ function PlanPicker({
                 {o.key === "yearly" ? t("subscribe.plan_yearly") : t("subscribe.plan_monthly")}
               </div>
               <div className="mt-1 flex items-baseline gap-1">
-                <span className="text-[20px] font-medium" style={{ color: "var(--ink, #22201C)" }}>{o.price}</span>
+                <span className="text-[20px]" style={{ fontWeight: 700, color: "rgb(var(--rgb-text-primary))" }}>{o.price}</span>
                 <span className="text-[14px]" style={{ color: "rgb(var(--rgb-text-muted))" }}>{o.per}</span>
               </div>
               {o.note && (
-                <div className="mt-1 text-[13px]" style={{ color: "var(--moss, #A34A22)" }}>{o.note}</div>
+                <div className="mt-1 text-[13px]" style={{ color: "rgb(var(--rgb-moss))" }}>{o.note}</div>
               )}
             </button>
           );
@@ -563,19 +577,9 @@ function PlanPicker({
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-baseline">
-      <span
-        className="text-[14px] tracking-[0.22em] uppercase font-bold"
-        style={{ color: "var(--text-muted)" }}
-      >
-        {label}
-      </span>
-      <span
-        className="text-[17px]"
-        style={{ color: "var(--text-primary, #22201C)" }}
-      >
-        {value}
-      </span>
+    <div className="flex justify-between items-baseline font-body" style={{ paddingBlock: 10, borderTop: "1px solid rgb(var(--rgb-border) / .6)" }}>
+      <span style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>{value}</span>
     </div>
   );
 }
@@ -649,38 +653,10 @@ function NativeMembershipView() {
   };
 
   return (
-    <div className="min-h-screen px-6 pt-20 pb-32">
-      <div className="max-w-md mx-auto text-center">
-        <p
-          className="text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
-          style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
-        >
-          {t("subscribe.eyebrow_lbd")}
-        </p>
-
-        <h1
-          className="text-5xl mb-5"
-          style={{
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 900,
-            letterSpacing: "-0.01em",
-            color: "var(--text-primary, #22201C)",
-          }}
-        >
-          {t("subscribe.chart_spoken_to")}
-        </h1>
-
-        <p
-          className="text-base mb-12 leading-relaxed"
-          style={{
-            color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            
-            fontWeight: 700,
-          }}
-        >
-          {t("subscribe.native_blurb")}
-        </p>
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}>
+      <PageHead label={t("subscribe.eyebrow_lbd")} />
+      <div className="max-w-lg mx-auto px-5">
+        <PageTitle title={t("subscribe.chart_spoken_to")} sub={t("subscribe.native_blurb")} />
 
         {/* Plan choice: monthly or annual. Both start the same 3-day free
             trial; the chosen product id is what gets ordered on the store. */}
@@ -695,10 +671,10 @@ function NativeMembershipView() {
                 key={o.key}
                 onClick={() => setPlanChoice(o.key)}
                 disabled={loading}
-                className="py-4 px-3 rounded-2xl text-center transition-colors disabled:opacity-50"
+                className="py-4 px-4 rounded-sm text-left transition-colors disabled:opacity-50"
                 style={{
-                  border: selected ? "1px solid var(--amber, #5A31AE)" : "1px solid rgba(110,102,89, 0.25)",
-                  background: selected ? "rgba(90,49,174, 0.10)" : "transparent",
+                  border: selected ? "1px solid rgb(var(--rgb-text-primary))" : "1px solid rgb(var(--rgb-border))",
+                  background: selected ? "rgb(var(--rgb-card))" : "transparent",
                 }}
               >
                 <span className="block text-[13px] tracking-[0.25em] uppercase font-bold" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.label}</span>
@@ -727,8 +703,8 @@ function NativeMembershipView() {
             onClick={logout}
             className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
             style={{
-              color: "var(--text-secondary, #6E6659)",
-              border: "1px solid rgba(110,102,89, 0.25)",
+              color: "rgb(var(--rgb-text-secondary))",
+              border: "1px solid rgb(var(--rgb-border))",
               background: "transparent",
             }}
           >
@@ -747,15 +723,15 @@ function NativeMembershipView() {
             Policy links. Apple's purchase sheet shows the price too, but
             reviewers expect it on our screen. Links open in the system
             browser (they are not in the WebView allow-list). */}
-        <div className="mt-9 space-y-3 text-center">
+        <div className="mt-9 space-y-3">
           {priceLabel && (
             <p className="text-[15px]" style={{ color: "var(--text-primary, #22201C)" }}>
               {t("subscribe.free_week_then")} {priceLabel} {t("subscribe.per_month")}
             </p>
           )}
           <p
-            className="text-[14px] leading-relaxed mx-auto"
-            style={{ color: "var(--text-secondary, #6E6659)", opacity: 0.8, maxWidth: "22rem" }}
+            className="text-[14px] leading-relaxed"
+            style={{ color: "rgb(var(--rgb-text-secondary))" }}
           >
             {t("subscribe.auto_renew_terms")}
           </p>
@@ -764,7 +740,7 @@ function NativeMembershipView() {
               href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--amber, #5A31AE)", textDecoration: "underline" }}
+              style={{ color: "rgb(var(--rgb-text-primary))", textDecoration: "underline", textUnderlineOffset: 3 }}
             >
               {t("subscribe.terms_of_use")}
             </a>
@@ -773,7 +749,7 @@ function NativeMembershipView() {
               href="https://solray.ai/legal"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--amber, #5A31AE)", textDecoration: "underline" }}
+              style={{ color: "rgb(var(--rgb-text-primary))", textDecoration: "underline", textUnderlineOffset: 3 }}
             >
               {t("subscribe.privacy_policy")}
             </a>
@@ -795,54 +771,13 @@ function TrialOffer({
 }) {
   const { t } = useT();
   return (
-    <div className="min-h-screen px-6 pt-20 pb-32">
-      <div className="max-w-md mx-auto text-center">
-        {/* Eyebrow */}
-        <p
-          className="text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
-          style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
-        >
-          {t("subscribe.eyebrow_lbd")}
-        </p>
-
-        <h1
-          className="text-5xl mb-5"
-          style={{
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            fontWeight: 900,
-            letterSpacing: "-0.01em",
-            color: "var(--text-primary, #22201C)",
-          }}
-        >
-          {t("subscribe.chart_spoken_to")}
-        </h1>
-
-        <p
-          className="text-base mb-14 leading-relaxed"
-          style={{
-            color: "var(--text-secondary, #6E6659)",
-            fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
-            
-            fontWeight: 700,
-          }}
-        >
-          {t("subscribe.trial_blurb")}
-        </p>
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}>
+      <PageHead label={t("subscribe.eyebrow_lbd")} />
+      <div className="max-w-lg mx-auto px-5">
+        <PageTitle title={t("subscribe.chart_spoken_to")} sub={t("subscribe.trial_blurb")} />
 
         {/* What you get */}
-        <div
-          className="text-left rounded-sm p-7 mb-10"
-          style={{
-            background: "rgb(var(--rgb-card) / 0.6)",
-            border: "1px solid rgba(90,49,174, 0.14)",
-          }}
-        >
-          <p
-            className="text-[14px] tracking-[0.3em] uppercase mb-6 font-bold"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            {t("subscribe.everything_included")}
-          </p>
+        <Section label={t("subscribe.everything_included")}>
           {[
             t("subscribe.feature_oracle"),
             t("subscribe.feature_forecast"),
@@ -869,13 +804,13 @@ function TrialOffer({
               </span>
             </div>
           ))}
-        </div>
+        </Section>
 
         {/* Pricing */}
         <div className="mb-10">
           <p
-            className="text-xs tracking-wide"
-            style={{ color: "var(--text-secondary)" }}
+            className="text-[15px]"
+            style={{ color: "rgb(var(--rgb-text-secondary))" }}
           >
             {t("subscribe.five_days_then")}
           </p>
@@ -902,8 +837,8 @@ function TrialOffer({
             </span>
           </p>
           <p
-            className="text-xs mt-3 tracking-wide"
-            style={{ color: "var(--text-muted)" }}
+            className="text-[14px] mt-3"
+            style={{ color: "rgb(var(--rgb-text-muted))" }}
           >
             {t("subscribe.cancel_anytime")}
           </p>
@@ -914,7 +849,7 @@ function TrialOffer({
         </ActionButton>
 
         {error && (
-          <p className="text-sm mt-4" style={{ color: "var(--ember, #A34A22)" }}>
+          <p className="text-[15px] mt-4" style={{ color: "rgb(var(--rgb-ember))" }}>
             {error}
           </p>
         )}
@@ -925,35 +860,13 @@ function TrialOffer({
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useT();
-  const colors: Record<string, { bg: string; text: string; border: string }> = {
-    trial: {
-      bg: "rgba(90,49,174,0.12)",
-      text: "var(--amber, #5A31AE)",
-      border: "rgba(90,49,174,0.35)",
-    },
-    active: {
-      bg: "rgba(138,158,102,0.12)",
-      text: "var(--moss, #A34A22)",
-      border: "rgba(138,158,102,0.35)",
-    },
-    past_due: {
-      bg: "rgba(163,74,34,0.12)",
-      text: "var(--ember, #A34A22)",
-      border: "rgba(163,74,34,0.35)",
-    },
-    cancelled: {
-      bg: "rgba(110,102,89,0.08)",
-      text: "var(--text-secondary, #6E6659)",
-      border: "rgba(110,102,89,0.25)",
-    },
-    expired: {
-      bg: "rgba(110,102,89,0.08)",
-      text: "var(--text-secondary, #6E6659)",
-      border: "rgba(110,102,89,0.25)",
-    },
+  // One dot of meaning, no pill: the rest of the app marks state with a word
+  // in the label voice, not a coloured capsule.
+  const dot: Record<string, string> = {
+    trial: "rgb(var(--rgb-amber))",
+    active: "rgb(var(--rgb-moss))",
+    past_due: "rgb(var(--rgb-ember))",
   };
-  const c = colors[status] || colors.expired;
-
   const label: Record<string, string> = {
     trial: t("subscribe.badge_trial"),
     active: t("subscribe.badge_active"),
@@ -961,16 +874,9 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: t("subscribe.badge_cancelled"),
     expired: t("subscribe.badge_expired"),
   };
-
   return (
-    <span
-      className="text-[14px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full font-bold"
-      style={{
-        background: c.bg,
-        color: c.text,
-        border: `1px solid ${c.border}`,
-      }}
-    >
+    <span className="inline-flex items-center gap-2" style={{ color: "rgb(var(--rgb-text-primary))" }}>
+      <span style={{ width: 7, height: 7, borderRadius: 999, background: dot[status] || "rgb(var(--rgb-text-muted))" }} />
       {label[status] || status.replace("_", " ")}
     </span>
   );
@@ -991,11 +897,12 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="w-full py-4 px-8 rounded-full text-[15px] tracking-[0.3em] uppercase transition-all duration-300 disabled:opacity-50 hover:brightness-110 font-bold"
+      className="w-full py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase transition-opacity duration-300 disabled:opacity-50 font-bold"
+      data-accent={color}
       style={{
-        background: color,
-        color: "var(--bg-deep)",
-        boxShadow: "0 1px 0 rgba(34,32,28,0.08) inset, 0 8px 24px rgba(90,49,174,0.12)",
+        background: "rgb(var(--rgb-text-primary))",
+        color: "rgb(var(--rgb-bg-deep))",
+        border: "1.5px solid rgb(var(--rgb-text-primary))",
       }}
     >
       {loading ? (
