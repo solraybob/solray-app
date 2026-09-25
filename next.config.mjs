@@ -21,7 +21,8 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   async headers() {
     return [
-      { source: '/((?!widget).*)', headers: SECURITY_HEADERS },
+      { source: '/', headers: SECURITY_HEADERS },
+      { source: '/:path((?!widget).*)', headers: SECURITY_HEADERS },
     ];
   },
   eslint: {
