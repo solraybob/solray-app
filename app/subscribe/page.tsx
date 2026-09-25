@@ -250,6 +250,9 @@ function SubscribeContent() {
   // Cancelled and the paid month has run out: same as expired, they need a
   // way back in. This state used to render no payment button at all.
   const rejoinable = sub.status === "expired" || (sub.status === "cancelled" && !sub.has_access);
+  // Apple / Google bill store members; our cancel cannot stop their charge,
+  // so those members are sent to their store instead of a button that lies.
+  const storeBilled = sub.platform === "ios" || sub.platform === "android";
   const statusSubtitle: Record<string, string> = {
     trial: t("subscribe.subtitle_trial"),
     active: t("subscribe.subtitle_active"),
@@ -414,7 +417,13 @@ function SubscribeContent() {
 
           {/* Active or trial: cancel. Available on every platform; cancel
               is a backend-only call and never touches a payment processor. */}
-          {(sub.status === "active" || sub.status === "trial") && (
+          {storeBilled && sub.has_access && (
+            <p className="text-[15px] leading-relaxed" style={{ color: "rgb(var(--rgb-text-secondary))" }}>
+              {sub.platform === "ios" ? t("subscribe.managed_in_app_store") : t("subscribe.managed_in_play")}
+            </p>
+          )}
+
+          {!storeBilled && (sub.status === "active" || sub.status === "trial" || sub.status === "past_due") && (
             <button
               onClick={handleCancel}
               disabled={actionLoading}

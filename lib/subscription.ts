@@ -23,6 +23,7 @@ export interface SubscriptionStatus {
   plan?: "monthly" | "yearly";
   period_days?: number;
   cancelled_at: string | null;
+  platform?: "web" | "ios" | "android" | string;
 }
 
 // ---------------------------------------------------------------------------

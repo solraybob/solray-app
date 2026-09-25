@@ -591,7 +591,9 @@
     "card_invalid_number": "That card number does not look right.",
     "card_invalid_expiry": "Check the expiry date.",
     "card_error": "The card could not be saved. Please try again.",
-    "card_privacy": "Your card number goes directly to the payment provider over an encrypted connection. It never touches Solray's servers; we only store a secure token."
+    "card_privacy": "Your card number goes directly to the payment provider over an encrypted connection. It never touches Solray's servers; we only store a secure token.",
+    "managed_in_app_store": "Billed through the App Store. To cancel or change it, open Settings, tap your name, then Subscriptions.",
+    "managed_in_play": "Billed through Google Play. To cancel or change it, open the Play Store, tap your profile, then Payments and subscriptions."
   },
   "depth": {
     "the_sky": "The Sky",

@@ -591,7 +591,9 @@
     "card_invalid_number": "Ese número de tarjeta no parece correcto.",
     "card_invalid_expiry": "Revisa la fecha de vencimiento.",
     "card_error": "No se pudo guardar la tarjeta. Inténtalo de nuevo.",
-    "card_privacy": "El número de tu tarjeta va directamente al proveedor de pagos por una conexión cifrada. Nunca pasa por los servidores de Solray; solo guardamos un token seguro."
+    "card_privacy": "El número de tu tarjeta va directamente al proveedor de pagos por una conexión cifrada. Nunca pasa por los servidores de Solray; solo guardamos un token seguro.",
+    "managed_in_app_store": "Se cobra a través del App Store. Para cancelarla o cambiarla, abre Ajustes, toca tu nombre y luego Suscripciones.",
+    "managed_in_play": "Se cobra a través de Google Play. Para cancelarla o cambiarla, abre Play Store, toca tu perfil y luego Pagos y suscripciones."
   },
   "depth": {
     "the_sky": "El Cielo",

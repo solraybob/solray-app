@@ -8,7 +8,22 @@ const BUILD_ID =
   process.env.BUILD_ID ||
   String(Date.now());
 
+// Baseline security headers. No page of the member app (payment form
+// included) may be framed by another site: that is how clickjacking works.
+// /widget is left frameable on purpose, it exists to be embedded.
+const SECURITY_HEADERS = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+];
+
 const nextConfig = {
+  async headers() {
+    return [
+      { source: '/((?!widget).*)', headers: SECURITY_HEADERS },
+    ];
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

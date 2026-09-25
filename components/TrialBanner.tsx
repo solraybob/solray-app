@@ -61,7 +61,7 @@ export default function TrialBanner() {
     ? Math.max(0, Math.ceil((new Date(sub.trial_end).getTime() - Date.now()) / 86_400_000))
     : null;
 
-  const TRIAL_DAYS = 5;
+  const TRIAL_DAYS = 3; // matches backend TRIAL_DAYS; was 5, so the bar read wrong
   const daysUsed = daysLeft !== null ? TRIAL_DAYS - daysLeft : 0;
   const progress = Math.min(1, daysUsed / TRIAL_DAYS);
   const urgent = daysLeft !== null && daysLeft <= 1;
