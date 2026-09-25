@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
@@ -20,10 +20,11 @@ import {
   getLocalizedMonthlyPrice,
   MONTHLY_PRODUCT_ID,
   YEARLY_PRODUCT_ID,
+  NativeIAPError,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
 import CardForm, { type CardSaveResult } from "@/components/CardForm";
-import { Wordmark } from "@/components/Wordmark";
+import { PageHead, PageTitle, Section, HairlineButton } from "@/components/PageHead";
 
 // ---------------------------------------------------------------------------
 // Subscribe / Manage Subscription Page
@@ -39,9 +40,19 @@ export default function SubscribePage() {
 
 function SubscribeContent() {
   const { t, lang } = useT();
-  const { token } = useAuth();
-  const { sub, loading: subLoading, refresh } = useSubscription();
+  const { token, logout } = useAuth();
+  const { sub, loading: subLoading, refresh, error: subError } = useSubscription();
   const router = useRouter();
+  // Notices carried in by redirects: ?payment=failed (card declined or the
+  // hosted page was cancelled) and ?activation=unknown (payment went
+  // through but activation has not been confirmed yet).
+  const [notice, setNotice] = useState<"" | "payment_failed" | "activation_pending">("");
+  const [retrying, setRetrying] = useState(false);
+
+  const handleSignOut = () => {
+    logout();
+    router.replace("/login");
+  };
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
@@ -115,6 +126,14 @@ function SubscribeContent() {
   // If we ever land on /subscribe with a stray ?token=... param (e.g.
   // a user shared the URL), strip it from the bar and refetch
   // subscription status to reflect whatever the backend actually did.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("payment") === "failed") setNotice("payment_failed");
+      else if (params.get("activation") === "unknown") setNotice("activation_pending");
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     if (isNative) return;
     const params = new URLSearchParams(window.location.search);
@@ -217,11 +236,41 @@ function SubscribeContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+      <div className="min-h-[100dvh] bg-forest-deep flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full animate-spin" style={{ border: "2px solid rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-text-primary))" }} />
       </div>
     );
   }
+
+  // Status call failed and there is nothing cached: say so and offer a
+  // retry. Falling through here used to show the trial offer (or, on
+  // native, the purchase sheet) to members who may already be paying.
+  if (!sub && subError) {
+    return (
+      <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}>
+        <PageHead label={t("subscribe.eyebrow_subscription")} />
+        <div className="max-w-lg mx-auto px-5">
+          <PageTitle title={t("subscribe.status_error_title")} sub={t("subscribe.status_error_body")} />
+          <div className="space-y-3">
+            <ActionButton
+              onClick={async () => {
+                setRetrying(true);
+                try { await refresh(); } finally { setRetrying(false); }
+              }}
+              loading={retrying}
+            >
+              {t("common.retry")}
+            </ActionButton>
+            <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const noticeText =
+    notice === "payment_failed" ? t("subscribe.payment_failed") :
+    notice === "activation_pending" ? t("subscribe.activation_pending") : "";
 
   // Native (iOS/Android): ANY account without active access goes straight to
   // the in-app purchase screen. This covers never-subscribed, expired,
@@ -233,12 +282,12 @@ function SubscribeContent() {
   // sheet. Gating on has_access (not the looser `subscribed`) is what makes
   // the StoreKit purchase reachable for every non-member on iOS.
   if (isNative && (!sub || !sub.has_access)) {
-    return <NativeMembershipView />;
+    return <NativeMembershipView onSignOut={handleSignOut} />;
   }
 
   // No subscription yet (web only now; native handled above).
   if (!sub || !sub.subscribed) {
-    return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} />;
+    return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} notice={noticeText} onSignOut={handleSignOut} />;
   }
 
   // Has subscription: show status + management.
@@ -276,6 +325,8 @@ function SubscribeContent() {
           title={t("subscribe.your_membership")}
           sub={lapsed ? t("subscribe.subtitle_lapsed") : statusSubtitle[sub.status || ""] || ""}
         />
+
+        {noticeText && <Notice text={noticeText} tone={notice === "payment_failed" ? "ember" : "muted"} />}
 
         <Section label={t("subscribe.status")} right={<StatusBadge status={lapsed ? "expired" : sub.status || ""} />}>
           <div>
@@ -341,14 +392,14 @@ function SubscribeContent() {
         <div className="space-y-4">
           {/* Trial without card: add payment */}
           {!isNative && sub.status === "trial" && !sub.card_last_four && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #5A31AE)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading}>
               {t("subscribe.add_payment")}
             </ActionButton>
           )}
 
           {/* Trial with card: activate now */}
           {!isNative && sub.status === "trial" && sub.card_last_four && (
-            <ActionButton onClick={handleActivate} loading={actionLoading} color="var(--amber, #5A31AE)">
+            <ActionButton onClick={handleActivate} loading={actionLoading}>
               {t("subscribe.subscribe_now")}
             </ActionButton>
           )}
@@ -357,21 +408,21 @@ function SubscribeContent() {
               Same SecurePay checkout as rejoin; charges the month and
               restarts the period on return. */}
           {!isNative && lapsed && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #5A31AE)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading}>
               {t("subscribe.renew")}
             </ActionButton>
           )}
 
           {/* Expired, or cancelled and ended: restart */}
           {!isNative && rejoinable && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #5A31AE)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading}>
               {t("subscribe.rejoin")}
             </ActionButton>
           )}
 
           {/* Past due: update card */}
           {!isNative && sub.status === "past_due" && (
-            <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #5A31AE)">
+            <ActionButton onClick={handleAddCard} loading={actionLoading}>
               {t("subscribe.update_payment")}
             </ActionButton>
           )}
@@ -384,7 +435,9 @@ function SubscribeContent() {
               onSuccess={async (r: CardSaveResult) => {
                 setShowCardForm(false);
                 setCardSavedNote(
-                  r.charged
+                  r.store_active
+                    ? t("subscribe.store_restored")
+                    : r.charged
                     ? t("subscribe.card_saved_charged")
                     : t("subscribe.card_saved")
                 );
@@ -446,17 +499,16 @@ function SubscribeContent() {
             so it's impossible to design ourselves into another stranded
             paying-customer situation. */}
         <div className="mt-8">
-          <button
-            onClick={() => router.push("/today")}
-            className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
-            style={
-              sub.has_access
-                ? { color: "rgb(var(--rgb-bg-deep))", background: "rgb(var(--rgb-text-primary))", border: "1.5px solid rgb(var(--rgb-text-primary))" }
-                : { color: "rgb(var(--rgb-text-secondary))", background: "transparent", border: "1px solid rgb(var(--rgb-border))" }
-            }
-          >
-            {t("subscribe.continue_to_app")}
-          </button>
+          {sub.has_access ? (
+            <ActionButton onClick={() => router.push("/today")} loading={false}>
+              {t("subscribe.continue_to_app")}
+            </ActionButton>
+          ) : (
+            // Without access, "Continue to app" only bounced the member off
+            // the access gate straight back here. Signing out is the honest
+            // secondary exit.
+            <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>
+          )}
         </div>
 
         {error && (
@@ -472,62 +524,6 @@ function SubscribeContent() {
   );
 }
 
-
-/* mundane's .head, the one Now, the Oracle and You already use: the mark on
-   the left, one rule under it, then the small label line. This page was the
-   last one still printing an accent eyebrow over a centred 48px title, a
-   second header style that made the payment screen look like another app. */
-function PageHead({ label }: { label: string }) {
-  return (
-    <div className="w-full max-w-lg mx-auto px-5 pt-3">
-      <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
-        <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
-      </div>
-      <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
-      <p
-        className="font-body uppercase"
-        style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))", marginTop: 12 }}
-      >
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function PageTitle({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div style={{ paddingTop: 18, paddingBottom: 28 }}>
-      <h1
-        className="font-heading"
-        style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}
-      >
-        {title}
-      </h1>
-      {sub && (
-        <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, marginTop: 10, color: "rgb(var(--rgb-text-secondary))" }}>
-          {sub}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* The fold grammar used across the app: a quiet uppercase label over a
-   hairline, content under it. Replaces the bordered, purple-edged card. */
-function Section({ label, right, children }: { label: string; right?: React.ReactNode; children?: React.ReactNode }) {
-  return (
-    <div style={{ borderTop: "1px solid rgb(var(--rgb-border))", marginBottom: 28 }}>
-      <div
-        className="flex items-center justify-between font-body uppercase"
-        style={{ paddingBlock: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
-      >
-        <span>{label}</span>
-        {right}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function PlanPicker({
   current,
@@ -610,12 +606,25 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  * the backend verifies the receipt, and entitlement refreshes in place.
  * No web payment path is ever shown on native.
  */
-function NativeMembershipView() {
+// If the store never calls back after the sheet opened (Ask to Buy waiting
+// on a parent, a pending bank approval, a sheet dismissed without an event),
+// stop the spinner instead of leaving the member on "Opening..." forever.
+const NATIVE_PURCHASE_TIMEOUT_MS = 60_000;
+
+function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
   const { t } = useT();
-  const { logout } = useAuth();
   const { refresh } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingNote, setPendingNote] = useState("");
+  const purchaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPurchaseTimer = () => {
+    if (purchaseTimer.current) {
+      clearTimeout(purchaseTimer.current);
+      purchaseTimer.current = null;
+    }
+  };
+  useEffect(() => () => clearPurchaseTimer(), []);
   const [priceLabel, setPriceLabel] = useState<string | null>(null);
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
 
@@ -635,29 +644,42 @@ function NativeMembershipView() {
   // membership view. A failure surfaces inline.
   useEffect(() => {
     setPurchaseListener((outcome) => {
+      clearPurchaseTimer();
+      setPendingNote("");
       if (outcome.ok) {
         void refresh();
         setLoading(false);
         setError("");
       } else {
         setLoading(false);
-        setError(outcome.error || t("subscribe.purchase_failed"));
+        setError(outcome.code ? t(`subscribe.iap_${outcome.code}`) : t("subscribe.purchase_failed"));
       }
     });
     return () => setPurchaseListener(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
   const handleSubscribe = async () => {
     setError("");
+    setPendingNote("");
     setLoading(true);
+    clearPurchaseTimer();
+    purchaseTimer.current = setTimeout(() => {
+      purchaseTimer.current = null;
+      setLoading(false);
+      setPendingNote(t("subscribe.purchase_pending"));
+      // The purchase may still land; pick up whatever the backend knows.
+      void refresh();
+    }, NATIVE_PURCHASE_TIMEOUT_MS);
     try {
       // Opens the native store sheet for the chosen plan. The approved ->
       // verify -> finish flow runs in play-billing.ts; the listener above
       // flips state on success.
       await launchNativePurchase(plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID);
     } catch (e) {
+      clearPurchaseTimer();
       setLoading(false);
-      setError(e instanceof Error ? e.message : t("subscribe.purchase_not_started"));
+      setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.purchase_not_started"));
     }
   };
 
@@ -686,9 +708,9 @@ function NativeMembershipView() {
                   background: selected ? "rgb(var(--rgb-card))" : "transparent",
                 }}
               >
-                <span className="block text-[13px] tracking-[0.25em] uppercase font-bold" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.label}</span>
-                <span className="block text-xl mt-1" style={{ color: "var(--text-primary, #22201C)" }}>{o.price}</span>
-                <span className="block text-[13px]" style={{ color: "var(--text-secondary, #6E6659)" }}>{o.per}</span>
+                <span className="block text-[13px] tracking-[0.25em] uppercase font-bold" style={{ color: "rgb(var(--rgb-text-secondary))" }}>{o.label}</span>
+                <span className="block text-xl mt-1" style={{ color: "rgb(var(--rgb-text-primary))" }}>{o.price}</span>
+                <span className="block text-[13px]" style={{ color: "rgb(var(--rgb-text-secondary))" }}>{o.per}</span>
               </button>
             );
           })}
@@ -708,17 +730,13 @@ function NativeMembershipView() {
             {loading ? t("subscribe.opening") : t("subscribe.start_free_trial")}
           </button>
 
-          <button
-            onClick={logout}
-            className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors font-bold"
-            style={{
-              color: "rgb(var(--rgb-text-secondary))",
-              border: "1px solid rgb(var(--rgb-border))",
-              background: "transparent",
-            }}
-          >
-            {t("common.sign_out")}
-          </button>
+          <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
+
+          {pendingNote && (
+            <p className="font-body pt-2" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>
+              {pendingNote}
+            </p>
+          )}
 
           {error && (
             <p className="text-sm pt-2" style={{ color: "rgb(var(--rgb-ember))" }}>
@@ -734,7 +752,7 @@ function NativeMembershipView() {
             browser (they are not in the WebView allow-list). */}
         <div className="mt-9 space-y-3">
           {priceLabel && (
-            <p className="text-[15px]" style={{ color: "var(--text-primary, #22201C)" }}>
+            <p className="text-[15px]" style={{ color: "rgb(var(--rgb-text-primary))" }}>
               {t("subscribe.free_week_then")} {priceLabel} {t("subscribe.per_month")}
             </p>
           )}
@@ -753,7 +771,7 @@ function NativeMembershipView() {
             >
               {t("subscribe.terms_of_use")}
             </a>
-            <span style={{ color: "var(--text-muted)" }}>{"   ·   "}</span>
+            <span style={{ color: "rgb(var(--rgb-text-muted))" }}>{"   ·   "}</span>
             <a
               href="https://solray.ai/legal"
               target="_blank"
@@ -773,10 +791,14 @@ function TrialOffer({
   onStart,
   loading,
   error,
+  notice,
+  onSignOut,
 }: {
   onStart: () => void;
   loading: boolean;
   error: string;
+  notice?: string;
+  onSignOut: () => void;
 }) {
   const { t } = useT();
   return (
@@ -784,6 +806,8 @@ function TrialOffer({
       <PageHead label={t("subscribe.eyebrow_lbd")} />
       <div className="max-w-lg mx-auto px-5">
         <PageTitle title={t("subscribe.chart_spoken_to")} sub={t("subscribe.trial_blurb")} />
+
+        {notice && <Notice text={notice} tone="ember" />}
 
         {/* What you get */}
         <Section label={t("subscribe.everything_included")}>
@@ -807,7 +831,7 @@ function TrialOffer({
               />
               <span
                 className="text-[17px] leading-snug"
-                style={{ color: "var(--text-primary, #22201C)" }}
+                style={{ color: "rgb(var(--rgb-text-primary))" }}
               >
                 {item}
               </span>
@@ -826,7 +850,7 @@ function TrialOffer({
           <p
             className="mt-2"
             style={{
-              color: "var(--text-primary)",
+              color: "rgb(var(--rgb-text-primary))",
               fontFamily: "var(--font-heading, 'Zen Kaku Gothic New', system-ui, sans-serif)",
               fontWeight: 700,
               fontSize: "3rem",
@@ -838,8 +862,7 @@ function TrialOffer({
               className="ml-1"
               style={{
                 fontSize: "1rem",
-                color: "var(--text-secondary)",
-                
+                color: "rgb(var(--rgb-text-secondary))",
               }}
             >
               {t("subscribe.per_month")}
@@ -853,9 +876,12 @@ function TrialOffer({
           </p>
         </div>
 
-        <ActionButton onClick={onStart} loading={loading} color="var(--amber, #5A31AE)">
-          {t("login.begin_journey")}
-        </ActionButton>
+        <div className="space-y-3">
+          <ActionButton onClick={onStart} loading={loading}>
+            {t("login.begin_journey")}
+          </ActionButton>
+          <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
+        </div>
 
         {error && (
           <p className="text-[15px] mt-4" style={{ color: "rgb(var(--rgb-ember))" }}>
@@ -891,15 +917,33 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function Notice({ text, tone }: { text: string; tone: "ember" | "muted" }) {
+  return (
+    <p
+      className="font-body"
+      role="status"
+      style={{
+        fontSize: 15,
+        lineHeight: 1.55,
+        paddingBlock: 14,
+        marginBottom: 20,
+        borderTop: "1px solid rgb(var(--rgb-border))",
+        borderBottom: "1px solid rgb(var(--rgb-border))",
+        color: tone === "ember" ? "rgb(var(--rgb-ember))" : "rgb(var(--rgb-text-secondary))",
+      }}
+    >
+      {text}
+    </p>
+  );
+}
+
 function ActionButton({
   onClick,
   loading,
-  color,
   children,
 }: {
   onClick: () => void;
   loading: boolean;
-  color: string;
   children: React.ReactNode;
 }) {
   return (
@@ -907,7 +951,6 @@ function ActionButton({
       onClick={onClick}
       disabled={loading}
       className="w-full py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase transition-opacity duration-300 disabled:opacity-50 font-bold"
-      data-accent={color}
       style={{
         background: "rgb(var(--rgb-text-primary))",
         color: "rgb(var(--rgb-bg-deep))",

@@ -63,7 +63,7 @@ export function Orb({
       height={size}
       unoptimized
       className={className}
-      style={{ width: size, height: size, objectFit: "contain", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))", ...style }}
+      style={{ width: size, height: size, objectFit: "contain", filter: "drop-shadow(0 14px 22px rgb(var(--rgb-indigo) / .26))", ...style }}
     />
   );
 }

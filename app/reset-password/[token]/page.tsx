@@ -11,12 +11,13 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
-import { Wordmark, Orb } from "@/components/Wordmark";
+import { errorText } from "@/lib/errors";
+import { PageHead, PageTitle, InkButton, hairlinePillStyle, inputStyle } from "@/components/PageHead";
+
+const MIN_PASSWORD = 8;
 
 export default function ResetPasswordPage() {
   const { t } = useT();
@@ -34,7 +35,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD) {
       setError(t("reset.error_too_short"));
       return;
     }
@@ -53,7 +54,7 @@ export default function ResetPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.detail || t("reset.error_failed"));
+        throw new Error(errorText(e?.detail, t("reset.error_failed")));
       }
       const data = await res.json();
       // Backend issues a fresh JWT so we land the user straight into
@@ -76,20 +77,13 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="flex flex-col items-center mb-10">
-          <Orb size={40} className="mb-4" />
-          <Wordmark size={30} />
-          <p className="font-body text-text-secondary text-[14px] mt-3 tracking-[0.22em] uppercase font-bold">{t("reset.set_new_password")}</p>
-        </div>
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(48px + var(--sab, 0px))" }}>
+      <PageHead label={t("reset.set_new_password")} />
+      <div className="max-w-lg mx-auto px-5 animate-fade-in">
+        <form onSubmit={handleSubmit}>
+          <PageTitle title={t("reset.set_new_password")} sub={t("reset.prompt")} />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="font-body text-text-secondary text-[17px] leading-relaxed text-center mb-4">
-            {t("reset.prompt")}
-          </p>
-
-          <div>
+          <div className="space-y-3">
             <input
               type="password"
               value={password}
@@ -98,11 +92,10 @@ export default function ResetPasswordPage() {
               autoComplete="new-password"
               required
               autoFocus
-              minLength={6}
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
+              minLength={MIN_PASSWORD}
+              className="font-body placeholder-text-muted"
+              style={inputStyle}
             />
-          </div>
-          <div>
             <input
               type="password"
               value={confirm}
@@ -110,28 +103,28 @@ export default function ResetPasswordPage() {
               placeholder={t("reset.confirm_password")}
               autoComplete="new-password"
               required
-              minLength={6}
-              className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
+              minLength={MIN_PASSWORD}
+              className="font-body placeholder-text-muted"
+              style={inputStyle}
             />
           </div>
 
           {error && (
-            <p className="text-ember text-xs text-center font-body">{error}</p>
+            <p className="font-body mt-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || password.length < 6 || password !== confirm}
-            className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-          >
-            {loading ? <LoadingSpinner size="sm" /> : t("reset.set_password")}
-          </button>
-
-          <p className="text-center text-text-secondary text-xs mt-5 font-body">
-            <Link href="/login" className="hover:text-text-primary transition-colors">
+          <div className="mt-6 space-y-3">
+            <InkButton type="submit" loading={loading} disabled={password.length < MIN_PASSWORD || password !== confirm}>
+              {t("reset.set_password")}
+            </InkButton>
+            <Link
+              href="/login"
+              className="block w-full text-center py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold"
+              style={hairlinePillStyle}
+            >
               {t("forgot.back_to_login")}
             </Link>
-          </p>
+          </div>
         </form>
       </div>
     </div>

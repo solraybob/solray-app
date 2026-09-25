@@ -13,6 +13,7 @@ import { ShareCardOffscreen } from "@/components/ShareCard";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
+import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 
 // The ruling planet colours the day, drawn from the orb rather than from a
 // stock photograph. The photographs were storm clouds and star fields behind
@@ -21,16 +22,16 @@ import { Wordmark } from "@/components/Wordmark";
 // orb's own pigments at a whisper, on the paper the rest of the app is made of.
 const PLANET_HERO_WASH: Record<string, string> = {
   sun:     "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(252,180,156,.30), transparent 72%)",
-  moon:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(84,63,150,.22), transparent 72%)",
+  moon:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgb(var(--rgb-indigo) / .22), transparent 72%)",
   mercury: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.20), transparent 72%)",
   venus:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(176,46,114,.22), transparent 72%)",
-  mars:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(163,74,34,.24), transparent 72%)",
+  mars:    "radial-gradient(ellipse 78% 120% at 50% 0%, rgb(var(--rgb-ember) / .24), transparent 72%)",
   jupiter: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(230,141,94,.24), transparent 72%)",
   saturn:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.16), transparent 72%)",
-  uranus:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(90,49,174,.22), transparent 72%)",
+  uranus:  "radial-gradient(ellipse 78% 120% at 50% 0%, rgb(var(--rgb-amber) / .22), transparent 72%)",
   neptune: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(74,46,158,.24), transparent 72%)",
   pluto:   "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(176,46,114,.16), transparent 72%)",
-  default: "radial-gradient(ellipse 78% 120% at 50% 0%, rgba(84,63,150,.20), transparent 72%)",
+  default: "radial-gradient(ellipse 78% 120% at 50% 0%, rgb(var(--rgb-indigo) / .20), transparent 72%)",
 };
 
 interface Planet {
@@ -508,9 +509,9 @@ function DeckCard({
           aria-hidden
           style={{ gridArea: "1/1", pointerEvents: "none", width: "calc(var(--orb) * 1.46)", height: "calc(var(--orb) * 1.46)" }}
         >
-          <circle cx="125" cy="125" r="94" fill="none" stroke="#D98A7A" strokeOpacity=".30" strokeWidth="1" />
-          <circle cx="125" cy="125" r="106" fill="none" stroke="#D98A7A" strokeOpacity=".18" strokeWidth="1" />
-          <circle cx="125" cy="125" r="113" fill="none" stroke="#D98A7A" strokeOpacity=".10" strokeWidth="1" />
+          <circle cx="125" cy="125" r="94" fill="none" stroke="rgb(var(--rgb-ember))" strokeOpacity=".30" strokeWidth="1" />
+          <circle cx="125" cy="125" r="106" fill="none" stroke="rgb(var(--rgb-ember))" strokeOpacity=".18" strokeWidth="1" />
+          <circle cx="125" cy="125" r="113" fill="none" stroke="rgb(var(--rgb-ember))" strokeOpacity=".10" strokeWidth="1" />
         </svg>
         <Image
           src="/solray-orb.png"
@@ -677,35 +678,48 @@ const PLANET_SYMBOLS: Record<string, string> = {
 // or a fake day title. Replaces the previous MOCK_FORECAST fallback.
 function PendingTodayState({ planets }: { planets: Planet[] }) {
   const { t } = useT();
+  const [retrying, setRetrying] = useState(false);
+  // Re-run the forecast fetch through the same path pull-to-refresh uses,
+  // so there is one refetch implementation, and a visible way to try again
+  // for members who do not know the pull gesture.
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    const done = () => setRetrying(false);
+    window.dispatchEvent(new CustomEvent("solray:refresh", { detail: { done } }));
+  };
   return (
-    <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-12">
-      <div
-        className="rounded-sm p-7 mb-8"
-        style={{
-          background: "rgba(250,246,236, 0.6)",
-          border: "1px solid rgba(90,49,174, 0.14)",
-        }}
-      >
-        <p
-          className="font-body text-[14px] tracking-[0.3em] uppercase mb-5 font-bold"
-          style={{ color: "var(--amber, #5A31AE)", opacity: 0.85 }}
-        >
-          {t("today.your_reading")}
-        </p>
-        <p
-          className="font-heading text-text-primary mb-3"
-          style={{ fontWeight: 900, fontSize: "1.4rem", lineHeight: 1.3 }}
+    <div className="max-w-lg lg:max-w-3xl mx-auto px-5">
+      <div style={{ paddingTop: 18, paddingBottom: 28 }}>
+        <h1
+          className="font-heading"
+          style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}
         >
           {t("today.pending_title")}
-        </p>
-        <p className="font-body text-text-secondary text-[17px] leading-relaxed">
+        </h1>
+        <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, marginTop: 10, color: "rgb(var(--rgb-text-secondary))" }}>
           {t("today.pending_body")}
         </p>
+        <button
+          onClick={retry}
+          disabled={retrying}
+          className="w-full py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold disabled:opacity-50"
+          style={{ marginTop: 22, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+        >
+          {retrying ? (
+            <span className="inline-block w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin align-middle" />
+          ) : t("common.retry")}
+        </button>
       </div>
 
-      <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">
-        {t("today.sky_now")}
-      </p>
+      <div style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+        <p
+          className="font-body uppercase"
+          style={{ paddingBlock: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
+        >
+          {t("today.sky_now")}
+        </p>
+      </div>
       <div
         className="-mx-5 px-5 overflow-x-auto"
         style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
@@ -838,7 +852,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
       >
         <button
           onClick={onDismiss}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="absolute"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
@@ -851,7 +865,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgb(var(--rgb-indigo) / .26))" }}
           />
         </div>
 
@@ -1000,14 +1014,14 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
       >
         <button
           onClick={onDismiss}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="absolute"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         {/* a soft moon, the sky returning */}
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }} />
+          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgb(var(--rgb-indigo) / .26))" }} />
         </div>
 
         <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgb(var(--rgb-wisteria))", marginBottom: 14 }}>
@@ -1093,12 +1107,12 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
         }}
       >
         <button
-          onClick={onDismiss} aria-label="Close" className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
         <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 18px" }}>
-          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }} />
+          <Image src="/solray-orb.png" alt="" width={60} height={60} unoptimized style={{ position: "relative", width: 60, height: 60, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgb(var(--rgb-indigo) / .26))" }} />
         </div>
 
         <p className="font-body" style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgb(var(--rgb-mist))", marginBottom: 12 }}>
@@ -1206,7 +1220,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
         }}
       >
         <button
-          onClick={onDismiss} aria-label="Close" className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1218,7 +1232,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
             width={64}
             height={64}
             unoptimized
-            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgba(84,63,150,.26))" }}
+            style={{ position: "relative", width: 64, height: 64, objectFit: "contain", animation: "orbBreathe 11s ease-in-out infinite", filter: "drop-shadow(0 14px 22px rgb(var(--rgb-indigo) / .26))" }}
           />
         </div>
 
@@ -1273,6 +1287,8 @@ export default function TodayPage() {
   const lunarChecked = useRef(false);
   const [cycles, setCycles] = useState<DeckCycle[]>([]);
   const [birthDate, setBirthDate] = useState<string | null>(null);
+  // From /users/me. undefined until known, so the banner never flashes.
+  const [emailVerified, setEmailVerified] = useState<boolean | undefined>(undefined);
   const [showBirthday, setShowBirthday] = useState(false);
   const birthdayChecked = useRef(false);
   const { token } = useAuth();
@@ -1603,6 +1619,7 @@ export default function TodayPage() {
           apiFetch("/users/me", {}, token).then((userData) => {
             if (cancelled) return;
             if (userData?.birth_date) setBirthDate(userData.birth_date);
+            if (typeof userData?.email_verified === "boolean") setEmailVerified(userData.email_verified);
             if (userData.blueprint) {
               try {
                 const bpCacheKey = "solray_blueprint";
@@ -1813,6 +1830,8 @@ export default function TodayPage() {
             {today}
           </p>
         </div>
+
+        <VerifyEmailBanner emailVerified={emailVerified} />
 
         {loading ? (
           <SkeletonToday />

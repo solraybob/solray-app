@@ -2,6 +2,7 @@
 // which made fetches fail with "Failed to fetch" because the resulting URL
 // had a literal \n inside it. trim() strips any whitespace.
 import { clearUserScopedCaches } from "./local-cache";
+import { errorText } from "./errors";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
 
@@ -100,7 +101,7 @@ export async function apiFetch(
       }
     }
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new ApiError(err.detail || `HTTP ${res.status}`, res.status);
+    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status);
   }
 
   return res.json();

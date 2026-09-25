@@ -52,7 +52,10 @@
     "forgot_password": "Forgot password?",
     "new_here": "New here?",
     "begin_journey": "Begin your journey",
-    "error_no_signal": "The signal didn't reach. Try again."
+    "error_no_signal": "The signal didn't reach. Try again.",
+    "error_failed": "Could not sign in. Check your email and password.",
+    "session_expired": "Your session ended, please sign in again.",
+    "tagline": "living by design"
   },
   "install": {
     "cta": "Add Solray to your home screen",
@@ -77,7 +80,7 @@
     "new_password": "New password",
     "confirm_password": "Confirm password",
     "set_password": "Set password",
-    "error_too_short": "Password should be at least 6 characters.",
+    "error_too_short": "Password should be at least 8 characters.",
     "error_mismatch": "Passwords don't match.",
     "error_failed": "Could not reset password."
   },
@@ -89,7 +92,8 @@
     "redirecting": "Redirecting you now...",
     "failed_title": "Verification Failed",
     "failed_message": "Verification failed. The link may have expired.",
-    "go_to_app": "Go to App"
+    "go_to_app": "Go to App",
+    "eyebrow": "Email"
   },
   "onboard": {
     "welcome": "Welcome to Solray",
@@ -116,11 +120,14 @@
     "welcome_name": "Welcome,",
     "create_account": "Create your account to begin.",
     "email_placeholder": "Email",
-    "password_placeholder": "Password (min 6 characters)",
+    "password_placeholder": "Password (min 8 characters)",
     "hive_consent": "Add my chart to the Collective. Patterns only appear once at least ten people share a configuration. Your name, birth time, and conversations are never visible. The Oracle grows sharper as the Collective grows. You can change this anytime in Settings.",
     "begin_journey": "Begin my journey",
     "calibration": "Calibration",
-    "calibration_why": "Your Oracle is built from your exact moment of birth. This is why nothing it says is generic."
+    "calibration_why": "Your Oracle is built from your exact moment of birth. This is why nothing it says is generic.",
+    "log_in": "Log in",
+    "have_account": "Already have an account?",
+    "step_of": "Step {n} of {total}"
   },
   "first_mirror": {
     "title": "The First Mirror",
@@ -309,7 +316,23 @@
     "suggest_unknown": "Tell me something I likely don't know about myself.",
     "suggest_undervalue": "What am I good at that I tend to undervalue?",
     "suggest_money_block": "Do I have any money blocks in my chart?",
-    "suggest_love_block": "Do I have blocks around love in my chart?"
+    "suggest_love_block": "Do I have blocks around love in my chart?",
+    "greet_aspect": "{planet} {aspect}s your natal {target} today.",
+    "greet_sun": "Sun in {sign}",
+    "greet_moon": "Moon in {sign}",
+    "greet_sky_only": "{sky}. The sky is holding something specific for you today. What's already stirring?",
+    "greet_plain": "The sky is moving today. What's stirring in you?",
+    "greet_q_mars": "Where are you pushing against something that might need to breathe?",
+    "greet_q_venus": "What relationship or desire has been quietly asking for your attention?",
+    "greet_q_mercury": "What conversation have you been rehearsing but not yet had?",
+    "greet_q_jupiter": "What is expanding in your life that you haven't fully acknowledged yet?",
+    "greet_q_saturn": "What structure in your life is being tested right now?",
+    "greet_q_uranus": "What change is arriving that part of you already knew was coming?",
+    "greet_q_neptune": "What have you been sensing that you haven't quite put into words?",
+    "greet_q_pluto": "What are you ready to let go of, even if it's uncomfortable?",
+    "greet_q_moon": "What are you feeling right now that you haven't allowed yourself to feel fully?",
+    "greet_q_sun": "What part of yourself are you being asked to step into more completely?",
+    "greet_q_default": "What does your body already know about this?"
   },
   "souls": {
     "title": "SOULS",
@@ -392,7 +415,9 @@
     "error_partial_chart": "Couldn't pull their full chart, reading from the basics.",
     "connected": "connected",
     "saved": "saved",
-    "wants_to_connect": "wants to connect"
+    "wants_to_connect": "wants to connect",
+    "invite_share_title": "You're invited to Solray",
+    "invite_share_text": "Read your chart against today's sky, and the dynamics with the people in your life. Join me on Solray: {link}"
   },
   "profile": {
     "title": "Profile",
@@ -434,7 +459,12 @@
     "photo_saving": "saving...",
     "photo_saved": "saved",
     "ask": "Ask →",
-    "blueprint_weaving": "Your blueprint is still being woven. Refresh in a moment."
+    "blueprint_weaving": "Your blueprint is still being woven. Refresh in a moment.",
+    "load_error": "Your profile did not load. The connection dropped, nothing has changed.",
+    "wheel_unavailable": "Wheel unavailable",
+    "wheel_aria": "Natal chart wheel",
+    "astro_load_failed": "Could not load astrocartography data.",
+    "astro_no_data": "No astrocartography data available."
   },
   "settings": {
     "title": "Settings",
@@ -474,7 +504,20 @@
     "birth_city_select_hint": "Pick a city from the suggestions so we can geolocate it precisely.",
     "birth_date_time_required": "Date and time are both required.",
     "searching": "Searching...",
-    "birth_wheel_prompt": "Scroll to set the moment you were born"
+    "birth_wheel_prompt": "Scroll to set the moment you were born",
+    "could_not_save": "Could not save",
+    "change_photo": "Change photo",
+    "photo_alt": "Profile",
+    "load_error_title": "Your settings did not load",
+    "load_error_body": "The connection dropped. Nothing has changed. Try again.",
+    "delete_section": "Delete account",
+    "delete_hint": "Permanently removes your account, your chart and your conversations. This cannot be undone.",
+    "delete_button": "Delete account",
+    "delete_confirm_body": "This permanently deletes your account, your chart, your readings and your conversations. It cannot be undone.",
+    "delete_type_prompt": "Type DELETE to confirm.",
+    "delete_confirm_button": "Delete my account",
+    "delete_failed": "Could not delete the account. Try again.",
+    "delete_done_store": "Your account is deleted. Your membership is billed by the App Store or Google Play, so cancel it there too, or it will keep renewing."
   },
   "nav": {
     "today": "Now",
@@ -524,7 +567,8 @@
     "prompt": "Please verify your email to unlock all features.",
     "sent": "Verification email sent. Check your inbox.",
     "sending": "Sending...",
-    "resend": "Resend"
+    "resend": "Resend",
+    "failed": "Could not send the email. Try again."
   },
   "subscribe": {
     "eyebrow_subscription": "Subscription",
@@ -593,7 +637,18 @@
     "card_error": "The card could not be saved. Please try again.",
     "card_privacy": "Your card number goes directly to the payment provider over an encrypted connection. It never touches Solray's servers; we only store a secure token.",
     "managed_in_app_store": "Billed through the App Store. To cancel or change it, open Settings, tap your name, then Subscriptions.",
-    "managed_in_play": "Billed through Google Play. To cancel or change it, open the Play Store, tap your profile, then Payments and subscriptions."
+    "managed_in_play": "Billed through Google Play. To cancel or change it, open the Play Store, tap your profile, then Payments and subscriptions.",
+    "status_error_title": "We could not load your membership",
+    "status_error_body": "The connection dropped before your membership came through. Nothing has changed on your account.",
+    "payment_failed": "The payment did not go through. No charge was made. You can try again with the same or another card.",
+    "activation_pending": "Your payment is being confirmed. This can take a minute. Refresh this page shortly.",
+    "purchase_pending": "The purchase may be waiting for approval, for example Ask to Buy. Reopen Solray later and your membership will be here once it is approved.",
+    "iap_unavailable": "In-app purchases are not available on this device right now.",
+    "iap_loading": "The membership is still loading. Try again in a moment.",
+    "iap_failed": "The purchase did not go through. No charge was made.",
+    "iap_verify_failed": "We could not confirm the purchase with the store yet. If you were charged, reopen Solray shortly and it will be applied.",
+    "card_network_error": "Could not reach the card service. Try again.",
+    "store_restored": "Your App Store or Google Play membership is still active, so we restored your access. No card was charged."
   },
   "depth": {
     "the_sky": "The Sky",
@@ -713,7 +768,8 @@
     "hint_energetic_loop": "Channels you complete together that neither of you closes alone.",
     "hint_type_pairing": "How your Human Design types tend to fit (Generator with Projector, etc).",
     "hint_astrological": "Element-family overlap across Sun, Moon, Venus, Mars, Ascendant.",
-    "hint_gene_keys": "Spheres where you both have the same gate (Life's Work, Radiance, etc)."
+    "hint_gene_keys": "Spheres where you both have the same gate (Life's Work, Radiance, etc).",
+    "paywall_cta": "Become a member"
   },
   "insight": {
     "eyebrow": "While you were away",
@@ -734,5 +790,19 @@
     "illuminating": "Illuminating your house",
     "read_more": "Read more",
     "close": "Close"
+  },
+  "preview": {
+    "eyebrow": "Chart preview",
+    "title": "Preview your chart",
+    "subtitle": "See your Sun, Moon and Rising signs instantly.",
+    "city_placeholder": "City, Country",
+    "calculating": "Calculating your blueprint...",
+    "result_title": "Your cosmic blueprint",
+    "hd_type": "Human Design type",
+    "description": "This is just the beginning. Your full blueprint includes Human Design, Gene Keys, Astrocartography and a Higher Self who knows you.",
+    "cta_preview": "Preview your chart",
+    "cta_create": "Create your free profile",
+    "error_forming": "Blueprint still forming. Try once more.",
+    "error_generic": "Something felt off in the cosmos. Try once more."
   }
 }

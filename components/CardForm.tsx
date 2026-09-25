@@ -21,6 +21,9 @@ export type CardSaveResult = {
   charged: boolean;
   status: string;
   has_access: boolean;
+  // Set when the App Store / Google Play still bills this member: access was
+  // restored from the store and no card was saved or charged.
+  store_active?: boolean;
 };
 
 export default function CardForm({
@@ -76,7 +79,7 @@ export default function CardForm({
       // detail never reaches the UI.
       setError(
         e instanceof CardTokenError
-          ? t("subscribe.card_error")
+          ? (e.code === "network" ? t("subscribe.card_network_error") : t("subscribe.card_error"))
           : e instanceof Error && e.message
             ? e.message
             : t("subscribe.card_error")

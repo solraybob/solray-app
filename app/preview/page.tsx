@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { Wordmark } from "@/components/Wordmark";
 import BirthWheels from "@/components/BirthWheels";
+import { useT } from "@/lib/i18n";
+import { tx } from "@/lib/astro-i18n";
+import { errorText } from "@/lib/errors";
+import { PageHead, PageTitle, InkButton } from "@/components/PageHead";
 
 export default function PreviewPage() {
   const router = useRouter();
+  const { t, lang } = useT();
   const [step, setStep] = useState(1); // 1: input, 2: loading, 3: result
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
@@ -120,7 +122,7 @@ export default function PreviewPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Blueprint still forming. Try once more.");
+        throw new Error(errorText(err?.detail, t("preview.error_forming")));
       }
 
       const data = await res.json();
@@ -136,7 +138,7 @@ export default function PreviewPage() {
       setStep(3);
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : "Something felt off in the cosmos. Try once more.";
+        err instanceof Error ? err.message : t("preview.error_generic");
       setError(msg);
       setStep(1);
     } finally {
@@ -146,6 +148,11 @@ export default function PreviewPage() {
 
   const handleBeginJourney = () => {
     router.push("/onboard");
+  };
+
+  const sign = (v: string) => {
+    const c = v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+    return tx(c, lang);
   };
 
   return (
@@ -159,13 +166,14 @@ export default function PreviewPage() {
           padding: 12px 0;
           color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
-          font-size: 1rem;
+          font-size: 17px;
+          font-weight: 500;
           transition: border-color 0.2s;
           display: block;
         }
         .preview-input:focus {
           outline: none;
-          border-bottom-color: rgb(var(--rgb-amber));
+          border-bottom-color: rgb(var(--rgb-text-primary));
         }
         .preview-input::placeholder {
           color: rgb(var(--rgb-text-muted));
@@ -180,7 +188,7 @@ export default function PreviewPage() {
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
-          box-shadow: 0 8px 24px rgba(34,32,28,0.08);
+          box-shadow: 0 8px 24px rgb(var(--rgb-scrim) / 0.08);
         }
         .preview-dropdown-item {
           display: block;
@@ -189,63 +197,36 @@ export default function PreviewPage() {
           padding: 12px 16px;
           color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
-          font-size: 0.95rem;
+          font-size: 17px;
           background: transparent;
           border: none;
           cursor: pointer;
-          transition: background 0.15s, color 0.15s;
+          transition: background 0.15s;
         }
         .preview-dropdown-item:hover,
         .preview-dropdown-item:focus {
-          background: rgba(90,49,174, 0.15);
-          color: rgb(var(--rgb-amber));
+          background: rgb(var(--rgb-bg-dark));
           outline: none;
         }
         .preview-dropdown-item + .preview-dropdown-item {
           border-top: 1px solid rgb(var(--rgb-border));
         }
-        .pulse-orb {
-          animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%,
-          100% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          50% {
-            transform: scale(1.08);
-            opacity: 1;
-          }
-        }
       `}</style>
 
-      <div className="min-h-screen bg-forest-deep flex flex-col">
-        {/* Header */}
-        <div className="flex items-center gap-2 px-6 pt-12 pb-8">
-          <Wordmark size={26} className="text-text-primary" />
-        </div>
+      <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(140px + var(--sab, 0px))" }}>
+        <PageHead label={t("preview.eyebrow")} />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
+        <div className="max-w-lg mx-auto px-5">
           {/* Step 1: Input */}
           {step === 1 && (
-            <div className="w-full max-w-sm animate-slide-up">
-              <div className="mb-12">
-                <h1 className="font-heading text-5xl text-text-primary mb-3 leading-tight">
-                  Preview Your Chart
-                </h1>
-                <p className="text-text-secondary text-sm font-body">
-                  See your Sun, Moon, and Rising signs instantly.
-                </p>
-              </div>
+            <div className="animate-slide-up">
+              <PageTitle title={t("preview.title")} sub={t("preview.subtitle")} />
 
               <div className="space-y-8">
-                {/* Birth Date */}
                 {/* The same instrument as onboarding and settings. */}
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
-                    Birth Date
+                  <label className="block font-body uppercase mb-2" style={LABEL}>
+                    {t("common.birth_date")}
                   </label>
                   <BirthWheels
                     date={birthDate}
@@ -254,10 +235,9 @@ export default function PreviewPage() {
                   />
                 </div>
 
-                {/* Birth City */}
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-text-secondary mb-2 font-body font-bold">
-                    Birth City
+                  <label className="block font-body uppercase mb-2" style={LABEL}>
+                    {t("common.birth_city")}
                   </label>
                   <div className="relative">
                     <input
@@ -269,33 +249,16 @@ export default function PreviewPage() {
                         setShowSuggestions(true);
                       }}
                       onKeyDown={handleKeyDown}
-                      placeholder="City, Country"
+                      placeholder={t("preview.city_placeholder")}
                       className="preview-input"
-                      style={{
-                        paddingRight: cityLoading ? "2rem" : undefined,
-                      }}
+                      style={{ paddingRight: cityLoading ? "2rem" : undefined }}
                       autoComplete="off"
                     />
                     {cityLoading && (
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-text-secondary">
-                        <svg
-                          className="animate-spin h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8z"
-                          />
+                      <span className="absolute right-0 top-1/2 -translate-y-1/2" style={{ color: "rgb(var(--rgb-text-secondary))" }}>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                         </svg>
                       </span>
                     )}
@@ -322,7 +285,7 @@ export default function PreviewPage() {
                 </div>
 
                 {error && (
-                  <p className="text-ember text-xs font-body text-center">
+                  <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>
                     {error}
                   </p>
                 )}
@@ -332,129 +295,65 @@ export default function PreviewPage() {
 
           {/* Step 2: Loading */}
           {step === 2 && (
-            <div className="flex flex-col items-center justify-center gap-8 animate-slide-up">
+            <div className="animate-slide-up" style={{ paddingTop: 18 }}>
               <div
-                className="pulse-orb w-24 h-24 rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle at 40% 35%, rgb(var(--rgb-amber) / 0.33), rgb(var(--rgb-card) / 0) 70%)",
-                  border: "1px solid rgba(90,49,174,0.2)",
-                  boxShadow: "0 0 40px rgba(90,49,174,0.1)",
-                }}
+                className="w-6 h-6 rounded-full animate-spin mb-6"
+                style={{ border: "2px solid rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-text-primary))" }}
               />
-              <p className="font-body text-sm text-text-secondary">
-                Calculating your blueprint…
+              <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
+                {t("preview.calculating")}
               </p>
             </div>
           )}
 
           {/* Step 3: Result */}
           {step === 3 && result && (
-            <div className="w-full max-w-sm animate-slide-up">
-              {/* Result Card */}
-              <div className="bg-forest-card border border-forest-border rounded-2xl p-8 mb-8">
-                <div className="text-center mb-8">
-                  <p className="text-text-secondary text-xs uppercase tracking-widest font-body mb-4 font-bold">
-                    Your Cosmic Blueprint
-                  </p>
-                  <div className="grid grid-cols-3 gap-4">
-                    {/* Sun */}
-                    <div>
-                      <div className="text-2xl mb-2">☉</div>
-                      <p className="font-heading text-3xl text-amber-sun mb-1">
-                        {result.sun_sign.charAt(0).toUpperCase() +
-                          result.sun_sign.slice(1)}
-                      </p>
-                      <p className="text-xs text-text-secondary font-body">
-                        Sun
-                      </p>
-                    </div>
-
-                    {/* Moon */}
-                    <div>
-                      <div className="text-2xl mb-2">☽</div>
-                      <p className="font-heading text-3xl text-text-primary mb-1">
-                        {result.moon_sign.charAt(0).toUpperCase() +
-                          result.moon_sign.slice(1)}
-                      </p>
-                      <p className="text-xs text-text-secondary font-body">
-                        Moon
-                      </p>
-                    </div>
-
-                    {/* Rising */}
-                    <div>
-                      <div className="text-2xl mb-2">⚛</div>
-                      <p className="font-heading text-3xl text-text-primary mb-1">
-                        {result.rising_sign.charAt(0).toUpperCase() +
-                          result.rising_sign.slice(1)}
-                      </p>
-                      <p className="text-xs text-text-secondary font-body">
-                        Rising
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* HD Type */}
-                <div
-                  className="border-t pt-6 text-center"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <p className="text-xs uppercase tracking-widest text-text-secondary font-body mb-2 font-bold">
-                    Human Design Type
-                  </p>
-                  <p className="font-heading text-2xl text-text-primary">
-                    {result.hd_type}
-                  </p>
-                </div>
+            <div className="animate-slide-up">
+              <PageTitle title={t("preview.result_title")} />
+              <div style={{ borderTop: "1px solid rgb(var(--rgb-border))", marginBottom: 28 }}>
+                <ResultRow label={t("planets.sun")} value={sign(result.sun_sign)} />
+                <ResultRow label={t("planets.moon")} value={sign(result.moon_sign)} />
+                <ResultRow label={t("planets.ascendant")} value={sign(result.rising_sign)} />
+                <ResultRow label={t("preview.hd_type")} value={tx(result.hd_type, lang)} />
               </div>
-
-              {/* Description */}
-              <div className="text-center mb-8">
-                <p className="text-sm text-text-secondary font-body leading-relaxed">
-                  This is just the beginning. Your full blueprint includes{" "}
-                  <span className="text-text-primary">Human Design</span>,{" "}
-                  <span className="text-text-primary">Gene Keys</span>,{" "}
-                  <span className="text-text-primary">Astrocartography</span> and
-                  a <span className="text-text-primary">Higher Self</span> who
-                  knows you.
-                </p>
-              </div>
+              <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
+                {t("preview.description")}
+              </p>
             </div>
           )}
         </div>
 
         {/* CTA */}
         <div
-          className="fixed bottom-0 left-0 right-0 px-6 pb-10 pt-8"
+          className="fixed bottom-0 left-0 right-0 px-5 pt-8"
           style={{
-            background:
-              "linear-gradient(to top, rgb(var(--rgb-bg-deep)), rgb(var(--rgb-bg-deep)) 50%, transparent)",
+            paddingBottom: "calc(24px + var(--sab, 0px))",
+            background: "linear-gradient(to top, rgb(var(--rgb-bg-deep)), rgb(var(--rgb-bg-deep)) 50%, transparent)",
           }}
         >
-          <div className="max-w-sm mx-auto">
+          <div className="max-w-lg mx-auto">
             {step === 1 && (
-              <button
-                onClick={handleCalculate}
-                disabled={!canProceed() || loading}
-                className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
-              >
-                {loading ? <LoadingSpinner size="sm" /> : "Preview Your Chart"}
-              </button>
+              <InkButton onClick={handleCalculate} loading={loading} disabled={!canProceed()}>
+                {t("preview.cta_preview")}
+              </InkButton>
             )}
-
             {step === 3 && (
-              <button
-                onClick={handleBeginJourney}
-                className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-4 rounded-xl text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95"
-              >
-                Create your free profile →
-              </button>
+              <InkButton onClick={handleBeginJourney}>{t("preview.cta_create")}</InkButton>
             )}
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+const LABEL: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" };
+
+function ResultRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-baseline font-body" style={{ paddingBlock: 12, borderBottom: "1px solid rgb(var(--rgb-border) / .6)" }}>
+      <span style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 700, color: "rgb(var(--rgb-text-primary))" }}>{value}</span>
+    </div>
   );
 }

@@ -217,7 +217,7 @@ function calculatePowerSpots(lines: AstroLine[]): PowerSpot[] {
 }
 
 export default function AstroGeography({ token }: { token: string | null }) {
-  const { lang } = useT();
+  const { lang, t } = useT();
   const [data, setData] = useState<AstroData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -249,7 +249,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
         setPowerSpots(calculatePowerSpots(d.lines));
         try { localStorage.setItem(cacheKey, JSON.stringify(d)); } catch (_) {}
       })
-      .catch(() => setError("Could not load astrocartography data."))
+      .catch(() => setError("load_failed"))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -289,7 +289,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
   if (error || !data) {
     return (
       <div className="text-text-secondary text-sm font-body text-center py-6">
-        {lang.startsWith("es") ? "No se pudieron cargar los datos de astrocartografía." : (error || "No astrocartography data available.")}
+        {error ? t("profile.astro_load_failed") : t("profile.astro_no_data")}
       </div>
     );
   }
@@ -326,7 +326,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => togglePlanet(planet)}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-[14px] font-body transition-all"
                 style={{
-                  border: `1px solid ${active ? color : "rgba(226,218,202,0.8)"}`,
+                  border: `1px solid ${active ? color : "rgb(var(--rgb-border))"}`,
                   background: active ? `${color}20` : "transparent",
                   color: active ? color : "rgb(var(--rgb-ember))",
                 }}
@@ -349,8 +349,8 @@ export default function AstroGeography({ token }: { token: string | null }) {
                 onClick={() => toggleType(type)}
                 className="px-2.5 py-1 rounded-full text-[14px] font-body tracking-wider transition-all"
                 style={{
-                  border: `1px solid ${active ? "rgb(var(--rgb-amber))" : "rgba(226,218,202,0.8)"}`,
-                  background: active ? "rgba(90,49,174,0.1)" : "transparent",
+                  border: `1px solid ${active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-border))"}`,
+                  background: active ? "rgb(var(--rgb-amber) / 0.1)" : "transparent",
                   color: active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-ember))",
                 }}
               >

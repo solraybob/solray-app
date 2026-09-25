@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { clearUserScopedCaches } from "./local-cache";
+import { errorText } from "./errors";
 
 interface User {
   id: string;
@@ -13,7 +14,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  /** failMessage: localized fallback when the backend sends no readable detail. */
+  login: (email: string, password: string, failMessage?: string) => Promise<void>;
   logout: () => void;
   setToken: (token: string, user: User) => void;
   loading: boolean;
@@ -85,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(usr);
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, failMessage = "Login failed") => {
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     const res = await fetch(`${apiUrl}/users/login`, {
       method: "POST",
@@ -94,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Login failed");
+      throw new Error(errorText(err?.detail, failMessage));
     }
     const data = await res.json();
     const userObj = data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email };

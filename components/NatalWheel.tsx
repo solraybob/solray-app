@@ -22,6 +22,7 @@
 
 import { signText, planetText, GLYPH_FONT_FAMILY } from "./AstroGlyphs";
 import { useTheme } from "@/lib/theme-context";
+import { useT } from "@/lib/i18n";
 
 type Planet = {
   planet: string;
@@ -91,12 +92,13 @@ export default function NatalWheel({
   showLegend = false,
 }: NatalWheelProps) {
   const { theme } = useTheme();
+  const { t } = useT();
   const isDark = theme !== "light";
   if (ascLongitude == null) {
     return (
       <div className="flex items-center justify-center py-8">
         <p className="font-body text-text-muted text-[15px] tracking-[0.15em] uppercase font-bold">
-          Wheel unavailable
+          {t("profile.wheel_unavailable")}
         </p>
       </div>
     );
@@ -222,7 +224,7 @@ export default function NatalWheel({
         viewBox={`0 0 ${size} ${size}`}
         width="100%"
         style={{ display: "block" }}
-        aria-label="Natal chart wheel"
+        aria-label={t("profile.wheel_aria")}
       >
         <defs>
           <radialGradient id="nwGlow" cx="50%" cy="50%" r="50%">

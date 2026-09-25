@@ -16,7 +16,14 @@ const RPG_URL =
   (process.env.NEXT_PUBLIC_TEYA_RPG_URL || "https://ecommerce.borgun.is/rpg").replace(/\/$/, "");
 const PUBLIC_KEY = (process.env.NEXT_PUBLIC_TEYA_PUBLIC_KEY || "").trim();
 
-export class CardTokenError extends Error {}
+/** code lets the UI pick a localized message; message is for logs only. */
+export class CardTokenError extends Error {
+  code: "not_configured" | "network" | "declined";
+  constructor(code: "not_configured" | "network" | "declined", message = "") {
+    super(message);
+    this.code = code;
+  }
+}
 
 export function luhnValid(pan: string): boolean {
   const digits = pan.replace(/\D/g, "");
@@ -40,7 +47,7 @@ export async function createSingleUseToken(
   expMonth: string,
   expYear: string
 ): Promise<string> {
-  if (!PUBLIC_KEY) throw new CardTokenError("Card service is not configured.");
+  if (!PUBLIC_KEY) throw new CardTokenError("not_configured", "Card service is not configured.");
   const body = new URLSearchParams({
     PAN: pan.replace(/\D/g, ""),
     ExpMonth: expMonth.padStart(2, "0"),
@@ -58,14 +65,14 @@ export async function createSingleUseToken(
       body: body.toString(),
     });
   } catch {
-    throw new CardTokenError("Could not reach the card service. Please try again.");
+    throw new CardTokenError("network", "Could not reach the card service.");
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.Token) {
     // The processor's raw Message stays out of the UI (Codex audit):
     // decline phrasing and validator internals are telemetry, not copy.
     if (data.Message) console.debug("[teya-card]", String(data.Message).slice(0, 120));
-    throw new CardTokenError("");
+    throw new CardTokenError("declined");
   }
   return data.Token as string;
 }

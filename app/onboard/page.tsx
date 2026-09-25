@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import Link from "next/link";
+import { Wordmark } from "@/components/Wordmark";
+import { errorText } from "@/lib/errors";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
@@ -16,11 +18,11 @@ const TOTAL_STEPS = 5;
 const STEP_WASH = [
   // first light, morning, midday, late sun, after sunset, dawn again: the
   // orb's own colours at a whisper, so each question has its own hour.
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(252,180,156,.16), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(176,46,114,.13), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(163,74,34,.12), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(90,49,174,.12), transparent 70%)",
-  "radial-gradient(ellipse 70% 50% at 50% 22%, rgba(84,63,150,.12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgb(var(--rgb-wisteria) / .08), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgb(var(--rgb-wisteria) / .13), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgb(var(--rgb-ember) / .12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgb(var(--rgb-amber) / .12), transparent 70%)",
+  "radial-gradient(ellipse 70% 50% at 50% 22%, rgb(var(--rgb-indigo) / .12), transparent 70%)",
 ];
 
 // Magical blueprint calculation loading screen
@@ -54,9 +56,9 @@ function BlueprintLoader() {
         className="w-20 h-20 rounded-full mb-10"
         style={{
           background: "radial-gradient(circle at 40% 35%, rgb(var(--rgb-amber) / 0.33), rgb(var(--rgb-card) / 0) 70%)",
-          border: "1px solid rgba(90,49,174,0.2)",
+          border: "1px solid rgb(var(--rgb-amber) / 0.2)",
           animation: "pulse 2s ease-in-out infinite",
-          boxShadow: "0 0 40px rgba(90,49,174,0.1)",
+          boxShadow: "0 0 40px rgb(var(--rgb-amber) / 0.1)",
         }}
       />
       <div className="space-y-4 w-full max-w-xs">
@@ -71,14 +73,15 @@ function BlueprintLoader() {
           >
             <div className="flex items-center gap-3">
               <span
-                className="text-amber-sun text-sm"
-                style={{ opacity: i < visibleCount ? 1 : 0 }}
+                className="text-sm"
+                style={{ opacity: i < visibleCount ? 1 : 0, color: "rgb(var(--rgb-text-primary))" }}
               >
                 {i < visibleCount - 1 ? "•" : "·"}
               </span>
               <p
-                className="font-body text-sm"
+                className="font-body"
                 style={{
+                  fontSize: 17, lineHeight: 1.62, fontWeight: 500,
                   color: i === visibleCount - 1 ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-text-muted))",
                 }}
               >
@@ -121,8 +124,18 @@ export default function OnboardPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [calculatingBlueprint, setCalculatingBlueprint] = useState(false);
-  const { setToken } = useAuth();
+  const { setToken, token, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Already signed in on this device: onboarding is not for you. Checked
+  // once, when auth first settles, so the setToken() at the end of a real
+  // signup does not trigger this and skip the blueprint screen.
+  const mountCheckDone = useRef(false);
+  useEffect(() => {
+    if (authLoading || mountCheckDone.current) return;
+    mountCheckDone.current = true;
+    if (token) router.replace("/today");
+  }, [authLoading, token, router]);
 
   // City autocomplete debounce
   useEffect(() => {
@@ -192,7 +205,7 @@ export default function OnboardPage() {
       case 2: return sex === "male" || sex === "female";
       case 3: return birthDate.length === 10 && (timeUnknown || birthTime.length === 5);
       case 4: return birthPlace.trim().length > 0;
-      case 5: return email.trim().length > 0 && password.length >= 6;
+      case 5: return /^\S+@\S+\.\S+$/.test(email.trim()) && password.length >= 8;
       default: return false;
     }
   };
@@ -204,6 +217,7 @@ export default function OnboardPage() {
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
     // Capture invite code from the URL (?invite=CODE) and the saved
     // language preference, both optional. Backend defaults handle their
@@ -241,7 +255,7 @@ export default function OnboardPage() {
           birth_date: birthDate,
           birth_time: timeUnknown ? "12:00" : birthTime,
           birth_city: birthPlace,
-          email,
+          email: cleanEmail,
           password,
           hive_consent: hiveConsent,
           invite_code: inviteCode || undefined,
@@ -250,11 +264,11 @@ export default function OnboardPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || t("onboard.registration_failed"));
+        throw new Error(errorText(err?.detail, t("onboard.registration_failed")));
       }
       const data = await res.json();
       const newToken = data.token || data.access_token;
-      setToken(newToken, data.profile || data.user || { id: data.user_id, email, name });
+      setToken(newToken, data.profile || data.user || { id: data.user_id, email: cleanEmail, name });
       // Funnel event: marks the moment a real signup completed. Powers
       // the registration-drop-off canary alert.
       try {
@@ -305,48 +319,53 @@ export default function OnboardPage() {
       {/* Magical blueprint calculation screen */}
       {calculatingBlueprint && <BlueprintLoader />}
 
-      {/* Header */}
-      <div className="flex flex-col items-center px-6 pt-10 pb-6" style={{ position: "relative", zIndex: 1 }}>
-        {/* Centered lockup, same composition as the landing hero and login:
-            sun above, wordmark beneath. */}
-        <div className="flex flex-col items-center entry-rise">
-          <div
-            className="w-24 h-24 mb-4 entry-sun"
-            style={{
-              filter: "drop-shadow(0 18px 26px rgba(84,63,150,.26))",
-            }}
-          >
-            <Image
-              src="/solray-orb.png"
-              unoptimized
-              priority
-              alt="Solray"
-              width={96}
-              height={96}
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <span className="font-heading text-xl text-text-primary inline-flex items-baseline" style={{ fontWeight: 700, letterSpacing: "-0.02em" }} aria-label="Solray">
-            <span>s</span>
-            <Image src="/solray-orb.png" alt="" width={20} height={20} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
-            <span>lray</span>
-          </span>
-          <span className="font-heading text-[14px] text-text-secondary tracking-[0.06em] leading-tight" style={{ fontWeight: 700 }}>living by design</span>
+      {/* Header: the one look. Mark top-left, one hairline, the label line.
+          The right slot is the way out: Log in on the first question, Back
+          on every question after it. */}
+      <div className="w-full max-w-lg mx-auto px-5 pt-3" style={{ position: "relative", zIndex: 1 }}>
+        <div className="flex items-center justify-between" style={{ minHeight: 34 }}>
+          <Wordmark size={17} className="text-text-primary" style={{ letterSpacing: "-.045em" }} />
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={() => { setError(""); setStep((s) => Math.max(1, s - 1)); }}
+              className="font-body uppercase font-bold"
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", padding: "6px 0" }}
+            >
+              {t("common.back")}
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="font-body uppercase font-bold"
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", padding: "6px 0" }}
+            >
+              {t("onboard.log_in")}
+            </Link>
+          )}
         </div>
-        {/* Progress dots */}
-        <div className="flex gap-2 mt-5">
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <div
-              key={i}
-              className={`rounded-full transition-all duration-300 ${
-                i + 1 === step
-                  ? "w-4 h-2 bg-amber-sun"
-                  : i + 1 < step
-                  ? "w-2 h-2 bg-amber-sun opacity-60"
-                  : "w-2 h-2 bg-forest-border"
-              }`}
-            />
-          ))}
+        <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
+        <div className="flex items-center justify-between" style={{ marginTop: 12 }}>
+          <p
+            className="font-body uppercase"
+            style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
+          >
+            {t("onboard.step_of").replace("{n}", String(step)).replace("{total}", String(TOTAL_STEPS))}
+          </p>
+          <div className="flex gap-1.5" aria-hidden="true">
+            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-full transition-all duration-300"
+                style={{
+                  height: 4,
+                  width: i + 1 === step ? 14 : 4,
+                  background: i + 1 <= step ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-border))",
+                  opacity: i + 1 < step ? 0.6 : 1,
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -354,8 +373,8 @@ export default function OnboardPage() {
       {/* pb-40, not pb-24: the birth step is an instrument now, not a single
           line input, and the fixed Continue button was sitting on the "I do not
           know my birth time" line underneath it. */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-14 px-6 pb-40 animate-slide-up" key={step} style={{ position: "relative" }}>
-        <div className="w-full max-w-sm">
+      <div className="flex-1 flex flex-col justify-start pt-8 px-5 pb-48 animate-slide-up" key={step} style={{ position: "relative" }}>
+        <div className="w-full max-w-lg mx-auto">
           {step === 1 && (
             <StepWrapper label={t("onboard.q_name")}>
               <input
@@ -382,12 +401,12 @@ export default function OnboardPage() {
                       onClick={() => setSex(opt)}
                       className="sex-card"
                       style={{
-                        borderColor: active ? "var(--amber)" : "var(--border)",
-                        background: active ? "rgba(90,49,174,0.08)" : "transparent",
-                        color: active ? "var(--text-primary)" : "var(--text-muted)",
+                        borderColor: active ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-border))",
+                        background: active ? "rgb(var(--rgb-card))" : "transparent",
+                        color: active ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-text-muted))",
                       }}
                     >
-                      <span className="font-heading text-2xl" style={{ fontWeight: 900 }}>
+                      <span className="font-heading" style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-.02em" }}>
                         {opt === "female" ? t("onboard.female") : t("onboard.male")}
                       </span>
                     </button>
@@ -421,9 +440,8 @@ export default function OnboardPage() {
                   // assumes for an unknown time.
                   if (next) setBirthTime("12:00");
                 }}
-                className={`mt-3 text-xs font-body tracking-wider transition-colors ${
-                  timeUnknown ? "text-amber-sun" : "text-text-secondary hover:text-text-primary"
-                }`}
+                className="mt-3 font-body transition-colors"
+                style={{ fontSize: 15, color: timeUnknown ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-text-secondary))", textDecoration: timeUnknown ? "underline" : "none", textUnderlineOffset: 3 }}
               >
                 {timeUnknown ? t("onboard.time_using_noon") : t("onboard.time_unknown")}
               </button>
@@ -479,7 +497,7 @@ export default function OnboardPage() {
                   </div>
                 )}
               </div>
-              <p className="text-text-secondary text-xs mt-2 font-body">{t("onboard.city_example")}</p>
+              <p className="font-body mt-2" style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>{t("onboard.city_example")}</p>
             </StepWrapper>
           )}
 
@@ -488,6 +506,11 @@ export default function OnboardPage() {
               <input
                 autoFocus
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("login.email_placeholder")}
@@ -495,6 +518,7 @@ export default function OnboardPage() {
               />
               <input
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("onboard.password_placeholder")}
@@ -507,9 +531,10 @@ export default function OnboardPage() {
                   type="checkbox"
                   checked={hiveConsent}
                   onChange={(e) => setHiveConsent(e.target.checked)}
-                  className="mt-1 w-4 h-4 accent-amber-sun cursor-pointer flex-shrink-0"
+                  className="mt-1 w-4 h-4 cursor-pointer flex-shrink-0"
+                  style={{ accentColor: "rgb(var(--rgb-text-primary))" }}
                 />
-                <span className="font-body text-[15px] leading-relaxed text-pearl">
+                <span className="font-body text-[15px] leading-relaxed" style={{ color: "rgb(var(--rgb-text-secondary))" }}>
                   {t("onboard.hive_consent")}
                 </span>
               </label>
@@ -517,19 +542,19 @@ export default function OnboardPage() {
           )}
 
           {error && (
-            <p className="text-ember text-xs text-center font-body mt-4">{error}</p>
+            <p className="font-body mt-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
           )}
         </div>
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-10 bg-gradient-to-t from-forest-deep via-forest-deep to-transparent pt-8" style={{ zIndex: 2 }}>
-        <div className="max-w-sm mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 px-5 bg-gradient-to-t from-forest-deep via-forest-deep to-transparent pt-8" style={{ zIndex: 2, paddingBottom: "calc(24px + var(--sab, 0px))" }}>
+        <div className="max-w-lg mx-auto">
           {step < TOTAL_STEPS ? (
             <button
               onClick={next}
               disabled={!canProceed()}
-              className="w-full font-body font-bold py-4 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {t("common.continue")}
             </button>
@@ -537,11 +562,17 @@ export default function OnboardPage() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="w-full font-body font-bold py-4 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>
           )}
+          <p className="text-center font-body mt-4" style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>
+            {t("onboard.have_account")}{" "}
+            <Link href="/login" className="underline underline-offset-4" style={{ color: "rgb(var(--rgb-text-primary))" }}>
+              {t("onboard.log_in")}
+            </Link>
+          </p>
         </div>
       </div>
 
@@ -554,12 +585,13 @@ export default function OnboardPage() {
           padding: 12px 0;
           color: rgb(var(--rgb-text-primary));
           font-family: var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif;
-          font-size: 1rem;
+          font-size: 17px;
+          font-weight: 500;
           transition: border-color 0.2s;
           display: block;
         }
         .onboard-input:focus {
-          border-bottom-color: rgb(var(--rgb-amber));
+          border-bottom-color: rgb(var(--rgb-text-primary));
         }
         .onboard-input::placeholder {
           color: rgb(var(--rgb-text-muted));
@@ -576,7 +608,7 @@ export default function OnboardPage() {
           cursor: pointer;
         }
         .sex-card:hover {
-          border-color: rgba(90,49,174,0.55);
+          border-color: rgb(var(--rgb-text-secondary));
           color: rgb(var(--rgb-text-primary));
         }
         .sex-card:active {
@@ -592,7 +624,7 @@ export default function OnboardPage() {
           border-radius: 8px;
           overflow: hidden;
           z-index: 50;
-          box-shadow: 0 8px 24px rgba(34,32,28,0.08);
+          box-shadow: 0 8px 24px rgb(var(--rgb-scrim) / 0.08);
         }
         .city-dropdown-item {
           display: block;
@@ -609,8 +641,8 @@ export default function OnboardPage() {
         }
         .city-dropdown-item:hover,
         .city-dropdown-item:focus {
-          background: rgba(90,49,174,0.15);
-          color: rgb(var(--rgb-amber));
+          background: rgb(var(--rgb-bg-dark));
+          color: rgb(var(--rgb-text-primary));
           outline: none;
         }
         .city-dropdown-item + .city-dropdown-item {
@@ -636,15 +668,17 @@ function StepWrapper({
     <div>
       {eyebrow && (
         <p
-          className="font-body text-[13px] tracking-[0.3em] uppercase mb-3 font-bold"
-          style={{ color: "var(--amber)" }}
+          className="font-body uppercase mb-3"
+          style={{ fontSize: 11, letterSpacing: "0.3em", color: "rgb(var(--rgb-text-muted))" }}
         >{eyebrow}</p>
       )}
       <h2
-        className="font-heading text-4xl text-text-primary mb-2 leading-tight"
-        style={{ fontWeight: 900, letterSpacing: "-0.01em" }}
+        className="font-heading mb-2"
+        style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}
       >{label}</h2>
-      {subtitle && <p className="text-text-secondary text-sm font-body mb-8">{subtitle}</p>}
+      {subtitle && (
+        <p className="font-body mb-8" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>{subtitle}</p>
+      )}
       <div className={subtitle ? "" : "mt-8"}>{children}</div>
     </div>
   );

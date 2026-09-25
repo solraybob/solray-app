@@ -42,13 +42,11 @@ export default function PushNotificationPrompt() {
 
   if (isEnabled) {
     return (
-      <div className="px-4 py-3 rounded-xl border border-amber-sun/40 bg-amber-sun/5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-sun shrink-0" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          <p className="text-text-secondary text-sm font-body">{t("push.enabled")}</p>
-        </div>
+      <div className="py-3 flex items-center gap-2" style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--rgb-moss))" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>{t("push.enabled")}</p>
       </div>
     );
   }
@@ -58,21 +56,21 @@ export default function PushNotificationPrompt() {
   }
 
   return (
-    <div className="px-4 py-3 rounded-xl border border-amber-sun/50 bg-forest-card/50 flex items-center justify-between gap-3">
-      <div className="flex-1">
-        <p className="text-text-secondary text-sm font-body">{t("push.get_alerts")}</p>
-      </div>
-      <div className="flex gap-2 shrink-0">
+    <div className="py-3 flex items-center justify-between gap-3" style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+      <p className="flex-1 font-body" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>{t("push.get_alerts")}</p>
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={handleDismiss}
-          className="px-3 py-1.5 text-text-muted text-xs font-body hover:text-text-secondary transition-colors"
+          className="px-2 py-1.5 font-body uppercase font-bold"
+          style={{ fontSize: 11, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
         >
           {t("common.dismiss")}
         </button>
         <button
           onClick={handleEnable}
           disabled={isLoading}
-          className="px-3 py-1.5 rounded-lg bg-amber-sun/20 text-amber-sun text-xs font-body font-medium hover:bg-amber-sun/30 transition-colors disabled:opacity-50"
+          className="font-body uppercase font-bold rounded-full transition-opacity disabled:opacity-50"
+          style={{ fontSize: 11, letterSpacing: "0.2em", padding: "7px 14px", background: "transparent", border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-primary))" }}
         >
           {isLoading ? t("push.enabling") : t("push.enable")}
         </button>

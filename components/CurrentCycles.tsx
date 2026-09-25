@@ -10,16 +10,16 @@ import { useT } from "@/lib/i18n";
 // to survive, which is how it went invisible when the palette changed.
 const PLANET_CYCLE_WASH: Record<string, string> = {
   Sun:     "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(252,180,156,.26), transparent 74%)",
-  Moon:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(84,63,150,.20), transparent 74%)",
+  Moon:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgb(var(--rgb-indigo) / .20), transparent 74%)",
   Mercury: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.18), transparent 74%)",
   Venus:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(176,46,114,.20), transparent 74%)",
-  Mars:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(163,74,34,.22), transparent 74%)",
+  Mars:    "radial-gradient(ellipse 80% 130% at 50% 0%, rgb(var(--rgb-ember) / .22), transparent 74%)",
   Jupiter: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(230,141,94,.22), transparent 74%)",
   Saturn:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.15), transparent 74%)",
-  Uranus:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(90,49,174,.20), transparent 74%)",
+  Uranus:  "radial-gradient(ellipse 80% 130% at 50% 0%, rgb(var(--rgb-amber) / .20), transparent 74%)",
   Neptune: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(74,46,158,.22), transparent 74%)",
   Pluto:   "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(176,46,114,.15), transparent 74%)",
-  default: "radial-gradient(ellipse 80% 130% at 50% 0%, rgba(84,63,150,.18), transparent 74%)",
+  default: "radial-gradient(ellipse 80% 130% at 50% 0%, rgb(var(--rgb-indigo) / .18), transparent 74%)",
 };
 
 function getCycleWash(planet: string): string {

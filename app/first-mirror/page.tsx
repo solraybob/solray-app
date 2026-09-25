@@ -26,7 +26,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { Wordmark } from "@/components/Wordmark";
+import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
 
 interface FirstMirrorData {
   pattern: string;
@@ -111,12 +111,12 @@ function FirstMirrorContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-forest-deep">
-        <div
-          className="font-body text-[13px] tracking-[0.3em] uppercase font-bold"
-          style={{ color: "var(--amber)" }}
-        >
-          {t("first_mirror.reading")}
+      <div className="min-h-[100dvh] bg-forest-deep">
+        <PageHead label={t("first_mirror.title")} />
+        <div className="max-w-lg mx-auto px-5" style={{ paddingTop: 18 }}>
+          <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
+            {t("first_mirror.reading")}
+          </p>
         </div>
       </div>
     );
@@ -127,48 +127,25 @@ function FirstMirrorContent() {
   // First Words screen: the Oracle is awake, ask one true question.
   if (showAsk) {
     return (
-      <div className="min-h-[100dvh] flex flex-col bg-forest-deep">
-        <div className="flex-1 flex flex-col justify-center px-6 pb-24 animate-slide-up">
-          <div className="max-w-md mx-auto w-full">
-            <p
-              className="font-body text-[13px] tracking-[0.3em] uppercase mb-4 text-center font-bold"
-              style={{ color: "var(--amber)", opacity: 0.8 }}
-            >
-              {t("first_mirror.awake")}
-            </p>
-            <h1
-              className="font-heading text-text-primary text-center mb-3"
-              style={{ fontWeight: 700, fontSize: "2rem", letterSpacing: "-0.01em" }}
-            >
-              {t("first_mirror.ask_title")}
-            </h1>
-            <p className="font-body text-text-secondary text-[15px] text-center mb-10">
-              {t("first_mirror.ask_hint")}
-            </p>
-            <div className="space-y-3">
-              {[t("first_mirror.chip_yes"), t("first_mirror.chip_forcing")].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => askOracle(q)}
-                  className="w-full text-left px-5 py-4 rounded-2xl border border-forest-border/80 bg-forest-card/40 font-body text-[17px] text-text-primary transition-all hover:border-amber-sun/40 active:scale-[0.99]"
-                >
-                  {q}
-                </button>
-              ))}
+      <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(48px + var(--sab, 0px))" }}>
+        <PageHead label={t("first_mirror.awake")} />
+        <div className="max-w-lg mx-auto px-5 animate-slide-up">
+          <PageTitle title={t("first_mirror.ask_title")} sub={t("first_mirror.ask_hint")} />
+          <div style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+            {[t("first_mirror.chip_yes"), t("first_mirror.chip_forcing")].map((q) => (
               <button
-                onClick={() => askOracle()}
-                className="w-full text-left px-5 py-4 rounded-2xl border border-amber-sun/35 font-body text-[17px] transition-all hover:border-amber-sun/60 active:scale-[0.99]"
-                style={{ color: "var(--amber)", background: "rgba(90,49,174,0.05)" }}
+                key={q}
+                onClick={() => askOracle(q)}
+                className="w-full text-left font-body transition-opacity active:opacity-70"
+                style={{ paddingBlock: 18, fontSize: 17, lineHeight: 1.5, fontWeight: 500, color: "rgb(var(--rgb-text-primary))", borderBottom: "1px solid rgb(var(--rgb-border))" }}
               >
-                {t("first_mirror.chip_own")}
+                {q}
               </button>
-            </div>
-            <button
-              onClick={() => router.replace("/today")}
-              className="block mx-auto mt-8 font-body text-[14px] tracking-[0.18em] uppercase text-text-muted hover:text-text-secondary transition-colors font-bold"
-            >
-              {t("first_mirror.not_now")}
-            </button>
+            ))}
+          </div>
+          <div className="mt-8 space-y-3">
+            <InkButton onClick={() => askOracle()}>{t("first_mirror.chip_own")}</InkButton>
+            <HairlineButton onClick={() => router.replace("/today")}>{t("first_mirror.not_now")}</HairlineButton>
           </div>
         </div>
       </div>
@@ -176,48 +153,27 @@ function FirstMirrorContent() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-forest-deep">
-      {/* Header */}
-      <div className="border-b border-forest-border/50">
-        <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-          <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "var(--amber)" }}>
-            {t("first_mirror.title")}
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(48px + var(--sab, 0px))" }}>
+      <PageHead label={t("first_mirror.title")} />
+
+      {/* Body: three lines, each on its own hairline fold */}
+      <div className="max-w-lg mx-auto px-5" style={{ paddingTop: 18 }}>
+        <MirrorLine label={t("first_mirror.line_pattern")} body={mirror.pattern} visible={revealStage >= 1} />
+        <MirrorLine label={t("first_mirror.line_shadow")} body={mirror.shadow} visible={revealStage >= 2} />
+        <MirrorLine label={t("first_mirror.line_question")} body={mirror.question} visible={revealStage >= 3} quiet />
+
+        {/* Continue CTA appears after all three lines have landed */}
+        <div
+          className="pt-6 transition-all duration-700"
+          style={{
+            opacity: revealStage >= 4 ? 1 : 0,
+            transform: revealStage >= 4 ? "translateY(0)" : "translateY(8px)",
+          }}
+        >
+          <InkButton onClick={() => setShowAsk(true)}>{t("common.continue")}</InkButton>
+          <p className="mt-4 font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-text-muted))" }}>
+            {t("first_mirror.oracle_remembers")}
           </p>
-          <div className="relative flex items-center justify-end" style={{ height: "26px" }}>
-            <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 flex flex-col justify-center px-6 pt-12 pb-32">
-        <div className="max-w-md mx-auto w-full space-y-12">
-          <MirrorLine label={t("first_mirror.line_pattern")} body={mirror.pattern} visible={revealStage >= 1} />
-          <MirrorLine label={t("first_mirror.line_shadow")} body={mirror.shadow} visible={revealStage >= 2} />
-          <MirrorLine label={t("first_mirror.line_question")} body={mirror.question} visible={revealStage >= 3} quiet />
-
-          {/* Continue CTA appears after all three lines have landed */}
-          <div
-            className="pt-4 transition-all duration-700"
-            style={{
-              opacity: revealStage >= 4 ? 1 : 0,
-              transform: revealStage >= 4 ? "translateY(0)" : "translateY(8px)",
-            }}
-          >
-            <button
-              onClick={() => setShowAsk(true)}
-              className="w-full py-4 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
-              style={{
-                background: "var(--amber)",
-                color: "var(--bg-deep)",
-              }}
-            >
-              {t("common.continue")}
-            </button>
-            <p className="text-center mt-4 font-body text-text-secondary text-[14px] text-text-muted">
-              {t("first_mirror.oracle_remembers")}
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -231,20 +187,24 @@ function MirrorLine({ label, body, visible, quiet }: { label: string; body: stri
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(12px)",
+        borderTop: "1px solid rgb(var(--rgb-border))",
+        paddingBottom: 24,
       }}
     >
       <p
-        className="font-body text-[13px] tracking-[0.28em] uppercase mb-3 font-bold"
-        style={{ color: "var(--text-muted)" }}
+        className="font-body uppercase"
+        style={{ paddingBlock: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}
       >
         {label}
       </p>
       <p
-        className="font-heading text-text-primary leading-snug"
+        className="font-heading"
         style={{
-          fontSize: "1.4rem",
+          fontSize: 22,
+          lineHeight: 1.35,
           fontWeight: quiet ? 500 : 900,
-          letterSpacing: "-.03em",
+          letterSpacing: "-.02em",
+          color: "rgb(var(--rgb-text-primary))",
         }}
       >
         {body}

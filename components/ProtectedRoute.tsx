@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useSubscription } from "@/lib/subscription-context";
@@ -52,13 +52,37 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   // subscriber's status-cache lag doesn't ricochet them off it either.
   const isSubscribeRoute =
     pathname === "/subscribe" || pathname.startsWith("/subscribe/");
+  // Admin tools are never subscription-gated: the backend authorizes every
+  // /admin endpoint by role on its own, and an operator whose own trial has
+  // lapsed must still be able to reach the admin pages.
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const skipAccessGate = isSubscribeRoute || isAdminRoute;
+
+  // Did this mount ever see a live session? If the token disappears while the
+  // page is open, that is a sign out (or account deletion): go to a plain
+  // /login, not /login?next=<this page>, so the next person to sign in on
+  // this device does not land on the previous member's settings screen.
+  const hadToken = useRef(false);
+  if (token) hadToken.current = true;
 
   // 1. Auth gate
   useEffect(() => {
     if (!authLoading && !token) {
-      router.push("/login");
+      if (hadToken.current) {
+        router.replace("/login");
+        return;
+      }
+      // replace, not push: Back from /login must not land on a protected
+      // page that immediately bounces again. Carry the current location so
+      // login can return the member to where they were.
+      let next = pathname;
+      try {
+        next = window.location.pathname + window.location.search;
+      } catch { /* SSR: keep pathname */ }
+      const q = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
+      router.replace(`/login${q}`);
     }
-  }, [token, authLoading, router]);
+  }, [token, authLoading, router, pathname]);
 
   // 2. Access gate. Trigger a TTL-aware refresh on every mount, but do
   //    NOT block render on it: if we already have a cached sub, render
@@ -67,19 +91,19 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   //    whether the data was cached or freshly fetched, so the gate
   //    still works on expiry.
   useEffect(() => {
-    if (!token || isSubscribeRoute) return;
+    if (!token || skipAccessGate) return;
     void ensureFresh();
-  }, [token, isSubscribeRoute, ensureFresh]);
+  }, [token, skipAccessGate, ensureFresh]);
 
   // Redirect when we know the user has no access. Triggers on both
   // initial load AND when refresh() lands a fresh state showing
   // expiry happened mid-session.
   useEffect(() => {
-    if (!token || isSubscribeRoute) return;
+    if (!token || skipAccessGate) return;
     if (sub && !sub.has_access) {
       router.replace("/subscribe");
     }
-  }, [token, sub, isSubscribeRoute, router]);
+  }, [token, sub, skipAccessGate, router]);
 
   // Render order:
   //   - Auth still loading: spinner
@@ -95,7 +119,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
   if (!token) return null;
-  if (!isSubscribeRoute && subLoading && !sub) {
+  if (!skipAccessGate && subLoading && !sub) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-forest-deep">
         <LoadingSpinner size="lg" />

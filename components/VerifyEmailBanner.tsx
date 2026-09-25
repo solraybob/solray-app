@@ -24,6 +24,7 @@ export default function VerifyEmailBanner({
   const [dismissed, setDismissed] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   // Don't render if verified, dismissed, or unknown
   if (emailVerified !== false || dismissed) return null;
@@ -31,39 +32,40 @@ export default function VerifyEmailBanner({
   const handleResend = async () => {
     if (!token || sending) return;
     setSending(true);
+    setFailed(false);
     try {
       await apiFetch("/users/resend-verification", { method: "POST" }, token);
       setSent(true);
     } catch {
-      // Silently fail: the user can try again
+      setFailed(true);
     } finally {
       setSending(false);
     }
   };
 
+  // One-look strip: a hairline under it, muted body text, a hairline pill.
+  // No tinted purple band.
   return (
     <div
-      className="px-4 py-3 flex items-center justify-between gap-3"
-      style={{
-        background: "rgba(90,49,174,0.08)",
-        borderBottom: "1px solid rgba(90,49,174,0.15)",
-      }}
+      className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between gap-3"
+      style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}
     >
-      <p className="text-xs" style={{ color: "var(--amber, #5A31AE)" }}>
-        {sent
-          ? t("verify_banner.sent")
-          : t("verify_banner.prompt")}
+      <p className="font-body" style={{ fontSize: 14, lineHeight: 1.5, color: failed ? "rgb(var(--rgb-ember))" : "rgb(var(--rgb-text-secondary))" }}>
+        {sent ? t("verify_banner.sent") : failed ? t("verify_banner.failed") : t("verify_banner.prompt")}
       </p>
       <div className="flex items-center gap-2 shrink-0">
         {!sent && (
           <button
             onClick={handleResend}
             disabled={sending}
-            className="text-xs px-3 py-1 rounded-sm transition-opacity"
+            className="font-body uppercase font-bold rounded-full transition-opacity disabled:opacity-50"
             style={{
-              background: "var(--amber, #5A31AE)",
-              color: "var(--bg-deep)",
-              opacity: sending ? 0.5 : 1,
+              fontSize: 11,
+              letterSpacing: "0.2em",
+              padding: "6px 12px",
+              background: "transparent",
+              border: "1px solid rgb(var(--rgb-border))",
+              color: "rgb(var(--rgb-text-secondary))",
             }}
           >
             {sending ? t("verify_banner.sending") : t("verify_banner.resend")}
@@ -71,8 +73,8 @@ export default function VerifyEmailBanner({
         )}
         <button
           onClick={() => setDismissed(true)}
-          className="text-xs px-1 opacity-40 hover:opacity-70"
-          style={{ color: "var(--text-secondary)" }}
+          className="px-1"
+          style={{ fontSize: 18, lineHeight: 1, color: "rgb(var(--rgb-text-muted))" }}
           aria-label={t("common.dismiss")}
         >
           &times;

@@ -60,8 +60,12 @@ export default function DesktopHeader() {
                 href={item.href}
                 className="px-4 py-2 rounded-lg transition-colors"
                 style={{
-                  color: isActive ? "rgb(var(--rgb-text-primary))" : "var(--text-secondary)",
-                  background: isActive ? "rgba(34,32,28,0.04)" : "transparent",
+                  color: isActive ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-text-secondary))",
+                  background: "transparent",
+                  // The one look marks the active item with a hairline under
+                  // it, not a tinted fill.
+                  boxShadow: isActive ? "inset 0 -1px 0 rgb(var(--rgb-text-primary))" : "none",
+                  borderRadius: 0,
                 }}
               >
                 <span className="font-body text-[15px] tracking-[0.15em] uppercase font-bold">

@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
+import { errorText } from "@/lib/errors";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
 interface Message {
@@ -557,12 +558,12 @@ function ChatPageInner() {
         const wordCount = mg.trim().split(/\s+/).length;
         if (mg && wordCount > 10) {
           content = mg;
-        } else if (lang !== "en") {
-          // The composed fallback below is English. A Spanish member must
-          // never get an English first line from the Oracle; starting
-          // plainly is more honest than starting in the wrong language.
-          return null;
         } else {
+          // Composed from i18n keys, with chart vocabulary run through tx(),
+          // so a Spanish member gets a Spanish first line, never English.
+          const tr = t;
+          const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
+          const term = (s: string) => (lang === "en" ? s : tx(cap(s), lang));
           // Build a rich greeting from today's transits + tightest aspect
           let sunSign = "";
           let moonSign = "";
@@ -605,27 +606,24 @@ function ChatPageInner() {
             const aspectType = top.aspect || top.type || "";
             const target = top.target || top.natal_planet || "";
             if (planet && aspectType && target) {
-              aspectStr = `${planet} ${aspectType}s your natal ${target} today.`;
+              aspectStr = tr("chat.greet_aspect")
+                .replace("{planet}", term(planet))
+                .replace("{aspect}", lang === "en" ? aspectType : term(aspectType).toLowerCase())
+                .replace("{target}", term(target));
               // Frame a personal question based on the planet involved
-              const planetQ: Record<string, string> = {
-                mars: "Where are you pushing against something that might need to breathe?",
-                venus: "What relationship or desire has been quietly asking for your attention?",
-                mercury: "What conversation have you been rehearsing but not yet had?",
-                jupiter: "What is expanding in your life that you haven't fully acknowledged yet?",
-                saturn: "What structure in your life is being tested right now?",
-                uranus: "What change is arriving that part of you already knew was coming?",
-                neptune: "What have you been sensing that you haven't quite put into words?",
-                pluto: "What are you ready to let go of, even if it's uncomfortable?",
-                moon: "What are you feeling right now that you haven't allowed yourself to feel fully?",
-                sun: "What part of yourself are you being asked to step into more completely?",
-              };
+              const QUESTION_PLANETS = ["mars", "venus", "mercury", "jupiter", "saturn", "uranus", "neptune", "pluto", "moon", "sun"];
               const pKey = planet.toLowerCase();
-              aspectQuestion = planetQ[pKey] || "What does your body already know about this?";
+              aspectQuestion = QUESTION_PLANETS.includes(pKey)
+                ? tr(`chat.greet_q_${pKey}`)
+                : tr("chat.greet_q_default");
             }
           }
 
           // Compose the greeting
-          const skyParts = [sunSign && `Sun in ${sunSign}`, moonSign && `Moon in ${moonSign}`]
+          const skyParts = [
+            sunSign && tr("chat.greet_sun").replace("{sign}", term(sunSign)),
+            moonSign && tr("chat.greet_moon").replace("{sign}", term(moonSign)),
+          ]
             .filter(Boolean)
             .join(", ");
 
@@ -633,9 +631,9 @@ function ChatPageInner() {
             const skyIntro = skyParts ? `${skyParts}. ` : "";
             content = `${skyIntro}${aspectStr} ${aspectQuestion}`;
           } else if (skyParts) {
-            content = `${skyParts}. The sky is holding something specific for you today. What's already stirring?`;
+            content = tr("chat.greet_sky_only").replace("{sky}", skyParts);
           } else {
-            content = "The sky is moving today. What's stirring in you?";
+            content = tr("chat.greet_plain");
           }
         }
 
@@ -659,7 +657,7 @@ function ChatPageInner() {
         timestamp: new Date().toISOString(),
       };
     },
-    [lang]
+    [lang, t]
   );
 
   // ── Initialise session on mount ───────────────────────────────────────────
@@ -1282,7 +1280,7 @@ function ChatPageInner() {
         let detail = "";
         try {
           const j = await res.json();
-          detail = j?.detail || "";
+          detail = errorText(j?.detail, "");
         } catch {
           // ignore
         }
@@ -1760,13 +1758,13 @@ function ChatPageInner() {
                       <div
                         className="rounded-2xl px-4 py-3 rounded-bl-sm"
                         style={{
-                          background: "rgba(163,74,34, 0.08)",
-                          border: "1px solid rgba(163,74,34, 0.30)",
+                          background: "rgb(var(--rgb-ember) / 0.08)",
+                          border: "1px solid rgb(var(--rgb-ember) / 0.30)",
                         }}
                       >
                         <p
                           className="font-body text-[13px] tracking-[0.22em] uppercase mb-1 font-bold"
-                          style={{ color: "var(--ember, #A34A22)", opacity: 0.85 }}
+                          style={{ color: "rgb(var(--rgb-ember))", opacity: 0.85 }}
                         >
                           {t("chat.connection")}
                         </p>
@@ -2154,7 +2152,7 @@ function ThinkingIndicator() {
           
           fontWeight: 700,
           fontSize: "1rem",
-          color: "var(--text-secondary, #6E6659)",
+          color: "rgb(var(--rgb-text-secondary))",
           opacity: 0.82,
           letterSpacing: "0.01em",
           marginLeft: 4,

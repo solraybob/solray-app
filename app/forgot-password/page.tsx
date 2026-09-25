@@ -12,11 +12,10 @@
  */
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import { useT } from "@/lib/i18n";
-import { Wordmark, Orb } from "@/components/Wordmark";
+import { errorText } from "@/lib/errors";
+import { PageHead, PageTitle, BodyText, InkButton, hairlinePillStyle, inputStyle } from "@/components/PageHead";
 
 export default function ForgotPasswordPage() {
   const { t } = useT();
@@ -38,7 +37,7 @@ export default function ForgotPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.detail || t("forgot.error_request"));
+        throw new Error(errorText(e?.detail, t("forgot.error_request")));
       }
       setSubmitted(true);
     } catch (e: unknown) {
@@ -49,65 +48,57 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-forest-deep flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="flex flex-col items-center mb-10">
-          <Orb size={40} className="mb-4" />
-          <Wordmark size={30} />
-          <p className="font-body text-text-secondary text-[14px] mt-3 tracking-[0.22em] uppercase font-bold">{t("forgot.reset_password")}</p>
-        </div>
-
+    <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(48px + var(--sab, 0px))" }}>
+      <PageHead label={t("forgot.reset_password")} />
+      <div className="max-w-lg mx-auto px-5 animate-fade-in">
         {submitted ? (
-          <div className="text-center space-y-4">
-            <p className="font-body text-text-primary text-[17px] leading-relaxed">
-              {t("forgot.sent_title")}
-            </p>
-            <p className="font-body text-text-secondary text-[15px] leading-relaxed">
-              {t("forgot.sent_detail")}
-            </p>
+          <>
+            <PageTitle title={t("forgot.sent_title")} sub={t("forgot.sent_detail")} />
             <Link
               href="/login"
-              className="inline-block mt-6 font-body text-amber-sun text-[15px] tracking-[0.18em] uppercase hover:opacity-80 transition-opacity font-bold"
+              className="block w-full text-center py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold"
+              style={hairlinePillStyle}
             >
               {t("forgot.back_to_login")}
             </Link>
-          </div>
+          </>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="font-body text-text-secondary text-[17px] leading-relaxed text-center mb-4">
-              {t("forgot.prompt")}
-            </p>
+          <form onSubmit={handleSubmit}>
+            <PageTitle title={t("forgot.reset_password")} />
+            <BodyText muted style={{ marginBottom: 24, marginTop: -12 }}>{t("forgot.prompt")}</BodyText>
 
-            <div>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t("login.email_placeholder")}
-                autoComplete="email"
-                required
-                autoFocus
-                className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors"
-              />
-            </div>
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("login.email_placeholder")}
+              required
+              autoFocus
+              className="font-body placeholder-text-muted"
+              style={inputStyle}
+            />
 
             {error && (
-              <p className="text-ember text-xs text-center font-body">{error}</p>
+              <p className="font-body mt-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading || !email.trim()}
-              className="w-full bg-amber-sun text-forest-deep font-body font-semibold py-3.5 rounded-lg text-sm tracking-wider transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-            >
-              {loading ? <LoadingSpinner size="sm" /> : t("forgot.send_link")}
-            </button>
-
-            <p className="text-center text-text-secondary text-xs mt-5 font-body">
-              <Link href="/login" className="hover:text-text-primary transition-colors">
+            <div className="mt-6 space-y-3">
+              <InkButton type="submit" loading={loading} disabled={!email.trim()}>
+                {t("forgot.send_link")}
+              </InkButton>
+              <Link
+                href="/login"
+                className="block w-full text-center py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold"
+                style={hairlinePillStyle}
+              >
                 {t("forgot.back_to_login")}
               </Link>
-            </p>
+            </div>
           </form>
         )}
       </div>

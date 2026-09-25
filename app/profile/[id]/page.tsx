@@ -19,7 +19,8 @@ import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { Wordmark } from "@/components/Wordmark";
+import { PageHead, Section, InkButton, HairlineButton } from "@/components/PageHead";
+import Link from "next/link";
 import {
   parseBlueprintForChart,
   HD_TYPE_MEANINGS,
@@ -77,29 +78,25 @@ export default function ConnectionProfilePage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}
       >
-        {/* Header */}
-        <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-indigo))" }}>
-              {t("conn.soul")}
-            </p>
-            <div className="relative flex items-center" style={{ height: "26px" }}>
-              <button
-                onClick={() => router.back()}
-                aria-label={t("common.back")}
-                className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
-                style={{ minWidth: "32px", minHeight: "32px", marginLeft: "-8px" }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-              </button>
-              <Wordmark size={21} className="text-text-primary absolute left-1/2 -translate-x-1/2" />
-            </div>
-          </div>
-        </div>
+        {/* Header: the one look. Back sits in the head's right slot. */}
+        <PageHead
+          label={t("conn.soul")}
+          right={
+            <button
+              onClick={() => { if (window.history.length > 1) router.back(); else router.push("/souls"); }}
+              aria-label={t("common.back")}
+              className="font-body uppercase font-bold flex items-center gap-1"
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 32 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              {t("common.back")}
+            </button>
+          }
+        />
 
-        <div className="max-w-lg mx-auto px-5 pt-8 page-enter">
+        <div className="max-w-lg mx-auto px-5 pt-2 page-enter">
           {loading && (
             <div className="text-center pt-12">
               <div className="h-1 w-32 mx-auto skeleton-shimmer rounded-full" />
@@ -136,27 +133,27 @@ export default function ConnectionProfilePage() {
           {!loading && !error && profile && (
             <>
               {/* Avatar + Identity */}
-              <div className="pt-6 pb-5 flex flex-col items-center gap-3">
+              <div className="pt-4 pb-7 flex items-center gap-4">
                 {profile.profile_photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={profile.profile_photo}
                     alt={profile.name}
                     className="rounded-full object-cover border border-forest-border"
-                    style={{ width: 96, height: 96 }}
+                    style={{ width: 72, height: 72 }}
                   />
                 ) : (
                   <div
-                    className="rounded-full border border-forest-border bg-forest-card/60 flex items-center justify-center font-heading text-text-primary"
-                    style={{ width: 96, height: 96, fontSize: 36, fontWeight: 900 }}
+                    className="rounded-full border border-forest-border flex items-center justify-center font-heading text-text-primary"
+                    style={{ width: 72, height: 72, fontSize: 28, fontWeight: 900 }}
                   >
                     {initials}
                   </div>
                 )}
-                <div className="text-center">
-                  <p className="font-heading text-text-primary" style={{ fontSize: 22, fontWeight: 900 }}>
+                <div className="min-w-0">
+                  <h1 className="font-heading" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}>
                     {profile.name}
-                  </p>
+                  </h1>
                   {profile.username && (
                     <p className="font-body text-text-secondary text-[15px] mt-1">@{profile.username}</p>
                   )}
@@ -190,14 +187,11 @@ export default function ConnectionProfilePage() {
 function PrivateProfileNotice({ name }: { name: string }) {
   const { t } = useT();
   return (
-    <div className="mt-4 mb-6 px-6 py-8 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
-        {t("conn.private_title")}
-      </p>
-      <p className="font-body text-text-secondary text-[17px] leading-relaxed max-w-xs mx-auto">
+    <Section label={t("conn.private_title")}>
+      <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
         {t("conn.private_body").replace("{name}", name)}
       </p>
-    </div>
+    </Section>
   );
 }
 
@@ -219,11 +213,11 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
   const profileMeaning = profileMatch ? HD_PROFILE_MEANINGS[profileMatch] : undefined;
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Three-line essence */}
       {(sunSign || chart?.human_design.type) && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.essence")}</p>
+        <div className="pb-6" style={FOLD}>
+          <p className="font-body uppercase" style={FOLD_LABEL}>{t("conn.essence")}</p>
           <div className="space-y-1.5 font-body text-[17px]">
             {sunSign  && <Row label={t("planets.sun")}  value={sunSign}  />}
             {moonSign && <Row label={t("planets.moon")} value={moonSign} />}
@@ -244,8 +238,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
 
       {/* Natal Chart */}
       {chart && chart.natal.length > 0 && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.natal_chart")}</p>
+        <div className="pb-6" style={FOLD}>
+          <p className="font-body uppercase" style={FOLD_LABEL}>{t("conn.natal_chart")}</p>
           <div className="flex justify-center">
             <NatalWheel
               planets={chart.natal.map((p) => ({ planet: p.planet, symbol: p.symbol, longitude: p.longitude, retrograde: p.retrograde }))}
@@ -260,8 +254,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
 
       {/* Human Design */}
       {chart && chart.human_design.defined_centres.length > 0 && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.human_design")}</p>
+        <div className="pb-6" style={FOLD}>
+          <p className="font-body uppercase" style={FOLD_LABEL}>{t("conn.human_design")}</p>
           <div className="flex justify-center mb-4">
             <BodyGraph
               definedCenters={chart.human_design.defined_centres}
@@ -303,8 +297,8 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
 
       {/* Gene Keys */}
       {chart && Object.keys(chart.gene_keys).length > 0 && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase mb-3 font-bold">{t("conn.gene_keys")}</p>
+        <div className="pb-6" style={FOLD}>
+          <p className="font-body uppercase" style={FOLD_LABEL}>{t("conn.gene_keys")}</p>
           <div className="space-y-3">
             {Object.entries(chart.gene_keys).map(([slot, gk]) => (
               <div key={slot} className="border-b border-forest-border/30 last:border-0 pb-3 last:pb-0">
@@ -328,6 +322,12 @@ function PublicProfileBody({ profile }: { profile: PublicProfile }) {
     </div>
   );
 }
+
+/* Hairline fold, the one-look replacement for the tinted rounded card. */
+const FOLD: React.CSSProperties = { borderTop: "1px solid rgb(var(--rgb-border))" };
+const FOLD_LABEL: React.CSSProperties = {
+  paddingBlock: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))",
+};
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -354,15 +354,10 @@ function EmptyState({
   title, body, actionLabel, onAction,
 }: { title: string; body: string; actionLabel: string; onAction: () => void }) {
   return (
-    <div className="mt-8 px-6 py-10 rounded-2xl border border-forest-border/60 bg-forest-card/40 text-center">
-      <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>{title}</p>
-      <p className="font-body text-text-secondary text-[17px] leading-relaxed max-w-xs mx-auto mb-5">{body}</p>
-      <button
-        onClick={onAction}
-        className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 transition-colors font-bold"
-      >
-        {actionLabel}
-      </button>
+    <div style={{ paddingTop: 18 }}>
+      <h1 className="font-heading" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, color: "rgb(var(--rgb-text-primary))" }}>{title}</h1>
+      <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, marginTop: 10, marginBottom: 28, color: "rgb(var(--rgb-text-secondary))" }}>{body}</p>
+      <InkButton onClick={onAction}>{actionLabel}</InkButton>
     </div>
   );
 }
@@ -481,36 +476,44 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
   }, [soulId, token]);
 
   return (
-    <div className="mt-8">
-      <p className="font-body text-[14px] tracking-[0.22em] uppercase mb-3 font-bold" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
+    <div style={FOLD}>
+      <p className="font-body uppercase" style={FOLD_LABEL}>
         {t("compat.between_you")}
       </p>
 
       {paywall && (
-        <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5 text-center">
-          <p className="font-heading text-text-primary mb-2" style={{ fontSize: 18, fontWeight: 700 }}>
+        <div className="pb-2">
+          <p className="font-heading mb-2" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-.02em", color: "rgb(var(--rgb-text-primary))" }}>
             {t("compat.paywall_title")}
           </p>
-          <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-4 max-w-md mx-auto">
+          <p className="font-body mb-5" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
             {t("compat.paywall_body")}
           </p>
+          <Link
+            href="/subscribe"
+            className="block w-full text-center py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold"
+            style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+          >
+            {t("compat.paywall_cta")}
+          </Link>
         </div>
       )}
 
       {error && !paywall && (
-        <div className="rounded-xl border px-4 py-3 font-body text-[15px]" style={{ borderColor: "var(--ember)", color: "var(--ember)" }}>
-          {error}
+        <div className="pb-4">
+          <p className="font-body mb-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
+          <HairlineButton onClick={() => load(true)} loading={loading}>{t("common.retry")}</HairlineButton>
         </div>
       )}
 
       {!paywall && !error && (loading && !reading) && (
-        <div className="rounded-2xl bg-forest-card/30 border border-forest-border/30 h-48 skeleton-shimmer" />
+        <div className="rounded-sm h-48 skeleton-shimmer" />
       )}
 
       {!paywall && index && <IndexCard index={index} soulName={soulName} />}
 
       {!paywall && reading && (
-        <div className="space-y-3 mt-3">
+        <div className="mt-3">
           <Lens label={t("compat.lens_amplify")}  body={reading.amplify} />
           <Lens label={t("compat.lens_misread")}  body={reading.misread} />
           <Lens label={t("compat.lens_safety")} body={reading.safety} />
@@ -519,8 +522,8 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       )}
 
       {!paywall && signals && (signals.shared_gates_count ?? 0) > 0 && (
-        <div className="mt-4 rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-          <p className="font-body text-text-secondary text-[13px] tracking-[0.22em] uppercase mb-3 font-bold">{t("compat.structural_signals")}</p>
+        <div className="mt-4 pb-4" style={FOLD}>
+          <p className="font-body uppercase" style={FOLD_LABEL}>{t("compat.structural_signals")}</p>
           <div className="space-y-1.5 font-body text-[15px]">
             {signals.hd_types?.compatibility_note && (
               <Row label={t("compat.types")} value={signals.hd_types.compatibility_note} />
@@ -541,7 +544,8 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       {!paywall && reading && (
         <button
           onClick={() => { try { sessionStorage.removeItem(cacheKey); } catch (_) {} load(true); }}
-          className="mt-3 font-body text-[13px] tracking-[0.22em] uppercase text-amber-sun hover:text-amber-sun transition-colors font-bold"
+          className="mt-3 mb-6 font-body text-[13px] tracking-[0.22em] uppercase transition-colors font-bold"
+          style={{ color: "rgb(var(--rgb-text-secondary))" }}
           disabled={loading}
         >
           {loading ? t("compat.refreshing") : t("compat.re_read")}
@@ -554,11 +558,11 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
 function Lens({ label, body }: { label: string; body?: string }) {
   if (!body) return null;
   return (
-    <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-4">
-      <p className="font-body text-[13px] tracking-[0.22em] uppercase mb-2 font-bold" style={{ color: "rgb(var(--rgb-indigo) / 0.95)" }}>
+    <div className="pb-5" style={FOLD}>
+      <p className="font-body uppercase" style={FOLD_LABEL}>
         {label}
       </p>
-      <p className="font-body text-text-primary leading-relaxed" style={{ fontSize: 17 }}>{body}</p>
+      <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>{body}</p>
     </div>
   );
 }
@@ -584,11 +588,11 @@ const AXIS_HINT_KEY: Record<string, string> = {
 // the four sub-axes spread across ember / moss / mist / wisteria so each
 // reads as its own frequency without the bars looking like a uniform set.
 const AXIS_COLOR: Record<string, string> = {
-  resonance:      "var(--amber)",
-  energetic_loop: "var(--ember)",
-  type_pairing:   "var(--moss)",
-  astrological:   "var(--mist)",
-  gene_keys:      "var(--wisteria)",
+  resonance:      "rgb(var(--rgb-amber))",
+  energetic_loop: "rgb(var(--rgb-ember))",
+  type_pairing:   "rgb(var(--rgb-moss))",
+  astrological:   "rgb(var(--rgb-mist))",
+  gene_keys:      "rgb(var(--rgb-wisteria))",
 };
 
 function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: string }) {
@@ -610,7 +614,7 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
   ];
 
   return (
-    <div className="rounded-2xl bg-forest-card/40 border border-forest-border/50 px-5 py-5">
+    <div className="pt-4 pb-6" style={FOLD}>
       {/* Header: same label-typography rhythm as Today's section labels */}
       <div className="flex items-center justify-between gap-4 mb-1">
         <div>
@@ -622,7 +626,7 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
           </p>
         </div>
         <div className="text-right">
-          <span className="font-heading text-amber-sun" style={{ fontSize: 44, fontWeight: 900, lineHeight: 1 }}>
+          <span className="font-heading" style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: "rgb(var(--rgb-text-primary))" }}>
             {overall}
           </span>
           <span className="font-heading text-text-secondary ml-1" style={{ fontSize: 17, fontWeight: 900 }}>
@@ -647,7 +651,7 @@ function IndexCard({ index, soulName }: { index: ResonanceIndex; soulName: strin
             hint={t(AXIS_HINT_KEY[key])}
             score={Math.round(axis.score)}
             weight={axis.weight}
-            color={AXIS_COLOR[key] || "var(--amber)"}
+            color={AXIS_COLOR[key] || "rgb(var(--rgb-amber))"}
             delayMs={idx * 90}
           />
         ))}

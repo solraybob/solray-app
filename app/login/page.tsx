@@ -11,6 +11,15 @@ import { useT } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
 import InstallApp from "@/components/InstallApp";
 
+/* Only same-origin relative paths: must start with "/" but not "//" (or
+   "/\\"), which browsers treat as protocol-relative, off-site URLs. */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/today";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/today";
+  if (raw.startsWith("/login") || raw.startsWith("/onboard")) return "/today";
+  return raw;
+}
+
 export default function LoginPage() {
   const { t } = useT();
   const [email, setEmail] = useState("");
@@ -20,16 +29,30 @@ export default function LoginPage() {
   const { login, token } = useAuth();
   const router = useRouter();
 
+  // ?next= (where a protected page sent them from) and ?expired=1 (the
+  // API layer's 401 handler). Read from window.location on mount instead of
+  // useSearchParams so the page stays statically renderable without a
+  // Suspense boundary.
+  const [nextPath, setNextPath] = useState("/today");
+  const [expired, setExpired] = useState(false);
   useEffect(() => {
-    if (token) router.push("/today");
-  }, [token, router]);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      setNextPath(safeNext(params.get("next")));
+      setExpired(params.get("expired") === "1");
+    } catch { /* keep defaults */ }
+  }, []);
+
+  useEffect(() => {
+    if (token) router.replace(nextPath);
+  }, [token, router, nextPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, t("login.error_failed"));
       // Fix 5: Prefetch blueprint in background after login
       // so Chart screen is instant on first visit
       const storedToken = localStorage.getItem("solray_token");
@@ -58,7 +81,7 @@ export default function LoginPage() {
             // prefetch failure is silent, doesn't block login
           });
       }
-      router.push("/today");
+      router.replace(nextPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("login.error_no_signal"));
     } finally {
@@ -88,7 +111,7 @@ export default function LoginPage() {
           <div
             className="w-24 h-24 mb-5 entry-sun entry-rise"
             style={{
-              filter: "drop-shadow(0 18px 26px rgba(84,63,150,.26))",
+              filter: "drop-shadow(0 18px 26px rgb(var(--rgb-amber) / .26))",
             }}
           >
             <Image
@@ -106,11 +129,17 @@ export default function LoginPage() {
             <Image src="/solray-orb.png" alt="" width={22} height={22} unoptimized style={{ width: "1ex", height: "1ex", objectFit: "contain", margin: "0 .01em", transform: "translateY(.02em)" }} />
             <span>lray</span>
           </h1>
-          <p className="font-body text-text-muted mt-2 entry-rise uppercase" style={{ fontSize: 13, letterSpacing: "0.22em", fontWeight: 500, "--d": "300ms" } as React.CSSProperties}>living by design</p>
+          <p className="font-body text-text-muted mt-2 entry-rise uppercase" style={{ fontSize: 13, letterSpacing: "0.22em", fontWeight: 500, "--d": "300ms" } as React.CSSProperties}>{t("login.tagline")}</p>
           <p className="font-body text-text-secondary text-[14px] mt-3 tracking-[0.22em] uppercase entry-rise font-bold" style={{ "--d": "420ms" } as React.CSSProperties}>{t("login.cosmic_intelligence")}</p>
         </div>
 
         {/* Form */}
+        {expired && !error && (
+          <p className="font-body text-center mb-4 entry-rise" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>
+            {t("login.session_expired")}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4 entry-rise" style={{ "--d": "560ms" } as React.CSSProperties}>
           <div>
             <input
@@ -119,6 +148,10 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t("login.email_placeholder")}
               autoComplete="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               className="w-full bg-forest-card border border-forest-border rounded-lg px-4 py-3.5 text-text-primary placeholder-text-secondary font-body text-base focus:border-amber-sun transition-colors entry-input"
             />
@@ -136,13 +169,13 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-ember text-xs text-center font-body">{error}</p>
+            <p className="text-center font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-body font-bold py-3.5 rounded-full text-[17px] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
+            className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
             style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
           >
             {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}
@@ -157,7 +190,7 @@ export default function LoginPage() {
 
         <p className="text-center text-text-secondary text-xs mt-6 font-body entry-rise" style={{ "--d": "820ms" } as React.CSSProperties}>
           {t("login.new_here")}{" "}
-          <Link href="/onboard" className="text-amber-sun hover:opacity-80 transition-opacity">
+          <Link href="/onboard" className="hover:opacity-80 transition-opacity underline underline-offset-4" style={{ color: "rgb(var(--rgb-text-primary))" }}>
             {t("login.begin_journey")}
           </Link>
         </p>

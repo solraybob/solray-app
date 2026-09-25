@@ -93,7 +93,22 @@ let initializing: Promise<void> | null = null;
 
 // The subscribe page registers a callback so it can refresh entitlement state
 // once the backend confirms a verified purchase (or surface a failure).
-type PurchaseOutcome = { ok: true } | { ok: false; error: string };
+/**
+ * Errors thrown to the UI carry a stable `code`; the UI maps it to a
+ * localized t("subscribe.iap_<code>") string. The English message stays for
+ * logs only, so a Spanish member never sees plugin or English copy.
+ */
+export type NativeIAPErrorCode = "unavailable" | "loading" | "failed" | "verify_failed";
+export class NativeIAPError extends Error {
+  code: NativeIAPErrorCode;
+  constructor(code: NativeIAPErrorCode, message: string) {
+    super(message);
+    this.code = code;
+    this.name = "NativeIAPError";
+  }
+}
+
+type PurchaseOutcome = { ok: true } | { ok: false; error: string; code?: NativeIAPErrorCode };
 let outcomeListener: ((o: PurchaseOutcome) => void) | null = null;
 export function setPurchaseListener(cb: ((o: PurchaseOutcome) => void) | null) {
   outcomeListener = cb;
@@ -162,7 +177,7 @@ export function initNativeIAP(): Promise<void> {
     const cdv = w.CdvPurchase;
     const platform = storePlatform();
     if (!cdv || !cdv.store || !platform) {
-      reject(new Error("In-app purchases are not available on this device"));
+      reject(new NativeIAPError("unavailable", "In-app purchases are not available on this device"));
       return;
     }
     try {
@@ -236,7 +251,7 @@ async function onApproved(tx: TransactionLike): Promise<void> {
     const error = e instanceof Error ? e.message : String(e);
     // eslint-disable-next-line no-console
     console.error("[native-iap] verify failed", e);
-    outcomeListener?.({ ok: false, error });
+    outcomeListener?.({ ok: false, error, code: "verify_failed" });
   }
 }
 
@@ -244,9 +259,9 @@ export async function launchNativePurchase(productId: string = PRODUCT_ID): Prom
   await initNativeIAP();
   const store = getStore();
   const platform = storePlatform();
-  if (!store || !platform) throw new Error("In-app purchases are not available");
+  if (!store || !platform) throw new NativeIAPError("unavailable", "In-app purchases are not available");
   const product = store.get(productId, platform) || store.get(productId);
-  if (!product) throw new Error("Subscription is still loading. Try again in a moment.");
+  if (!product) throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
 
   const offer =
     (typeof product.getOffer === "function" && product.getOffer()) ||
@@ -255,7 +270,7 @@ export async function launchNativePurchase(productId: string = PRODUCT_ID): Prom
 
   const result = await store.order(offer as OfferLike);
   if (result && (result as { isError?: boolean }).isError) {
-    throw new Error((result as { message?: string }).message || "Purchase failed");
+    throw new NativeIAPError("failed", (result as { message?: string }).message || "Purchase failed");
   }
 }
 

@@ -177,7 +177,7 @@ export default function GroupChatPage() {
         {/* Header */}
         <div className="px-5 pt-2 pb-4 border-b border-forest-border flex items-center gap-3 max-w-lg mx-auto w-full">
           <button
-            onClick={() => router.back()}
+            onClick={() => { if (window.history.length > 1) router.back(); else router.push("/souls"); }}
             className="text-text-secondary hover:text-text-primary transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -10,6 +10,8 @@ import { useRouter, useSearchParams } from "next/navigation";
  * The token and card info arrive as URL query params.
  * We forward them to /subscribe which handles the attach logic.
  */
+const SPIN = { border: "2px solid rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-text-primary))" } as const;
+
 function SecurePayCallbackInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -21,8 +23,8 @@ function SecurePayCallbackInner() {
   }, [router, params]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+    <div className="min-h-[100dvh] bg-forest-deep flex items-center justify-center">
+      <div className="w-6 h-6 rounded-full animate-spin" style={SPIN} />
     </div>
   );
 }
@@ -30,8 +32,8 @@ function SecurePayCallbackInner() {
 export default function SecurePayCallback() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+      <div className="min-h-[100dvh] bg-forest-deep flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full animate-spin" style={SPIN} />
       </div>
     }>
       <SecurePayCallbackInner />

@@ -52,7 +52,10 @@
     "forgot_password": "¿Olvidaste tu contraseña?",
     "new_here": "¿Eres nuevo aquí?",
     "begin_journey": "Comienza tu camino.",
-    "error_no_signal": "No se pudo conectar. Inténtalo de nuevo."
+    "error_no_signal": "No se pudo conectar. Inténtalo de nuevo.",
+    "error_failed": "No se pudo iniciar sesión. Revisa tu correo y tu contraseña.",
+    "session_expired": "Tu sesión terminó, vuelve a iniciar sesión.",
+    "tagline": "vivir por diseño"
   },
   "install": {
     "cta": "Añade Solray a tu pantalla de inicio",
@@ -82,7 +85,7 @@
     "welcome_name": "Bienvenido,",
     "create_account": "Crea tu cuenta para comenzar.",
     "email_placeholder": "Correo electrónico",
-    "password_placeholder": "Contraseña (mínimo 6 caracteres)",
+    "password_placeholder": "Contraseña (mínimo 8 caracteres)",
     "hive_consent": "Agrega mi carta al Colectivo. Los patrones solo aparecen cuando al menos diez personas comparten una configuración. Tu nombre, hora de nacimiento y conversaciones nunca son visibles. El Oráculo se afina a medida que el Colectivo crece. Puedes cambiar esto en Ajustes.",
     "begin_journey": "Comenzar mi camino",
     "blueprint_astrology": "Leyendo el cielo de tu nacimiento...",
@@ -91,7 +94,10 @@
     "blueprint_weaving": "Despertando a tu Oráculo...",
     "registration_failed": "El registro falló",
     "calibration": "Calibración",
-    "calibration_why": "Tu Oráculo se construye desde tu momento exacto de nacimiento. Por eso nada de lo que dice es genérico."
+    "calibration_why": "Tu Oráculo se construye desde tu momento exacto de nacimiento. Por eso nada de lo que dice es genérico.",
+    "log_in": "Iniciar sesión",
+    "have_account": "¿Ya tienes una cuenta?",
+    "step_of": "Paso {n} de {total}"
   },
   "today": {
     "title": "Hoy",
@@ -218,7 +224,23 @@
     "suggest_unknown": "Dime algo que probablemente no sé sobre mí.",
     "suggest_undervalue": "¿En qué soy buena o bueno que tiendo a infravalorar?",
     "suggest_money_block": "¿Tengo bloqueos con el dinero en mi carta?",
-    "suggest_love_block": "¿Tengo bloqueos en el amor en mi carta?"
+    "suggest_love_block": "¿Tengo bloqueos en el amor en mi carta?",
+    "greet_aspect": "{planet} en {aspect} con tu {target} natal hoy.",
+    "greet_sun": "Sol en {sign}",
+    "greet_moon": "Luna en {sign}",
+    "greet_sky_only": "{sky}. El cielo guarda algo concreto para ti hoy. ¿Qué se está moviendo ya?",
+    "greet_plain": "El cielo se mueve hoy. ¿Qué se mueve en ti?",
+    "greet_q_mars": "¿Dónde estás empujando contra algo que quizá necesita respirar?",
+    "greet_q_venus": "¿Qué relación o deseo te ha estado pidiendo atención en silencio?",
+    "greet_q_mercury": "¿Qué conversación has ensayado pero todavía no has tenido?",
+    "greet_q_jupiter": "¿Qué se está expandiendo en tu vida que aún no has reconocido del todo?",
+    "greet_q_saturn": "¿Qué estructura de tu vida se está poniendo a prueba ahora mismo?",
+    "greet_q_uranus": "¿Qué cambio está llegando que una parte de ti ya sabía que vendría?",
+    "greet_q_neptune": "¿Qué has estado intuyendo que todavía no has puesto en palabras?",
+    "greet_q_pluto": "¿Qué estás lista o listo para soltar, aunque sea incómodo?",
+    "greet_q_moon": "¿Qué sientes ahora mismo que no te has permitido sentir del todo?",
+    "greet_q_sun": "¿Qué parte de ti se te pide habitar más plenamente?",
+    "greet_q_default": "¿Qué sabe ya tu cuerpo sobre esto?"
   },
   "souls": {
     "title": "ALMAS",
@@ -301,7 +323,9 @@
     "error_partial_chart": "No se pudo traer su carta completa, leyendo desde lo básico.",
     "connected": "conectado",
     "saved": "guardado",
-    "wants_to_connect": "quiere conectar"
+    "wants_to_connect": "quiere conectar",
+    "invite_share_title": "Te invito a Solray",
+    "invite_share_text": "Lee tu carta frente al cielo de hoy, y las dinámicas con las personas de tu vida. Únete a mí en Solray: {link}"
   },
   "profile": {
     "title": "Perfil",
@@ -343,7 +367,12 @@
     "photo_saving": "guardando...",
     "photo_saved": "guardado",
     "ask": "Preguntar →",
-    "blueprint_weaving": "Tu plano aún se está tejiendo. Actualiza en un momento."
+    "blueprint_weaving": "Tu plano aún se está tejiendo. Actualiza en un momento.",
+    "load_error": "Tu perfil no se cargó. La conexión se cortó, no ha cambiado nada.",
+    "wheel_unavailable": "Rueda no disponible",
+    "wheel_aria": "Rueda de la carta natal",
+    "astro_load_failed": "No se pudieron cargar los datos de astrocartografía.",
+    "astro_no_data": "No hay datos de astrocartografía disponibles."
   },
   "settings": {
     "title": "Ajustes",
@@ -383,7 +412,20 @@
     "birth_city_select_hint": "Elige una ciudad de las sugerencias para geolocalizarla con precisión.",
     "birth_date_time_required": "La fecha y la hora son obligatorias.",
     "searching": "Buscando...",
-    "birth_wheel_prompt": "Desplázate para fijar el momento en que naciste"
+    "birth_wheel_prompt": "Desplázate para fijar el momento en que naciste",
+    "could_not_save": "No se pudo guardar",
+    "change_photo": "Cambiar foto",
+    "photo_alt": "Perfil",
+    "load_error_title": "Tus ajustes no se cargaron",
+    "load_error_body": "La conexión se cortó. No ha cambiado nada. Inténtalo de nuevo.",
+    "delete_section": "Eliminar cuenta",
+    "delete_hint": "Elimina para siempre tu cuenta, tu carta y tus conversaciones. No se puede deshacer.",
+    "delete_button": "Eliminar cuenta",
+    "delete_confirm_body": "Esto elimina para siempre tu cuenta, tu carta, tus lecturas y tus conversaciones. No se puede deshacer.",
+    "delete_type_prompt": "Escribe DELETE para confirmar.",
+    "delete_confirm_button": "Eliminar mi cuenta",
+    "delete_failed": "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
+    "delete_done_store": "Tu cuenta está eliminada. Tu membresía se cobra a través de App Store o Google Play, así que cancélala también allí o seguirá renovándose."
   },
   "nav": {
     "today": "Ahora",
@@ -474,7 +516,7 @@
     "new_password": "Nueva contraseña",
     "confirm_password": "Confirmar contraseña",
     "set_password": "Guardar contraseña",
-    "error_too_short": "La contraseña debe tener al menos 6 caracteres.",
+    "error_too_short": "La contraseña debe tener al menos 8 caracteres.",
     "error_mismatch": "Las contraseñas no coinciden.",
     "error_failed": "No se pudo restablecer la contraseña."
   },
@@ -486,7 +528,8 @@
     "redirecting": "Redirigiéndote ahora...",
     "failed_title": "Verificación fallida",
     "failed_message": "La verificación falló. El enlace puede haber expirado.",
-    "go_to_app": "Ir a la app"
+    "go_to_app": "Ir a la app",
+    "eyebrow": "Correo"
   },
   "first_mirror": {
     "title": "El Primer Espejo",
@@ -524,7 +567,8 @@
     "prompt": "Verifica tu correo para desbloquear todas las funciones.",
     "sent": "Correo de verificación enviado. Revisa tu bandeja de entrada.",
     "sending": "Enviando...",
-    "resend": "Reenviar"
+    "resend": "Reenviar",
+    "failed": "No se pudo enviar el correo. Inténtalo de nuevo."
   },
   "subscribe": {
     "eyebrow_subscription": "Suscripción",
@@ -593,7 +637,18 @@
     "card_error": "No se pudo guardar la tarjeta. Inténtalo de nuevo.",
     "card_privacy": "El número de tu tarjeta va directamente al proveedor de pagos por una conexión cifrada. Nunca pasa por los servidores de Solray; solo guardamos un token seguro.",
     "managed_in_app_store": "Se cobra a través del App Store. Para cancelarla o cambiarla, abre Ajustes, toca tu nombre y luego Suscripciones.",
-    "managed_in_play": "Se cobra a través de Google Play. Para cancelarla o cambiarla, abre Play Store, toca tu perfil y luego Pagos y suscripciones."
+    "managed_in_play": "Se cobra a través de Google Play. Para cancelarla o cambiarla, abre Play Store, toca tu perfil y luego Pagos y suscripciones.",
+    "status_error_title": "No pudimos cargar tu membresía",
+    "status_error_body": "La conexión se cortó antes de recibir tu membresía. No ha cambiado nada en tu cuenta.",
+    "payment_failed": "El pago no se completó. No se hizo ningún cargo. Puedes intentarlo de nuevo con la misma tarjeta u otra.",
+    "activation_pending": "Estamos confirmando tu pago. Puede tardar un minuto. Actualiza esta página en un momento.",
+    "purchase_pending": "La compra puede estar esperando aprobación, por ejemplo con Pedir la compra. Vuelve a abrir Solray más tarde y tu membresía estará aquí cuando se apruebe.",
+    "iap_unavailable": "Las compras dentro de la app no están disponibles ahora en este dispositivo.",
+    "iap_loading": "La membresía aún se está cargando. Inténtalo de nuevo en un momento.",
+    "iap_failed": "La compra no se completó. No se hizo ningún cargo.",
+    "iap_verify_failed": "Aún no pudimos confirmar la compra con la tienda. Si se hizo el cargo, vuelve a abrir Solray en un rato y se aplicará.",
+    "card_network_error": "No se pudo conectar con el servicio de tarjetas. Inténtalo de nuevo.",
+    "store_restored": "Tu membresía de App Store o Google Play sigue activa, así que restauramos tu acceso. No se cobró ninguna tarjeta."
   },
   "depth": {
     "the_sky": "El Cielo",
@@ -713,7 +768,8 @@
     "hint_energetic_loop": "Canales que completan juntos y que ninguno cierra solo.",
     "hint_type_pairing": "Cómo tienden a encajar sus tipos de Diseño Humano (Generador con Proyector, etc).",
     "hint_astrological": "Superposición de familias de elementos en Sol, Luna, Venus, Marte, Ascendente.",
-    "hint_gene_keys": "Esferas donde ambos tienen la misma puerta (Trabajo de Vida, Irradiación, etc)."
+    "hint_gene_keys": "Esferas donde ambos tienen la misma puerta (Trabajo de Vida, Irradiación, etc).",
+    "paywall_cta": "Hazte miembro"
   },
   "insight": {
     "eyebrow": "Mientras no estabas",
@@ -734,5 +790,19 @@
     "illuminating": "Iluminando tu casa",
     "read_more": "Leer más",
     "close": "Cerrar"
+  },
+  "preview": {
+    "eyebrow": "Vista previa de la carta",
+    "title": "Mira tu carta",
+    "subtitle": "Descubre al instante tu Sol, tu Luna y tu Ascendente.",
+    "city_placeholder": "Ciudad, País",
+    "calculating": "Calculando tu mapa...",
+    "result_title": "Tu mapa cósmico",
+    "hd_type": "Tipo de Diseño Humano",
+    "description": "Esto es solo el comienzo. Tu mapa completo incluye Diseño Humano, Claves Genéticas, Astrocartografía y un Yo Superior que te conoce.",
+    "cta_preview": "Ver mi carta",
+    "cta_create": "Crea tu perfil gratis",
+    "error_forming": "Tu mapa aún se está formando. Inténtalo otra vez.",
+    "error_generic": "Algo no encajó en el cosmos. Inténtalo otra vez."
   }
 }

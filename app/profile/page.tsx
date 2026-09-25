@@ -759,6 +759,10 @@ export default function ProfilePage() {
   const toggleSection = (title: string) =>
     setOpenSection((cur) => (cur === title ? null : title));
   const [soulMapSharing, setSoulMapSharing] = useState(false);
+  // /users/me failed with no cache to fall back on. Must not be read as
+  // "no birth data yet": show an error with Retry instead.
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const handleSoulMapShare = async () => {
     if (soulMapSharing || !soulMapRef.current) return;
@@ -782,6 +786,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!token) return;
+    setLoadError(false);
 
     const BP_CACHE_KEY = "solray_blueprint";
     // Bump when blueprint schema changes. v4 adds _profile_photo to cache.
@@ -854,10 +859,11 @@ export default function ProfilePage() {
         }
       })
       .catch(() => {
+        setLoadError(true);
         setLoading(false);
         setTimeout(() => setVisible(true), 50);
       });
-  }, [token]);
+  }, [token, loadAttempt]);
 
   const handleSignOut = () => {
     logout();
@@ -1196,6 +1202,22 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </CollapsibleSection>
+                </div>
+              ) : loadError ? (
+                <div style={{ marginTop: 26 }}>
+                  <p
+                    className="font-body"
+                    style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))", marginBottom: 20 }}
+                  >
+                    {t("profile.load_error")}
+                  </p>
+                  <button
+                    onClick={() => { setLoading(true); setLoadAttempt((n) => n + 1); }}
+                    className="w-full py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold"
+                    style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+                  >
+                    {t("common.retry")}
+                  </button>
                 </div>
               ) : (
                 <p

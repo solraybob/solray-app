@@ -28,6 +28,7 @@ import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 import { useT } from "@/lib/i18n";
 import BirthWheels from "@/components/BirthWheels";
+import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
 
 interface CitySuggestion { display: string; lat: number; lon: number; }
 
@@ -56,6 +57,17 @@ export default function SettingsPage() {
   const [birthLat, setBirthLat]   = useState<number | null>(null);
   const [birthLon, setBirthLon]   = useState<number | null>(null);
   const [loading, setLoading]     = useState(true);
+  // A failed /users/me must not render an empty, saveable form: saving it
+  // would blank the member's name and birth data. Show an error + Retry.
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
+  // ── Delete account ─────────────────────────────────────────────────────────
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteStoreNote, setDeleteStoreNote] = useState(false);
 
   // ── Save status per section ─────────────────────────────────────────────────
   const [identityStatus, setIdentityStatus] = useState<SaveStatus>("idle");
@@ -79,6 +91,8 @@ export default function SettingsPage() {
   // ── Initial load ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
+    setLoading(true);
+    setLoadError(false);
     apiFetch("/users/me", {}, token)
       .then((data) => {
         const p = data.profile || {};
@@ -96,9 +110,9 @@ export default function SettingsPage() {
         setBirthLat(p.birth_lat ?? null);
         setBirthLon(p.birth_lon ?? null);
       })
-      .catch(() => {/* silently, error UI is per-section */})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, loadAttempt]);
 
   // ── City suggestions (debounced) ────────────────────────────────────────────
   useEffect(() => {
@@ -180,7 +194,7 @@ export default function SettingsPage() {
       } catch {}
       setTimeout(() => setIdentityStatus("idle"), 1800);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not save";
+      const msg = e instanceof Error ? e.message : t("settings.could_not_save");
       setIdentityError(msg);
       setIdentityStatus("error");
     }
@@ -336,7 +350,7 @@ export default function SettingsPage() {
       cityDirtyRef.current = false;
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not save";
+      const msg = e instanceof Error ? e.message : t("settings.could_not_save");
       setBirthError(msg);
       setBirthStatus("error");
     }
@@ -344,7 +358,33 @@ export default function SettingsPage() {
 
   const handleSignOut = () => {
     logout();
-    router.push("/login");
+    router.replace("/login");
+  };
+
+  // Account deletion. Inline confirm (typing DELETE), never window.confirm:
+  // native dialogs block the webview automation and look foreign in the app.
+  const handleDeleteAccount = async () => {
+    if (!token || deleteText.trim() !== "DELETE" || deleteBusy) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const res = await apiFetch("/users/me", {
+        method: "DELETE",
+        body: JSON.stringify({ confirm: "DELETE" }),
+      }, token);
+      if (res?.store_managed) {
+        // Apple / Google keep billing until the member cancels there. Say
+        // so before signing out; the member leaves with the Done button.
+        setDeleteStoreNote(true);
+        setDeleteBusy(false);
+        return;
+      }
+      logout();
+      router.replace("/login");
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : t("settings.delete_failed"));
+      setDeleteBusy(false);
+    }
   };
 
   const initials = (name || "S").charAt(0).toUpperCase();
@@ -355,39 +395,36 @@ export default function SettingsPage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}
       >
-        {/* Header, back arrow on left, SETTINGS centered */}
-        <div className="border-b border-forest-border/50">
-          <div className="max-w-lg mx-auto px-5 pt-2 pb-3">
-            <p className="font-body text-[14px] tracking-[0.18em] uppercase mb-1 font-bold" style={{ color: "rgb(var(--rgb-moss))" }}>
-              {t("profile.section_label")}
-            </p>
-            <div className="relative flex items-center" style={{ height: "26px" }}>
-              <button
-                onClick={() => router.push("/profile")}
-                aria-label={t("settings.back_to_profile")}
-                className="text-text-secondary hover:text-amber-sun transition-colors flex items-center justify-center"
-                style={{ minWidth: "32px", minHeight: "32px", marginLeft: "-8px" }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-              </button>
-              <h1
-                className="font-heading tracking-[0.15em] text-text-primary absolute left-1/2 -translate-x-1/2"
-                style={{ fontWeight: 900, fontSize: "21px" }}
-              >
-                SETTINGS
-              </h1>
-            </div>
-          </div>
-        </div>
+        {/* Header: the one look. Back to the profile in the right slot. */}
+        <PageHead
+          label={t("profile.section_label")}
+          right={
+            <button
+              onClick={() => router.push("/profile")}
+              aria-label={t("settings.back_to_profile")}
+              className="font-body uppercase font-bold flex items-center gap-1"
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 32 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              {t("common.back")}
+            </button>
+          }
+        />
 
         {loading ? (
-          <div className="max-w-lg mx-auto px-5 pt-12 text-center">
-            <div className="h-1 w-32 mx-auto skeleton-shimmer rounded-full" />
+          <div className="max-w-lg mx-auto px-5 pt-12">
+            <div className="h-1 w-32 skeleton-shimmer rounded-full" />
+          </div>
+        ) : loadError ? (
+          <div className="max-w-lg mx-auto px-5">
+            <PageTitle title={t("settings.load_error_title")} sub={t("settings.load_error_body")} />
+            <InkButton onClick={() => setLoadAttempt((n) => n + 1)}>{t("common.retry")}</InkButton>
           </div>
         ) : (
-          <div className="max-w-lg mx-auto px-5 pt-6 page-enter">
+          <div className="max-w-lg mx-auto px-5 page-enter">
+            <PageTitle title={t("common.settings")} />
 
             {/* ── 1. Avatar ──────────────────────────────────────────────── */}
             <Section
@@ -401,23 +438,23 @@ export default function SettingsPage() {
                   onClick={() => photoInputRef.current?.click()}
                   className="relative shrink-0"
                   style={{ width: 72, height: 72 }}
-                  aria-label="Change photo"
+                  aria-label={t("settings.change_photo")}
                 >
                   {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photo}
-                      alt="Profile"
+                      alt={t("settings.photo_alt")}
                       className="w-full h-full rounded-full object-cover border border-forest-border"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-full border border-forest-border bg-forest-card/60 flex items-center justify-center font-heading text-text-primary" style={{ fontSize: 26, fontWeight: 900 }}>
+                    <div className="w-full h-full rounded-full border border-forest-border flex items-center justify-center font-heading text-text-primary" style={{ fontSize: 26, fontWeight: 900 }}>
                       {initials}
                     </div>
                   )}
                   <span
-                    className="absolute -bottom-1 -right-1 rounded-full bg-amber-sun text-forest-deep flex items-center justify-center"
-                    style={{ width: 22, height: 22 }}
+                    className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center"
+                    style={{ width: 22, height: 22, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}
                     aria-hidden
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -430,7 +467,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="font-body text-[15px] text-text-secondary hover:text-amber-sun transition-colors underline underline-offset-4"
+                    className="font-body text-[15px] text-text-secondary hover:text-text-primary transition-colors underline underline-offset-4"
                   >
                     {photo ? t("settings.replace_photo") : t("settings.upload_photo")}
                   </button>
@@ -459,7 +496,7 @@ export default function SettingsPage() {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
                     placeholder={t("settings.name_placeholder")}
                   />
                 </FieldRow>
@@ -469,7 +506,7 @@ export default function SettingsPage() {
                     <input
                       value={username}
                       onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
-                      className="flex-1 font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="flex-1 font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
                       placeholder={t("settings.username_placeholder")}
                       autoCapitalize="none"
                       autoCorrect="off"
@@ -593,7 +630,7 @@ export default function SettingsPage() {
                         setBirthLon(null);
                       }}
                       onFocus={() => birthCity.length >= 2 && setShowCitySuggestions(citySuggestions.length > 0)}
-                      className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-amber-sun pb-1.5 transition-colors"
+                      className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
                       placeholder={t("settings.city_placeholder")}
                       autoCapitalize="words"
                     />
@@ -635,7 +672,8 @@ export default function SettingsPage() {
             <Section label={t("settings.subscription")} hint={t("settings.subscription_hint")}>
               <button
                 onClick={() => router.push("/subscribe")}
-                className="font-body text-[15px] text-amber-sun hover:opacity-80 transition-opacity flex items-center gap-2"
+                className="font-body text-[17px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2"
+                style={{ color: "rgb(var(--rgb-text-primary))" }}
               >
                 {t("common.manage_subscription")}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -645,14 +683,63 @@ export default function SettingsPage() {
             </Section>
 
             {/* ── 7. Sign out ──────────────────────────────────────────── */}
-            <div className="mt-12 mb-2 flex justify-center">
-              <button
-                onClick={handleSignOut}
-                className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase hover:text-ember transition-colors font-bold"
-              >
-                {t("common.sign_out")}
-              </button>
+            <div className="py-6">
+              <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>
             </div>
+
+            {/* ── 8. Delete account ────────────────────────────────────── */}
+            <Section label={t("settings.delete_section")} hint={deleteOpen ? undefined : t("settings.delete_hint")}>
+              {deleteStoreNote ? (
+                <div className="space-y-4">
+                  <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>
+                    {t("settings.delete_done_store")}
+                  </p>
+                  <HairlineButton onClick={() => { logout(); router.replace("/login"); }}>
+                    {t("common.done")}
+                  </HairlineButton>
+                </div>
+              ) : !deleteOpen ? (
+                <HairlineButton
+                  onClick={() => { setDeleteOpen(true); setDeleteText(""); setDeleteError(null); }}
+                  style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
+                >
+                  {t("settings.delete_button")}
+                </HairlineButton>
+              ) : (
+                <div className="space-y-4">
+                  <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>
+                    {t("settings.delete_confirm_body")}
+                  </p>
+                  <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>
+                    {t("settings.delete_type_prompt")}
+                  </p>
+                  <input
+                    value={deleteText}
+                    onChange={(e) => setDeleteText(e.target.value)}
+                    placeholder="DELETE"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label={t("settings.delete_type_prompt")}
+                    className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
+                  />
+                  {deleteError && (
+                    <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{deleteError}</p>
+                  )}
+                  <HairlineButton
+                    onClick={handleDeleteAccount}
+                    loading={deleteBusy}
+                    disabled={deleteText.trim() !== "DELETE"}
+                    style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
+                  >
+                    {t("settings.delete_confirm_button")}
+                  </HairlineButton>
+                  <HairlineButton onClick={() => { setDeleteOpen(false); setDeleteText(""); setDeleteError(null); }} disabled={deleteBusy}>
+                    {t("common.cancel")}
+                  </HairlineButton>
+                </div>
+              )}
+            </Section>
 
           </div>
         )}
@@ -681,14 +768,14 @@ function Section({
 }) {
   const { t } = useT();
   return (
-    <section className="py-6 border-b border-forest-border/40">
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="font-body text-text-secondary text-[14px] tracking-[0.22em] uppercase font-bold">{label}</p>
+    <section className="pb-6" style={{ borderTop: "1px solid rgb(var(--rgb-border))" }}>
+      <div className="flex items-baseline justify-between" style={{ paddingBlock: 16 }}>
+        <p className="font-body uppercase" style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-muted))" }}>{label}</p>
         {status === "saving" && <span className="font-body text-[14px] text-text-muted">{t("settings.saving")}</span>}
         {status === "saved"  && <span className="font-body text-[14px] text-moss">{t("common.saved")}</span>}
       </div>
       {children}
-      {error && <p className="mt-3 font-body text-[14px] text-ember">{error}</p>}
+      {error && <p className="mt-3 font-body text-[15px] text-ember">{error}</p>}
       {hint  && !error && <p className="mt-3 font-body text-[15px] leading-relaxed text-text-muted">{hint}</p>}
     </section>
   );
@@ -711,7 +798,8 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="font-body text-[14px] tracking-[0.22em] uppercase px-4 py-2 rounded-full border border-amber-sun/70 text-amber-sun hover:bg-amber-sun/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+      className="font-body text-[13px] tracking-[0.25em] uppercase px-5 py-2.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+      style={{ background: "transparent", border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-primary))" }}
     >
       {status === "saving" ? t("common.saving") : t("common.save")}
     </button>
@@ -733,7 +821,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
         style={{
           width: 44,
           height: 24,
-          backgroundColor: checked ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-border))",
+          backgroundColor: checked ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-border))",
         }}
       >
         <span
@@ -755,11 +843,11 @@ function ThemeButton({ active, onClick, label }: { active: boolean; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 font-body text-[15px] tracking-[0.18em] uppercase py-2.5 rounded-full transition-colors font-bold"
+      className="flex-1 font-body text-[13px] tracking-[0.25em] uppercase py-2.5 rounded-full transition-colors font-bold"
       style={{
-        backgroundColor: active ? "rgb(var(--rgb-amber) / 0.16)" : "transparent",
-        color: active ? "rgb(var(--rgb-amber))" : "rgb(var(--rgb-text-secondary))",
-        border: `1px solid ${active ? "rgb(var(--rgb-amber) / 0.6)" : "rgb(var(--rgb-border))"}`,
+        backgroundColor: active ? "rgb(var(--rgb-text-primary))" : "transparent",
+        color: active ? "rgb(var(--rgb-bg-deep))" : "rgb(var(--rgb-text-secondary))",
+        border: `1px solid ${active ? "rgb(var(--rgb-text-primary))" : "rgb(var(--rgb-border))"}`,
       }}
     >
       {label}

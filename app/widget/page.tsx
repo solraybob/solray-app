@@ -148,7 +148,7 @@ export default function WidgetPage() {
     >
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-amber-sun/30 border-t-amber-sun rounded-full animate-spin" />
+          <div className="w-6 h-6 rounded-full animate-spin" style={{ border: "2px solid rgb(var(--rgb-border))", borderTopColor: "rgb(var(--rgb-text-primary))" }} />
         </div>
       ) : forecast ? (
         <>

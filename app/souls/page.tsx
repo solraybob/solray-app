@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { errorText } from "@/lib/errors";
 import { Wordmark } from "@/components/Wordmark";
 import BirthWheels from "@/components/BirthWheels";
 
@@ -241,8 +242,8 @@ export default function SoulsPage() {
       await shareOrDownloadCard({
         node: inviteShareRef.current,
         filename: "solray-invite.png",
-        title: "You're invited to Solray",
-        text: `Read your chart against today's sky, and the dynamics with the people in your life. Join me on Solray: ${link}`,
+        title: t("souls.invite_share_title"),
+        text: t("souls.invite_share_text").replace("{link}", link),
       });
     } catch (err) {
       console.warn("[share] souls invite failed", err);
@@ -263,6 +264,12 @@ export default function SoulsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   // Inline error surface, softer than alert(), matches Japanese-way quiet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Load failure is separate from the transient action errors above: it
+  // stays on screen until the member retries, and it never wipes data that
+  // did load (each call is settled on its own).
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [retryingLoad, setRetryingLoad] = useState(false);
 
   // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
@@ -288,26 +295,29 @@ export default function SoulsPage() {
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      try {
-        const [me, pending, souls] = await Promise.all([
-          apiFetch("/users/me", {}, token),
-          apiFetch("/souls/pending", {}, token),
-          apiFetch("/souls", {}, token),
-        ]);
+      // allSettled, not all: one failing call used to throw away the two
+      // that succeeded and leave an empty list that looked like "no souls".
+      const [meR, pendingR, soulsR] = await Promise.allSettled([
+        apiFetch("/users/me", {}, token),
+        apiFetch("/souls/pending", {}, token),
+        apiFetch("/souls", {}, token),
+      ]);
+      if (meR.status === "fulfilled") {
+        const me = meR.value;
         setMyUsername(me?.profile?.username || null);
         const serverPhoto = me?.profile?.profile_photo || null;
         const localPhoto = (() => { try { return localStorage.getItem("solray_avatar"); } catch { return null; } })();
         setMyAvatar(serverPhoto || localPhoto);
-        setPendingInvites(pending?.pending || []);
-        setConnectedSouls(dedupeSouls(souls?.souls || []));
-      } catch {
-        setErrorMessage(t("souls.error_field"));
-      } finally {
-        setLoading(false);
       }
+      if (pendingR.status === "fulfilled") setPendingInvites(pendingR.value?.pending || []);
+      if (soulsR.status === "fulfilled") setConnectedSouls(dedupeSouls(soulsR.value?.souls || []));
+      setLoadError(pendingR.status === "rejected" || soulsR.status === "rejected");
+      setLoading(false);
+      setRetryingLoad(false);
     };
     load();
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, loadAttempt]);
 
   // Sync saved people with the server so they survive reinstalls and follow the
   // user across devices. The server is the source of truth; people that only
@@ -768,6 +778,28 @@ export default function SoulsPage() {
           >
             {t("souls.intro")}
           </p>
+
+          {loadError && (
+            <div style={{ borderTop: "1px solid rgb(var(--rgb-border))", paddingTop: 16 }}>
+              <p className="font-body" style={{ fontSize: 15, lineHeight: 1.55, color: "rgb(var(--rgb-ember))", marginBottom: 14 }}>
+                {t("souls.error_field")}
+              </p>
+              <button
+                onClick={() => { setRetryingLoad(true); setLoadAttempt((n) => n + 1); }}
+                disabled={retryingLoad}
+                className="w-full py-4 px-8 rounded-full text-[14px] tracking-[0.3em] uppercase font-bold disabled:opacity-50"
+                style={{ background: "transparent", color: "rgb(var(--rgb-text-secondary))", border: "1px solid rgb(var(--rgb-border))" }}
+              >
+                {retryingLoad ? t("common.loading") : t("common.retry")}
+              </button>
+            </div>
+          )}
+
+          {errorMessage && !loadError && (
+            <p className="font-body" role="status" style={{ fontSize: 15, lineHeight: 1.55, color: "rgb(var(--rgb-ember))" }}>
+              {errorMessage}
+            </p>
+          )}
 
           {/* Hero: Read the Bond */}
           <BondCard
@@ -1499,7 +1531,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || t("souls.error_read_chart"));
+        throw new Error(errorText(err?.detail, t("souls.error_read_chart")));
       }
       const data = await res.json();
       const person: SavedPerson = {

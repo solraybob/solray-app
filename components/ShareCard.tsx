@@ -281,7 +281,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           fontSize: "26px",
           letterSpacing: "0.34em",
           textTransform: "uppercase",
-          color: "rgba(90,49,174, 0.85)",
+          color: "rgb(var(--rgb-amber) / 0.85)",
         }}
       >
         {data.dateLabel}
@@ -478,7 +478,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 40%, rgba(90,49,174,0.10) 0%, rgba(90,49,174,0) 55%)",
+            "radial-gradient(circle at 50% 40%, rgb(var(--rgb-amber) / 0.10) 0%, rgb(var(--rgb-amber) / 0) 55%)",
         }}
       />
 
@@ -520,7 +520,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           alt=""
           width={300}
           height={300}
-          style={{ width: "300px", height: "300px", objectFit: "contain", marginBottom: "44px", filter: "drop-shadow(0 22px 30px rgba(84,63,150,.28))" }}
+          style={{ width: "300px", height: "300px", objectFit: "contain", marginBottom: "44px", filter: "drop-shadow(0 22px 30px rgb(var(--rgb-indigo) / .28))" }}
         />
         <Wordmark size={130} />
         <div
@@ -575,7 +575,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             }}
           >
             join with code{" "}
-            <span style={{ color: "rgba(90,49,174,0.95)", letterSpacing: "0.18em" }}>{code}</span>
+            <span style={{ color: "rgb(var(--rgb-amber) / 0.95)", letterSpacing: "0.18em" }}>{code}</span>
           </div>
         ) : null}
         <div

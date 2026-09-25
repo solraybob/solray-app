@@ -106,10 +106,7 @@ export default function InstallBanner() {
 
   return (
     <div
-      style={{
-        background: "linear-gradient(180deg, rgba(90,49,174,0.06) 0%, rgb(var(--rgb-bg-dark)) 100%)",
-        borderBottom: "1px solid rgb(var(--rgb-border))",
-      }}
+      style={{ borderBottom: "1px solid rgb(var(--rgb-border))" }}
     >
       <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center justify-between gap-3">
         <button
@@ -117,7 +114,7 @@ export default function InstallBanner() {
           className="flex items-center gap-2 min-w-0 text-left"
           aria-label={t("install.cta")}
         >
-          <span style={{ color: "var(--amber)", flexShrink: 0, display: "inline-flex" }}>
+          <span style={{ color: "rgb(var(--rgb-text-secondary))", flexShrink: 0, display: "inline-flex" }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M5 18.5h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -130,19 +127,22 @@ export default function InstallBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleAdd}
-            className="font-body text-[13px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-md transition-colors font-bold"
+            className="font-body uppercase rounded-full transition-opacity hover:opacity-80 font-bold"
             style={{
-              background: "rgba(90,49,174,0.12)",
-              border: "1px solid rgba(90,49,174,0.5)",
-              color: "var(--amber)",
-              fontWeight: 500,
+              fontSize: 11,
+              letterSpacing: "0.2em",
+              padding: "7px 14px",
+              background: "transparent",
+              border: "1px solid rgb(var(--rgb-border))",
+              color: "rgb(var(--rgb-text-primary))",
             }}
           >
             {t("install.action")}
           </button>
           <button
             onClick={handleDismiss}
-            className="w-7 h-7 flex items-center justify-center text-text-secondary opacity-50 hover:opacity-80 transition-opacity"
+            className="w-7 h-7 flex items-center justify-center transition-opacity hover:opacity-80"
+            style={{ color: "rgb(var(--rgb-text-muted))" }}
             aria-label={t("install.dismiss")}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
