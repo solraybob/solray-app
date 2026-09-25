@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await fetch(`${apiUrl}/users/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

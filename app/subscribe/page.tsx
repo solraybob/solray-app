@@ -246,6 +246,9 @@ function SubscribeContent() {
   // must pass through SecurePay checkout once more; afterwards the period
   // restarts. Rendered like expired, with its own honest copy.
   const lapsed = sub.status === "active" && !sub.has_access;
+  // Cancelled and the paid month has run out: same as expired, they need a
+  // way back in. This state used to render no payment button at all.
+  const rejoinable = sub.status === "expired" || (sub.status === "cancelled" && !sub.has_access);
   const statusSubtitle: Record<string, string> = {
     trial: t("subscribe.subtitle_trial"),
     active: t("subscribe.subtitle_active"),
@@ -347,7 +350,7 @@ function SubscribeContent() {
             yearly $199. Switching POSTs /subscribe/plan and refreshes so the
             price row + the charge that follows reflect the chosen plan. The
             backend locks the plan once active, so this never shows post-charge. */}
-        {!isNative && (sub.status === "trial" || sub.status === "expired") && (
+        {!isNative && (sub.status === "trial" || rejoinable) && (
           <PlanPicker
             current={sub.plan === "yearly" ? "yearly" : "monthly"}
             disabled={planBusy}
@@ -399,8 +402,8 @@ function SubscribeContent() {
             </ActionButton>
           )}
 
-          {/* Expired: restart */}
-          {!isNative && sub.status === "expired" && (
+          {/* Expired, or cancelled and ended: restart */}
+          {!isNative && rejoinable && (
             <ActionButton onClick={handleAddCard} loading={actionLoading} color="var(--amber, #5A31AE)">
               {t("subscribe.rejoin")}
             </ActionButton>
