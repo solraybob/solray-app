@@ -30,6 +30,22 @@ export default function ServiceWorkerRegistration() {
     // One-time nuclear cache clear for this version
     if (!cleared) {
       const doReset = async () => {
+        // A brand-new visitor has no old worker and no old caches: there is
+        // nothing to heal, and reloading would yank the sign-up page out from
+        // under them while they start typing. Mark done and carry on.
+        try {
+          const cacheKeys = "caches" in window ? await caches.keys() : [];
+          const oldRegs = "serviceWorker" in navigator
+            ? await navigator.serviceWorker.getRegistrations()
+            : [];
+          if (cacheKeys.length === 0 && oldRegs.length === 0) {
+            try { localStorage.setItem(CLEARED_KEY, "1"); } catch { /* ignore */ }
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+            }
+            return;
+          }
+        } catch { /* fall through to the full reset */ }
         // 1. Clear all Cache Storage
         if ("caches" in window) {
           const keys = await caches.keys();

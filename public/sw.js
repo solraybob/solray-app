@@ -26,9 +26,8 @@ self.addEventListener('activate', (event) => {
     // 1. Delete every cache from older workers (this is where stale HTML /
     //    API responses lived). Keep only our meta + current static cache.
     const keys = await caches.keys();
-    await Promise.all(
-      keys.filter((k) => k !== META_CACHE && k !== STATIC_CACHE).map((k) => caches.delete(k))
-    );
+    const stale = keys.filter((k) => k !== META_CACHE && k !== STATIC_CACHE);
+    await Promise.all(stale.map((k) => caches.delete(k)));
     // 2. Take control of every open tab right now.
     await self.clients.claim();
     // 3. One-time heal: reload each open tab once so any stale cached shell
@@ -40,6 +39,10 @@ self.addEventListener('activate', (event) => {
       const already = await meta.match(HEAL_KEY);
       if (!already) {
         await meta.put(HEAL_KEY, new Response('1'));
+        // Only a device that actually had an older worker's caches needs the
+        // reload. A first-time visitor had none: reloading them mid-sign-up
+        // just threw away what they had started typing.
+        if (stale.length === 0) return;
         const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const client of clients) {
           try { await client.navigate(client.url); } catch (_) { /* ignore */ }
