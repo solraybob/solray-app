@@ -18,6 +18,7 @@ import {
   setPurchaseListener,
   initNativeIAP,
   getLocalizedMonthlyPrice,
+  getLocalizedYearlyPrice,
   MONTHLY_PRODUCT_ID,
   YEARLY_PRODUCT_ID,
   NativeIAPError,
@@ -53,11 +54,14 @@ function SubscribeContent() {
     logout();
     router.replace("/login");
   };
+  // Account settings (deletion, privacy) stay reachable without access.
+  const handleAccountSettings = () => router.push("/profile/settings");
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardSavedNote, setCardSavedNote] = useState("");
   const [planBusy, setPlanBusy] = useState(false);
+  const [planError, setPlanError] = useState("");
   // Show the spinner only on a true cold load (no cached sub yet);
   // every subsequent visit renders instantly because the provider
   // already has state. This is the user-visible part of the speed
@@ -97,12 +101,9 @@ function SubscribeContent() {
     // Funnel event: every /subscribe view. The canary uses this to
     // detect users stuck on /subscribe without tapping anything (which
     // suggests the page is misbehaving).
-    void (async () => {
-      try {
-        const { track } = await import("@/lib/analytics");
-        await track("subscribe_view", undefined, token);
-      } catch { /* ignore */ }
-    })();
+    void import("@/lib/analytics")
+      .then(({ track }) => track("subscribe_view", undefined, token))
+      .catch(() => { /* ignore */ });
     // refresh is stable across renders (useCallback with [token]),
     // listing token alone is enough.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,10 +170,10 @@ function SubscribeContent() {
     // Funnel event: user has explicitly tapped a payment-launch button.
     // This is the "intent to pay" line that the canary divides into to
     // produce the conversion-rate metric.
-    try {
-      const { track } = await import("@/lib/analytics");
-      await track("subscribe_card_tap", { sub_status: sub?.status ?? null }, token);
-    } catch { /* ignore */ }
+    // Fire and forget: analytics must never delay opening the card form.
+    void import("@/lib/analytics")
+      .then(({ track }) => track("subscribe_card_tap", { sub_status: sub?.status ?? null }, token))
+      .catch(() => { /* ignore */ });
 
     // Default path since 2026-06-11: the inline card form. It tokenizes in
     // the browser against RPG and stores a MULTI-use token, which is the
@@ -282,12 +283,12 @@ function SubscribeContent() {
   // sheet. Gating on has_access (not the looser `subscribed`) is what makes
   // the StoreKit purchase reachable for every non-member on iOS.
   if (isNative && (!sub || !sub.has_access)) {
-    return <NativeMembershipView onSignOut={handleSignOut} />;
+    return <NativeMembershipView onSignOut={handleSignOut} onAccountSettings={handleAccountSettings} />;
   }
 
   // No subscription yet (web only now; native handled above).
   if (!sub || !sub.subscribed) {
-    return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} notice={noticeText} onSignOut={handleSignOut} />;
+    return <TrialOffer onStart={handleStartTrial} loading={actionLoading} error={error} notice={noticeText} onSignOut={handleSignOut} onAccountSettings={handleAccountSettings} />;
   }
 
   // Has subscription: show status + management.
@@ -376,17 +377,24 @@ function SubscribeContent() {
             onChoose={async (p) => {
               if (!token || planBusy) return;
               setPlanBusy(true);
+              setPlanError("");
               try {
                 await setPlan(token, p);
                 await refresh();
               } catch {
-                /* keep current selection on failure; refresh shows truth */
+                // Keep the current selection and say the change did not go through.
+                setPlanError(t("subscribe.plan_change_failed"));
               } finally {
                 setPlanBusy(false);
               }
             }}
             t={t}
           />
+        )}
+        {!isNative && planError && (
+          <p role="alert" className="font-body mb-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>
+            {planError}
+          </p>
         )}
 
         {/* Actions
@@ -515,7 +523,10 @@ function SubscribeContent() {
             // Without access, "Continue to app" only bounced the member off
             // the access gate straight back here. Signing out is the honest
             // secondary exit.
-            <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>
+            <div className="space-y-3">
+              <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>
+              <HairlineButton onClick={handleAccountSettings}>{t("subscribe.account_settings")}</HairlineButton>
+            </div>
           )}
         </div>
 
@@ -619,7 +630,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 // stop the spinner instead of leaving the member on "Opening..." forever.
 const NATIVE_PURCHASE_TIMEOUT_MS = 60_000;
 
-function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
+function NativeMembershipView({ onSignOut, onAccountSettings }: { onSignOut: () => void; onAccountSettings: () => void }) {
   const { t } = useT();
   const { refresh } = useSubscription();
   const [loading, setLoading] = useState(false);
@@ -633,7 +644,8 @@ function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
     }
   };
   useEffect(() => () => clearPurchaseTimer(), []);
-  const [priceLabel, setPriceLabel] = useState<string | null>(null);
+  // Store-localized recurring prices per plan (null until the store is ready).
+  const [prices, setPrices] = useState<{ monthly: string | null; yearly: string | null }>({ monthly: null, yearly: null });
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
 
   // Warm the StoreKit/Play store on mount so (a) tapping Subscribe opens the
@@ -642,7 +654,9 @@ function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => {
     let cancelled = false;
     void initNativeIAP()
-      .then(() => { if (!cancelled) setPriceLabel(getLocalizedMonthlyPrice()); })
+      .then(() => {
+        if (!cancelled) setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
+      })
       .catch(() => { /* sheet still shows the price on tap; disclosure covers terms */ });
     return () => { cancelled = true; };
   }, []);
@@ -701,8 +715,8 @@ function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
             trial; the chosen product id is what gets ordered on the store. */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {([
-            { key: "monthly" as const, price: "$23", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
-            { key: "yearly" as const, price: "$199", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
+            { key: "monthly" as const, price: prices.monthly || "$23", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
+            { key: "yearly" as const, price: prices.yearly || "$199", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
           ]).map((o) => {
             const selected = plan === o.key;
             return (
@@ -739,6 +753,7 @@ function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
           </button>
 
           <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
+          <HairlineButton onClick={onAccountSettings}>{t("subscribe.account_settings")}</HairlineButton>
 
           {pendingNote && (
             <p className="font-body pt-2" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>
@@ -759,9 +774,10 @@ function NativeMembershipView({ onSignOut }: { onSignOut: () => void }) {
             reviewers expect it on our screen. Links open in the system
             browser (they are not in the WebView allow-list). */}
         <div className="mt-9 space-y-3">
-          {priceLabel && (
+          {(plan === "yearly" ? prices.yearly : prices.monthly) && (
             <p className="text-[15px]" style={{ color: "rgb(var(--rgb-text-primary))" }}>
-              {t("subscribe.free_week_then")} {priceLabel} {t("subscribe.per_month")}
+              {t("subscribe.free_week_then")} {plan === "yearly" ? prices.yearly : prices.monthly}{" "}
+              {plan === "yearly" ? t("subscribe.per_year") : t("subscribe.per_month")}
             </p>
           )}
           <p
@@ -801,12 +817,14 @@ function TrialOffer({
   error,
   notice,
   onSignOut,
+  onAccountSettings,
 }: {
   onStart: () => void;
   loading: boolean;
   error: string;
   notice?: string;
   onSignOut: () => void;
+  onAccountSettings: () => void;
 }) {
   const { t } = useT();
   return (
@@ -889,6 +907,7 @@ function TrialOffer({
             {t("login.begin_journey")}
           </ActionButton>
           <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
+          <HairlineButton onClick={onAccountSettings}>{t("subscribe.account_settings")}</HairlineButton>
         </div>
 
         {error && (

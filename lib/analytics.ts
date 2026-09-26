@@ -124,6 +124,9 @@ export async function track(
     return;
   }
 
+  // Short timeout so a slow analytics endpoint can never hold anything up.
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 3000) : null;
   try {
     await apiFetch(
       "/analytics/event",
@@ -134,11 +137,14 @@ export async function track(
           session_id: getSessionId(),
           props: props ?? null,
         }),
+        ...(controller ? { signal: controller.signal } : {}),
       },
       token,
     );
   } catch {
     // Best effort. Never let an analytics failure surface to the user.
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

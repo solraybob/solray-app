@@ -142,13 +142,23 @@ function authToken(): string | null {
 // paywall itself, in the user's currency). Returns a formatted string like
 // "$24.99" / "29,99 EUR" or null if the store isn't ready. Never throws.
 export function getLocalizedMonthlyPrice(): string | null {
+  return getLocalizedPrice(MONTHLY_PRODUCT_ID);
+}
+
+export function getLocalizedYearlyPrice(): string | null {
+  return getLocalizedPrice(YEARLY_PRODUCT_ID);
+}
+
+// Generic form: the store's localized recurring price for any registered
+// subscription product id, or null when unavailable. Never throws.
+export function getLocalizedPrice(productId: string): string | null {
   try {
     if (typeof window === "undefined") return null;
     const store = getStore();
     if (!store) return null;
     const platform = storePlatform();
     const product =
-      (platform ? store.get(PRODUCT_ID, platform) : undefined) || store.get(PRODUCT_ID);
+      (platform ? store.get(productId, platform) : undefined) || store.get(productId);
     if (!product) return null;
     const anyP = product as unknown as {
       pricing?: { price?: string };

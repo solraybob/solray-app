@@ -11,6 +11,7 @@
 // current locale ringed, nothing flashy. Living-by-design: feel, function,
 // nothing else.
 
+import { useState } from "react";
 import { useT, SUPPORTED_LANGUAGES, type LanguageCode, getLanguageDisplayName } from "@/lib/i18n";
 
 interface LanguagePickerProps {
@@ -28,16 +29,26 @@ const VISIBLE_CODES: LanguageCode[] = ["en", "es"];
 
 export default function LanguagePicker({ onChange, layout = "inline" }: LanguagePickerProps) {
   const { lang, setLang, t } = useT();
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const handlePick = async (code: LanguageCode) => {
     if (code === lang) return;
-    await setLang(code);
+    setSaveFailed(false);
+    const ok = await setLang(code);
+    if (!ok) setSaveFailed(true);
     onChange?.(code);
   };
+
+  const failNote = saveFailed ? (
+    <p role="alert" className="font-body text-[14px] mt-2" style={{ color: "rgb(var(--rgb-ember))" }}>
+      {t("language.save_failed")}
+    </p>
+  ) : null;
 
   if (layout === "list") {
     return (
       <div className="flex flex-col gap-2">
+        {failNote}
         {VISIBLE_CODES.map((code) => {
           const active = lang === code || (lang === "es-419" && code === "es");
           return (
@@ -63,6 +74,7 @@ export default function LanguagePicker({ onChange, layout = "inline" }: Language
   }
 
   return (
+    <>
     <div className="inline-flex items-center gap-1 rounded-full border border-forest-border/40 p-1">
       {VISIBLE_CODES.map((code) => {
         const active = lang === code || (lang === "es-419" && code === "es");
@@ -85,5 +97,7 @@ export default function LanguagePicker({ onChange, layout = "inline" }: Language
         );
       })}
     </div>
+    {failNote}
+    </>
   );
 }

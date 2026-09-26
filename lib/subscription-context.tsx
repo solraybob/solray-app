@@ -71,7 +71,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const lastFetchRef = useRef<number>(0);
   // Coalesces concurrent fetches: if three components call ensureFresh
   // in the same tick, only one /subscribe/status request goes out.
-  const inFlightRef = useRef<Promise<void> | null>(null);
+  // Keyed by token: a request started under one session is never shared
+  // with, or allowed to write state for, a different session.
+  const inFlightRef = useRef<{ token: string; promise: Promise<void>; key: object } | null>(null);
+  // Always the current token, updated during render so async results can
+  // tell whether they still belong to the live session.
+  const currentTokenRef = useRef<string | null>(token);
+  currentTokenRef.current = token;
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!token) {
@@ -79,23 +85,29 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    if (inFlightRef.current) {
-      return inFlightRef.current;
+    if (inFlightRef.current && inFlightRef.current.token === token) {
+      return inFlightRef.current.promise;
     }
+    const reqToken = token;
+    const key = {};
     const promise = (async () => {
       try {
-        const next = await getSubscriptionStatus(token);
+        const next = await getSubscriptionStatus(reqToken);
+        if (currentTokenRef.current !== reqToken) return; // stale session
         setSub(next);
         setError(null);
         lastFetchRef.current = Date.now();
       } catch (e) {
+        if (currentTokenRef.current !== reqToken) return;
         setError(e instanceof Error ? e : new Error(String(e)));
       } finally {
-        setLoading(false);
-        inFlightRef.current = null;
+        if (currentTokenRef.current === reqToken) setLoading(false);
+        if (inFlightRef.current && inFlightRef.current.key === key) {
+          inFlightRef.current = null;
+        }
       }
     })();
-    inFlightRef.current = promise;
+    inFlightRef.current = { token: reqToken, promise, key };
     return promise;
   }, [token]);
 
@@ -110,10 +122,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // logout). On logout (token becomes null) we clear sub so the next
   // login starts clean.
   useEffect(() => {
+    // Any token change (logout, or a different account signing in) starts
+    // from a clean slate; the previous session's status never lingers.
+    setSub(null);
+    setError(null);
+    lastFetchRef.current = 0;
     if (!token) {
-      setSub(null);
       setLoading(false);
-      lastFetchRef.current = 0;
       return;
     }
     setLoading(true);

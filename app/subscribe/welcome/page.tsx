@@ -19,7 +19,7 @@
  *     unexpected, let them self-navigate.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { getSubscriptionStatus, type SubscriptionStatus } from "@/lib/subscription";
@@ -33,17 +33,27 @@ export default function SubscribeWelcome() {
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
 
+  const loadStatus = useCallback((tok: string) => {
+    setStatusLoading(true);
+    getSubscriptionStatus(tok)
+      .then(setSub)
+      .catch(() => setSub(null))
+      .finally(() => setStatusLoading(false));
+  }, []);
+
   useEffect(() => {
     if (authLoading) return;          // auth context still hydrating
     if (!token) {                     // truly unauthenticated → login
       router.replace("/login");
       return;
     }
-    getSubscriptionStatus(token)
-      .then(setSub)
-      .catch(() => setSub(null))
-      .finally(() => setStatusLoading(false));
-  }, [token, authLoading, router]);
+    loadStatus(token);
+  }, [token, authLoading, router, loadStatus]);
+
+  // Only claim the membership is active once the backend says so. Until
+  // then (or if the status call failed) show a neutral confirming state
+  // with a retry; the exits stay available either way.
+  const confirmed = !statusLoading && !!sub?.has_access;
 
   // Always render the page, even when status hasn't loaded yet, so the
   // exit links are tappable from the very first paint. Status data is
@@ -72,17 +82,26 @@ export default function SubscribeWelcome() {
       />
 
       <div className="max-w-lg mx-auto px-5 page-enter">
-        <PageTitle title={t("welcome.youre_in")} sub={t("welcome.active_body")} />
+        {confirmed ? (
+          <PageTitle title={t("welcome.youre_in")} sub={t("welcome.active_body")} />
+        ) : (
+          <PageTitle title={t("welcome.confirming_title")} sub={t("welcome.confirming_body")} />
+        )}
 
         {/* Primary CTA, above the fold on every phone */}
         <div className="space-y-3 mb-10">
+          {!confirmed && (
+            <HairlineButton onClick={() => token && loadStatus(token)} loading={statusLoading}>
+              {t("common.retry")}
+            </HairlineButton>
+          )}
           <InkButton onClick={() => router.push("/today")}>{t("welcome.open_today")}</InkButton>
           <HairlineButton onClick={() => router.push("/profile/settings")}>{t("welcome.manage_subscription")}</HairlineButton>
         </div>
 
         {/* Quiet receipt, only shown if status loaded with details. We
             never block the page on this; the user can leave any time. */}
-        {!statusLoading && sub && (sub.card_brand || sub.price || renews) && (
+        {confirmed && sub && (sub.card_brand || sub.price || renews) && (
           <Section label={t("subscribe.eyebrow_subscription")}>
             {sub.card_brand && sub.card_last_four && (
               <Row label={t("subscribe.card_on_file")} value={`${sub.card_brand} \u00b7 ${sub.card_last_four}`} />
@@ -93,6 +112,7 @@ export default function SubscribeWelcome() {
         )}
 
         {/* What's unlocked, three quiet bullets, no marketing tone */}
+        {confirmed && (
         <Section label={t("welcome.whats_open")}>
           <ul className="space-y-3 font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>
             <UnlockRow>{t("welcome.unlock_forecast")}</UnlockRow>
@@ -100,6 +120,7 @@ export default function SubscribeWelcome() {
             <UnlockRow>{t("welcome.unlock_souls")}</UnlockRow>
           </ul>
         </Section>
+        )}
       </div>
     </div>
   );

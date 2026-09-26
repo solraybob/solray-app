@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { errorText } from "@/lib/errors";
 import { Wordmark } from "@/components/Wordmark";
@@ -254,6 +254,9 @@ export default function SoulsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  // A failed search is not the same as "no one found": say which it was.
+  const [searchFailed, setSearchFailed] = useState(false);
+  const [searchDone, setSearchDone] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [connectedSouls, setConnectedSouls] = useState<ConnectedSoul[]>([]);
   const [loading, setLoading] = useState(true);
@@ -383,9 +386,14 @@ export default function SoulsPage() {
 
   // Debounced search, avoid firing /users/search on every keystroke
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Only the latest search may write results (older responses are ignored).
+  const searchSeqRef = useRef(0);
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const seq = ++searchSeqRef.current;
+    setSearchFailed(false);
+    setSearchDone(false);
     if (!q || q.length < 2) {
       setSearchResults([]);
       setSearching(false);
@@ -395,11 +403,15 @@ export default function SoulsPage() {
     searchTimerRef.current = setTimeout(async () => {
       try {
         const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token);
+        if (seq !== searchSeqRef.current) return;
         setSearchResults(data?.results || []);
+        setSearchDone(true);
       } catch {
+        if (seq !== searchSeqRef.current) return;
         setSearchResults([]);
+        setSearchFailed(true);
       } finally {
-        setSearching(false);
+        if (seq === searchSeqRef.current) setSearching(false);
       }
     }, 280);
   }, [token]);
@@ -567,12 +579,29 @@ export default function SoulsPage() {
   };
 
   const handlePersonRemove = (id: string) => {
+    const removedIdx = savedPeople.findIndex((p) => p.id === id);
+    const removed = removedIdx >= 0 ? savedPeople[removedIdx] : null;
     const next = savedPeople.filter((p) => p.id !== id);
     setSavedPeople(next);
     writeSavedPeople(next);
     setBondPartners(prev => prev.filter(p => !(p.kind === "saved" && p.person.id === id)));
+    setErrorMessage(null);
     if (token) {
-      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).catch(() => {});
+      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).catch((e: unknown) => {
+        // 404: the server never had it (local-only person), so it is gone.
+        if (e instanceof ApiError && e.status === 404) return;
+        // Otherwise the delete did not happen: put the person back.
+        if (removed) {
+          setSavedPeople((prev) => {
+            if (prev.some((p) => p.id === id)) return prev;
+            const restored = [...prev];
+            restored.splice(Math.min(removedIdx, restored.length), 0, removed);
+            writeSavedPeople(restored);
+            return restored;
+          });
+        }
+        setErrorMessage(t("souls.remove_failed"));
+      });
     }
   };
 
@@ -1015,6 +1044,16 @@ export default function SoulsPage() {
                     {searching && (
                       <div className="pt-3 flex justify-center"><LoadingSpinner size="sm" /></div>
                     )}
+                    {!searching && searchFailed && (
+                      <p role="alert" className="font-body pt-3" style={{ fontSize: 14, color: "rgb(var(--rgb-ember))" }}>
+                        {t("souls.search_failed")}
+                      </p>
+                    )}
+                    {!searching && searchDone && !searchFailed && searchResults.length === 0 && (
+                      <p className="font-body pt-3" style={{ fontSize: 14, color: "rgb(var(--rgb-text-muted))" }}>
+                        {t("souls.no_users_found")}
+                      </p>
+                    )}
                     {searchResults.length > 0 && (
                       <div className="space-y-2" style={{ marginTop: 10 }}>
                         {searchResults.map(user => (
@@ -1037,8 +1076,8 @@ export default function SoulsPage() {
                               </p>
                             </div>
                             <button
-                              onClick={() => handleSendInvite(user.username)}
-                              disabled={sendingInvite === user.username}
+                              onClick={() => { if (!inviteSent.has(user.username)) handleSendInvite(user.username); }}
+                              disabled={sendingInvite === user.username || inviteSent.has(user.username)}
                               className="font-body shrink-0 disabled:opacity-40"
                               style={{
                                 border: "1.5px solid rgb(var(--rgb-text-primary))", borderRadius: 999,
@@ -1046,7 +1085,11 @@ export default function SoulsPage() {
                                 fontSize: 13, fontWeight: 700, padding: "8px 16px",
                               }}
                             >
-                              {sendingInvite === user.username ? "…" : t("souls.connect")}
+                              {sendingInvite === user.username
+                                ? "…"
+                                : inviteSent.has(user.username)
+                                ? t("souls.sent")
+                                : t("souls.connect")}
                             </button>
                           </div>
                         ))}

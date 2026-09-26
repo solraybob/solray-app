@@ -75,6 +75,7 @@ export default function SettingsPage() {
   const [visibilityStatus, setVisibilityStatus] = useState<SaveStatus>("idle");
   const [hiveStatus, setHiveStatus] = useState<SaveStatus>("idle");
   const [photoStatus,    setPhotoStatus]    = useState<SaveStatus>("idle");
+  const [photoError,     setPhotoError]     = useState<string | null>(null);
   const [birthStatus,    setBirthStatus]    = useState<SaveStatus>("idle");
   const [birthError,     setBirthError]     = useState<string | null>(null);
 
@@ -239,11 +240,24 @@ export default function SettingsPage() {
   const onPhotoSelected = async (file: File) => {
     if (!token) return;
     setPhotoStatus("saving");
+    setPhotoError(null);
+    const prevPhoto = photo;
+    // Any failure (unreadable file, undecodable image, upload error) clears
+    // the saving state and leaves a retryable message.
+    const failPhoto = () => {
+      setPhoto(prevPhoto);
+      setPhotoStatus("error");
+      setPhotoError(t("settings.photo_failed"));
+      setTimeout(() => setPhotoStatus("idle"), 2200);
+    };
     // Resize to 384x384 JPEG ~80q before upload, matches the existing
     // /users/photo size budget (under 2MB) and keeps avatars crisp on retina.
     const reader = new FileReader();
+    reader.onerror = failPhoto;
+    reader.onabort = failPhoto;
     reader.onload = () => {
       const img = new Image();
+      img.onerror = failPhoto;
       img.onload = async () => {
         try {
           const canvas = document.createElement("canvas");
@@ -276,13 +290,16 @@ export default function SettingsPage() {
           setPhotoStatus("saved");
           setTimeout(() => setPhotoStatus("idle"), 1800);
         } catch {
-          setPhotoStatus("error");
-          setTimeout(() => setPhotoStatus("idle"), 2200);
+          failPhoto();
         }
       };
       img.src = reader.result as string;
     };
-    reader.readAsDataURL(file);
+    try {
+      reader.readAsDataURL(file);
+    } catch {
+      failPhoto();
+    }
   };
 
   const saveBirth = async () => {
@@ -479,10 +496,17 @@ export default function SettingsPage() {
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
+                    // Reset so picking the same file again retries.
+                    e.target.value = "";
                     if (f) onPhotoSelected(f);
                   }}
                 />
               </div>
+              {photoError && (
+                <p role="alert" className="font-body text-[14px] mt-3" style={{ color: "rgb(var(--rgb-ember))" }}>
+                  {photoError}
+                </p>
+              )}
             </Section>
 
             {/* ── 2. Identity ───────────────────────────────────────────── */}

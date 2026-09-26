@@ -56,7 +56,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   // /admin endpoint by role on its own, and an operator whose own trial has
   // lapsed must still be able to reach the admin pages.
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
-  const skipAccessGate = isSubscribeRoute || isAdminRoute;
+  // Account settings (account deletion, privacy controls) must stay
+  // reachable without an active subscription: store rules require in-app
+  // account deletion to be available to every signed-in user.
+  const isAccountSettingsRoute =
+    pathname === "/profile/settings" || pathname.startsWith("/profile/settings/");
+  const skipAccessGate = isSubscribeRoute || isAdminRoute || isAccountSettingsRoute;
 
   // Did this mount ever see a live session? If the token disappears while the
   // page is open, that is a sign out (or account deletion): go to a plain

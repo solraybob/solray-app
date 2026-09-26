@@ -42,7 +42,8 @@
     "picker_subtitle": "Solray speaks with you in your language. You can change this later in Settings.",
     "label_en": "English",
     "label_es": "Spanish (Latin America)",
-    "saved": "Language saved"
+    "saved": "Language saved",
+    "save_failed": "Your language changed on this device but could not be saved to your account. Try again."
   },
   "login": {
     "cosmic_intelligence": "An intelligence tuned to one person. You.",
@@ -332,7 +333,8 @@
     "greet_q_pluto": "What are you ready to let go of, even if it's uncomfortable?",
     "greet_q_moon": "What are you feeling right now that you haven't allowed yourself to feel fully?",
     "greet_q_sun": "What part of yourself are you being asked to step into more completely?",
-    "greet_q_default": "What does your body already know about this?"
+    "greet_q_default": "What does your body already know about this?",
+    "delete_failed": "That conversation could not be deleted. Try again."
   },
   "souls": {
     "title": "SOULS",
@@ -417,7 +419,9 @@
     "saved": "saved",
     "wants_to_connect": "wants to connect",
     "invite_share_title": "You're invited to Solray",
-    "invite_share_text": "Read your chart against today's sky, and the dynamics with the people in your life. Join me on Solray: {link}"
+    "invite_share_text": "Read your chart against today's sky, and the dynamics with the people in your life. Join me on Solray: {link}",
+    "search_failed": "Search is not reachable right now. Try again in a moment.",
+    "remove_failed": "That person could not be removed. Try again."
   },
   "profile": {
     "title": "Profile",
@@ -517,7 +521,8 @@
     "delete_type_prompt": "Type DELETE to confirm.",
     "delete_confirm_button": "Delete my account",
     "delete_failed": "Could not delete the account. Try again.",
-    "delete_done_store": "Your account is deleted. Your membership is billed by the App Store or Google Play, so cancel it there too, or it will keep renewing."
+    "delete_done_store": "Your account is deleted. Your membership is billed by the App Store or Google Play, so cancel it there too, or it will keep renewing.",
+    "photo_failed": "That photo could not be uploaded. Try again or choose another image."
   },
   "nav": {
     "today": "Now",
@@ -649,7 +654,9 @@
     "iap_verify_failed": "We could not confirm the purchase with the store yet. If you were charged, reopen Solray shortly and it will be applied.",
     "card_network_error": "Could not reach the card service. Try again.",
     "store_restored": "Your App Store or Google Play membership is still active, so we restored your access. No card was charged.",
-    "subtitle_rejoin": "Your membership has ended. Rejoin whenever you are ready and pick up where you left off."
+    "subtitle_rejoin": "Your membership has ended. Rejoin whenever you are ready and pick up where you left off.",
+    "account_settings": "Account settings",
+    "plan_change_failed": "Your plan could not be changed. Try again."
   },
   "depth": {
     "the_sky": "The Sky",
@@ -715,7 +722,9 @@
     "whats_open": "What's open to you",
     "unlock_forecast": "Daily personalised forecast and energy reading.",
     "unlock_chat": "Higher Self chat with full chart context and persistent memory.",
-    "unlock_souls": "Souls, connect with others and read your dynamics together."
+    "unlock_souls": "Souls, connect with others and read your dynamics together.",
+    "confirming_title": "We are confirming your payment",
+    "confirming_body": "This usually takes a moment. If nothing changes, tap Try again."
   },
   "conn": {
     "soul": "Soul",

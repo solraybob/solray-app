@@ -16,6 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { isRunningInCapacitor } from "@/lib/native-push";
 
 type Variant = "primary" | "ghost";
 
@@ -28,6 +29,11 @@ export default function InstallApp({ variant = "ghost" }: { variant?: Variant })
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Inside the Capacitor native shell the app is already installed.
+    if (isRunningInCapacitor()) {
+      setInstalled(true);
+      return;
+    }
 
     // Already running as an installed app? Nothing to offer.
     const standalone =

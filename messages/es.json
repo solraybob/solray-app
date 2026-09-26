@@ -42,7 +42,8 @@
     "picker_subtitle": "Solray te habla en tu idioma. Puedes cambiarlo más tarde en Ajustes.",
     "label_en": "Inglés",
     "label_es": "Español (Latinoamérica)",
-    "saved": "Idioma guardado"
+    "saved": "Idioma guardado",
+    "save_failed": "El idioma cambió en este dispositivo, pero no se pudo guardar en tu cuenta. Inténtalo de nuevo."
   },
   "login": {
     "cosmic_intelligence": "Una inteligencia afinada a una sola persona. Tú.",
@@ -240,7 +241,8 @@
     "greet_q_pluto": "¿Qué estás lista o listo para soltar, aunque sea incómodo?",
     "greet_q_moon": "¿Qué sientes ahora mismo que no te has permitido sentir del todo?",
     "greet_q_sun": "¿Qué parte de ti se te pide habitar más plenamente?",
-    "greet_q_default": "¿Qué sabe ya tu cuerpo sobre esto?"
+    "greet_q_default": "¿Qué sabe ya tu cuerpo sobre esto?",
+    "delete_failed": "No se pudo eliminar esa conversación. Inténtalo de nuevo."
   },
   "souls": {
     "title": "ALMAS",
@@ -325,7 +327,9 @@
     "saved": "guardado",
     "wants_to_connect": "quiere conectar",
     "invite_share_title": "Te invito a Solray",
-    "invite_share_text": "Lee tu carta frente al cielo de hoy, y las dinámicas con las personas de tu vida. Únete a mí en Solray: {link}"
+    "invite_share_text": "Lee tu carta frente al cielo de hoy, y las dinámicas con las personas de tu vida. Únete a mí en Solray: {link}",
+    "search_failed": "La búsqueda no está disponible ahora. Inténtalo de nuevo en un momento.",
+    "remove_failed": "No se pudo eliminar a esa persona. Inténtalo de nuevo."
   },
   "profile": {
     "title": "Perfil",
@@ -425,7 +429,8 @@
     "delete_type_prompt": "Escribe DELETE para confirmar.",
     "delete_confirm_button": "Eliminar mi cuenta",
     "delete_failed": "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
-    "delete_done_store": "Tu cuenta está eliminada. Tu membresía se cobra a través de App Store o Google Play, así que cancélala también allí o seguirá renovándose."
+    "delete_done_store": "Tu cuenta está eliminada. Tu membresía se cobra a través de App Store o Google Play, así que cancélala también allí o seguirá renovándose.",
+    "photo_failed": "No se pudo subir esa foto. Inténtalo de nuevo o elige otra imagen."
   },
   "nav": {
     "today": "Ahora",
@@ -649,7 +654,9 @@
     "iap_verify_failed": "Aún no pudimos confirmar la compra con la tienda. Si se hizo el cargo, vuelve a abrir Solray en un rato y se aplicará.",
     "card_network_error": "No se pudo conectar con el servicio de tarjetas. Inténtalo de nuevo.",
     "store_restored": "Tu membresía de App Store o Google Play sigue activa, así que restauramos tu acceso. No se cobró ninguna tarjeta.",
-    "subtitle_rejoin": "Tu membresía ha terminado. Vuelve cuando quieras y retoma donde lo dejaste."
+    "subtitle_rejoin": "Tu membresía ha terminado. Vuelve cuando quieras y retoma donde lo dejaste.",
+    "account_settings": "Ajustes de la cuenta",
+    "plan_change_failed": "No se pudo cambiar tu plan. Inténtalo de nuevo."
   },
   "depth": {
     "the_sky": "El Cielo",
@@ -715,7 +722,9 @@
     "whats_open": "Lo que se abre para ti",
     "unlock_forecast": "Pronóstico diario personalizado y lectura de energía.",
     "unlock_chat": "Chat con el Ser Superior con contexto completo de tu carta y memoria persistente.",
-    "unlock_souls": "Almas: conecta con otros y lean sus dinámicas juntos."
+    "unlock_souls": "Almas: conecta con otros y lean sus dinámicas juntos.",
+    "confirming_title": "Estamos confirmando tu pago",
+    "confirming_body": "Esto suele tardar un momento. Si nada cambia, toca Intentar de nuevo."
   },
   "conn": {
     "soul": "Alma",

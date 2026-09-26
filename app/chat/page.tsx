@@ -91,8 +91,8 @@ function saveSession(session: StoredSession) {
 // Push a session to the server. Best-effort: failures don't block local save.
 // On success we record the server's last_message_at into the local meta so
 // the next sync compares like-with-like.
-async function pushSessionToServer(session: StoredSession, token: string | null): Promise<void> {
-  if (!token) return;
+async function pushSessionToServer(session: StoredSession, token: string | null): Promise<boolean> {
+  if (!token) return false;
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
   try {
     const res = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
@@ -109,14 +109,48 @@ async function pushSessionToServer(session: StoredSession, token: string | null)
       }),
     });
     if (res.ok) {
+      markServerConfirmed([session.sessionId]);
       const out = await res.json().catch(() => ({} as Record<string, string>));
       if (out && typeof out.last_message_at === "string") {
         setSessionLocalMeta(session.sessionId, out.last_message_at);
       }
+      return true;
     }
+    return false;
   } catch {
     // Local copy still saved; server sync will retry on next save.
+    return false;
   }
+}
+
+// Ids the server has confirmed holding (a PUT returned ok, or the id showed
+// up in a server list). Sync only drops a local session that is missing
+// from the server list when it is in this set; a session whose upload
+// failed silently was never confirmed, so it is re-uploaded, never deleted.
+const SERVER_CONFIRMED_KEY = "solray_chat_server_confirmed";
+
+function getServerConfirmed(): Set<string> {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SERVER_CONFIRMED_KEY) || "[]");
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+function saveServerConfirmed(ids: Set<string>) {
+  try { localStorage.setItem(SERVER_CONFIRMED_KEY, JSON.stringify(Array.from(ids))); } catch { /* best-effort */ }
+}
+function markServerConfirmed(ids: string[]) {
+  const set = getServerConfirmed();
+  let changed = false;
+  for (const id of ids) {
+    if (!set.has(id)) { set.add(id); changed = true; }
+  }
+  if (changed) saveServerConfirmed(set);
+}
+function unmarkServerConfirmed(id: string) {
+  const set = getServerConfirmed();
+  if (set.delete(id)) saveServerConfirmed(set);
 }
 
 // Track per-session last_message_at locally so we can compare with remote
@@ -200,29 +234,41 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
     //    b) After migration: local-only means deleted on another device,
     //       so remove from local cache. Otherwise a delete on phone
     //       resurrects on desktop forever.
+    //    Deletion only applies to sessions the server previously
+    //    confirmed; a never-confirmed local session (upload failed) is
+    //    re-uploaded and kept, never deleted.
     const remoteIds = new Set(remoteSessions.map((s) => s.session_id));
+    markServerConfirmed(Array.from(remoteIds));
+    const confirmed = getServerConfirmed();
     const localIdArr = Array.from(localIds);
-    const migrated = localStorage.getItem(MIGRATION_FLAG) === "1";
+    let migrated = false;
+    try { migrated = localStorage.getItem(MIGRATION_FLAG) === "1"; } catch { /* treat as not migrated */ }
+    let allUploadsOk = true;
     for (const localId of localIdArr) {
       if (remoteIds.has(localId)) continue;
-      if (!migrated) {
-        const local = loadSession(localId);
-        if (local) {
-          await pushSessionToServer(local, token);
-          if (local.messages?.length) {
-            setSessionLocalMeta(localId, new Date().toISOString());
-          }
-          fetched.push(localId);
-        }
-      } else {
-        // Treat as deleted on another device: drop from local cache.
-        localStorage.removeItem(`solray_chat_${localId}`);
+      if (migrated && confirmed.has(localId)) {
+        // Confirmed on the server before, now gone: deleted on another
+        // device, so drop from local cache.
+        try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
         const meta = getLocalMeta();
         delete meta[localId];
         setLocalMeta(meta);
+        unmarkServerConfirmed(localId);
+        continue;
+      }
+      const local = loadSession(localId);
+      if (local) {
+        const ok = await pushSessionToServer(local, token);
+        if (!ok) allUploadsOk = false;
+        if (ok && local.messages?.length) {
+          setSessionLocalMeta(localId, new Date().toISOString());
+        }
+        fetched.push(localId);
       }
     }
-    if (!migrated) localStorage.setItem(MIGRATION_FLAG, "1");
+    if (!migrated && allUploadsOk) {
+      try { localStorage.setItem(MIGRATION_FLAG, "1"); } catch { /* retry next sync */ }
+    }
 
     // 4. Save unified id list, server-order takes precedence.
     const allIds = Array.from(new Set(fetched));
@@ -395,6 +441,7 @@ function ChatPageInner() {
   const [sending, setSending] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // (forecast-seeded prompts now feed the unified `suggestions` above)
 
@@ -444,6 +491,10 @@ function ChatPageInner() {
   // without stale closures
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { tokenRef.current = token; }, [token]);
+  // Active session id, read when a /chat reply lands so a reply to one
+  // conversation never appends into another.
+  const activeSessionRef = useRef<string>("");
+  useEffect(() => { activeSessionRef.current = sessionId; }, [sessionId]);
 
   // Cross-device chat sync. localStorage stays as the cache for instant
   // reads; the server is the source of truth. On mount (or whenever a
@@ -971,7 +1022,8 @@ function ChatPageInner() {
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
-    if (!token) return;
+    // Never switch sessions while a reply is in flight.
+    if (!token || sending) return;
     // Synthesize the session we're leaving so memory carries forward into
     // the new one. Without this, clicking "+ New" loses everything that
     // wasn't already checkpointed in-session.
@@ -993,10 +1045,11 @@ function ChatPageInner() {
     persistSession(newSession);
     setMessages([]);
     setShowHistory(false);
-  }, [token, buildGreeting, triggerSessionSynthesis]);
+  }, [token, sending, buildGreeting, triggerSessionSynthesis]);
 
   // ── Load past session ─────────────────────────────────────────────────────
   const loadPastSession = useCallback((sid: string) => {
+    if (sending) return;
     // Synthesize the session we're leaving so recent context is not lost
     // when we hop back into an older one.
     triggerSessionSynthesis();
@@ -1007,7 +1060,7 @@ function ChatPageInner() {
       setShowHistory(false);
       setRenamingId(null);
     }
-  }, [triggerSessionSynthesis]);
+  }, [triggerSessionSynthesis, sending]);
 
   // ── Open history panel ────────────────────────────────────────────────────
   const openHistory = useCallback(() => {
@@ -1016,6 +1069,7 @@ function ChatPageInner() {
       .map((id) => loadSession(id))
       .filter((s): s is StoredSession => s !== null);
     setPastSessions(sessions);
+    setHistoryError(null);
     setShowHistory(true);
     setRenamingId(null);
   }, []);
@@ -1052,25 +1106,56 @@ function ChatPageInner() {
   const deleteSession = useCallback(
     (e: React.MouseEvent, sid: string) => {
       e.stopPropagation();
+      if (sending) return;
+      setHistoryError(null);
+      // Snapshot so a failed server delete can be undone locally.
+      const snapshot = loadSession(sid);
+      const prevIds = getSessionIds();
       // Local removal first (instant UX), then propagate to server so the
       // session doesn't reappear on the next sync from another device.
-      localStorage.removeItem(`solray_chat_${sid}`);
-      const ids = getSessionIds().filter((id) => id !== sid);
+      try { localStorage.removeItem(`solray_chat_${sid}`); } catch { /* ignore */ }
+      const ids = prevIds.filter((id) => id !== sid);
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
       if (token) {
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+        const restore = () => {
+          if (snapshot) {
+            try { localStorage.setItem(`solray_chat_${sid}`, JSON.stringify(snapshot)); } catch { /* ignore */ }
+          }
+          const current = getSessionIds();
+          if (snapshot && !current.includes(sid)) {
+            const at = Math.max(0, prevIds.indexOf(sid));
+            current.splice(Math.min(at, current.length), 0, sid);
+            saveSessionIds(current);
+          }
+          setPastSessions(
+            getSessionIds()
+              .map((id) => loadSession(id))
+              .filter((s): s is StoredSession => s !== null)
+          );
+          setHistoryError(t("chat.delete_failed"));
+        };
         void fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(sid)}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => { /* network failure: server retains; will re-sync on next pull */ });
+        })
+          .then((res) => {
+            // 404 means the server no longer has it: already deleted.
+            if (res.ok || res.status === 404) {
+              unmarkServerConfirmed(sid);
+            } else {
+              restore();
+            }
+          })
+          .catch(() => restore());
       }
       // If we just deleted the active session, start fresh
       if (sid === sessionId) {
         startNewChat();
       }
     },
-    [sessionId, startNewChat, token]
+    [sessionId, startNewChat, token, sending, t]
   );
 
   // ── Send message ──────────────────────────────────────────────────────────
@@ -1100,6 +1185,7 @@ function ChatPageInner() {
     setMessages(updatedMessages);
     setInput("");
     setSending(true);
+    const sentSessionId = sessionId;
 
     const history = updatedMessages
       .filter((m) => m.id !== "greeting")
@@ -1126,6 +1212,9 @@ function ChatPageInner() {
         },
         token
       );
+      // The active conversation changed while waiting: do not append this
+      // reply into a different session.
+      if (activeSessionRef.current !== sentSessionId) return;
 
       // Honest empty-response handling. If the backend returned 200 but
       // both response and message fields are empty, surface that as an
@@ -1169,6 +1258,7 @@ function ChatPageInner() {
         router.replace("/login");
         return;
       }
+      if (activeSessionRef.current !== sentSessionId) return;
       // Transport / server error. The previous version of this branch
       // shipped a hardcoded array of five "Oracle-flavored" fortune
       // cookie strings and picked one at random to display as if the
@@ -1651,9 +1741,11 @@ function ChatPageInner() {
               </button>
               <button
                 onClick={startNewChat}
+                disabled={sending}
                 title={t("chat.new_chat")}
                 aria-label={t("chat.new_chat")}
                 className="sol-ico"
+                style={sending ? { opacity: 0.4 } : undefined}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
                   <path d="M10 4v12M4 10h12" />
@@ -2024,6 +2116,11 @@ function ChatPageInner() {
                   </svg>
                 </button>
               </div>
+              {historyError && (
+                <p role="alert" className="font-body text-[14px] px-5 pb-3 shrink-0" style={{ color: "rgb(var(--rgb-ember))" }}>
+                  {historyError}
+                </p>
+              )}
               {/* Scrollable list */}
               <div className="overflow-y-auto flex-1 px-5 pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
                 {pastSessions.length === 0 ? (
@@ -2059,6 +2156,7 @@ function ChatPageInner() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => loadPastSession(s.sessionId)}
+                              disabled={sending}
                               className={`flex-1 min-w-0 text-left px-4 py-3 rounded-xl border transition-colors ${
                                 s.sessionId === sessionId
                                   ? "bg-forest-card text-text-primary"
@@ -2089,6 +2187,7 @@ function ChatPageInner() {
                             {/* Delete trash */}
                             <button
                               onClick={(e) => deleteSession(e, s.sessionId)}
+                              disabled={sending}
                               title={t("chat.delete_chat")}
                               className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgb(var(--rgb-ember))"}

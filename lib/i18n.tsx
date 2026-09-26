@@ -39,7 +39,8 @@ const DEFAULT_LANGUAGE: LanguageCode = "en";
 
 interface LanguageContextValue {
   lang: LanguageCode;
-  setLang: (code: LanguageCode) => Promise<void>;
+  /** Resolves false when a signed-in user's backend save failed. */
+  setLang: (code: LanguageCode) => Promise<boolean>;
   t: (key: string) => string;
 }
 
@@ -105,8 +106,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setLang = useCallback(async (code: LanguageCode) => {
-    if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(code)) return;
+  const setLang = useCallback(async (code: LanguageCode): Promise<boolean> => {
+    if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(code)) return false;
     setLangState(code);
     try {
       localStorage.setItem(STORAGE_KEY, code);
@@ -120,7 +121,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem("solray_token");
       if (token) {
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-        await fetch(`${apiUrl}/users/language`, {
+        const res = await fetch(`${apiUrl}/users/language`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -128,6 +129,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           },
           body: JSON.stringify({ language: code }),
         });
+        if (!res.ok) return false;
         // Mirror onto the cached user blob so a refresh keeps the choice
         // without an extra round-trip.
         try {
@@ -139,8 +141,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           }
         } catch { /* ignore */ }
       }
+      return true;
     } catch {
-      // Network failures should not block the UI change. Next login will reconcile.
+      // Network failures should not block the UI change, but the caller
+      // is told so it can say the preference did not reach the account.
+      return false;
     }
   }, []);
 

@@ -102,7 +102,7 @@ function BlueprintLoader() {
 }
 
 export default function OnboardPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [sex, setSex] = useState<"male" | "female" | "">("");
@@ -228,7 +228,8 @@ export default function OnboardPage() {
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
         inviteCode = params.get("invite") || params.get("ref") || null;
-        language = localStorage.getItem("solray_language");
+        // The provider's live language, not just what reached storage.
+        language = lang || localStorage.getItem("solray_language");
       }
     } catch { /* ignore */ }
     // Tell the backend which platform is registering. Inside the Capacitor
@@ -271,10 +272,10 @@ export default function OnboardPage() {
       setToken(newToken, data.profile || data.user || { id: data.user_id, email: cleanEmail, name });
       // Funnel event: marks the moment a real signup completed. Powers
       // the registration-drop-off canary alert.
-      try {
-        const { track } = await import("@/lib/analytics");
-        await track("register_success", undefined, newToken);
-      } catch { /* ignore, analytics is best-effort */ }
+      // Fire and forget: analytics must never delay the flow.
+      void import("@/lib/analytics")
+        .then(({ track }) => track("register_success", undefined, newToken))
+        .catch(() => { /* ignore, analytics is best-effort */ });
       // Show magical blueprint loading screen for at least 3.5 seconds
       setCalculatingBlueprint(true);
       await new Promise((resolve) => setTimeout(resolve, 3500));
