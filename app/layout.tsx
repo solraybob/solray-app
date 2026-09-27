@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     // own, which points browsers at the 16 frame even on a retina tab. Naming
     // the 32 here gives them the crisp one to prefer.
     icon: [
-      { url: "/icons/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-32.png?v=orb2", type: "image/png", sizes: "32x32" },
     ],
     apple: "/icons/icon-192.png",
   },
