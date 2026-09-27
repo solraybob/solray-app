@@ -67,14 +67,14 @@ const config: CapacitorConfig = {
   },
   ios: {
     // Default to "white" status bar style (white text on dark bg) since
-    // Solray's default theme is dark forest. The app controls this at
+    // Solray's default theme is paper. The app controls this at
     // runtime via the status-bar plugin when the user toggles light mode.
     contentInset: 'always',
-    // WKWebView background: forest-deep, not the OS default white. Prevents a
+    // WKWebView background: the paper ground, not the OS default white. Prevents a
     // white flash (or a permanent white screen on a failed load) from ever
     // showing through. The launch screen and splash are the same color, so
-    // launch -> splash -> webview is one seamless dark surface.
-    backgroundColor: '#050f08',
+    // launch -> splash -> webview is one seamless paper surface.
+    backgroundColor: '#F5F0E6',
   },
   android: {
     // Allow http for local dev; production traffic is HTTPS-only.
@@ -99,15 +99,15 @@ const config: CapacitorConfig = {
       // components/NativeBootstrap) to dismiss it the instant content is ready.
       launchAutoHide: true,
       launchShowDuration: 2000,
-      backgroundColor: '#050f08',         // forest-deep
+      backgroundColor: '#F5F0E6',         // paper
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
     },
     StatusBar: {
       // Initial style; runtime calls override this when the user changes theme.
-      style: 'DARK',                      // dark content (light bg) — flipped by app at runtime
-      backgroundColor: '#050f08',
+      style: 'LIGHT',                     // Capacitor LIGHT = dark text, for the paper ground; the app flips it at runtime
+      backgroundColor: '#F5F0E6',
     },
     Keyboard: {
       // Resize the WebView when the keyboard appears so input stays visible.
