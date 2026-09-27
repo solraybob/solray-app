@@ -70,15 +70,13 @@ export const metadata: Metadata = {
     title: "Solray",
   },
   icons: {
-    // Declared here with a version query rather than through the app/favicon.ico
-    // convention: the convention pins sizes="16x16" and has no cache key, so a
-    // browser that cached the old sun under /favicon.ico would keep it. Bump
-    // ?v= whenever the mark changes.
+    // The app/favicon.ico convention makes Next declare sizes="16x16" on its
+    // own, which points browsers at the 16 frame even on a retina tab. Naming
+    // the 32 here gives them the crisp one to prefer.
     icon: [
-      { url: "/favicon.ico?v=orb2", sizes: "any" },
-      { url: "/icons/icon-32.png?v=orb2", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-32.png", type: "image/png", sizes: "32x32" },
     ],
-    apple: { url: "/icons/apple-touch-icon.png?v=orb2", sizes: "180x180" },
+    apple: "/icons/icon-192.png",
   },
 };
 

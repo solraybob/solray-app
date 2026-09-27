@@ -4,46 +4,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terms & Privacy - Solray AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="icon" href="/favicon.ico?v=orb2" sizes="any">
-  <meta name="theme-color" content="#F5F0E6">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #F5F0E6; color: #22201C; font-family: 'Zen Kaku Gothic New', system-ui, sans-serif; font-weight: 500; line-height: 1.7; -webkit-font-smoothing: antialiased; }
-    .header { background: #F5F0E6; border-bottom: 1px solid #D9CFB9; position: sticky; top: 0; z-index: 40; }
-    .header-content { max-width: 50rem; margin: 0 auto; padding: 1.1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
-    .header a { color: #22201C; font-weight: 700; font-size: 1.45rem; letter-spacing: -.02em; line-height: 1; text-decoration: none; }
-    .header a:hover { text-decoration: none; }
-    .wm-orb { width: 1ex; height: 1ex; vertical-align: baseline; margin: 0 .012em; }
-    .content { max-width: 50rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
-    h1 { font-weight: 900; font-size: clamp(2rem, 5.5vw, 2.9rem); letter-spacing: -.04em; line-height: 1.06; margin-bottom: .75rem; }
-    h2 { font-weight: 900; font-size: 1.5rem; letter-spacing: -.03em; line-height: 1.2; margin: 2.6rem 0 1rem; }
-    h3 { font-weight: 700; font-size: 1.1rem; letter-spacing: -.01em; margin: 1.6rem 0 .5rem; }
-    p, li { color: #5C5548; font-size: 17px; }
-    p { margin-bottom: 1rem; }
-    ul, ol { margin-left: 1.5rem; margin-bottom: 1rem; }
-    li { margin-bottom: .35rem; }
-    strong { color: #22201C; font-weight: 700; }
-    em { font-style: normal; color: #22201C; }
-    .subtitle { color: #6E6659; font-size: 15px; }
-    .date { color: #6E6659; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .22em; margin: .5rem 0 3rem; }
-    hr { border: none; border-top: 1px solid #D9CFB9; margin: 2.4rem 0; }
-    a { color: #5A31AE; text-decoration: none; }
+    body {
+      background: #050f08;
+      color: #f5f0e8;
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+    }
+    .header {
+      background: #050f08;
+      border-bottom: 1px solid #1a3020;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .header-content {
+      max-width: 50rem;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header a {
+      color: inherit;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8a9e8d;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .header a:hover { opacity: 1; }
+    .logo { width: 24px; height: 24px; border-radius: 50%; }
+    .content {
+      max-width: 50rem;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 6rem;
+    }
+    h1 { font-size: 2.25rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.5rem; letter-spacing: 0.05em; color: #f5f0e8; margin: 2rem 0 1rem; }
+    h3 { font-size: 1.125rem; letter-spacing: 0.05em; color: #f5f0e8; margin: 1.5rem 0 0.5rem; }
+    p { color: #c1c9bb; margin-bottom: 1rem; }
+    ul, ol { margin-left: 2rem; margin-bottom: 1rem; }
+    li { color: #c1c9bb; margin-bottom: 0.25rem; }
+    .subtitle { color: #8a9e8d; font-size: 0.95rem; }
+    .date { color: #8a9e8d; font-size: 0.875rem; margin-bottom: 3rem; }
+    hr { border: none; border-top: 1px solid #1a3020; margin: 2rem 0; }
+    a { color: #e8821a; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .highlight { color: #22201C; font-weight: 700; }
-    .footer { color: #6E6659; font-size: 13px; text-align: center; margin-top: 3rem; }
-    .toc, .card { background: #FDFBF5; border: 1px solid #D9CFB9; border-radius: 18px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
-    .card h2 { margin-top: 0; }
-    .toc ul { margin-bottom: 0; }
-    .toc li { font-size: 15px; }
+    .highlight { color: #e8821a; font-weight: 600; }
+    .footer { color: #8a9e8d; font-size: 0.75rem; text-align: center; margin-top: 3rem; }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="header-content">
-      <a href="/" aria-label="Solray">s<img class="wm-orb" src="/solray-orb.png" alt="">lray</a>
+      <a href="/">
+        <img src="/logo.jpg" alt="Solray" class="logo">
+        <span>Solray</span>
+      </a>
     </div>
   </div>
 
