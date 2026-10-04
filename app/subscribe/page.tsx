@@ -20,6 +20,7 @@ import {
   initNativeIAP,
   getLocalizedMonthlyPrice,
   getLocalizedYearlyPrice,
+  hasIntroFreeTrial,
   MONTHLY_PRODUCT_ID,
   YEARLY_PRODUCT_ID,
   NativeIAPError,
@@ -662,6 +663,10 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   // Store-localized recurring prices per plan (null until the store is ready).
   const [prices, setPrices] = useState<{ monthly: string | null; yearly: string | null }>({ monthly: null, yearly: null });
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
+  // Which plans the store will actually start with a free trial for this
+  // customer. Only those get the free-trial wording and button.
+  const [trials, setTrials] = useState<{ monthly: boolean; yearly: boolean }>({ monthly: false, yearly: false });
+  const planHasTrial = plan === "yearly" ? trials.yearly : trials.monthly;
 
   // Warm the StoreKit/Play store on mount so (a) tapping Subscribe opens the
   // sheet instantly and (b) we can show the localized recurring price on the
@@ -670,7 +675,10 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     let cancelled = false;
     void initNativeIAP()
       .then(() => {
-        if (!cancelled) setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
+        if (!cancelled) {
+          setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
+          setTrials({ monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID), yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID) });
+        }
       })
       .catch(() => { /* sheet still shows the price on tap; disclosure covers terms */ });
     return () => { cancelled = true; };
@@ -743,10 +751,10 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}>
       <PageHead label={t("subscribe.eyebrow_lbd")} />
       <div className="max-w-lg mx-auto px-5">
-        <PageTitle title={t("subscribe.chart_spoken_to")} sub={t("subscribe.native_blurb")} />
+        <PageTitle title={t("subscribe.chart_spoken_to")} sub={planHasTrial ? t("subscribe.native_blurb") : t("subscribe.native_blurb_paid")} />
 
-        {/* Plan choice: monthly or annual. Both start the same 3-day free
-            trial; the chosen product id is what gets ordered on the store. */}
+        {/* Plan choice: monthly or annual. Free-trial wording follows what
+            the store reports for each plan; the chosen product id is what gets ordered. */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {([
             { key: "monthly" as const, price: prices.monthly || "…", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
@@ -783,7 +791,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
               border: "1.5px solid rgb(var(--rgb-text-primary))",
             }}
           >
-            {loading ? t("subscribe.opening") : t("subscribe.start_free_trial")}
+            {loading ? t("subscribe.opening") : planHasTrial ? t("subscribe.start_free_trial") : t("subscribe.subscribe_now")}
           </button>
 
           {onContinue && (
@@ -816,15 +824,16 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
         <div className="mt-9 space-y-3">
           {(plan === "yearly" ? prices.yearly : prices.monthly) && (
             <p className="text-[15px]" style={{ color: "rgb(var(--rgb-text-primary))" }}>
-              {t("subscribe.free_week_then")} {plan === "yearly" ? prices.yearly : prices.monthly}{" "}
+              {planHasTrial ? `${t("subscribe.free_week_then")} ` : ""}{plan === "yearly" ? prices.yearly : prices.monthly}{" "}
               {plan === "yearly" ? t("subscribe.per_year") : t("subscribe.per_month")}
+              {planHasTrial ? "" : `, ${t("subscribe.renews_automatically")}`}
             </p>
           )}
           <p
             className="text-[14px] leading-relaxed"
             style={{ color: "rgb(var(--rgb-text-secondary))" }}
           >
-            {t("subscribe.auto_renew_terms")}
+            {planHasTrial ? t("subscribe.auto_renew_terms") : t("subscribe.auto_renew_terms_paid")}
           </p>
           <p className="text-[14px]">
             <a

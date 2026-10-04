@@ -663,7 +663,10 @@
     "plan_change_failed": "Your plan could not be changed. Try again.",
     "restore_purchases": "Restore purchases",
     "restore_done": "Restore finished. If this Apple ID or Google account has an active Solray membership, your access is back.",
-    "restore_failed": "Could not restore purchases. Check your connection and try again."
+    "restore_failed": "Could not restore purchases. Check your connection and try again.",
+    "native_blurb_paid": "Renews at the price shown until you cancel. Not a horoscope. A companion calibrated to your exact birth moment, awake to today’s sky, remembering every conversation. Cancel anytime in your device’s subscription settings.",
+    "renews_automatically": "renews automatically",
+    "auto_renew_terms_paid": "Solray Membership is an auto-renewable subscription. Payment is charged to your store account when you confirm. It renews automatically each period at the price above and continues until you cancel. Cancel anytime in your App Store settings, at least 24 hours before the period ends."
   },
   "depth": {
     "the_sky": "The Sky",

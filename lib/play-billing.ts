@@ -162,19 +162,48 @@ export function getLocalizedPrice(productId: string): string | null {
       (platform ? store.get(productId, platform) : undefined) || store.get(productId);
     if (!product) return null;
     const anyP = product as unknown as {
-      pricing?: { price?: string };
-      offers?: Array<{ pricingPhrases?: Array<{ price?: string }> }>;
+      pricing?: { price?: string; paymentMode?: string; priceMicros?: number };
+      offers?: Array<{ pricingPhases?: Array<{ price?: string }> }>;
     };
-    if (anyP.pricing?.price) return anyP.pricing.price;
-    const phrases = anyP.offers?.[0]?.pricingPhrases;
+    // The recurring price is the LAST pricing phase. product.pricing is the
+    // FIRST phase, which for a plan with an introductory free trial is
+    // "$0.00": the paywall then read "$0.00 / month" (found in the iOS
+    // simulator against the real sandbox products, 2026-10-05).
+    const phrases = anyP.offers?.[0]?.pricingPhases;
     if (phrases && phrases.length) {
-      // Last phrase is the ongoing recurring price (the intro/free phrase is first).
       const last = phrases[phrases.length - 1];
       if (last?.price) return last.price;
+    }
+    if (anyP.pricing?.price && anyP.pricing.paymentMode !== "FreeTrial" && anyP.pricing.priceMicros !== 0) {
+      return anyP.pricing.price;
     }
     return null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * True when the store says this product starts with a free introductory
+ * phase for this customer. The paywall only promises a free trial when the
+ * store will actually give one (Guideline 3.1.2: the screen must match the
+ * sheet). False when unknown.
+ */
+export function hasIntroFreeTrial(productId: string): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    const store = getStore();
+    if (!store) return false;
+    const platform = storePlatform();
+    const product =
+      (platform ? store.get(productId, platform) : undefined) || store.get(productId);
+    const anyP = product as unknown as {
+      offers?: Array<{ pricingPhases?: Array<{ paymentMode?: string; priceMicros?: number }> }>;
+    } | undefined;
+    const first = anyP?.offers?.[0]?.pricingPhases?.[0];
+    return Boolean(first && (first.paymentMode === "FreeTrial" || first.priceMicros === 0));
+  } catch {
+    return false;
   }
 }
 
