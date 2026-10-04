@@ -5,9 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Solray</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
+	<string>Solray</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,9 +19,17 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>9</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Lets you take a photo when setting your profile picture. Solray never records video.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Solray uses the microphone so you can speak with the Higher Self instead of typing.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Lets you save shared reading cards as images to your photo library.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -47,11 +53,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Solray uses the microphone so you can speak with the Higher Self instead of typing.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Lets you take a photo when setting your profile picture. Solray never records video.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Lets you save shared reading cards as images to your photo library.</string>
 </dict>
 </plist>
