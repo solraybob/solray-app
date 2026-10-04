@@ -1,12 +1,20 @@
 /** @type {import('next').NextConfig} */
 
-// Build-time identifier. On Vercel, every deploy has a unique
-// VERCEL_GIT_COMMIT_SHA. Locally we fall back to the build timestamp so
-// each `next build` still produces a fresh id.
+// Build-time identifier. It MUST be the same value in the client bundle and
+// in the server's /api/build-id, or VersionCheck reloads every page forever.
+//
+// Incident 2026-10-05: a `vercel deploy` from the CLI has no
+// VERCEL_GIT_COMMIT_SHA, so this fell back to String(Date.now()). Next
+// evaluates this file more than once per build, so the client and the server
+// got two different timestamps and app.solray.ai reloaded itself every few
+// seconds for about 12 minutes. Never fall back to a clock. VERCEL_DEPLOYMENT_ID
+// is stable for one deployment; with nothing stable available the id is
+// "unknown", which VersionCheck treats as "do not auto-reload".
 const BUILD_ID =
   process.env.VERCEL_GIT_COMMIT_SHA ||
   process.env.BUILD_ID ||
-  String(Date.now());
+  process.env.VERCEL_DEPLOYMENT_ID ||
+  "unknown";
 
 // Baseline security headers. No page of the member app (payment form
 // included) may be framed by another site: that is how clickjacking works.
