@@ -51,7 +51,16 @@ const themeFoucKiller = `(function(){try{var t=localStorage.getItem('solray-them
 // In the installed app and the Capacitor shell it reads the real notch, which
 // is also right, and it no longer moves. Orientation genuinely changes it, so
 // that one event re-measures.
-const safeAreaFreeze = `(function(){try{function m(){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';document.documentElement.appendChild(d);var c=getComputedStyle(d);var t=parseFloat(c.paddingTop)||0;var b=parseFloat(c.paddingBottom)||0;d.parentNode.removeChild(d);var r=document.documentElement.style;r.setProperty('--sat',t+'px');r.setProperty('--sab',b+'px');}m();window.addEventListener('orientationchange',function(){setTimeout(m,250);});}catch(e){}})();`;
+//
+// One exception, found running the store build in the iOS simulator on
+// 2026-10-05: inside the Capacitor shell (and an installed PWA) WKWebView
+// reports env(safe-area-inset-*) as 0 at first paint and only fills in the
+// real notch a moment later. A single first-paint reading froze --sat at 0px,
+// so every header and the login language switch sat under the status bar.
+// In those app contexts the browser-chrome problem above does not exist, so
+// the insets are re-read for a few seconds and on resize, and only ever grow
+// (orientation still resets them). The browser path is unchanged.
+const safeAreaFreeze = `(function(){try{var S={t:0,b:0};function m(reset){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';document.documentElement.appendChild(d);var c=getComputedStyle(d);var t=parseFloat(c.paddingTop)||0;var b=parseFloat(c.paddingBottom)||0;d.parentNode.removeChild(d);if(reset){S={t:t,b:b};}else{S.t=Math.max(S.t,t);S.b=Math.max(S.b,b);}var r=document.documentElement.style;r.setProperty('--sat',S.t+'px');r.setProperty('--sab',S.b+'px');}m(true);var C=window.Capacitor;var app=(C&&C.isNativePlatform&&C.isNativePlatform())||navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);if(app){var up=function(){m(false);};if(window.requestAnimationFrame){requestAnimationFrame(up);}document.addEventListener('DOMContentLoaded',up);window.addEventListener('load',up);window.addEventListener('resize',up);[100,300,800,1600,3000].forEach(function(ms){setTimeout(up,ms);});}window.addEventListener('orientationchange',function(){setTimeout(function(){m(true);},250);});}catch(e){}})();`;
 
 // Capture the PWA install prompt the instant the browser offers it. Chromium
 // fires `beforeinstallprompt` once, early, and only the page that calls

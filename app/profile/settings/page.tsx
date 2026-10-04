@@ -706,6 +706,51 @@ export default function SettingsPage() {
               </button>
             </Section>
 
+            {/* ── 6a. Legal and support ───────────────────────────────────
+                App Review looks for the privacy policy and a support route
+                inside the app. These open in the system browser on native
+                (solray.ai is deliberately outside the WebView allow-list). */}
+            <Section label={t("settings.legal_section")}>
+              <div className="space-y-3">
+                <a
+                  href="https://solray.ai/legal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-body text-[17px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2"
+                  style={{ color: "rgb(var(--rgb-text-primary))" }}
+                >
+                  {t("settings.terms_privacy")}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://solray.ai/support"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-body text-[17px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2"
+                  style={{ color: "rgb(var(--rgb-text-primary))" }}
+                >
+                  {t("settings.support")}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://solray.ai/account-deletion"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-body text-[17px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2"
+                  style={{ color: "rgb(var(--rgb-text-primary))" }}
+                >
+                  {t("settings.deletion_info")}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </a>
+              </div>
+            </Section>
+
             {/* ── 7. Sign out ──────────────────────────────────────────── */}
             <div className="py-6">
               <HairlineButton onClick={handleSignOut}>{t("common.sign_out")}</HairlineButton>

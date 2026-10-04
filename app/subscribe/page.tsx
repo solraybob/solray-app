@@ -15,6 +15,7 @@ import {
 } from "@/lib/subscription";
 import {
   launchNativePurchase,
+  restoreNativePurchases,
   setPurchaseListener,
   initNativeIAP,
   getLocalizedMonthlyPrice,
@@ -282,8 +283,22 @@ function SubscribeContent() {
   // nothing visibly happened and the user could never reach the purchase
   // sheet. Gating on has_access (not the looser `subscribed`) is what makes
   // the StoreKit purchase reachable for every non-member on iOS.
-  if (isNative && (!sub || !sub.has_access)) {
-    return <NativeMembershipView onSignOut={handleSignOut} onAccountSettings={handleAccountSettings} />;
+  //
+  // A member still inside Solray's own server-side free trial (status
+  // "trial", no store purchase yet) also gets the purchase screen on native.
+  // Before 2026-10-05 they saw the web status page with every payment control
+  // hidden, so for the first three days there was no way to reach StoreKit at
+  // all, which is exactly where App Review looks for the subscription. They
+  // keep their access, so the screen offers Continue to app as well.
+  if (isNative && (!sub || !sub.has_access || sub.status === "trial")) {
+    const inTrial = Boolean(sub && sub.has_access);
+    return (
+      <NativeMembershipView
+        onSignOut={handleSignOut}
+        onAccountSettings={handleAccountSettings}
+        onContinue={inTrial ? () => router.push("/today") : undefined}
+      />
+    );
   }
 
   // No subscription yet (web only now; native handled above).
@@ -630,7 +645,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 // stop the spinner instead of leaving the member on "Opening..." forever.
 const NATIVE_PURCHASE_TIMEOUT_MS = 60_000;
 
-function NativeMembershipView({ onSignOut, onAccountSettings }: { onSignOut: () => void; onAccountSettings: () => void }) {
+function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { onSignOut: () => void; onAccountSettings: () => void; onContinue?: () => void }) {
   const { t } = useT();
   const { refresh } = useSubscription();
   const [loading, setLoading] = useState(false);
@@ -681,6 +696,25 @@ function NativeMembershipView({ onSignOut, onAccountSettings }: { onSignOut: () 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
+  // Restore Purchases: replays this Apple ID's (or Google account's)
+  // existing subscription through the same verify path as a new purchase.
+  const [restoring, setRestoring] = useState(false);
+  const handleRestore = async () => {
+    if (restoring || loading) return;
+    setError("");
+    setPendingNote("");
+    setRestoring(true);
+    try {
+      await restoreNativePurchases();
+      await refresh();
+      setPendingNote(t("subscribe.restore_done"));
+    } catch (e) {
+      setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.restore_failed"));
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const handleSubscribe = async () => {
     setError("");
     setPendingNote("");
@@ -715,8 +749,8 @@ function NativeMembershipView({ onSignOut, onAccountSettings }: { onSignOut: () 
             trial; the chosen product id is what gets ordered on the store. */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {([
-            { key: "monthly" as const, price: prices.monthly || "$23", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
-            { key: "yearly" as const, price: prices.yearly || "$199", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
+            { key: "monthly" as const, price: prices.monthly || "…", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
+            { key: "yearly" as const, price: prices.yearly || "…", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
           ]).map((o) => {
             const selected = plan === o.key;
             return (
@@ -752,6 +786,12 @@ function NativeMembershipView({ onSignOut, onAccountSettings }: { onSignOut: () 
             {loading ? t("subscribe.opening") : t("subscribe.start_free_trial")}
           </button>
 
+          {onContinue && (
+            <HairlineButton onClick={onContinue} disabled={loading}>{t("subscribe.continue_to_app")}</HairlineButton>
+          )}
+          <HairlineButton onClick={handleRestore} loading={restoring} disabled={loading}>
+            {t("subscribe.restore_purchases")}
+          </HairlineButton>
           <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
           <HairlineButton onClick={onAccountSettings}>{t("subscribe.account_settings")}</HairlineButton>
 

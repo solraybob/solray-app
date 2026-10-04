@@ -51,6 +51,7 @@ interface CdvPurchaseWindow {
       get: (id: string, platform?: string) => ProductLike | undefined;
       when: () => WhenEventChain;
       order: (offer: OfferLike) => Promise<{ isError?: boolean; message?: string } | void>;
+      restorePurchases?: () => Promise<{ isError?: boolean; message?: string } | void>;
     };
     Platform: { GOOGLE_PLAY: string; APPLE_APPSTORE: string };
     ProductType: { PAID_SUBSCRIPTION: string };
@@ -281,6 +282,26 @@ export async function launchNativePurchase(productId: string = PRODUCT_ID): Prom
   const result = await store.order(offer as OfferLike);
   if (result && (result as { isError?: boolean }).isError) {
     throw new NativeIAPError("failed", (result as { message?: string }).message || "Purchase failed");
+  }
+}
+
+/**
+ * Restore Purchases (App Store Guideline 3.1.1 expects a visible restore
+ * mechanism for restorable purchases). Asks the store to replay the member's
+ * existing transactions; every replayed subscription flows through the same
+ * approved -> backend verify -> finish path as a new purchase, so the backend
+ * stays the only authority on entitlement. Resolves when the store has
+ * finished replaying; the caller refreshes entitlement afterwards.
+ */
+export async function restoreNativePurchases(): Promise<void> {
+  await initNativeIAP();
+  const store = getStore();
+  if (!store || !store.restorePurchases) {
+    throw new NativeIAPError("unavailable", "Restore is not available on this device");
+  }
+  const result = await store.restorePurchases();
+  if (result && (result as { isError?: boolean }).isError) {
+    throw new NativeIAPError("failed", (result as { message?: string }).message || "Restore failed");
   }
 }
 

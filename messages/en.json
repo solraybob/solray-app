@@ -522,7 +522,11 @@
     "delete_confirm_button": "Delete my account",
     "delete_failed": "Could not delete the account. Try again.",
     "delete_done_store": "Your account is deleted. Your membership is billed by the App Store or Google Play, so cancel it there too, or it will keep renewing.",
-    "photo_failed": "That photo could not be uploaded. Try again or choose another image."
+    "photo_failed": "That photo could not be uploaded. Try again or choose another image.",
+    "legal_section": "Legal and support",
+    "terms_privacy": "Terms and privacy policy",
+    "support": "Support",
+    "deletion_info": "How account deletion works"
   },
   "nav": {
     "today": "Now",
@@ -656,7 +660,10 @@
     "store_restored": "Your App Store or Google Play membership is still active, so we restored your access. No card was charged.",
     "subtitle_rejoin": "Your membership has ended. Rejoin whenever you are ready and pick up where you left off.",
     "account_settings": "Account settings",
-    "plan_change_failed": "Your plan could not be changed. Try again."
+    "plan_change_failed": "Your plan could not be changed. Try again.",
+    "restore_purchases": "Restore purchases",
+    "restore_done": "Restore finished. If this Apple ID or Google account has an active Solray membership, your access is back.",
+    "restore_failed": "Could not restore purchases. Check your connection and try again."
   },
   "depth": {
     "the_sky": "The Sky",
