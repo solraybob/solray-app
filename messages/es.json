@@ -98,7 +98,9 @@
     "calibration_why": "Tu Oráculo se construye desde tu momento exacto de nacimiento. Por eso nada de lo que dice es genérico.",
     "log_in": "Iniciar sesión",
     "have_account": "¿Ya tienes una cuenta?",
-    "step_of": "Paso {n} de {total}"
+    "step_of": "Paso {n} de {total}",
+    "ai_consent": "Acepto que Solray envíe mis datos de nacimiento y lo que escribo o digo en la app a sus proveedores de IA (Anthropic, OpenAI y Groq) para que generen mis lecturas y las respuestas del Oráculo. Solo los procesan en nombre de Solray.",
+    "ai_consent_link": "Política de privacidad"
   },
   "today": {
     "title": "Hoy",

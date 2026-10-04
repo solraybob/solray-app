@@ -128,7 +128,9 @@
     "calibration_why": "Your Oracle is built from your exact moment of birth. This is why nothing it says is generic.",
     "log_in": "Log in",
     "have_account": "Already have an account?",
-    "step_of": "Step {n} of {total}"
+    "step_of": "Step {n} of {total}",
+    "ai_consent": "I agree that Solray sends my birth details and what I write or say in the app to its AI providers (Anthropic, OpenAI and Groq) so they can generate my readings and the Oracle's replies. They process it only on Solray's behalf.",
+    "ai_consent_link": "Privacy policy"
   },
   "first_mirror": {
     "title": "The First Mirror",
