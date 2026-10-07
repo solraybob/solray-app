@@ -5,6 +5,7 @@ import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
 import { bindAccount, bumpAuthGeneration, identityStorageChange } from "./account-session";
 import { releaseNativePush } from "./native-push";
+import { deviceLanguage } from "./i18n";
 
 interface User {
   id: string;
@@ -149,7 +150,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await res.json();
     const userObj = data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email };
-    const lang = userObj.language || data.language;
+    let lang = userObj.language || data.language;
+    // An account that never had a language chosen holds the server's 'en'
+    // default (language_saved false). The device's language (the one saved
+    // here, else the browser's) is then saved to the account once, instead
+    // of the device being switched to the default.
+    if (userObj.language_saved === false) {
+      const device = deviceLanguage();
+      lang = device;
+      const tok = data.token || data.access_token;
+      void fetch(`${apiUrl}/users/language`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ language: device }),
+      }).catch(() => { /* asked again at the next sign-in */ });
+    }
     // Mirror the server's saved language preference onto the localStorage
     // slot LanguageProvider reads. If absent, the provider falls back to
     // browser locale / 'en' on its own.

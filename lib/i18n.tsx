@@ -217,6 +217,23 @@ export function getLanguageDisplayName(code: LanguageCode): string {
   }
 }
 
+/**
+ * The language this device shows: the one saved here, else the browser's
+ * (Spanish for any es-*), else English. The same rule the provider boots
+ * with; signup and a first sign-in send it to the account.
+ */
+export function deviceLanguage(): LanguageCode {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && (SUPPORTED_LANGUAGES as readonly string[]).includes(saved)) return saved as LanguageCode;
+  } catch { /* storage unavailable */ }
+  try {
+    const browser = (typeof navigator !== "undefined" ? navigator.language : "") || "";
+    if (browser.toLowerCase().startsWith("es")) return "es";
+  } catch { /* SSR */ }
+  return DEFAULT_LANGUAGE;
+}
+
 /** Replace {name} placeholders in a translated template. */
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));

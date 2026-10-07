@@ -7,7 +7,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { errorText } from "@/lib/errors";
 import { useAuth } from "@/lib/auth-context";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useT } from "@/lib/i18n";
+import { useT, deviceLanguage } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
 import { isRunningInCapacitor } from "@/lib/native-push";
 import BirthWheels from "@/components/BirthWheels";
@@ -215,7 +215,7 @@ export default function OnboardPage() {
         const params = new URLSearchParams(window.location.search);
         inviteCode = params.get("invite") || params.get("ref") || null;
         // The provider's live language, not just what reached storage.
-        language = lang || localStorage.getItem("solray_language");
+        language = lang || deviceLanguage();
       }
     } catch { /* ignore */ }
     // Tell the backend which platform is registering. Inside the Capacitor
