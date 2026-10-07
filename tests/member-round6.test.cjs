@@ -29,8 +29,8 @@ const M1 = { id: "m1", role: "user", content: "q", timestamp: "2026-10-07T10:00:
 const M2 = { id: "m2", role: "user", content: "offline turn", timestamp: "2026-10-07T11:00:00Z" };
 
 /** Server holding n1 at revision 5 with `serverName`; records PUT bodies
- *  and answers them the way the backend merges a name (non-null applies,
- *  null applies only when the device was up to date). */
+ *  and answers them the way the backend merges a name (round 9: only an
+ *  explicit rename changes it; an ordinary upload leaves it as it is). */
 function nameServer(serverName) {
   const state = { name: serverName, revision: 5, puts: [] };
   global.fetch = async (url, init = {}) => {
@@ -46,7 +46,7 @@ function nameServer(serverName) {
     const body = JSON.parse(init.body);
     state.puts.push(body);
     const upToDate = body.base_revision === state.revision;
-    if (body.custom_name !== null || upToDate) state.name = body.custom_name;
+    if (body.rename === true) state.name = body.custom_name;
     state.revision += 1;
     return json(200, { session_id: "n1", custom_name: state.name, date_label: "Oct 7", last_message_at: "2026-10-07T11:00:00Z",
       revision: state.revision, conflict: !upToDate, messages: body.messages });

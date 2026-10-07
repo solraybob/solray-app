@@ -37,7 +37,11 @@ export interface ChatMessage {
   // Who a Dynamics conversation is with (set on its opening message), so
   // the conversation keeps its partner on every device. Ids only, never a
   // chart: the server loads and authorises the chart itself.
-  soul?: { name?: string | null; connection_id?: string | null; saved_person_id?: string | null };
+  soul?: {
+    name?: string | null; connection_id?: string | null; saved_person_id?: string | null;
+    // A family reading: everyone else in it, by reference.
+    family?: Array<{ name?: string | null; connection_id?: string | null; saved_person_id?: string | null }>;
+  };
   // The fixed crisis or support card (lib/crisis-card.ts), drawn as a card
   // with call and text buttons. `content` keeps its plain text.
   crisis?: CrisisCardData;
@@ -269,54 +273,82 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
         }
       }
 
-      // The newest local copy (the member may have written more meanwhile),
-      // with this device's Dynamics partner reference written in if the
-      // transcript does not name it yet.
-      let latest = loadSession(sessionId) || local;
-      const backfilled = withSoulBackfill(sessionId, latest.messages || []);
-      if (backfilled !== latest.messages) {
-        latest = { ...latest, messages: backfilled };
-        saveSession(latest);
-      }
-      const sent = latest.messages || [];
-      const baseRevision = getLocalMeta()[sessionId]?.revision;
-      const putRes = await fetch(url, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({
-          session_id: sessionId,
-          custom_name: latest.customName || null,
-          date_label: latest.date || null,
-          messages: sent,
-          ...(typeof baseRevision === "number" ? { base_revision: baseRevision } : {}),
-          expect_existing: expectExisting,
-        }),
-      });
-      if (!stillMine()) return false;
-      if (!putRes.ok) return false;
-      const out = await putRes.json().catch(() => ({} as Record<string, unknown>));
-      if (!stillMine()) return false;
-      markServerConfirmed([sessionId]);
-      // The name: a rename made here is done once the server holds it (and
-      // nothing newer was typed meanwhile). Without one, the server's name
-      // is the current one (another device may have renamed or cleared it).
-      const sentName = latest.customName || undefined;
-      const nowLocal = loadSession(sessionId);
-      if (getPendingRenames().has(sessionId)) {
-        if ((nowLocal?.customName || undefined) === sentName) clearRenamePending(sessionId);
-      } else if (nowLocal && out && "custom_name" in out) {
-        const serverNameNow = typeof out.custom_name === "string" && out.custom_name ? out.custom_name : undefined;
-        if ((nowLocal.customName || undefined) !== serverNameNow) saveSession({ ...nowLocal, customName: serverNameNow });
-      }
-      // The merged transcript the server now holds: take in what other
-      // devices added (a server from before the merge sends none).
-      const serverNow: ChatMessage[] = Array.isArray(out?.messages) ? out.messages as ChatMessage[] : sent;
-      takeServerCopy(sessionId, serverNow);
-      // Only clear "unsent" if nothing newer was written while uploading.
-      const after = loadSession(sessionId);
-      if (!after || sameTranscript(mergeMessages(serverNow, after.messages || []), serverNow)) clearUnsent(sessionId);
-      if (out && typeof out.last_message_at === "string") {
-        setSessionLocalMeta(sessionId, out.last_message_at, typeof out.revision === "number" ? out.revision : undefined);
+      // A rename made here and not confirmed yet goes up as an explicit
+      // rename; every other upload is an ordinary transcript upload, which
+      // never changes the name on the server (the reply carries the current
+      // one). If the server answers with a different name than the one
+      // asked for, the rename stays pending and is sent once more with the
+      // revision just learned (and again on the next sync if needed).
+      for (let attempt = 0; attempt < 2; attempt++) {
+        // The newest local copy (the member may have written more meanwhile),
+        // with this device's Dynamics partner reference written in if the
+        // transcript does not name it yet.
+        let latest = loadSession(sessionId) || local;
+        const backfilled = withSoulBackfill(sessionId, latest.messages || []);
+        if (backfilled !== latest.messages) {
+          latest = { ...latest, messages: backfilled };
+          saveSession(latest);
+        }
+        const sent = latest.messages || [];
+        const baseRevision = getLocalMeta()[sessionId]?.revision;
+        const renaming = getPendingRenames().has(sessionId);
+        const putRes = await fetch(url, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({
+            session_id: sessionId,
+            custom_name: latest.customName || null,
+            rename: renaming,
+            date_label: latest.date || null,
+            messages: sent,
+            ...(typeof baseRevision === "number" ? { base_revision: baseRevision } : {}),
+            expect_existing: expectExisting,
+          }),
+        });
+        if (!stillMine()) return false;
+        if (!putRes.ok) return false;
+        const out = await putRes.json().catch(() => ({} as Record<string, unknown>));
+        if (!stillMine()) return false;
+        markServerConfirmed([sessionId]);
+        const sentName = latest.customName || undefined;
+        const serverKnown = !!out && "custom_name" in out;
+        const serverNameNow = serverKnown && typeof out.custom_name === "string" && out.custom_name
+          ? out.custom_name as string : undefined;
+        const nowLocal = loadSession(sessionId);
+        let renameStillPending = false;
+        if (renaming) {
+          // Done only when the server reports the name that was asked for
+          // (and nothing newer was typed here meanwhile).
+          if (serverKnown && serverNameNow === sentName) {
+            if ((nowLocal?.customName || undefined) === sentName) clearRenamePending(sessionId);
+            else renameStillPending = true;
+          } else {
+            renameStillPending = true;
+          }
+        } else if (getPendingRenames().has(sessionId)) {
+          // Renamed here while this upload ran: sent next.
+          renameStillPending = true;
+        } else if (nowLocal && serverKnown) {
+          // No rename made here: the server's name is the current one
+          // (another device may have renamed or cleared it).
+          if ((nowLocal.customName || undefined) !== serverNameNow) saveSession({ ...nowLocal, customName: serverNameNow });
+        }
+        // The merged transcript the server now holds: take in what other
+        // devices added (a server from before the merge sends none).
+        const serverNow: ChatMessage[] = Array.isArray(out?.messages) ? out.messages as ChatMessage[] : sent;
+        takeServerCopy(sessionId, serverNow);
+        if (out && typeof out.last_message_at === "string") {
+          setSessionLocalMeta(sessionId, out.last_message_at, typeof out.revision === "number" ? out.revision : undefined);
+        }
+        if (renameStillPending) {
+          // Kept unsent so the next sync sends the rename again.
+          if (attempt === 0) continue;
+          return true;
+        }
+        // Only clear "unsent" if nothing newer was written while uploading.
+        const after = loadSession(sessionId);
+        if (!after || sameTranscript(mergeMessages(serverNow, after.messages || []), serverNow)) clearUnsent(sessionId);
+        return true;
       }
       return true;
     });
