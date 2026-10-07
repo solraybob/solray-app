@@ -18,6 +18,7 @@ import { useT, fill, ordinal } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import { signalReadingShown } from "@/lib/native-push";
 
 // The ruling planet colours the day, drawn from the orb rather than from a
 // stock photograph. The photographs were storm clouds and star fields behind
@@ -1857,6 +1858,12 @@ export default function TodayPage() {
     window.addEventListener("solray:refresh", onRefresh);
     return () => window.removeEventListener("solray:refresh", onRefresh);
   }, [token]);
+
+  // A complete reading is on screen: the push ask's value signal (native
+  // shell only). Skeletons, errors and the preparing state never count.
+  useEffect(() => {
+    if (!loading && forecast && forecast._pending !== true) signalReadingShown();
+  }, [forecast, loading]);
 
   // Staggered section reveal
   useEffect(() => {

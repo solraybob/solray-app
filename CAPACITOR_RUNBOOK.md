@@ -54,7 +54,12 @@ npx cap sync ios
 
 This regenerates `ios/App/App/capacitor.config.json` and `config.xml`,
 copies `public/` (the offline page), and runs `pod install`, which moves
-the pods to Capacitor 6.2.2. Commit the updated `ios/App/Podfile.lock`.
+the pods to Capacitor 6.2.2. The committed `ios/App/Podfile.lock` still
+says `Capacitor (6.2.1)` and `CapacitorCordova (6.2.1)` (pod install cannot
+run outside a Mac). Required before archiving: after the sync,
+`grep -E "Capacitor(Cordova)? \(" ios/App/Podfile.lock` must show 6.2.2 for
+both, then commit the updated `ios/App/Podfile.lock`. Do not archive while
+it says 6.2.1.
 
 `./RUN_IOS_BUILD.sh` does steps 1 and 2 plus the version checks below and
 opens Xcode. It never commits or pushes.
