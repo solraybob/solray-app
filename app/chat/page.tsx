@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode, isAiConsentError } from "@/lib/api";
 import { getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
+import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -317,24 +318,6 @@ async function syncSessionsFromServer(token: string | null, gen: number = getAut
     if (isStaleAccountError(e)) throw e;
     return getSessionIds();
   }
-}
-
-// Union of two transcripts of the same conversation, by message id: the
-// server's copy, plus anything only this device has (sent while the sync
-// was still running), in time order.
-function mergeMessages(server: Message[], local: Message[]): Message[] {
-  const seen = new Set(server.map((m) => m.id));
-  const extra = local.filter((m) => !seen.has(m.id));
-  if (extra.length === 0) return server;
-  return [...server, ...extra].sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
-}
-
-function sameTranscript(a: Message[], b: Message[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i].id !== b[i].id || a[i].content !== b[i].content) return false;
-  }
-  return true;
 }
 
 // Dynamics context (the other person's chart) belongs to the conversation it

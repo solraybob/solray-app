@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStaleAccountError } from "@/lib/account-session";
+import { mergeSavedPeople, peopleToUpload } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
@@ -388,7 +389,7 @@ export default function SoulsPage() {
         //    confirmed. A confirmed person missing from the server was
         //    deleted on another device: it is dropped here, not re-created.
         const local = loadSavedPeople();
-        const toMigrate = local.filter((p) => p && p.id && !serverIds.has(p.id) && !p._synced && !tomb.has(p.id));
+        const toMigrate = peopleToUpload(local, serverIds, tomb);
         const migrated: SavedPerson[] = [];
         const idRemap: Record<string, string> = {};
         for (const p of toMigrate) {
@@ -408,26 +409,13 @@ export default function SoulsPage() {
           }
         }
         if (cancelled) return;
-        const migratedById = new Map(Object.entries(idRemap));
+        const replacedIds = new Set(Object.keys(idRemap));
         const confirmed = [...migrated, ...server];
         const confirmedIds = new Set(confirmed.map((p) => p.id));
         // 3. Merge against the CURRENT list, not the snapshot read above, so a
         //    person added or removed while this sync ran is respected.
         setSavedPeople((prev) => {
-          const tombNow = loadTombstones();
-          const keepLocal = prev.filter((p) =>
-            p && p.id &&
-            !p._synced &&                       // never confirmed: still local-only
-            !confirmedIds.has(p.id) &&
-            !migratedById.has(p.id) &&          // replaced by the server's id
-            !tombNow.has(p.id)
-          );
-          const seen = new Set<string>();
-          const final = [...keepLocal, ...confirmed].filter((p) => {
-            if (!p || !p.id || seen.has(p.id) || tombNow.has(p.id)) return false;
-            seen.add(p.id);
-            return true;
-          });
+          const final = mergeSavedPeople(prev, confirmed, replacedIds, loadTombstones());
           writeSavedPeople(final);
           return final;
         });

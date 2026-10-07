@@ -14,20 +14,7 @@ import BirthWheels from "@/components/BirthWheels";
 import { AI_CONSENT_VERSION } from "@/lib/ai-consent";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 
-// Solray's terms and privacy policy set the minimum age at 16.
-const MIN_AGE = 16;
-
-/** Whole years between a YYYY-MM-DD birth date and today, or null if invalid. */
-function ageFromBirthDate(date: string): number | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (!m) return null;
-  const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
-  const now = new Date();
-  let age = now.getFullYear() - y;
-  const beforeBirthday = now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d);
-  if (beforeBirthday) age -= 1;
-  return age;
-}
+import { ageFromBirthDate, MIN_AGE } from "@/lib/age";
 
 const TOTAL_STEPS = 5;
 

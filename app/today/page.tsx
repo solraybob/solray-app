@@ -11,6 +11,7 @@ import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
 import { isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
 import { syncBirthRevision } from "@/lib/chart-revision";
+import { activeCardIndex } from "@/lib/deck";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import { ShareCardOffscreen } from "@/components/ShareCard";
 import { useT, fill, ordinal } from "@/lib/i18n";
@@ -612,20 +613,8 @@ function Deck({ children, count }: { children: React.ReactNode; count: number })
   const onScroll = () => {
     const el = ref.current;
     if (!el) return;
-    const cards = Array.from(el.children) as HTMLElement[];
-    if (cards.length === 0) return;
-    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
-      setHere(Math.min(count, cards.length) - 1);
-      return;
-    }
-    const mid = el.scrollLeft + el.clientWidth / 2;
-    let best = 0;
-    let bestDist = Infinity;
-    cards.forEach((c, i) => {
-      const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid);
-      if (d < bestDist) { bestDist = d; best = i; }
-    });
-    setHere(Math.max(0, Math.min(count - 1, best)));
+    const cards = (Array.from(el.children) as HTMLElement[]).map((c) => ({ left: c.offsetLeft, width: c.offsetWidth }));
+    setHere(activeCardIndex(el.scrollLeft, el.clientWidth, el.scrollWidth, cards, count));
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0 }}>

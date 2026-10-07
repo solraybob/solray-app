@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "rootDir": "..",
+    "baseUrl": "..",
+    "paths": { "@/*": ["./*"] }
+  },
+  "files": [
+    "../lib/account-session.ts",
+    "../lib/api.ts",
+    "../lib/ai-consent.ts",
+    "../lib/local-cache.ts",
+    "../lib/chart-revision.ts",
+    "../lib/chat-merge.ts",
+    "../lib/age.ts",
+    "../lib/deck.ts",
+    "../lib/saved-people-sync.ts",
+    "../lib/legal-links.ts",
+    "../lib/share-available.ts",
+    "../lib/today-prompts.ts",
+    "../lib/i18n.tsx"
+  ]
+}
