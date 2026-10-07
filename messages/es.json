@@ -371,7 +371,13 @@
     "permission_needed_title": "Antes de seguir",
     "permission_needed_body": "Para esta lectura, los datos de nacimiento de {names} van a Solray y a sus proveedores de IA. Solray lo pregunta una vez por cada persona que guardaste.",
     "permission_continue": "Continuar",
-    "permission_not_now": "Ahora no"
+    "permission_not_now": "Ahora no",
+    "birth_wheel_prompt": "Desplázate para fijar el momento en que nació",
+    "compat_sun_in": "Sol en {sign}",
+    "compat_moon_in": "Luna en {sign}",
+    "compat_hd": "Diseño Humano: {type}",
+    "compat_intro": "Quiero entender la dinámica entre {name} y yo. ¿Cómo interactúan nuestras energías?",
+    "compat_intro_chart": "Quiero entender la dinámica entre {name} y yo. Su carta: {chart}. ¿Cómo interactúan nuestras energías?"
   },
   "profile": {
     "title": "Perfil",
@@ -766,7 +772,8 @@
     "iap_card_pending": "Aún se está confirmando un pago con tarjeta en tu cuenta. No se cobró nada en la tienda. Inténtalo de nuevo en unos minutos.",
     "iap_web_billing_active": "Tu membresía ya está pagada con tarjeta y activa. No se cobró nada en la tienda.",
     "iap_check_failed": "No pudimos comprobar tu membresía en este momento, así que no se abrió la tienda. Revisa tu conexión e inténtalo de nuevo.",
-    "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato."
+    "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato.",
+    "badge_awaiting_email": "Esperando tu correo"
   },
   "depth": {
     "the_sky": "El Cielo",

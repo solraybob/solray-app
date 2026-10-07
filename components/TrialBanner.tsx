@@ -89,7 +89,10 @@ export default function TrialBanner() {
           >
             {t("trial.label")}
           </p>
-          <p className="font-body truncate" style={{ fontSize: 15, fontWeight: 500, marginTop: 2, color: tone }}>
+          {/* Wraps rather than truncates: in Spanish "Quedan 3 dias en tu
+              periodo de prueba." was cut to "Quedan 3 dias en..." at phone
+              width, losing what the days are left of. */}
+          <p className="font-body" style={{ fontSize: 15, lineHeight: 1.35, fontWeight: 500, marginTop: 2, color: tone }}>
             {message}
           </p>
         </div>

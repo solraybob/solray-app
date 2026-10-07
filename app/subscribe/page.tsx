@@ -360,7 +360,7 @@ function SubscribeContent() {
   };
 
   const dateFmt = (d: string) =>
-    new Date(d).toLocaleDateString(lang === "en" ? "en-US" : lang, {
+    new Date(d).toLocaleDateString(lang === "en" ? "en-GB" : lang, {
       month: "long",
       day: "numeric",
       year: "numeric",
@@ -389,7 +389,7 @@ function SubscribeContent() {
 
         {!isNative && sub.trial_pending_verification && <ResendVerification token={token} />}
 
-        <Section label={t("subscribe.status")} right={<StatusBadge status={lapsed ? "expired" : sub.status || ""} />}>
+        <Section label={t("subscribe.status")} right={<StatusBadge status={lapsed ? "expired" : sub.trial_pending_verification ? "awaiting_email" : sub.status || ""} />}>
           <div>
             {sub.status === "trial" && sub.trial_end && (
               <DetailRow label={t("subscribe.trial_ends")} value={dateFmt(sub.trial_end)} />
@@ -1169,6 +1169,9 @@ function StatusBadge({ status }: { status: string }) {
     trial: t("subscribe.badge_trial"),
     active: t("subscribe.badge_active"),
     past_due: t("subscribe.badge_retrying"),
+    // A web signup's trial starts when the email is confirmed; until then
+    // the badge must not say Trial over a line saying it has not started.
+    awaiting_email: t("subscribe.badge_awaiting_email"),
     cancelled: t("subscribe.badge_cancelled"),
     expired: t("subscribe.badge_expired"),
   };

@@ -235,7 +235,7 @@ interface SoulActionsProps {
 }
 
 function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: SoulActionsProps) {
-  const { t } = useT();
+  const { t, lang } = useT();
   // Removing is permanent for both people, so it asks once more first.
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -268,10 +268,10 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: 
             <h3 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{soul.soul.name}</h3>
             <p className="font-body text-text-secondary text-[17px]">
               {soul.soul.sun_sign && (
-                <>☉ {soul.soul.sun_sign}</>
+                <>☉ {tx(soul.soul.sun_sign, lang)}</>
               )}
               {soul.soul.sun_sign && soul.soul.hd_type && " · "}
-              {soul.soul.hd_type}
+              {tx(soul.soul.hd_type, lang)}
             </p>
           </div>
         </div>
@@ -717,15 +717,16 @@ export default function SoulsPage() {
     // (and says so plainly if they keep it private or have not agreed to
     // AI processing). No chart travels through the app.
 
+    // The member's own opening line in the chat, so in their language.
     const chartSummary = [
-      soul.soul.sun_sign && `Sun in ${soul.soul.sun_sign}`,
-      soul.soul.moon_sign && `Moon in ${soul.soul.moon_sign}`,
-      soul.soul.hd_type && `Human Design: ${soul.soul.hd_type}`,
+      soul.soul.sun_sign && fill(t("souls.compat_sun_in"), { sign: tx(soul.soul.sun_sign, lang) }),
+      soul.soul.moon_sign && fill(t("souls.compat_moon_in"), { sign: tx(soul.soul.moon_sign, lang) }),
+      soul.soul.hd_type && fill(t("souls.compat_hd"), { type: tx(soul.soul.hd_type, lang) }),
     ].filter(Boolean).join(", ");
 
     const introMessage = chartSummary
-      ? `I want to understand the dynamic between me and ${soul.soul.name}. Their chart: ${chartSummary}. How do our energies interact?`
-      : `I want to understand the dynamic between me and ${soul.soul.name}. How do our energies interact?`;
+      ? fill(t("souls.compat_intro_chart"), { name: soul.soul.name, chart: chartSummary })
+      : fill(t("souls.compat_intro"), { name: soul.soul.name });
 
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
       soulName: soul.soul.name,
@@ -747,7 +748,7 @@ export default function SoulsPage() {
       name: c.soul.name,
       photo: c.soul.profile_photo || null,
       connected: true,
-      detail: [c.soul.sun_sign ? `☉ ${c.soul.sun_sign}` : null, c.soul.hd_type]
+      detail: [c.soul.sun_sign ? `☉ ${tx(c.soul.sun_sign, lang)}` : null, c.soul.hd_type ? tx(c.soul.hd_type, lang) : null]
         .filter(Boolean)
         .join(" · ") || t("souls.connected"),
       onOpen: () => setActiveSoul(c),
@@ -757,7 +758,7 @@ export default function SoulsPage() {
       name: person.name,
       photo: null as string | null,
       connected: false,
-      detail: [person.profile?.sun_sign ? `☉ ${person.profile.sun_sign}` : null, person.profile?.hd_type]
+      detail: [person.profile?.sun_sign ? `☉ ${tx(person.profile.sun_sign, lang)}` : null, person.profile?.hd_type ? tx(person.profile.hd_type, lang) : null]
         .filter(Boolean)
         .join(" · ") || t("souls.saved"),
       onOpen: () => {
@@ -1324,7 +1325,7 @@ export default function SoulsPage() {
                             {invite.requester.name}
                           </p>
                           <p className="font-body truncate" style={{ fontSize: 12, color: "rgb(var(--rgb-text-muted))", marginTop: 3 }}>
-                            {invite.requester.sun_sign ? `☉ ${invite.requester.sun_sign}` : t("souls.wants_to_connect")}
+                            {invite.requester.sun_sign ? `☉ ${tx(invite.requester.sun_sign, lang)}` : t("souls.wants_to_connect")}
                           </p>
                         </div>
                         <button
@@ -1496,7 +1497,7 @@ export default function SoulsPage() {
                                 {user.name}
                               </p>
                               <p className="font-body truncate" style={{ fontSize: 12, color: "rgb(var(--rgb-text-muted))", marginTop: 3 }}>
-                                {[user.sun_sign ? `☉ ${user.sun_sign}` : null, user.username ? `@${user.username}` : null].filter(Boolean).join("  ·  ")}
+                                {[user.sun_sign ? `☉ ${tx(user.sun_sign, lang)}` : null, user.username ? `@${user.username}` : null].filter(Boolean).join("  ·  ")}
                               </p>
                             </div>
                             <button
@@ -1646,7 +1647,7 @@ interface BondCardProps {
 const MAX_FAMILY_MEMBERS = 5;
 
 function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePartner, onChangeLens, onRead, reading }: BondCardProps) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const lenses: { key: BondLens; label: string; hint: string }[] = [
     { key: "family",     label: t("souls.lens_family"),     hint: t("souls.lens_family_hint") },
     { key: "friendship", label: t("souls.lens_friendship"), hint: t("souls.lens_friendship_hint") },
@@ -1754,10 +1755,10 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
       {/* Chart whisper, only for single partner on non-family lenses */}
       {!isFamily && partner && chart && (chart.sun_sign || chart.hd_type) && (
         <p className="font-body text-[15px] text-text-secondary mb-5 -mt-2 pl-1">
-          {chart.sun_sign && <>☉ {chart.sun_sign}</>}
+          {chart.sun_sign && <>☉ {tx(chart.sun_sign, lang)}</>}
           {chart.sun_sign && chart.hd_type && " · "}
           {chart.hd_type && (
-            <>{chart.hd_type}{chart.hd_profile ? ` ${chart.hd_profile}` : ""}</>
+            <>{tx(chart.hd_type, lang)}{chart.hd_profile ? ` ${chart.hd_profile}` : ""}</>
           )}
         </p>
       )}
@@ -1826,7 +1827,7 @@ interface PartnerPickerProps {
 }
 
 function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSaved, onConfirmSaved, onClose }: PartnerPickerProps) {
-  const { t } = useT();
+  const { t, lang } = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
@@ -1868,9 +1869,9 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-text-primary text-sm font-semibold truncate">{p.name}</p>
                       <p className="text-text-secondary text-[15px] font-body truncate">
-                        {p.profile.sun_sign && <>☉ {p.profile.sun_sign}</>}
+                        {p.profile.sun_sign && <>☉ {tx(p.profile.sun_sign, lang)}</>}
                         {p.profile.sun_sign && p.profile.hd_type && " · "}
-                        {p.profile.hd_type}
+                        {tx(p.profile.hd_type, lang)}
                       </p>
                     </div>
                   </button>
@@ -1918,9 +1919,9 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                   <div className="flex-1 min-w-0">
                     <p className="font-body text-text-primary text-sm font-semibold truncate">{c.soul.name}</p>
                     <p className="text-text-secondary text-[15px] font-body truncate">
-                      {c.soul.sun_sign && <>☉ {c.soul.sun_sign}</>}
+                      {c.soul.sun_sign && <>☉ {tx(c.soul.sun_sign, lang)}</>}
                       {c.soul.sun_sign && c.soul.hd_type && " · "}
-                      {c.soul.hd_type}
+                      {tx(c.soul.hd_type, lang)}
                     </p>
                   </div>
                 </button>
@@ -2198,6 +2199,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
               time={birthTime}
               timeDisabled={timeUnknown}
               onChange={(d, tm) => { setBirthDate(d); setBirthTime(tm); }}
+              prompt={t("souls.birth_wheel_prompt")}
             />
           </div>
           <button
@@ -2323,7 +2325,7 @@ interface SoulCardProps {
 }
 
 function SoulCard({ connection, onOpen }: SoulCardProps) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const { soul } = connection;
   const avatarInitial = soul.name?.[0]?.toUpperCase() || "·";
 
@@ -2358,7 +2360,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {soul.sun_sign && (
               <span className="text-text-secondary text-sm">
-                ☉ {soul.sun_sign}
+                ☉ {tx(soul.sun_sign, lang)}
               </span>
             )}
             {soul.sun_sign && soul.hd_type && (
@@ -2366,7 +2368,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
             )}
             {soul.hd_type && (
               <span className="text-text-secondary text-xs font-body">
-                {soul.hd_type}{soul.hd_profile ? ` ${soul.hd_profile}` : ""}
+                {tx(soul.hd_type, lang)}{soul.hd_profile ? ` ${soul.hd_profile}` : ""}
               </span>
             )}
             {soul.username && (

@@ -466,7 +466,13 @@
     "permission_needed_title": "One thing first",
     "permission_needed_body": "For this reading, the birth details of {names} go to Solray and its AI providers. Solray asks once for each person you saved.",
     "permission_continue": "Continue",
-    "permission_not_now": "Not now"
+    "permission_not_now": "Not now",
+    "birth_wheel_prompt": "Scroll to set the moment they were born",
+    "compat_sun_in": "Sun in {sign}",
+    "compat_moon_in": "Moon in {sign}",
+    "compat_hd": "Human Design: {type}",
+    "compat_intro": "I want to understand the dynamic between me and {name}. How do our energies interact?",
+    "compat_intro_chart": "I want to understand the dynamic between me and {name}. Their chart: {chart}. How do our energies interact?"
   },
   "profile": {
     "title": "Profile",
@@ -766,7 +772,8 @@
     "iap_card_pending": "A card payment on your account is still being confirmed. Nothing was charged in the store. Try again in a few minutes.",
     "iap_web_billing_active": "Your membership is already paid by card and active. Nothing was charged in the store.",
     "iap_check_failed": "We could not check your membership just now, so the store was not opened. Check your connection and try again.",
-    "store_purchase_pending": "A purchase through the App Store or Google Play was just started on this account. Nothing was charged here. If it did not go through, try again in a little while."
+    "store_purchase_pending": "A purchase through the App Store or Google Play was just started on this account. Nothing was charged here. If it did not go through, try again in a little while.",
+    "badge_awaiting_email": "Waiting for your email"
   },
   "depth": {
     "the_sky": "The Sky",

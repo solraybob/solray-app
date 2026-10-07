@@ -152,6 +152,7 @@ export default function BirthWheels({
   time,
   onChange,
   timeDisabled,
+  prompt,
 }: {
   /** YYYY-MM-DD, or "" when the person has not set one yet. */
   date: string;
@@ -160,6 +161,10 @@ export default function BirthWheels({
   onChange: (date: string, time: string) => void;
   /** Locks the hour and minute columns, for "I do not know the time". */
   timeDisabled?: boolean;
+  /** The line under the wheels before anything is set. Defaults to the
+   *  member's own ("the moment you were born"); someone else's birth passes
+   *  its own wording. */
+  prompt?: string;
 }) {
   const { t, lang } = useT();
   // en-GB rather than en: the app writes dates day-first everywhere else
@@ -233,7 +238,7 @@ export default function BirthWheels({
         month: "long",
         year: "numeric",
       }) + (timeDisabled ? "" : `, ${pad2(val.h)}:${pad2(val.i)}`)
-    : t("settings.birth_wheel_prompt");
+    : (prompt || t("settings.birth_wheel_prompt"));
 
   return (
     <div>
