@@ -27,7 +27,17 @@ const BORDER = "var(--border, #E2DACA)";
 const MOSS = "var(--moss, #A34A22)";
 const EMBER = "var(--ember, #A34A22)";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type BirthSnapshot = {
+  birth_date: string;
+  birth_time: string;
+  birth_city: string | null;
+  name: string | null;
+  sex: string | null;
+  language: string;
+};
+// Each Oracle answer carries the chart it was generated for, so promoting it
+// later records that chart, even if the form has been changed since.
+type Msg = { role: "user" | "assistant"; content: string; chart?: BirthSnapshot };
 type Note = {
   id: string;
   expert_label: string | null;
@@ -60,9 +70,9 @@ function TrainingGround() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  const birthData = () => ({
+  const birthData = (): BirthSnapshot => ({
     birth_date: birthDate,
-    birth_time: birthTime,
+    birth_time: birthTime || "12:00",
     birth_city: birthCity || null,
     name: name || null,
     sex: sex || null,
@@ -97,25 +107,21 @@ function TrainingGround() {
     setMessages((m) => [...m, { role: "user", content: text }]);
     setInput("");
     setSending(true);
+    const chart = birthData();
     try {
       const data = await apiFetch(
         "/admin/training/chat",
         {
           method: "POST",
           body: JSON.stringify({
-            birth_date: birthDate,
-            birth_time: birthTime || "12:00",
-            birth_city: birthCity || null,
-            name: name || null,
-            sex: sex || null,
-            language,
-            conversation_history: history,
+            ...chart,
+            conversation_history: history.map(({ role, content }) => ({ role, content })),
             message: text,
           }),
         },
         token
       );
-      setMessages((m) => [...m, { role: "assistant", content: data.reply || "" }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.reply || "", chart }]);
     } catch (e) {
       const msg =
         e instanceof ApiError ? `${e.status}: ${e.message}` : "Could not reach the Oracle.";
@@ -148,7 +154,7 @@ function TrainingGround() {
             verdict,
             note: noteDrafts[idx] || null,
             question,
-            birth_data: birthData(),
+            birth_data: oracleMsg.chart ?? birthData(),
           }),
         },
         token

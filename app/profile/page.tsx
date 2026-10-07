@@ -13,6 +13,7 @@ import { useT } from "@/lib/i18n";
 import { cardShareAvailable } from "@/lib/share-available";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
+import { syncBirthRevision } from "@/lib/chart-revision";
 
 // Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
 // inside a collapsed section that rarely opens, so code-split it into its own
@@ -827,6 +828,8 @@ export default function ProfilePage() {
         } else if (!bp._name) {
           apiFetch("/users/me", {}, token)
             .then((data) => {
+              // Birth details changed since this cache was built: rebuild.
+              if (syncBirthRevision(data)) { setLoadAttempt((n) => n + 1); return; }
               const bpWithUser = {
                 ...bp,
                 _name: data.profile?.name || data.name || "",
@@ -840,6 +843,12 @@ export default function ProfilePage() {
           return;
         } else {
           loadFromBlueprint(bp);
+          // Paint from cache, then check in the background that the cache
+          // was built from the current birth details (an edit on another
+          // device leaves it stale); if not, rebuild from the server.
+          apiFetch("/users/me", {}, token)
+            .then((data) => { if (syncBirthRevision(data)) setLoadAttempt((n) => n + 1); })
+            .catch(() => { /* offline: the cached chart stays */ });
           return;
         }
       }
@@ -848,6 +857,7 @@ export default function ProfilePage() {
     // No cache, fetch full blueprint (first load or after cache bust)
     apiFetch("/users/me", {}, token)
       .then((data) => {
+        syncBirthRevision(data);
         if (data.blueprint) {
           const bpWithUser = {
             ...data.blueprint,

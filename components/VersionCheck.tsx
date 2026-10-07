@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { apiBusy } from "@/lib/api";
 
 /**
  * VersionCheck
@@ -17,9 +18,12 @@ import { useEffect, useRef } from "react";
  *   3. If the server returns a different id, a newer deploy is live on the
  *      edge, so we reload the page to swap in the new bundle.
  *
- * We avoid reloading while the user is actively typing (input/textarea
- * focused) so a poll does not destroy in-progress text. When the focused
- * element blurs, the pending reload fires.
+ * The reload waits until it cannot cost the member anything: no field
+ * focused, no field holding text they typed (a chat draft, a half-filled
+ * form), and no API request in flight (an Oracle reply on its way). Until
+ * then it stays pending and is retried every few seconds and whenever the
+ * page is hidden or shown again. Reloading on the first blur used to throw
+ * away a typed message the moment the member tapped elsewhere.
  */
 
 const EMBEDDED_BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID || "unknown";
@@ -47,12 +51,28 @@ export default function VersionCheck() {
       );
     };
 
+    // Any text field holding something the member typed.
+    const hasDraft = () => {
+      try {
+        const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+          "textarea, input:not([type]), input[type=text], input[type=email], input[type=search], input[type=password], input[type=tel], input[type=url]",
+        );
+        for (const f of Array.from(fields)) {
+          if (f.value && f.value !== f.defaultValue) return true;
+        }
+      } catch { /* treat as no draft */ }
+      return false;
+    };
+
+    const safeToReload = () => !isUserTyping() && !hasDraft() && !apiBusy();
+
     const doReload = () => {
       if (cancelled) return;
-      if (isUserTyping()) {
+      if (!safeToReload()) {
         pendingReload.current = true;
         return;
       }
+      pendingReload.current = false;
       window.location.reload();
     };
 
@@ -82,32 +102,28 @@ export default function VersionCheck() {
       }
     };
 
+    const retryPending = () => {
+      if (pendingReload.current) doReload();
+    };
     const onVisibility = () => {
       if (document.visibilityState === "visible") check();
+      retryPending();
     };
     const onFocus = () => check();
-    const onBlur = () => {
-      // If a reload was deferred because the user was typing, fire it now
-      // that they have moved focus away.
-      if (pendingReload.current && !isUserTyping()) {
-        pendingReload.current = false;
-        window.location.reload();
-      }
-    };
+    const pendingTimer = setInterval(retryPending, 5_000);
 
     // Kick off one check right after mount, then poll.
     check();
     timer = setInterval(check, POLL_INTERVAL_MS);
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onFocus);
-    window.addEventListener("blur", onBlur, true);
 
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
+      clearInterval(pendingTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
-      window.removeEventListener("blur", onBlur, true);
     };
   }, []);
 

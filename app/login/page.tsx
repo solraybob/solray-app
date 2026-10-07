@@ -10,6 +10,8 @@ import LanguagePicker from "@/components/LanguagePicker";
 import { useT } from "@/lib/i18n";
 import EntrySky from "@/components/EntrySky";
 import InstallApp from "@/components/InstallApp";
+import { apiFetch } from "@/lib/api";
+import { syncBirthRevision } from "@/lib/chart-revision";
 
 /* Only same-origin relative paths: must start with "/" but not "//" (or
    "/\\"), which browsers treat as protocol-relative, off-site URLs. */
@@ -55,18 +57,16 @@ export default function LoginPage() {
       await login(email, password, t("login.error_failed"));
       // Fix 5: Prefetch blueprint in background after login
       // so Chart screen is instant on first visit
-      const storedToken = localStorage.getItem("solray_token");
+      // Through apiFetch, so an answer that arrives after this account has
+      // already signed out (or another one signed in) is dropped instead of
+      // being cached as the next account's chart.
+      let storedToken: string | null = null;
+      try { storedToken = localStorage.getItem("solray_token"); } catch { /* memory-only session */ }
       if (storedToken) {
-        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-        fetch(`${apiUrl}/users/me`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${storedToken}`,
-          },
-        })
-          .then((r) => r.json())
+        apiFetch("/users/me", {}, storedToken)
           .then((data) => {
-            if (data.blueprint) {
+            syncBirthRevision(data);
+            if (data?.blueprint) {
               try {
                 localStorage.setItem(
                   "solray_blueprint",
@@ -78,7 +78,7 @@ export default function LoginPage() {
             }
           })
           .catch(() => {
-            // prefetch failure is silent, doesn't block login
+            // prefetch failure (or a stale account) is silent, never blocks login
           });
       }
       router.replace(nextPath);

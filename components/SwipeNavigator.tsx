@@ -33,6 +33,12 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
   const horizontal= useRef(false);
   const liveDx    = useRef(0);
   const committed = useRef(false); // prevents double-fire on touchend
+  // Set on every touchstart: false when the touch began somewhere this
+  // navigator must leave alone (a field, a horizontal scroller like the Now
+  // deck). Move and end ignore the whole gesture then; before, they ran on
+  // the previous gesture's start point and could turn a deck swipe into a
+  // page change.
+  const eligible  = useRef(false);
 
   const idx     = NAV_ORDER.indexOf(pathname);
   const canNext = idx !== -1 && idx < NAV_ORDER.length - 1;
@@ -121,9 +127,13 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     };
 
     const onStart = (e: TouchEvent) => {
+      eligible.current = false;
+      dragging.current = false;
+      horizontal.current = false;
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select") return;
       if (isInsideHScroll(e.target)) return;
+      eligible.current = true;
 
       const t = e.touches[0];
       startX.current    = t.clientX;
@@ -139,6 +149,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     };
 
     const onMove = (e: TouchEvent) => {
+      if (!eligible.current) return;
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select") return;
       if (committed.current) return;
@@ -169,6 +180,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
 
       // Take over native scroll once we own a horizontal gesture
       e.preventDefault();
+      el.style.willChange = "transform, opacity";
 
       // 1:1 tracking for valid directions, page follows finger exactly.
       // Heavy rubber band only at the edges where there's nowhere to go.
@@ -181,6 +193,8 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     };
 
     const onEnd = () => {
+      if (!eligible.current) return;
+      eligible.current = false;
       if (!horizontal.current || !dragging.current || committed.current) return;
 
       const dx  = liveDx.current;
@@ -234,6 +248,7 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
         if (!dragging.current && !committed.current) {
           el.style.transition = "";
           el.style.transform = "";
+          el.style.willChange = "";
         }
       }, 480);
     };
@@ -257,11 +272,10 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
       style={{
         width: "100%",
         minHeight: "100%",
-        willChange: "transform, opacity",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
-        // Promote to its own compositor layer, eliminates repaint lag
-        transform: "translateZ(0)",
+        // No resting transform or will-change: either one makes this wrapper
+        // the containing block for every position:fixed overlay inside it,
+        // so sheets and modals attached to the page instead of the screen.
+        // Both are applied only while a swipe is actually moving.
       }}
     >
       {children}

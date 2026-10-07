@@ -45,6 +45,13 @@ function localDateString(): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+// Requests in flight, so an update reload can wait until nothing (an
+// Oracle reply, a save) would be cut off.
+let inflight = 0;
+export function apiBusy(): boolean {
+  return inflight > 0;
+}
+
 export interface ApiFetchExtra {
   /**
    * A 401 on this call means "wrong password", not "dead session" (the
@@ -110,10 +117,16 @@ export async function apiFetch(
   const startedGen = getAuthGeneration();
   const accountBound = !!token;
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let res: Response;
+  inflight += 1;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } finally {
+    inflight -= 1;
+  }
 
   if (accountBound && !isCurrentGeneration(startedGen)) {
     throw new StaleAccountError();
