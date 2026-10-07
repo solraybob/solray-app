@@ -18,6 +18,7 @@
     "../lib/account-session.ts",
     "../lib/api.ts",
     "../lib/ai-consent.ts",
+    "../lib/memory-settings.ts",
     "../lib/local-cache.ts",
     "../lib/chart-revision.ts",
     "../lib/chat-merge.ts",

@@ -9,6 +9,8 @@
  *   3. Visibility, public/private toggle       (PATCH /users/profile is_public)
  *   4. Theme, dark/light mode             (localStorage + ThemeProvider)
  *   5. Birth, date, time, city            (PATCH /users/birth, regenerates blueprint)
+ *   4e. Memory, the Oracle's memory switch + Clear memory
+ *       (GET/PUT /users/me/consents/personalization_memory, DELETE /memory)
  *   6. Subscription, link to /subscribe
  *   7. Sign out
  *
@@ -29,6 +31,7 @@ import { clearChartDerivedCaches, syncBirthRevision } from "@/lib/chart-revision
 import { captureAccount, isStaleAccountError, type AccountGuard } from "@/lib/account-session";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
+import { clearMemory, loadMemorySetting, saveMemorySetting } from "@/lib/memory-settings";
 import { useT } from "@/lib/i18n";
 import BirthWheels from "@/components/BirthWheels";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
@@ -102,6 +105,14 @@ export default function SettingsPage() {
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
   const [hiveStatus, setHiveStatus] = useState<SaveStatus>("idle");
   const [hiveError, setHiveError] = useState<string | null>(null);
+  // The Oracle's memory switch as the server holds it (null until read: the
+  // switch is never shown as a choice the server has not confirmed).
+  const [memoryOn, setMemoryOn] = useState<boolean | null>(null);
+  const [memoryLoadFailed, setMemoryLoadFailed] = useState(false);
+  const [memoryStatus, setMemoryStatus] = useState<SaveStatus>("idle");
+  const [memoryError, setMemoryError] = useState<string | null>(null);
+  const [memoryClearOpen, setMemoryClearOpen] = useState(false);
+  const [memoryClearStatus, setMemoryClearStatus] = useState<SaveStatus>("idle");
   const [photoStatus,    setPhotoStatus]    = useState<SaveStatus>("idle");
   const [photoError,     setPhotoError]     = useState<string | null>(null);
   const [birthStatus,    setBirthStatus]    = useState<SaveStatus>("idle");
@@ -154,6 +165,18 @@ export default function SettingsPage() {
       })
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
+  }, [token, loadAttempt]);
+
+  // The memory switch lives with the consent scopes.
+  useEffect(() => {
+    if (!token) return;
+    let live = true;
+    setMemoryOn(null);
+    setMemoryLoadFailed(false);
+    loadMemorySetting(token)
+      .then((on) => { if (live) { setMemoryOn(on); setMemoryLoadFailed(on === null); } })
+      .catch(() => { if (live) setMemoryLoadFailed(true); });
+    return () => { live = false; };
   }, [token, loadAttempt]);
 
   // The consent sheet (or a withdrawal here) changed the server state:
@@ -255,6 +278,41 @@ export default function SettingsPage() {
       setIsPublic(confirmed);
       setVisibilityStatus("error");
       setVisibilityError(t("settings.switch_failed"));
+    }
+  };
+
+  // The memory switch, same pattern as the privacy switches above: one save
+  // at a time, and on failure it returns to the value the server confirmed.
+  const toggleMemory = async (next: boolean) => {
+    if (!token || memoryOn === null || memoryStatus === "saving") return;
+    const confirmed = memoryOn;
+    setMemoryOn(next);
+    setMemoryStatus("saving");
+    setMemoryError(null);
+    try {
+      const stored = await saveMemorySetting(next, token);
+      setMemoryOn(stored);
+      setMemoryStatus("saved");
+      setTimeout(() => setMemoryStatus((s) => (s === "saved" ? "idle" : s)), 1500);
+    } catch {
+      setMemoryOn(confirmed);
+      setMemoryStatus("error");
+      setMemoryError(t("settings.switch_failed"));
+    }
+  };
+
+  // "Clear memory", only from its confirm step.
+  const confirmClearMemory = async () => {
+    if (!token || memoryClearStatus === "saving") return;
+    setMemoryClearStatus("saving");
+    setMemoryError(null);
+    try {
+      await clearMemory(token);
+      setMemoryClearOpen(false);
+      setMemoryClearStatus("saved");
+    } catch {
+      setMemoryClearStatus("error");
+      setMemoryError(t("settings.memory_clear_failed"));
     }
   };
 
@@ -848,6 +906,51 @@ export default function SettingsPage() {
                 )}
               </div>
               )}
+            </Section>
+
+            {/* ── 4e. Memory ───────────────────────────────────────────── */}
+            <Section
+              label={t("settings.memory_section")}
+              status={memoryStatus}
+              error={memoryError}
+              hint={memoryOn === null
+                ? (memoryLoadFailed ? t("settings.memory_load_failed") : undefined)
+                : memoryOn ? t("settings.memory_on_hint") : t("settings.memory_off_hint")}
+            >
+              <div className="space-y-4">
+                <Toggle
+                  label={memoryOn ? t("common.on") : t("common.off")}
+                  checked={memoryOn === true}
+                  onChange={toggleMemory}
+                  disabled={memoryOn === null || memoryStatus === "saving"}
+                />
+                <div className="space-y-3">
+                  <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                    {memoryClearStatus === "saved" ? t("settings.memory_cleared") : t("settings.memory_clear_hint")}
+                  </p>
+                  {memoryClearOpen ? (
+                    <div className="space-y-3">
+                      <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                        {t("settings.memory_clear_body")}
+                      </p>
+                      <HairlineButton
+                        onClick={confirmClearMemory}
+                        loading={memoryClearStatus === "saving"}
+                        style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
+                      >
+                        {t("settings.memory_clear_confirm")}
+                      </HairlineButton>
+                      <HairlineButton onClick={() => setMemoryClearOpen(false)} disabled={memoryClearStatus === "saving"}>
+                        {t("common.cancel")}
+                      </HairlineButton>
+                    </div>
+                  ) : (
+                    <HairlineButton onClick={() => { setMemoryClearOpen(true); setMemoryClearStatus("idle"); setMemoryError(null); }}>
+                      {t("settings.memory_clear")}
+                    </HairlineButton>
+                  )}
+                </div>
+              </div>
             </Section>
 
             {/* ── 5. Birth details ─────────────────────────────────────── */}
