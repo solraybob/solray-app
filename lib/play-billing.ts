@@ -30,6 +30,7 @@
 
 import { apiFetch } from "./api";
 import { getNativePlatform } from "./native-push";
+import { chooseOffer, offerStartsFree, verifyErrorCode, type StoreOfferLike } from "./native-iap-helpers";
 
 // Two subscription products, matching the backend IAP_PRODUCT_IDS allowlist
 // and the Play Console / App Store Connect product ids.
@@ -133,6 +134,8 @@ export type NativeIAPErrorCode =
   | "failed"
   | "verify_failed"
   | "other_account"
+  | "charge_pending"
+  | "state_changed"
   | "timeout";
 export class NativeIAPError extends Error {
   code: NativeIAPErrorCode;
@@ -223,7 +226,7 @@ export function getLocalizedPrice(productId: string): string | null {
  * store will actually give one (Guideline 3.1.2: the screen must match the
  * sheet). False when unknown.
  */
-export function hasIntroFreeTrial(productId: string): boolean {
+export function hasIntroFreeTrial(productId: string, trialEligible?: boolean): boolean {
   try {
     if (typeof window === "undefined") return false;
     const store = getStore();
@@ -231,14 +234,19 @@ export function hasIntroFreeTrial(productId: string): boolean {
     const platform = storePlatform();
     const product =
       (platform ? store.get(productId, platform) : undefined) || store.get(productId);
-    const anyP = product as unknown as {
-      offers?: Array<{ pricingPhases?: Array<{ paymentMode?: string; priceMicros?: number }> }>;
-    } | undefined;
-    const first = anyP?.offers?.[0]?.pricingPhases?.[0];
-    return Boolean(first && (first.paymentMode === "FreeTrial" || first.priceMicros === 0));
+    if (!product) return false;
+    // The offer launchNativePurchase will order for this member, so the
+    // paywall promises a free trial only when the sheet will give one.
+    return offerStartsFree(offerFor(product, trialEligible));
   } catch {
     return false;
   }
+}
+
+function offerFor(product: ProductLike, trialEligible?: boolean): (OfferLike & StoreOfferLike) | undefined {
+  const offers = (product.offers || []) as Array<OfferLike & StoreOfferLike>;
+  const def = (typeof product.getOffer === "function" && product.getOffer()) || undefined;
+  return chooseOffer(offers, def as (OfferLike & StoreOfferLike) | undefined, trialEligible);
 }
 
 // Product-load listeners: the paywall re-reads prices whenever the store
@@ -378,9 +386,7 @@ function codeForVerifyError(e: unknown): NativeIAPErrorCode {
   if (e instanceof NativeIAPError) return e.code;
   const status = (e as { status?: number })?.status;
   const code = (e as { code?: string })?.code;
-  // 409: the purchase belongs to (or was bought from) another Solray account.
-  if (status === 409 || code === "purchase_other_account") return "other_account";
-  return "verify_failed";
+  return verifyErrorCode(status, code);
 }
 
 function onApproved(tx: TransactionLike): Promise<VerifyResult> {
@@ -424,7 +430,8 @@ function setAccountToken(accountToken?: string | null) {
  * sheet (not an error), "started" otherwise; the approved -> verify ->
  * finish flow then reports through the purchase listener.
  *
- * accountToken is the member's store_account_token from /subscribe/status.
+ * accountToken is the member's store_account_token from /subscribe/status,
+ * trialEligible its trial_eligible flag (false: order a paid offer).
  * It travels with the purchase (Apple appAccountToken, Google
  * obfuscatedAccountId) so the server can check the purchase belongs to the
  * account that verifies it (D5).
@@ -432,6 +439,7 @@ function setAccountToken(accountToken?: string | null) {
 export async function launchNativePurchase(
   productId: string = PRODUCT_ID,
   accountToken?: string | null,
+  trialEligible?: boolean,
 ): Promise<"started" | "cancelled"> {
   await initNativeIAP();
   const store = getStore();
@@ -443,10 +451,9 @@ export async function launchNativePurchase(
     throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
   }
 
-  const offer =
-    (typeof product.getOffer === "function" && product.getOffer()) ||
-    product.offers?.[0] ||
-    product;
+  // One free trial per person (D6): a member whose email already had its
+  // trial is sold the paid offer where the store lists one.
+  const offer = offerFor(product, trialEligible) || product;
 
   setAccountToken(accountToken);
   const data: OrderData | undefined = accountToken

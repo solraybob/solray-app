@@ -65,6 +65,14 @@ function SubscribeContent() {
   const handleAccountSettings = () => router.push("/profile/settings");
   // Billing errors in the member's language. A deadline means the outcome is
   // unknown: say so and pull fresh status instead of inviting a blind retry.
+  // Every action re-reads the membership afterwards. The status call has a
+  // deadline; when it could not be confirmed, say so (B5) rather than leave
+  // the screen implying it is current.
+  const refreshAfterAction = async () => {
+    const fresh = await refresh();
+    if (!fresh) setError(t("subscribe.status_unconfirmed"));
+    return fresh;
+  };
   const billingError = (e: unknown, paymentStep = false): string => {
     if (e instanceof DeadlineError) {
       void refresh();
@@ -175,7 +183,7 @@ function SubscribeContent() {
       const res = await startTrial(token);
       if (res?.trial_used) setNotice("trial_used");
       // Provider refresh below pulls fresh authoritative state
-      await refresh();
+      await refreshAfterAction();
     } catch (e) {
       setError(billingError(e));
     } finally {
@@ -227,7 +235,7 @@ function SubscribeContent() {
     try {
       await activateSubscription(token);
       // Provider refresh below pulls fresh authoritative state
-      await refresh();
+      await refreshAfterAction();
     } catch (e) {
       setError(billingError(e, true));
     } finally {
@@ -242,7 +250,7 @@ function SubscribeContent() {
     try {
       await cancelSubscription(token);
       // Provider refresh below pulls fresh authoritative state
-      await refresh();
+      await refreshAfterAction();
     } catch (e) {
       setError(billingError(e));
     } finally {
@@ -419,7 +427,7 @@ function SubscribeContent() {
               setPlanError("");
               try {
                 await setPlan(token, p);
-                await refresh();
+                await refreshAfterAction();
               } catch {
                 // Keep the current selection and say the change did not go through.
                 setPlanError(t("subscribe.plan_change_failed"));
@@ -497,7 +505,7 @@ function SubscribeContent() {
                     ? t("subscribe.card_saved_charged")
                     : t("subscribe.card_saved")
                 );
-                await refresh();
+                await refreshAfterAction();
               }}
             />
           )}
@@ -698,6 +706,11 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const { t } = useT();
   const { refresh, sub } = useSubscription();
   const accountToken = sub?.store_account_token || null;
+  // One free trial per person: false when this email already had it, so a
+  // paid offer is ordered and no free trial is promised.
+  const trialEligible = sub?.trial_eligible;
+  const trialEligibleRef = useRef<boolean | undefined>(trialEligible);
+  trialEligibleRef.current = trialEligible;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingNote, setPendingNote] = useState("");
@@ -725,8 +738,16 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const [storeState, setStoreState] = useState<"loading" | "ready" | "failed">("loading");
   const readPrices = () => {
     setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
-    setTrials({ monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID), yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID) });
+    setTrials({
+      monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID, trialEligibleRef.current),
+      yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID, trialEligibleRef.current),
+    });
   };
+  // Eligibility can arrive after the store loaded: re-read the offers.
+  useEffect(() => {
+    if (storeState === "ready") readPrices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trialEligible]);
   const loadStore = () => {
     let cancelled = false;
     setStoreState("loading");
@@ -792,8 +813,12 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     setRestoring(true);
     try {
       const outcome = await restoreNativePurchases(accountToken);
-      await refresh();
-      setPendingNote(outcome === "restored" ? t("subscribe.restore_done") : t("subscribe.restore_none"));
+      // Bounded (the status call has a deadline), so Restore never stays busy.
+      const fresh = await refresh();
+      setPendingNote(
+        !fresh ? t("subscribe.status_unconfirmed")
+          : outcome === "restored" ? t("subscribe.restore_done") : t("subscribe.restore_none"),
+      );
     } catch (e) {
       setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.restore_failed"));
       void refresh();
@@ -822,6 +847,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       const started = await launchNativePurchase(
         plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID,
         accountToken,
+        trialEligible,
       );
       if (started === "cancelled") {
         // Closing the store sheet is a choice, not an error.

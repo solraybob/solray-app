@@ -46,8 +46,11 @@ interface SubscriptionState {
   sub: SubscriptionStatus | null;
   loading: boolean;
   error: Error | null;
-  /** Force a fresh fetch from the backend, bypassing the TTL cache. */
-  refresh: () => Promise<void>;
+  /** Force a fresh fetch from the backend, bypassing the TTL cache.
+   * Always settles (the status call has a deadline). Resolves true when
+   * fresh status arrived, false when it could not be confirmed, so callers
+   * can say so instead of implying the membership is up to date. */
+  refresh: () => Promise<boolean>;
   /** Refresh only if cache is older than TTL_MS. Cheap to call on every mount. */
   ensureFresh: () => Promise<void>;
 }
@@ -56,7 +59,7 @@ const SubscriptionContext = createContext<SubscriptionState>({
   sub: null,
   loading: true,
   error: null,
-  refresh: async () => {},
+  refresh: async () => false,
   ensureFresh: async () => {},
 });
 
@@ -73,33 +76,35 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // in the same tick, only one /subscribe/status request goes out.
   // Keyed by token: a request started under one session is never shared
   // with, or allowed to write state for, a different session.
-  const inFlightRef = useRef<{ token: string; promise: Promise<void>; key: object } | null>(null);
+  const inFlightRef = useRef<{ token: string; promise: Promise<boolean>; key: object } | null>(null);
   // Always the current token, updated during render so async results can
   // tell whether they still belong to the live session.
   const currentTokenRef = useRef<string | null>(token);
   currentTokenRef.current = token;
 
-  const refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (): Promise<boolean> => {
     if (!token) {
       setSub(null);
       setLoading(false);
-      return;
+      return false;
     }
     if (inFlightRef.current && inFlightRef.current.token === token) {
       return inFlightRef.current.promise;
     }
     const reqToken = token;
     const key = {};
-    const promise = (async () => {
+    const promise = (async (): Promise<boolean> => {
       try {
         const next = await getSubscriptionStatus(reqToken);
-        if (currentTokenRef.current !== reqToken) return; // stale session
+        if (currentTokenRef.current !== reqToken) return false; // stale session
         setSub(next);
         setError(null);
         lastFetchRef.current = Date.now();
+        return true;
       } catch (e) {
-        if (currentTokenRef.current !== reqToken) return;
+        if (currentTokenRef.current !== reqToken) return false;
         setError(e instanceof Error ? e : new Error(String(e)));
+        return false;
       } finally {
         if (currentTokenRef.current === reqToken) setLoading(false);
         if (inFlightRef.current && inFlightRef.current.key === key) {
@@ -115,7 +120,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     const age = Date.now() - lastFetchRef.current;
     if (sub && age < TTL_MS) return;
-    return refresh();
+    await refresh();
   }, [token, sub, refresh]);
 
   // Initial fetch on mount and whenever the token changes (login or

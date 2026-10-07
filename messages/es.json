@@ -729,7 +729,10 @@
     "charge_pending": "Tu último pago aún se está confirmando. No se cobrará nada más hasta entonces.",
     "store_managed_card": "Tu membresía se cobra a través de App Store o Google Play y sigue activa allí. No se cobró ninguna tarjeta.",
     "payment_timeout": "Esto está tardando más de lo esperado. Tu pago aún puede completarse, así que actualiza esta página en un minuto antes de volver a intentarlo.",
-    "action_timeout": "La conexión es lenta. Actualiza la página para ver tu membresía tal como está ahora."
+    "action_timeout": "La conexión es lenta. Actualiza la página para ver tu membresía tal como está ahora.",
+    "status_unconfirmed": "No pudimos confirmar tu membresía en este momento. No se ha perdido nada. Desliza hacia abajo para actualizar en un momento.",
+    "iap_charge_pending": "Aún se está confirmando un pago con tarjeta en tu cuenta. Tu compra en la tienda está a salvo. Vuelve a abrir Solray en unos minutos y se aplicará.",
+    "iap_state_changed": "Tu membresía cambió mientras la comprobábamos. Inténtalo de nuevo en un momento."
   },
   "depth": {
     "the_sky": "El Cielo",
