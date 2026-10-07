@@ -134,11 +134,12 @@ interface DeckCycle {
 
 // One line naming the day: the aspect the reading is built on, and where the
 // Moon is. This replaces a separate moon card and a separate tag chip.
-function skyLine(f: { tags: { astrology: string }; planets: Planet[] }): string {
+function skyLine(f: { tags: { astrology: string }; planets: Planet[] }, t: (key: string) => string): string {
   const moon = f.planets.find((pl) => pl.name === "Moon");
-  const parts = [f.tags.astrology];
-  if (moon) parts.push(`Moon in ${moon.sign}`);
-  return parts.join("  ·  ");
+  const parts = [f.tags?.astrology];
+  // In the member's language, like the Sky Now cards ("Luna en Virgo").
+  if (moon?.sign) parts.push(`${t("moon.moon_in")} ${t(`signs.${moon.sign.toLowerCase()}`)}`);
+  return parts.filter((p) => typeof p === "string" && p.trim()).join("  ·  ");
 }
 
 // The wash for the day's ruling planet
@@ -1206,7 +1207,7 @@ export default function TodayPage() {
     insightFetched.current = true;
     (async () => {
       try {
-        const data = await apiFetch("/insight/pending", {}, token) as { insight: PendingInsight | null };
+        const data = await apiFetch("/insight/pending", {}, token, { quietConsent: true }) as { insight: PendingInsight | null };
         let ins: PendingInsight | null = (data && data.insight) ? data.insight : null;
         const _d = new Date();
         const dayStr = `${_d.getFullYear()}-${_d.getMonth() + 1}-${_d.getDate()}`;
@@ -1248,7 +1249,7 @@ export default function TodayPage() {
     skyEchoFetched.current = true;
     (async () => {
       try {
-        const data = await apiFetch("/insight/sky-echo", {}, token) as { echo: SkyEcho | null };
+        const data = await apiFetch("/insight/sky-echo", {}, token, { quietConsent: true }) as { echo: SkyEcho | null };
         if (data && data.echo) {
           setSkyEcho(data.echo);
           // Show the takeover unless this exact memory was already consumed
@@ -1290,7 +1291,7 @@ export default function TodayPage() {
     let off = false;
     (async () => {
       try {
-        const r = await apiFetch("/transits/long-range", {}, token);
+        const r = await apiFetch("/transits/long-range", {}, token, { quietConsent: true });
         if (!off) setCycles(Array.isArray(r?.cycles) ? r.cycles.slice(0, 4) : []);
       } catch (_) { /* the deck simply carries one card */ }
     })();
@@ -1522,7 +1523,7 @@ export default function TodayPage() {
       try {
         // Run /forecast/today and /users/me in parallel
         const [forecastData] = await Promise.all([
-          apiFetch("/forecast/today", {}, token),
+          apiFetch("/forecast/today", {}, token, { quietConsent: true }),
           apiFetch("/users/me", {}, token).then((userData) => {
             if (cancelled) return;
             // Birth details changed (here or on another device): drop the
@@ -1743,7 +1744,7 @@ export default function TodayPage() {
       (async () => {
         try {
           const stamp = chartWorkStamp();
-          const data = await apiFetch("/forecast/today", {}, token);
+          const data = await apiFetch("/forecast/today", {}, token, { quietConsent: true });
           // The chart changed while refreshing: load again for the new one.
           if (!chartStampCurrent(stamp)) {
             setReloadNonce((n) => n + 1);
@@ -1782,7 +1783,7 @@ export default function TodayPage() {
     setPlainCard(null);
     if (!PLAIN_NOW_CARD_FOR_MEMBERS || !token || !plainReading) return;
     let live = true;
-    apiFetch("/forecast/today/plain", {}, token)
+    apiFetch("/forecast/today/plain", {}, token, { quietConsent: true })
       .then((p) => { if (live) setPlainCard(p as PlainNowCard); })
       .catch(() => { /* the card keeps today's words */ });
     return () => { live = false; };
@@ -1912,7 +1913,7 @@ export default function TodayPage() {
                   textWrap: "balance",
                 } as React.CSSProperties}
               >
-                {skyLine(forecast)}
+                {skyLine(forecast, t)}
               </p>
 
               {/* .deckwrap{flex:1 1 auto;min-height:0;display:flex;

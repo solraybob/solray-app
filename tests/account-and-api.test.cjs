@@ -64,6 +64,24 @@ test("403 ai_consent_required carries the code and opens the consent sheet", asy
   assert.equal(opened, 1);
 });
 
+test("a background load's consent 403 asks quietly; a member's own action does not", async () => {
+  const seen = [];
+  const onAsk = (e) => { seen.push(e.detail && e.detail.quiet); };
+  win.addEventListener("solray:ai-consent-required", onAsk);
+  const calls = deferredFetch();
+  const bg = api.apiFetch("/forecast/today", {}, "token-C", { quietConsent: true });
+  await tick();
+  calls[0].respond(403, { detail: { code: "ai_consent_required" } });
+  await assert.rejects(bg, (e) => api.isAiConsentError(e));
+  const calls2 = deferredFetch();
+  const own = api.apiFetch("/chat", { method: "POST" }, "token-C");
+  await tick();
+  calls2[0].respond(403, { detail: { code: "ai_consent_required" } });
+  await assert.rejects(own, (e) => api.isAiConsentError(e));
+  win.removeEventListener("solray:ai-consent-required", onAsk);
+  assert.deepEqual(seen, [true, false]);
+});
+
 test("a billing 403 is not mistaken for a consent 403", async () => {
   const calls = deferredFetch();
   const p = api.apiFetch("/forecast/today", {}, "token-C");

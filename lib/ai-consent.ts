@@ -24,9 +24,16 @@ export const AI_CONSENT_EVENT = "solray:ai-consent-required";
 /** Fired after consent is recorded or withdrawn, so screens can refresh. */
 export const AI_CONSENT_CHANGED_EVENT = "solray:ai-consent-changed";
 
-export function openAiConsentSheet(): void {
+/**
+ * Opens the consent sheet. `quiet` is for a refusal the member did not ask
+ * for (a screen loading in the background): it opens the sheet only when the
+ * member has not already said "Not now" this session, so Not now holds.
+ * A member's own action (sending a message, a Review and agree button) asks
+ * without `quiet` and always opens it.
+ */
+export function openAiConsentSheet(opts: { quiet?: boolean } = {}): void {
   try {
-    window.dispatchEvent(new CustomEvent(AI_CONSENT_EVENT));
+    window.dispatchEvent(new CustomEvent(AI_CONSENT_EVENT, { detail: { quiet: opts.quiet === true } }));
   } catch { /* SSR */ }
 }
 

@@ -367,7 +367,7 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
     // shown: the chart change reruns this effect and fetches again.
     let off = false;
     const stamp = chartWorkStamp();
-    apiFetch("/transits/long-range", {}, token)
+    apiFetch("/transits/long-range", {}, token, { quietConsent: true })
       .then((data: CyclesResponse) => {
         if (off || !chartStampCurrent(stamp)) return;
         const cycleList = data.cycles || [];

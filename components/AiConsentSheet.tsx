@@ -73,7 +73,14 @@ export default function AiConsentSheet() {
 
   // Any screen (or lib/api on a 403) can ask for the sheet.
   useEffect(() => {
-    const onAsk = () => { if (token) { setError(""); setOpen(true); } };
+    const onAsk = (e: Event) => {
+      if (!token) return;
+      // A background load's refusal respects this session's "Not now".
+      const quiet = (e as CustomEvent<{ quiet?: boolean } | undefined>).detail?.quiet === true;
+      if (quiet && safeGet(SNOOZE_KEY, true) === "1") return;
+      setError("");
+      setOpen(true);
+    };
     window.addEventListener(AI_CONSENT_EVENT, onAsk);
     return () => window.removeEventListener(AI_CONSENT_EVENT, onAsk);
   }, [token]);

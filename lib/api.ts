@@ -92,6 +92,12 @@ export interface ApiFetchExtra {
    * StaleAccountError. Defaults to the generation at call time.
    */
   generation?: number;
+  /**
+   * A load the member did not ask for (a screen fetching in the background).
+   * A consent 403 on it opens the consent sheet only when the member has not
+   * already said "Not now" this session.
+   */
+  quietConsent?: boolean;
 }
 
 export async function apiFetch(
@@ -220,7 +226,7 @@ async function finishApiFetch(
     // Third-party AI consent missing: open the consent sheet wherever the
     // member is. The caller still gets the error and keeps its own state.
     if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
-      openAiConsentSheet();
+      openAiConsentSheet({ quiet: extra.quietConsent === true });
     }
     throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code, err?.detail);
   }
