@@ -13,10 +13,14 @@ export class ApiError extends Error {
   /** Machine-readable code when the backend sent detail: {code, message},
    *  e.g. "ai_consent_required", "ai_daily_limit". */
   code?: string;
-  constructor(message: string, status: number, code?: string) {
+  /** The server's full `detail`, for errors that carry more than a code
+   *  (e.g. the two offsets of an ambiguous birth time). */
+  detail?: unknown;
+  constructor(message: string, status: number, code?: string, detail?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.detail = detail;
     this.name = "ApiError";
   }
 }
@@ -47,10 +51,23 @@ function localDateString(): string {
 }
 
 // Requests in flight, so an update reload can wait until nothing (an
-// Oracle reply, a save) would be cut off.
+// Oracle reply, a save) would be cut off. A request counts from the moment
+// it is sent until its answer has been read in full, not just until the
+// headers arrive. Raw fetches outside apiFetch (chat sync, voice, a chart
+// calculation, sign-up) are counted through trackRequest.
 let inflight = 0;
 export function apiBusy(): boolean {
   return inflight > 0;
+}
+
+/** Counts `work` (a raw request and the reading of its answer) as busy. */
+export async function trackRequest<T>(work: () => Promise<T>): Promise<T> {
+  inflight += 1;
+  try {
+    return await work();
+  } finally {
+    inflight -= 1;
+  }
 }
 
 export interface ApiFetchExtra {
@@ -118,16 +135,26 @@ export async function apiFetch(
   const startedGen = getAuthGeneration();
   const accountBound = !!token;
 
-  let res: Response;
   inflight += 1;
   try {
-    res = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers,
-    });
+    return await finishApiFetch(path, options, headers, startedGen, accountBound, extra);
   } finally {
     inflight -= 1;
   }
+}
+
+async function finishApiFetch(
+  path: string,
+  options: RequestInit,
+  headers: HeadersInit,
+  startedGen: number,
+  accountBound: boolean,
+  extra: ApiFetchExtra,
+) {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
 
   if (accountBound && !isCurrentGeneration(startedGen)) {
     throw new StaleAccountError();
@@ -164,7 +191,7 @@ export async function apiFetch(
     if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
       openAiConsentSheet();
     }
-    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code);
+    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code, err?.detail);
   }
 
   const data = await res.json();

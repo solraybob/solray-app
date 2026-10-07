@@ -1,8 +1,8 @@
 {
   "name": "Solray",
   "short_name": "Solray",
-  "description": "Your Higher Self, Unlocked. Live astrology, Human Design, and Gene Keys.",
-  "lang": "en",
+  "description": "Tu Yo Superior, al descubierto. Astrología en vivo, Diseño Humano y Claves Genéticas.",
+  "lang": "es",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F0E6",
@@ -24,7 +24,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Today's Reading",
+      "name": "La lectura de hoy",
       "url": "/widget",
       "icons": [
         {

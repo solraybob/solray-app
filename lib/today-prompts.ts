@@ -84,19 +84,44 @@ function extractTitlePhrase(dayTitle: string): string {
  * clean phrase fit for a question. Best-effort; falls back to using
  * the raw string when parsing fails.
  */
+// The backend writes aspects as verbs or adjectives ("conjunct", "squares",
+// "opposite"); the translation table and the phrase ("Saturn in square to
+// my Sun") use the aspect's name. Every spelling maps to that name.
+const ASPECT_NAMES: Record<string, string> = {
+  conjunct: "Conjunction", conjuncts: "Conjunction", conjunction: "Conjunction", conjoins: "Conjunction", conjoining: "Conjunction",
+  opposite: "Opposition", opposes: "Opposition", oppose: "Opposition", opposing: "Opposition", opposition: "Opposition",
+  square: "Square", squares: "Square", squaring: "Square",
+  trine: "Trine", trines: "Trine", trining: "Trine",
+  sextile: "Sextile", sextiles: "Sextile", sextiling: "Sextile",
+  quincunx: "Quincunx", inconjunct: "Quincunx",
+  "semi-sextile": "Semi-Sextile", semisextile: "Semi-Sextile",
+  "semi-square": "Semi-Square", semisquare: "Semi-Square",
+  sesquiquadrate: "Sesquiquadrate", sesquisquare: "Sesquiquadrate",
+  quintile: "Quintile", "bi-quintile": "Bi-Quintile", biquintile: "Bi-Quintile",
+};
+
+/** The aspect's canonical name ("Conjunction") for any backend spelling, or null. */
+export function aspectName(word: string): string | null {
+  return ASPECT_NAMES[word.trim().toLowerCase()] ?? null;
+}
+
 function normalizeTransit(raw: string, t: Translate, lang: string): string {
   const cleaned = raw.replace(/\?+/g, "").trim();
   // Parse "<planet> <aspect> natal <natal_planet>" or similar
-  const m = cleaned.match(/^([A-Z][a-z]+)\s+([a-z]+)s?\s+natal\s+([A-Z][a-z]+)/i);
+  const m = cleaned.match(/^([A-Z][a-z]+)\s+([a-z-]+)\s+natal\s+([A-Z][a-z]+)/i);
   if (m) {
     const [, planet, aspect, natal] = m;
-    const term = (v: string) => (lang === "en" ? v : tx(v, lang));
-    const aspectWord = aspect.charAt(0).toUpperCase() + aspect.slice(1).toLowerCase();
-    return fill(t("prompts.tp_transit_phrase"), {
-      planet: term(planet),
-      aspect: term(aspectWord).toLowerCase(),
-      natal: term(natal),
-    });
+    const name = aspectName(aspect);
+    // An aspect word we do not know is not dressed up as a phrase that
+    // would leave it untranslated: the raw line is used instead.
+    if (name) {
+      const term = (v: string) => (lang === "en" ? v : tx(v, lang));
+      return fill(t("prompts.tp_transit_phrase"), {
+        planet: term(planet),
+        aspect: term(name).toLowerCase(),
+        natal: term(natal),
+      });
+    }
   }
   return cleaned.toLowerCase();
 }

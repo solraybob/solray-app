@@ -451,7 +451,11 @@
     "remove_confirm_title": "Remove {name}?",
     "remove_confirm_body": "You stop being connected for both of you. The Oracle forgets what she kept about each of you from this connection, and your shared readings are removed.",
     "remove_confirm_yes": "Remove",
-    "remove_connection_failed": "Could not remove the connection just now. Try again."
+    "remove_connection_failed": "Could not remove the connection just now. Try again.",
+    "permission_needed_title": "One thing first",
+    "permission_needed_body": "For this reading, the birth details of {names} go to Solray and its AI providers. Solray asks once for each person you saved.",
+    "permission_continue": "Continue",
+    "permission_not_now": "Not now"
   },
   "profile": {
     "title": "Profile",
@@ -971,5 +975,14 @@
     "ai_daily_limit": "You have reached today's limit for this. It resets tomorrow.",
     "message_too_long": "That message is too long. Try saying it in fewer words.",
     "soul_connection_gone": "This connection has ended, so the reading between you is closed. You can still talk with the Oracle about yourself."
+  },
+  "birth_fold": {
+    "title": "Which one was it?",
+    "body": "Your birth time happened twice that night because the clocks went back. Which one?",
+    "earlier": "The earlier one",
+    "later": "The later one",
+    "hint": "If you are not sure, a birth certificate or a parent may know. You can change it later in Settings.",
+    "back": "Go back",
+    "nonexistent": "That time did not happen where you were born: the clocks jumped forward an hour that night. Please check your birth time. It may have been an hour later."
   }
 }

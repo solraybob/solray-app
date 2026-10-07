@@ -32,6 +32,8 @@ import { useT } from "@/lib/i18n";
 import BirthWheels from "@/components/BirthWheels";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
+import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
+import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
 
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -319,6 +321,11 @@ export default function SettingsPage() {
     }
   };
 
+  // The "which one was it" question for a birth time that happened twice.
+  const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  const askFold = (options: FoldChoice[]) =>
+    new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
+
   const saveBirth = async () => {
     if (!token) return;
     if (!birthDate || !birthTime) {
@@ -347,7 +354,26 @@ export default function SettingsPage() {
       };
       if (birthLat != null) body.birth_lat = birthLat;
       if (birthLon != null) body.birth_lon = birthLon;
-      const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
+      // A birth time in the hour the clocks went back happened twice: the
+      // member says which one and the same change is sent again with it.
+      // One that never happened (clocks went forward) comes back to fix.
+      const outcome = await sendBirthRequest(
+        (fold) => apiFetch("/users/birth", {
+          method: "PATCH",
+          body: JSON.stringify(fold ? { ...body, birth_time_fold: fold } : body),
+        }, token),
+        askFold,
+      );
+      if (outcome.status === "cancelled") {
+        setBirthStatus("idle");
+        return;
+      }
+      if (outcome.status === "nonexistent") {
+        setBirthError(t("birth_fold.nonexistent"));
+        setBirthStatus("error");
+        return;
+      }
+      const res = outcome.value;
       // Every chart computed from the old birth details is now wrong:
       // astrocartography, cycles, forecasts, the week, compatibility.
       clearChartDerivedCaches();
@@ -439,6 +465,13 @@ export default function SettingsPage() {
         className="min-h-[100dvh] bg-forest-deep"
         style={{ paddingBottom: "calc(96px + var(--sab, 0px))" }}
       >
+        {foldAsk && (
+          <BirthTimeFoldSheet
+            options={foldAsk.options}
+            onChoose={(f) => { foldAsk.resolve(f); setFoldAsk(null); }}
+            onCancel={() => { foldAsk.resolve(null); setFoldAsk(null); }}
+          />
+        )}
         {/* Header: the one look. Back to the profile in the right slot. */}
         <PageHead
           label={t("profile.section_label")}

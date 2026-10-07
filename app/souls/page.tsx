@@ -6,9 +6,29 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import { apiFetch, ApiError } from "@/lib/api";
-import { isStaleAccountError } from "@/lib/account-session";
-import { mergeSavedPeople, peopleToUpload } from "@/lib/saved-people-sync";
+import { apiFetch, ApiError, trackRequest } from "@/lib/api";
+import { captureAccount, getAuthGeneration, isStaleAccountError } from "@/lib/account-session";
+import {
+  absenceConfirmsDelete,
+  deleteConfirmed,
+  deletedHereIds,
+  forgetSharingPermission,
+  forPerson,
+  hasSharingPermission,
+  markDeletedHere,
+  mergeSavedPeople,
+  moveSharingPermission,
+  needingPermission,
+  nextSeq,
+  noteDeleteAttempt,
+  peopleToUpload,
+  recordSharingPermission,
+  rememberServerId,
+  bindPersonWritesToAccount,
+  serverIdOf,
+  unmarkDeletedHere,
+  wasDeletedHere,
+} from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
@@ -376,6 +396,14 @@ export default function SoulsPage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [retryingLoad, setRetryingLoad] = useState(false);
 
+  // False once the member has left Souls: work that lands later (a chart
+  // recalculation) must not navigate or write from a screen that is gone.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
   const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
@@ -383,6 +411,9 @@ export default function SoulsPage() {
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [readingBond, setReadingBond] = useState(false);
+  // Saved people in the reading the member has not yet confirmed permission
+  // for (saved before the question existed, or on another device).
+  const [permissionAsk, setPermissionAsk] = useState<SavedPerson[] | null>(null);
 
   // Hydrate saved people from localStorage once on mount
   useEffect(() => {
@@ -427,7 +458,16 @@ export default function SoulsPage() {
   // Sync saved people with the server so they survive reinstalls and follow the
   // user across devices. The server is the source of truth; people that only
   // exist locally (created before server persistence, or while offline) are
-  // migrated up once. Falls back silently to the localStorage copy if offline.
+  // migrated up once, but only people the member has confirmed permission
+  // for. Falls back silently to the localStorage copy if offline.
+  //
+  // Every write for one person goes through forPerson (one at a time, in
+  // order), and anything removed on this device stays removed even if a
+  // list read or a save started before the removal finishes after it.
+  const [peopleSyncNonce, setPeopleSyncNonce] = useState(0);
+  useEffect(() => {
+    bindPersonWritesToAccount(getAuthGeneration());
+  }, [token]);
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
@@ -435,36 +475,55 @@ export default function SoulsPage() {
       try {
         // 1. Finish deletions made offline or that failed earlier.
         for (const id of Array.from(loadTombstones())) {
+          noteDeleteAttempt(id);
           try {
-            await apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token);
-            dropTombstone(id);
+            const r = await forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token));
+            if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
           } catch (e) {
             if (isStaleAccountError(e)) throw e;
             if (e instanceof ApiError && e.status === 404) dropTombstone(id);
           }
         }
+        const listStartedAt = nextSeq();
         const res = await apiFetch("/saved-people", {}, token);
-        const server: SavedPerson[] = (Array.isArray(res?.people) ? res.people : [])
+        const listed: SavedPerson[] = (Array.isArray(res?.people) ? res.people : [])
           .map((p: SavedPerson) => ({ ...p, _synced: true }));
+        const listedIds = new Set(listed.map((p) => p.id));
+        // A tombstone whose delete was not confirmed is finished once a list
+        // read that began after the delete no longer has the person.
+        for (const id of Array.from(loadTombstones())) {
+          if (absenceConfirmsDelete(id, listStartedAt, listedIds)) { dropTombstone(id); forgetSharingPermission(id); }
+        }
+        // Removed here (even if the server has confirmed it since this list
+        // was read): never merged back.
+        const gone = () => new Set([...Array.from(loadTombstones()), ...Array.from(deletedHereIds())]);
+        const server = listed.filter((p) => !gone().has(p.id));
         const serverIds = new Set(server.map((p) => p.id));
-        const tomb = loadTombstones();
-        // 2. Upload only people this device created and the server has never
-        //    confirmed. A confirmed person missing from the server was
-        //    deleted on another device: it is dropped here, not re-created.
+        // 2. Upload only people this device created, the server has never
+        //    confirmed, and the member has confirmed permission for. A
+        //    confirmed person missing from the server was deleted on another
+        //    device: it is dropped here, not re-created.
         const local = loadSavedPeople();
-        const toMigrate = peopleToUpload(local, serverIds, tomb);
+        const toMigrate = peopleToUpload(local, serverIds, gone()).filter((p) => hasSharingPermission(p.id));
         const migrated: SavedPerson[] = [];
         const idRemap: Record<string, string> = {};
         for (const p of toMigrate) {
           try {
-            const r = await apiFetch("/saved-people", {
-              method: "POST",
-              body: JSON.stringify(forServer(p)),
-            }, token);
+            const r = await forPerson(p.id, async () => {
+              // Removed while waiting its turn: do not create it.
+              if (wasDeletedHere(p.id) || loadTombstones().has(p.id)) return null;
+              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(p)) }, token);
+            });
             if (r?.person) {
               const sp = { ...(r.person as SavedPerson), _synced: true };
-              migrated.push(sp);
-              if (sp.id && sp.id !== p.id) idRemap[p.id] = sp.id;
+              if (sp.id && sp.id !== p.id) {
+                rememberServerId(p.id, sp.id);
+                moveSharingPermission(p.id, sp.id);
+                idRemap[p.id] = sp.id;
+              }
+              // Removed while the save ran: the delete queued behind it
+              // removes it from the server; it is not shown again.
+              if (!wasDeletedHere(p.id)) migrated.push(sp);
             }
           } catch (e) {
             if (isStaleAccountError(e)) throw e;
@@ -473,12 +532,12 @@ export default function SoulsPage() {
         }
         if (cancelled) return;
         const replacedIds = new Set(Object.keys(idRemap));
-        const confirmed = [...migrated, ...server];
+        const confirmed = [...migrated, ...server].filter((p) => !gone().has(p.id));
         const confirmedIds = new Set(confirmed.map((p) => p.id));
         // 3. Merge against the CURRENT list, not the snapshot read above, so a
         //    person added or removed while this sync ran is respected.
         setSavedPeople((prev) => {
-          const final = mergeSavedPeople(prev, confirmed, replacedIds, loadTombstones());
+          const final = mergeSavedPeople(prev, confirmed, replacedIds, gone());
           writeSavedPeople(final);
           return final;
         });
@@ -500,7 +559,7 @@ export default function SoulsPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, peopleSyncNonce]);
 
   // Debounced search, avoid firing /users/search on every keystroke
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -660,17 +719,31 @@ export default function SoulsPage() {
       setBondPartners([newPartner]);
     }
     setAddPersonOpen(false);
+    // The sheet only adds someone once the member has confirmed that
+    // person's permission; recorded per person.
+    recordSharingPermission([person.id]);
     // Persist to the server so the person survives reinstalls and syncs across
     // devices. Optimistic above; reconcile the id if the server minted its own.
     if (token) {
       (async () => {
         try {
-          const r = await apiFetch("/saved-people", {
-            method: "POST",
-            body: JSON.stringify(forServer(person)),
-          }, token);
+          const r = await forPerson(person.id, async () => {
+            // Removed before the save got its turn: do not create it.
+            if (wasDeletedHere(person.id)) return null;
+            return apiFetch("/saved-people", {
+              method: "POST",
+              body: JSON.stringify(forServer(person)),
+            }, token);
+          });
           const raw = r?.person as SavedPerson | undefined;
           const saved = raw ? { ...raw, _synced: true } : undefined;
+          if (saved && saved.id && saved.id !== person.id) {
+            rememberServerId(person.id, saved.id);
+            moveSharingPermission(person.id, saved.id);
+          }
+          // Removed while the save ran: the delete queued behind it takes it
+          // off the server again; nothing is put back on screen.
+          if (wasDeletedHere(person.id)) return;
           if (saved && saved.id) {
             // Confirmed by the server (with its own id, if it minted one).
             setSavedPeople(prev => {
@@ -706,32 +779,62 @@ export default function SoulsPage() {
       // Recorded until the server confirms, so a sync running right now (or
       // another device's copy) cannot bring the person back.
       addTombstone(id);
-      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).then(() => dropTombstone(id)).catch((e: unknown) => {
-        if (isStaleAccountError(e)) return;
-        // 404: the server never had it (local-only person), so it is gone.
-        if (e instanceof ApiError && e.status === 404) { dropTombstone(id); return; }
-        // No answer (offline): the tombstone stays and the next sync
-        // finishes the delete. The person stays removed here.
-        if (!(e instanceof ApiError)) return;
-        dropTombstone(id);
-        // The server refused: the delete did not happen, put the person back.
-        if (removed) {
-          setSavedPeople((prev) => {
-            if (prev.some((p) => p.id === id)) return prev;
-            const restored = [...prev];
-            restored.splice(Math.min(removedIdx, restored.length), 0, removed);
-            writeSavedPeople(restored);
-            return restored;
-          });
-        }
-        setErrorMessage(t("souls.remove_failed"));
-      });
+      markDeletedHere(id);
+      noteDeleteAttempt(id);
+      // After any save still on its way for this person, and against the id
+      // the server ended up giving them.
+      forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token))
+        .then((r: unknown) => {
+          // {ok:true}: gone. {ok:false}: the server did not remove anything
+          // (it never had the person, or the delete failed there). The
+          // tombstone stays, the delete is retried on the next sync, and it
+          // is dropped once the server's list shows the person is not there.
+          if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
+        })
+        .catch((e: unknown) => {
+          if (isStaleAccountError(e)) return;
+          // 404: the server never had it (local-only person), so it is gone.
+          if (e instanceof ApiError && e.status === 404) { dropTombstone(id); forgetSharingPermission(id); return; }
+          // No answer (offline): the tombstone stays and the next sync
+          // finishes the delete. The person stays removed here.
+          if (!(e instanceof ApiError)) return;
+          dropTombstone(id);
+          unmarkDeletedHere(id);
+          // The server refused: the delete did not happen, put the person back.
+          if (removed) {
+            setSavedPeople((prev) => {
+              if (prev.some((p) => p.id === id)) return prev;
+              const restored = [...prev];
+              restored.splice(Math.min(removedIdx, restored.length), 0, removed);
+              writeSavedPeople(restored);
+              return restored;
+            });
+          }
+          setErrorMessage(t("souls.remove_failed"));
+        });
     }
   };
 
   // Fire the Bond reading, route to /chat?compat=1 with context
   const readTheBond = async () => {
     if (bondPartners.length === 0) return;
+    // Every saved person in the reading needs the member's confirmed
+    // permission before their birth details go to Solray and its AI
+    // providers (their chart, and their summary in a family reading).
+    const unconfirmed = needingPermission(
+      bondPartners.flatMap((p) => (p.kind === "saved" ? [p.person] : [])),
+    );
+    if (unconfirmed.length > 0) {
+      setPermissionAsk(unconfirmed);
+      return;
+    }
+    // Everything below (a chart recalculation, the cache write, the handoff
+    // to chat) belongs to the account signed in now. If that changes or the
+    // member leaves Souls while it runs, nothing is written and no one is
+    // sent anywhere.
+    const acct = captureAccount();
+    const stillHere = () => acct.live && mountedRef.current;
+    const abandon = () => { if (mountedRef.current) setReadingBond(false); };
     setReadingBond(true);
     setErrorMessage(null);
 
@@ -786,6 +889,7 @@ export default function SoulsPage() {
         lens: bondLens,
       }));
 
+      if (!stillHere()) return abandon();
       setReadingBond(false);
       router.push("/chat?compat=1");
       return;
@@ -819,30 +923,39 @@ export default function SoulsPage() {
         // legacy person, we re-store the blueprint after.
         try {
           const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-          const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: saved.name,
-              sex: saved.sex,
-              birth_date: saved.birth_date,
-              birth_time: saved.birth_time,
-              birth_city: saved.birth_city,
-            }),
+          const { ok, data } = await trackRequest(async () => {
+            const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: saved.name,
+                sex: saved.sex,
+                birth_date: saved.birth_date,
+                birth_time: saved.birth_time,
+                birth_city: saved.birth_city,
+              }),
+            });
+            return { ok: res.ok, data: res.ok ? await res.json() : null };
           });
-          if (res.ok) {
-            const data = await res.json();
+          if (!stillHere()) return abandon();
+          if (ok) {
             soulBlueprint = data?.blueprint || null;
             // Persist for next time so this user doesn't pay the cost again.
+            // Against the CURRENT list: the snapshot this function started
+            // with may be out of date by now (a sync or a removal ran).
             if (soulBlueprint) {
-              const next = savedPeople.map((p) =>
-                p.id === saved.id ? { ...p, blueprint: soulBlueprint } : p
-              );
-              setSavedPeople(next);
-              writeSavedPeople(next);
+              setSavedPeople((prev) => {
+                if (!prev.some((p) => p.id === saved.id)) return prev;
+                const next = prev.map((p) =>
+                  p.id === saved.id ? { ...p, blueprint: soulBlueprint } : p
+                );
+                writeSavedPeople(next);
+                return next;
+              });
             }
           }
         } catch {
+          if (!stillHere()) return abandon();
           setErrorMessage(t("souls.error_partial_chart"));
         }
       }
@@ -852,6 +965,7 @@ export default function SoulsPage() {
       ? fill(t("souls.bond_intro_chart"), { lens: lensLabel, name: pName, chart: chartSummary })
       : fill(t("souls.bond_intro"), { lens: lensLabel, name: pName });
 
+    if (!stillHere()) return abandon();
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
       soulName: pName,
       introMessage,
@@ -1275,6 +1389,20 @@ export default function SoulsPage() {
         )}
 
         {/* Add-person sheet */}
+        {permissionAsk && (
+          <PermissionSheet
+            people={permissionAsk}
+            onCancel={() => setPermissionAsk(null)}
+            onConfirm={() => {
+              recordSharingPermission(permissionAsk.map((p) => p.id));
+              setPermissionAsk(null);
+              // People kept only on this device can now be saved to the account.
+              setPeopleSyncNonce((n) => n + 1);
+              void readTheBond();
+            }}
+          />
+        )}
+
         {addPersonOpen && (
           <AddPersonSheet
             onClose={() => setAddPersonOpen(false)}
@@ -1598,6 +1726,66 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
 }
 
 // ---------------------------------------------------------------------------
+// Permission sheet: asked once per saved person before their first reading
+// when the member has not confirmed it yet (people saved before the
+// question existed, or saved on another device).
+// ---------------------------------------------------------------------------
+
+function PermissionSheet({ people, onCancel, onConfirm }: { people: SavedPerson[]; onCancel: () => void; onConfirm: () => void }) {
+  const { t } = useT();
+  const [checked, setChecked] = useState(false);
+  const names = people.map((p) => p.name);
+  const nameList = names.length <= 1
+    ? (names[0] || t("souls.permission_this_person"))
+    : names.length === 2
+    ? names.join(t("souls.bond_and"))
+    : `${names.slice(0, -1).join(", ")}${t("souls.bond_and_last")}${names[names.length - 1]}`;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="souls-permission-title">
+      <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16">
+        <div className="w-10 h-1 bg-forest-border rounded-full mx-auto mb-5" />
+        <h3 id="souls-permission-title" className="font-heading text-text-primary mb-2" style={{ fontSize: "1.2rem", fontWeight: 700 }}>
+          {t("souls.permission_needed_title")}
+        </h3>
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-5">
+          {fill(t("souls.permission_needed_body"), { names: nameList })}
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer select-none mb-6" style={{ minHeight: 44 }}>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => setChecked(e.target.checked)}
+            className="mt-1 w-4 h-4 cursor-pointer flex-shrink-0"
+            style={{ accentColor: "rgb(var(--rgb-text-primary))" }}
+          />
+          <span className="font-body text-[15px] leading-relaxed text-text-secondary">
+            {t("souls.permission_confirm").replace("{name}", nameList)}
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={!checked}
+          className="w-full py-3.5 rounded-xl font-body font-semibold text-[17px] tracking-[0.2em] uppercase transition-all disabled:opacity-30"
+          style={{ background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))", color: "var(--text-primary)" }}
+        >
+          {t("souls.permission_continue")}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="w-full mt-3 py-3 font-body text-[15px] text-text-secondary"
+          style={{ minHeight: 44 }}
+        >
+          {t("souls.permission_not_now")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Add-person sheet, collects birth data, calls /souls/calculate-blueprint
 // ---------------------------------------------------------------------------
 
@@ -1627,6 +1815,13 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   // chart, and to its AI providers when the member asks about them), so the
   // member confirms they have that person's permission first.
   const [hasPermission, setHasPermission] = useState(false);
+  // A chart that lands after the sheet closed, or after the account
+  // changed, is dropped: it must never be added to anyone's list.
+  const sheetMountedRef = useRef(true);
+  useEffect(() => {
+    sheetMountedRef.current = true;
+    return () => { sheetMountedRef.current = false; };
+  }, []);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -1658,23 +1853,28 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     setSubmitting(true);
     setError(null);
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+    const acct = captureAccount();
+    const stillHere = () => acct.live && sheetMountedRef.current;
     try {
-      const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          sex: sex || null,
-          birth_date: birthDate,
-          birth_time: timeUnknown ? "12:00" : birthTime,
-          birth_city: birthCity,
-        }),
+      const { ok, data } = await trackRequest(async () => {
+        const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            sex: sex || null,
+            birth_date: birthDate,
+            birth_time: timeUnknown ? "12:00" : birthTime,
+            birth_city: birthCity,
+          }),
+        });
+        if (!stillHere()) return { ok: false, data: null };
+        return { ok: res.ok, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(errorText(err?.detail, t("souls.error_read_chart")));
+      if (!stillHere()) return;
+      if (!ok) {
+        throw new Error(errorText(data?.detail, t("souls.error_read_chart")));
       }
-      const data = await res.json();
       const person: SavedPerson = {
         id: typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -1698,10 +1898,11 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       };
       onAdded(person);
     } catch (e: unknown) {
+      if (!stillHere()) return;
       const msg = e instanceof Error ? e.message : t("souls.error_drifted_short");
       setError(msg);
     } finally {
-      setSubmitting(false);
+      if (sheetMountedRef.current) setSubmitting(false);
     }
   };
 

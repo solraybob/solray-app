@@ -106,3 +106,89 @@ test("consent flags are read from /users/me at top level or under profile", () =
     { required: false, version: "2026-10-06", at: "2026-10-07T10:00:00" },
   );
 });
+
+test("F1: captureAccount goes stale when the account changes, and check() throws", () => {
+  const acct = session.captureAccount();
+  assert.equal(acct.live, true);
+  acct.check();
+  session.bumpAuthGeneration();
+  assert.equal(acct.live, false);
+  assert.throws(() => acct.check(), (e) => session.isStaleAccountError(e));
+  assert.equal(session.captureAccount().live, true);
+});
+
+test("F1: raw callbacks check the account before writing caches or calling back", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const root = path.join(__dirname, "..");
+  const souls = fs.readFileSync(path.join(root, "app/souls/page.tsx"), "utf8");
+  // Add-person sheet: the chart is only added for the same account, sheet open.
+  const sheet = souls.slice(souls.indexOf("function AddPersonSheet"));
+  const submit = sheet.slice(sheet.indexOf("const submit = async"), sheet.indexOf("onAdded(person);"));
+  assert.match(submit, /const acct = captureAccount\(\);/);
+  assert.ok((submit.match(/!stillHere\(\)/g) || []).length >= 2, "checked after fetch and after decoding");
+  // Bond reading: legacy recalculation and the chat handoff are guarded.
+  const bond = souls.slice(souls.indexOf("const readTheBond"), souls.indexOf("<ProtectedRoute>"));
+  assert.match(bond, /const acct = captureAccount\(\);/);
+  const pushes = bond.split('router.push("/chat?compat=1")').length - 1;
+  const guards = (bond.match(/if \(!stillHere\(\)\) return abandon\(\);/g) || []).length;
+  assert.ok(guards >= pushes + 2, "every handoff and the cache write are guarded");
+  const i18n = fs.readFileSync(path.join(root, "lib/i18n.tsx"), "utf8");
+  assert.match(i18n, /if \(!acct\.live\) return true;/);
+});
+
+test("F7: apiBusy covers reading the answer, not just the headers", async () => {
+  let release;
+  global.fetch = async () => ({
+    ok: true, status: 200,
+    json: () => new Promise((r) => { release = () => r({ done: true }); }),
+  });
+  const p = api.apiFetch("/x", {}, "token-C");
+  await tick(); await tick();
+  assert.equal(api.apiBusy(), true, "still decoding");
+  release();
+  await p;
+  assert.equal(api.apiBusy(), false);
+});
+
+test("F7: raw requests counted through trackRequest", async () => {
+  let done;
+  const p = api.trackRequest(() => new Promise((r) => { done = r; }));
+  assert.equal(api.apiBusy(), true);
+  done(1);
+  assert.equal(await p, 1);
+  assert.equal(api.apiBusy(), false);
+  await assert.rejects(api.trackRequest(async () => { throw new Error("x"); }));
+  assert.equal(api.apiBusy(), false);
+});
+
+test("F7: a typed controlled field is a draft even when defaultValue follows value", () => {
+  const dg = load("lib/draft-guard.js");
+  dg.resetDraftTracking();
+  // React keeps defaultValue === value on a controlled input.
+  const box = { tagName: "TEXTAREA", value: "half a message", defaultValue: "half a message", isConnected: true };
+  assert.equal(dg.hasTypedDraft(), false, "untouched page");
+  const target = new EventTarget();
+  const stop = dg.installDraftTracking(target);
+  const ev = new Event("input");
+  Object.defineProperty(ev, "target", { value: box });
+  target.dispatchEvent(ev);
+  assert.equal(dg.hasTypedDraft(), true);
+  box.value = "";            // sent: the box is cleared
+  assert.equal(dg.hasTypedDraft(), false);
+  box.value = "again";
+  box.isConnected = false;   // left the page
+  assert.equal(dg.hasTypedDraft(), false);
+  // Buttons and checkboxes are not drafts.
+  dg.noteTyping({ tagName: "INPUT", type: "checkbox", value: "on", isConnected: true });
+  assert.equal(dg.hasTypedDraft(), false);
+  stop();
+});
+
+test("F1: the birthday question is not handed to the next account's chat", () => {
+  const fs = require("fs");
+  const src = fs.readFileSync(require("path").join(__dirname, "..", "app/today/page.tsx"), "utf8");
+  const fn = src.slice(src.indexOf("const goDeeperBirthday"), src.indexOf("const laterBirthday"));
+  assert.match(fn, /const acct = captureAccount\(\);/);
+  assert.ok(fn.indexOf("if (!acct.live) return;") < fn.indexOf('sessionStorage.setItem("solray_chat_prompt"'));
+});

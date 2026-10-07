@@ -31,6 +31,10 @@
     "../lib/oracle-errors.ts",
     "../lib/oracle-request.ts",
     "../lib/native-push.ts",
-    "../lib/push-eligibility.ts"
+    "../lib/push-eligibility.ts",
+    "../lib/draft-guard.ts",
+    "../lib/chat-sync.ts",
+    "../lib/voice-result.ts",
+    "../lib/birth-time-fold.ts"
   ]
 }

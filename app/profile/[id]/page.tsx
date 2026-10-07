@@ -11,6 +11,7 @@
  * pointing back to /souls so the user can send an invite.
  */
 
+import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -451,13 +452,14 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
     }
     setLoading(true);
     setError(null);
+    const stamp = chartWorkStamp();
     apiFetch(`/souls/${soulId}/compatibility`, {}, token)
       .then((d) => {
         const parsed = d as { reading: CompatReading; signals: CompatSignals; index: ResonanceIndex };
         setReading(parsed.reading || null);
         setSignals(parsed.signals || null);
         setIndex(parsed.index || null);
-        try { sessionStorage.setItem(cacheKey, JSON.stringify(parsed)); } catch (_) {}
+        writeChartCache(stamp, cacheKey, parsed, "session");
       })
       .catch((e: unknown) => {
         if (e instanceof ApiError && e.status === 402) {

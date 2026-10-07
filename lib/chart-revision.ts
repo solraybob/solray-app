@@ -31,17 +31,56 @@ export function currentBirthRevision(): string | null {
   try { return localStorage.getItem(REV_KEY); } catch { return null; }
 }
 
+// Bumped whenever the derived caches are dropped in this tab. Together with
+// the stored revision it tells work that started before a birth change
+// apart from work that started after it, even when an edit is undone
+// (A to B to A gives the same revision but a new epoch).
+let chartEpoch = 0;
+
+function isDerivedKey(k: string): boolean {
+  return DERIVED_EXACT.includes(k) || DERIVED_PREFIX.some((p) => k.startsWith(p));
+}
+
 /** Drop every cache computed from the birth chart. */
 export function clearChartDerivedCaches(): void {
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (!k) continue;
-      if (DERIVED_EXACT.includes(k) || DERIVED_PREFIX.some((p) => k.startsWith(p))) {
-        localStorage.removeItem(k);
+  chartEpoch += 1;
+  for (const store of [() => localStorage, () => sessionStorage]) {
+    try {
+      const st = store();
+      for (let i = st.length - 1; i >= 0; i--) {
+        const k = st.key(i);
+        if (k && isDerivedKey(k)) st.removeItem(k);
       }
-    }
-  } catch { /* storage unavailable: nothing cached */ }
+    } catch { /* storage unavailable: nothing cached */ }
+  }
+}
+
+/**
+ * The chart a piece of work starts from. Capture it BEFORE requesting
+ * anything computed from the birth chart; when the answer lands, only
+ * cache it (and only call it current) if chartStampCurrent(stamp) still
+ * holds. Otherwise the birth details changed while the request was in
+ * flight and the answer may describe the old chart.
+ */
+export type ChartStamp = { rev: string | null; epoch: number };
+
+export function chartWorkStamp(): ChartStamp {
+  return { rev: currentBirthRevision(), epoch: chartEpoch };
+}
+
+export function chartStampCurrent(stamp: ChartStamp): boolean {
+  return stamp.epoch === chartEpoch && stamp.rev === currentBirthRevision();
+}
+
+/** Writes a chart-derived cache entry only if the chart has not changed since `stamp`. */
+export function writeChartCache(stamp: ChartStamp, key: string, value: unknown, store: "local" | "session" = "local"): boolean {
+  if (!chartStampCurrent(stamp)) return false;
+  try {
+    (store === "local" ? localStorage : sessionStorage).setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
