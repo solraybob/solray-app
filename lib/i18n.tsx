@@ -115,6 +115,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       document.documentElement.lang = lang === "es-419" ? "es-419" : lang;
     } catch { /* SSR */ }
+    // The install manifest (app name line, shortcut names) in the same
+    // language, so "Add to home screen" and its shortcuts read in Spanish
+    // for a Spanish member.
+    try {
+      const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+      const href = manifestFor(lang);
+      if (link && link.getAttribute("href") !== href) link.setAttribute("href", href);
+    } catch { /* SSR */ }
   }, [lang]);
 
   const setLang = useCallback(async (code: LanguageCode): Promise<boolean> => {
@@ -206,6 +214,11 @@ export function fill(template: string, vars: Record<string, string | number>): s
 }
 
 /** "1st", "2nd", "3rd", "11th" in English; the bare number elsewhere. */
+/** The web app manifest for a language (public/manifest*.json). */
+export function manifestFor(lang: string): string {
+  return lang.startsWith("es") ? "/manifest.es.json" : "/manifest.json";
+}
+
 export function ordinal(n: number | string, lang: string): string {
   const v = Number(n);
   if (!lang.startsWith("en") || !isFinite(v)) return String(n);

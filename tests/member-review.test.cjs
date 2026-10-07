@@ -133,3 +133,36 @@ test("F4: permission is recorded per person and gates uploads and readings", () 
   assert.match(bond, /setPermissionAsk\(unconfirmed\);\n\s+return;/);
   assert.match(src, /recordSharingPermission\(\[person\.id\]\);/);
 });
+
+test("F10 (B4): backend aspect spellings reach the Spanish prompt translated", () => {
+  const { buildTodayPrompts, aspectName } = load("lib/today-prompts.js");
+  const en = require(process.env.SOLRAY_TEST_BUILD + "/messages/en.json");
+  const es = require(process.env.SOLRAY_TEST_BUILD + "/messages/es.json");
+  const tr = (bundle) => (key) => key.split(".").reduce((o, k) => (o ? o[k] : undefined), bundle) ?? key;
+  assert.equal(aspectName("conjunct"), "Conjunction");
+  assert.equal(aspectName("Squares"), "Square");
+  assert.equal(aspectName("opposite"), "Opposition");
+  assert.equal(aspectName("semi-sextile"), "Semi-Sextile");
+  assert.equal(aspectName("wiggles"), null);
+  const f = (dt) => ({ dominant_transit: dt });
+  const esQ = buildTodayPrompts(f("Saturn conjunct natal Neptune"), tr(es), "es")[0].question;
+  assert.match(esQ, /Saturno en conjunción con mi Neptuno/);
+  assert.ok(!/conjunct/i.test(esQ), esQ);
+  assert.match(buildTodayPrompts(f("Mars opposite natal Venus"), tr(es), "es")[0].question, /Marte en oposición con mi Venus/);
+  assert.match(buildTodayPrompts(f("Saturn conjunct natal Neptune"), tr(en), "en")[0].question, /Saturn in conjunction to my Neptune/);
+});
+
+test("F10 (B4): the install manifest follows the language", () => {
+  const { manifestFor } = load("lib/i18n.js");
+  assert.equal(manifestFor("en"), "/manifest.json");
+  assert.equal(manifestFor("es"), "/manifest.es.json");
+  assert.equal(manifestFor("es-419"), "/manifest.es.json");
+  const en = JSON.parse(read("public/manifest.json"));
+  const es = JSON.parse(read("public/manifest.es.json"));
+  assert.deepEqual(Object.keys(es).sort(), Object.keys(en).sort());
+  assert.equal(es.lang, "es");
+  assert.equal(es.shortcuts.length, en.shortcuts.length);
+  for (const sc of es.shortcuts) assert.ok(!/Today|Reading/.test(sc.name), sc.name);
+  assert.ok(!/Higher Self|Human Design/.test(es.description));
+  assert.match(read("lib/i18n.tsx"), /link\[rel="manifest"\]/);
+});
