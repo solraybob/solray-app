@@ -6,9 +6,24 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode } from "@/lib/api";
-import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
+import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
+import {
+  CHAT_MERGED_EVENT,
+  ChatSyncUnavailable,
+  deleteSessionOnServer,
+  getSessionIds,
+  loadSession,
+  markUnsent,
+  pushSessionToServer,
+  resetChatSyncMemory,
+  saveSession,
+  saveSessionIds,
+  syncSessionsFromServer,
+  type ChatMessage,
+  type StoredSession as ChatStoredSession,
+} from "@/lib/chat-sync";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -18,25 +33,11 @@ import { oracleErrorKey, ORACLE_ERROR_KEYS } from "@/lib/oracle-errors";
 import { soulRequestFields, historyForServer, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string; // ISO string for serialisation
-  // When true, this message represents a transport-level error rather
-  // than an Oracle reply. Renders with distinct styling (no Cormorant
-  // serif, no Higher-Self framing) so the user is never misled into
-  // thinking error fallback copy came from the Oracle. Replaces the
-  // earlier mockReplies fortune-cookie fallback.
-  isError?: boolean;
-}
-
-interface StoredSession {
-  sessionId: string;
-  date: string; // human-readable date label
-  customName?: string; // user-renamed label
-  messages: Message[];
-}
+// isError marks a transport-level error rather than an Oracle reply. It
+// renders with distinct styling so the member is never misled into thinking
+// error copy came from the Oracle.
+type Message = ChatMessage;
+type StoredSession = ChatStoredSession;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -57,271 +58,7 @@ function todayLabel() {
   });
 }
 
-// localStorage is now the CACHE; the server is the source of truth.
-// On any signed-in load, we hydrate from the server and overwrite the
-// local cache. saveSession writes locally first (instant render) then
-// fires-and-forgets a PUT to /chat/sessions/{id} so the server stays
-// in sync. Devices that come online later read the server's copy.
-
-function getSessionIds(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem("solray_chat_sessions") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveSessionIds(ids: string[]) {
-  try { localStorage.setItem("solray_chat_sessions", JSON.stringify(ids)); } catch { /* best-effort */ }
-}
-
-function loadSession(sessionId: string): StoredSession | null {
-  try {
-    const raw = localStorage.getItem(`solray_chat_${sessionId}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(session: StoredSession) {
-  // Best-effort: quota exhaustion or disabled storage must never break the
-  // conversation itself; in-memory state and the server sync still work.
-  try {
-    localStorage.setItem(`solray_chat_${session.sessionId}`, JSON.stringify(session));
-    const ids = getSessionIds();
-    if (!ids.includes(session.sessionId)) {
-      ids.unshift(session.sessionId);
-      saveSessionIds(ids);
-    }
-  } catch { /* memory + server only */ }
-}
-
-// ─── Server sync ────────────────────────────────────────────────────────────
-// Push a session to the server. Best-effort: failures don't block local save.
-// On success we record the server's last_message_at into the local meta so
-// the next sync compares like-with-like.
-// Writes for one conversation run one after another, in the order they were
-// made, so an older transcript can never land after a newer one and replace
-// it on the server.
-const pushChains = new Map<string, Promise<boolean>>();
-
-function pushSessionToServer(session: StoredSession, token: string | null, gen: number = getAuthGeneration()): Promise<boolean> {
-  if (!token) return Promise.resolve(false);
-  const prev = pushChains.get(session.sessionId) || Promise.resolve(true);
-  const next = prev
-    .catch(() => false)
-    .then(() => pushSessionNow(session, token, gen));
-  pushChains.set(session.sessionId, next);
-  void next.finally(() => {
-    if (pushChains.get(session.sessionId) === next) pushChains.delete(session.sessionId);
-  });
-  return next;
-}
-
-async function pushSessionNow(session: StoredSession, token: string, gen: number): Promise<boolean> {
-  // Written under an account that has since signed out: drop it.
-  if (!isCurrentGeneration(gen)) return false;
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-  try {
-    const res = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        session_id: session.sessionId,
-        custom_name: session.customName || null,
-        date_label: session.date || null,
-        messages: session.messages || [],
-      }),
-    });
-    if (!isCurrentGeneration(gen)) return false;
-    if (res.ok) {
-      markServerConfirmed([session.sessionId]);
-      const out = await res.json().catch(() => ({} as Record<string, string>));
-      if (out && typeof out.last_message_at === "string") {
-        setSessionLocalMeta(session.sessionId, out.last_message_at);
-      }
-      return true;
-    }
-    return false;
-  } catch {
-    // Local copy still saved; server sync will retry on next save.
-    return false;
-  }
-}
-
-// Ids the server has confirmed holding (a PUT returned ok, or the id showed
-// up in a server list). Sync only drops a local session that is missing
-// from the server list when it is in this set; a session whose upload
-// failed silently was never confirmed, so it is re-uploaded, never deleted.
-const SERVER_CONFIRMED_KEY = "solray_chat_server_confirmed";
-
-function getServerConfirmed(): Set<string> {
-  try {
-    const arr = JSON.parse(localStorage.getItem(SERVER_CONFIRMED_KEY) || "[]");
-    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
-function saveServerConfirmed(ids: Set<string>) {
-  try { localStorage.setItem(SERVER_CONFIRMED_KEY, JSON.stringify(Array.from(ids))); } catch { /* best-effort */ }
-}
-function markServerConfirmed(ids: string[]) {
-  const set = getServerConfirmed();
-  let changed = false;
-  for (const id of ids) {
-    if (!set.has(id)) { set.add(id); changed = true; }
-  }
-  if (changed) saveServerConfirmed(set);
-}
-function unmarkServerConfirmed(id: string) {
-  const set = getServerConfirmed();
-  if (set.delete(id)) saveServerConfirmed(set);
-}
-
-// Track per-session last_message_at locally so we can compare with remote
-// on sync. Without this, a stale local copy (laptop after a week) would
-// overwrite a fresh server copy (phone wrote yesterday) when the user
-// opens the local one and the persist-on-message effect fires. Codex
-// audit P0 (the blocker before TestFlight).
-const SESSION_META_KEY = "solray_chat_session_meta";
-type LocalMeta = Record<string, { last_message_at: string }>;
-
-function getLocalMeta(): LocalMeta {
-  try { return JSON.parse(localStorage.getItem(SESSION_META_KEY) || "{}") as LocalMeta; } catch { return {}; }
-}
-function setLocalMeta(meta: LocalMeta) {
-  try { localStorage.setItem(SESSION_META_KEY, JSON.stringify(meta)); } catch { /* ignore quota */ }
-}
-function setSessionLocalMeta(sessionId: string, last_message_at: string) {
-  const meta = getLocalMeta();
-  meta[sessionId] = { last_message_at };
-  setLocalMeta(meta);
-}
-
-// One-time migration flag: after the first sync where local-only sessions
-// are pushed to the server, mark this device as migrated. Subsequent syncs
-// treat local-only sessions as "deleted on another device" and remove them
-// from the local cache, so cross-device deletes propagate cleanly.
-const MIGRATION_FLAG = "solray_chat_migrated_v1";
-
-// Pull all sessions from server, reconcile against local cache, return
-// the unified id list. Falls back to local on network failure.
-async function syncSessionsFromServer(token: string | null, gen: number = getAuthGeneration()): Promise<string[]> {
-  if (!token) return getSessionIds();
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-  // Every await below is followed by this check: once the account has
-  // changed, nothing from this sync may touch the cache the next account
-  // reads, and nothing local may be uploaded with this token.
-  const live = () => { if (!isCurrentGeneration(gen)) throw new StaleAccountError(); };
-  try {
-    // 1. Fetch the lightweight list (includes last_message_at).
-    const listRes = await fetch(`${apiUrl}/chat/sessions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    live();
-    if (!listRes.ok) return getSessionIds();
-    const listJson = await listRes.json();
-    live();
-    const remoteSessions: Array<{ session_id: string; custom_name: string | null; date_label: string | null; message_count: number; last_message_at: string | null }> =
-      listJson.sessions || [];
-
-    const localIds = new Set(getSessionIds());
-    const localMeta = getLocalMeta();
-    const fetched: string[] = [];
-
-    // 2. Reconcile each remote session: pull from server when remote is
-    //    newer than local OR local doesn't have it.
-    for (const s of remoteSessions) {
-      fetched.push(s.session_id);
-      const remoteAt = s.last_message_at || "";
-      const localAt = localMeta[s.session_id]?.last_message_at || "";
-      const needPull = !localIds.has(s.session_id) || (remoteAt && remoteAt > localAt);
-      if (needPull) {
-        try {
-          const fullRes = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(s.session_id)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          live();
-          if (fullRes.ok) {
-            const full = await fullRes.json();
-            live();
-            const stored: StoredSession = {
-              sessionId: full.session_id,
-              date: full.date_label || "",
-              customName: full.custom_name || undefined,
-              messages: full.messages || [],
-            };
-            localStorage.setItem(`solray_chat_${stored.sessionId}`, JSON.stringify(stored));
-            if (full.last_message_at) {
-              setSessionLocalMeta(stored.sessionId, full.last_message_at);
-            }
-          }
-        } catch (e) {
-          if (isStaleAccountError(e)) throw e;
-          /* skip; will retry on next sync */
-        }
-      }
-    }
-
-    // 3. Local-only reconciliation. Two paths:
-    //    a) FIRST migration on this device: push local-only sessions UP.
-    //       This is the existing-user case where localStorage holds real
-    //       history that's never been to the server.
-    //    b) After migration: local-only means deleted on another device,
-    //       so remove from local cache. Otherwise a delete on phone
-    //       resurrects on desktop forever.
-    //    Deletion only applies to sessions the server previously
-    //    confirmed; a never-confirmed local session (upload failed) is
-    //    re-uploaded and kept, never deleted.
-    const remoteIds = new Set(remoteSessions.map((s) => s.session_id));
-    markServerConfirmed(Array.from(remoteIds));
-    const confirmed = getServerConfirmed();
-    const localIdArr = Array.from(localIds);
-    let migrated = false;
-    try { migrated = localStorage.getItem(MIGRATION_FLAG) === "1"; } catch { /* treat as not migrated */ }
-    let allUploadsOk = true;
-    for (const localId of localIdArr) {
-      if (remoteIds.has(localId)) continue;
-      if (migrated && confirmed.has(localId)) {
-        // Confirmed on the server before, now gone: deleted on another
-        // device, so drop from local cache.
-        try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
-        const meta = getLocalMeta();
-        delete meta[localId];
-        setLocalMeta(meta);
-        unmarkServerConfirmed(localId);
-        continue;
-      }
-      const local = loadSession(localId);
-      if (local) {
-        const ok = await pushSessionToServer(local, token, gen);
-        live();
-        if (!ok) allUploadsOk = false;
-        if (ok && local.messages?.length) {
-          setSessionLocalMeta(localId, new Date().toISOString());
-        }
-        fetched.push(localId);
-      }
-    }
-    if (!migrated && allUploadsOk) {
-      try { localStorage.setItem(MIGRATION_FLAG, "1"); } catch { /* retry next sync */ }
-    }
-
-    // 4. Save unified id list, server-order takes precedence.
-    const allIds = Array.from(new Set(fetched));
-    live();
-    saveSessionIds(allIds);
-    return allIds;
-  } catch (e) {
-    if (isStaleAccountError(e)) throw e;
-    return getSessionIds();
-  }
-}
+// Device cache and server sync for chat history: lib/chat-sync.ts.
 
 // Dynamics context (the other person's chart) belongs to the conversation it
 // was opened for. Kept per session on this device so reopening that
@@ -578,28 +315,40 @@ function ChatPageInner() {
 
   // Cross-device chat sync. localStorage stays as the cache for instant
   // reads; the server is the source of truth. On mount (or whenever a
-  // fresh token arrives), pull the user's sessions from the server and
-  // migrate any local-only sessions up. Runs once per token change.
+  // fresh token arrives), pull the member's sessions from the server and
+  // upload what only this device has (lib/chat-sync).
   //
-  // Until that first sync has reconciled, nothing is uploaded: a device
-  // holding an older copy of a conversation must not PUT it over the
-  // server's newer one. Writes made meanwhile stay local and are queued;
-  // once the sync lands, the open conversation is rebuilt from the server's
-  // copy plus anything only this device has, and the queue is flushed.
+  // Until that sync has reconciled, nothing is uploaded: a device holding an
+  // older copy of a conversation must not write it over the server's newer
+  // one. Writes made meanwhile stay local and are queued; once the sync
+  // lands, the open conversation is rebuilt from the server's copy plus
+  // anything only this device has, and the queue is flushed. If the sync
+  // fails (offline, server error), uploads stay off and it is retried with
+  // a growing delay, and as soon as the device is back online.
   //
   // The account generation this render belongs to. Every write below checks
   // it, so work finishing after a sign-out never lands in the next account.
   const accountGen = useMemo(() => getAuthGeneration(), [token]);
   const syncReadyRef = useRef(false);
   const pendingPushRef = useRef<Set<string>>(new Set());
+  const [syncAttempt, setSyncAttempt] = useState(0);
+  const syncFailuresRef = useRef(0);
+  useEffect(() => {
+    resetChatSyncMemory();
+    syncFailuresRef.current = 0;
+  }, [accountGen]);
   useEffect(() => {
     if (!token) return;
     const gen = accountGen;
     syncReadyRef.current = false;
     let off = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    const retry = () => { if (!off) setSyncAttempt((n) => n + 1); };
+    const onOnline = () => retry();
     syncSessionsFromServer(token, gen)
       .then(() => {
         if (off || !isCurrentGeneration(gen)) return;
+        syncFailuresRef.current = 0;
         const sid = activeSessionRef.current;
         if (sid) {
           const reconciled = loadSession(sid);
@@ -614,19 +363,39 @@ function ChatPageInner() {
         const pending = Array.from(pendingPushRef.current);
         pendingPushRef.current.clear();
         for (const id of pending) {
-          if (id === sid) continue; // handled by the merge above
           const local = loadSession(id);
           if (local) void pushSessionToServer(local, token, gen);
         }
       })
-      .catch(() => {
-        // Offline or the account changed: uploads stay off for this token
-        // unless it is still the live account (then allow them, the local
-        // copy is all there is).
-        if (!off && isCurrentGeneration(gen)) syncReadyRef.current = true;
+      .catch((e) => {
+        if (off || !isCurrentGeneration(gen)) return;
+        if (!(e instanceof ChatSyncUnavailable)) return;
+        // Not reconciled: uploads stay off (writes are kept on this device
+        // and marked unsent). Try again later, or when back online.
+        const n = syncFailuresRef.current++;
+        retryTimer = setTimeout(retry, Math.min(15_000 * 2 ** n, 300_000));
+        window.addEventListener("online", onOnline);
       });
-    return () => { off = true; };
-  }, [token, accountGen]);
+    return () => {
+      off = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [token, accountGen, syncAttempt]);
+
+  // An upload pulled in turns another device added to the open
+  // conversation: show them here too.
+  useEffect(() => {
+    const onMerged = (e: Event) => {
+      const d = (e as CustomEvent).detail as { sessionId?: string; messages?: Message[] } | undefined;
+      if (!d || !d.sessionId || d.sessionId !== activeSessionRef.current || !Array.isArray(d.messages)) return;
+      const current = messagesRef.current;
+      const merged = mergeMessages(d.messages, current);
+      if (!sameTranscript(merged, current)) setMessages(merged);
+    };
+    window.addEventListener(CHAT_MERGED_EVENT, onMerged);
+    return () => window.removeEventListener(CHAT_MERGED_EVENT, onMerged);
+  }, []);
 
   // persistSession: local first (instant render), server second (cross-device).
   // Use this everywhere in the component instead of saveSession() so the
@@ -638,6 +407,7 @@ function ChatPageInner() {
     if (syncReadyRef.current) {
       void pushSessionToServer(session, token, accountGen);
     } else {
+      markUnsent(session.sessionId);
       pendingPushRef.current.add(session.sessionId);
     }
   };
@@ -1301,7 +1071,6 @@ function ChatPageInner() {
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
       if (token) {
-        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
         // The answer may land after a sign-out (and the next account's
         // sign-in): then it belongs to nobody on this device and must not
         // write the old conversation back into the shared cache.
@@ -1310,6 +1079,7 @@ function ChatPageInner() {
           if (!acct.live) return;
           if (snapshot) {
             try { localStorage.setItem(`solray_chat_${sid}`, JSON.stringify(snapshot)); } catch { /* ignore */ }
+            markUnsent(sid);
           }
           const current = getSessionIds();
           if (snapshot && !current.includes(sid)) {
@@ -1325,20 +1095,11 @@ function ChatPageInner() {
           );
           setHistoryError(t("chat.delete_failed"));
         };
-        void fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(sid)}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => {
-            if (!acct.live) return;
-            // 404 means the server no longer has it: already deleted.
-            if (res.ok || res.status === 404) {
-              unmarkServerConfirmed(sid);
-            } else {
-              restore();
-            }
-          })
-          .catch(() => restore());
+        // Runs after any upload already queued for this conversation, so a
+        // late upload can never recreate it on the server.
+        void deleteSessionOnServer(sid, token, acct.generation).then((gone) => {
+          if (!gone) restore();
+        });
       }
       // If we just deleted the active session, start fresh
       if (sid === sessionId) {

@@ -30,6 +30,7 @@
     "../lib/i18n.tsx",
     "../lib/oracle-errors.ts",
     "../lib/oracle-request.ts",
-    "../lib/draft-guard.ts"
+    "../lib/draft-guard.ts",
+    "../lib/chat-sync.ts"
   ]
 }
