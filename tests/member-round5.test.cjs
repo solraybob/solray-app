@@ -236,6 +236,7 @@ test("finding 3: a rename not uploaded yet survives a pull of the older name", a
     messages: [{ id: "m1", role: "user", content: "q", timestamp: "2026-10-07T10:00:00Z" }] });
   sync.saveSessionIds(["n1"]);
   sync.markServerConfirmed(["n1"]);
+  sync.markRenamePending("n1");
   sync.markUnsent("n1");
   sync.bindChatSyncToAccount(session.getAuthGeneration());
   nameServer(null);

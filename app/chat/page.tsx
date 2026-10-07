@@ -16,6 +16,7 @@ import {
   deleteSessionOnServer,
   getSessionIds,
   loadSession,
+  markRenamePending,
   markUnsent,
   pushSessionToServer,
   bindChatSyncToAccount,
@@ -1094,6 +1095,8 @@ function ChatPageInner() {
         ...session,
         customName: newName || undefined,
       };
+      // Only a rename made here holds its name against the server's copy.
+      markRenamePending(sid);
       persistSession(updated);
       setPastSessions((prev) =>
         prev.map((s) => (s.sessionId === sid ? updated : s))

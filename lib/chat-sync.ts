@@ -132,6 +132,21 @@ function clearUnsent(id: string) {
   if (set.delete(id)) writeSet(UNSENT_KEY, set);
 }
 
+// Conversations renamed (or cleared) on this device and not yet taken by
+// the server. Kept apart from unsent turns: turns written offline say
+// nothing about the name, so they must never hold on to a name another
+// device has since changed or cleared. Only a rename made here does.
+const PENDING_RENAME_KEY = "solray_chat_pending_rename";
+export function getPendingRenames(): Set<string> { return readSet(PENDING_RENAME_KEY); }
+export function markRenamePending(id: string) {
+  const set = getPendingRenames();
+  if (!set.has(id)) { set.add(id); writeSet(PENDING_RENAME_KEY, set); }
+}
+function clearRenamePending(id: string) {
+  const set = getPendingRenames();
+  if (set.delete(id)) writeSet(PENDING_RENAME_KEY, set);
+}
+
 // Per-session last_message_at as the server reported it, so a sync can
 // tell whether the server's copy is newer than this device's.
 const SESSION_META_KEY = "solray_chat_session_meta";
@@ -264,6 +279,17 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
       const out = await putRes.json().catch(() => ({} as Record<string, unknown>));
       if (!stillMine()) return false;
       markServerConfirmed([sessionId]);
+      // The name: a rename made here is done once the server holds it (and
+      // nothing newer was typed meanwhile). Without one, the server's name
+      // is the current one (another device may have renamed or cleared it).
+      const sentName = latest.customName || undefined;
+      const nowLocal = loadSession(sessionId);
+      if (getPendingRenames().has(sessionId)) {
+        if ((nowLocal?.customName || undefined) === sentName) clearRenamePending(sessionId);
+      } else if (nowLocal && out && "custom_name" in out) {
+        const serverNameNow = typeof out.custom_name === "string" && out.custom_name ? out.custom_name : undefined;
+        if ((nowLocal.customName || undefined) !== serverNameNow) saveSession({ ...nowLocal, customName: serverNameNow });
+      }
       // The merged transcript the server now holds: take in what other
       // devices added (a server from before the merge sends none).
       const serverNow: ChatMessage[] = Array.isArray(out?.messages) ? out.messages as ChatMessage[] : sent;
@@ -301,6 +327,7 @@ function takeServerCopy(sessionId: string, serverMessages: ChatMessage[]) {
 export function deleteSessionOnServer(sessionId: string, token: string, gen: number): Promise<boolean> {
   deletedHere.add(sessionId);
   clearUnsent(sessionId);
+  clearRenamePending(sessionId);
   return enqueue(sessionId, async () => {
     if (!isCurrentGeneration(gen)) return false;
     try {
@@ -417,11 +444,12 @@ async function readServerSession(
 
 /** The conversation name after taking the server's copy. A name the server
  *  sends (or an explicit null: cleared on another device) wins, unless this
- *  device has writes the server has not taken yet (a rename made here and
- *  not uploaded is newer). Only when the server leaves the field out is the
- *  local name kept. */
+ *  device renamed the conversation and the server has not taken it yet (a
+ *  rename made here and not uploaded is newer). Unsent turns alone do not
+ *  count: they say nothing about the name. Only when the server leaves the
+ *  field out is the local name kept. */
 function serverName(sessionId: string, full: Record<string, unknown>, localName: string | undefined): string | undefined {
-  if (!("custom_name" in full) || getUnsent().has(sessionId)) return localName || undefined;
+  if (!("custom_name" in full) || getPendingRenames().has(sessionId)) return localName || undefined;
   return typeof full.custom_name === "string" && full.custom_name ? full.custom_name : undefined;
 }
 
@@ -529,6 +557,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
         dropSessionLocalMeta(localId);
         unmarkServerConfirmed(localId);
         clearUnsent(localId);
+        clearRenamePending(localId);
         continue;
       }
       fetched.push(localId);
