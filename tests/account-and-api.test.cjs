@@ -184,3 +184,11 @@ test("F7: a typed controlled field is a draft even when defaultValue follows val
   assert.equal(dg.hasTypedDraft(), false);
   stop();
 });
+
+test("F1: the birthday question is not handed to the next account's chat", () => {
+  const fs = require("fs");
+  const src = fs.readFileSync(require("path").join(__dirname, "..", "app/today/page.tsx"), "utf8");
+  const fn = src.slice(src.indexOf("const goDeeperBirthday"), src.indexOf("const laterBirthday"));
+  assert.match(fn, /const acct = captureAccount\(\);/);
+  assert.ok(fn.indexOf("if (!acct.live) return;") < fn.indexOf('sessionStorage.setItem("solray_chat_prompt"'));
+});

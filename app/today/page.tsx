@@ -8,7 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { humanizeCycleTitle, fmtDateLong } from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
-import { isStaleAccountError } from "@/lib/account-session";
+import { captureAccount, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
 import { chartStampCurrent, chartWorkStamp, syncBirthRevision, writeChartCache } from "@/lib/chart-revision";
 import { activeCardIndex } from "@/lib/deck";
@@ -1565,6 +1565,9 @@ export default function TodayPage() {
     // true placements, not invented ones. Fail-soft: if it is unavailable the
     // question still opens a personalised reading from her chart knowledge.
     let facts = "";
+    // The solar return may land after a sign-out: then the question belongs
+    // to nobody here and must not be handed to the next account's chat.
+    const acct = captureAccount();
     try {
       const data = token ? (await apiFetch("/solar-return", {}, token)) as { solar_return: any } : null;
       const sr = data?.solar_return;
@@ -1581,6 +1584,7 @@ export default function TodayPage() {
         if (parts.length) facts = fill(t("prompts.sr_facts"), { parts: parts.join(", ") });
       }
     } catch (_) { /* non-fatal */ }
+    if (!acct.live) return;
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: t("prompts.birthday_topic"),
