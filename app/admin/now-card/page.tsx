@@ -12,13 +12,13 @@
  * PLAIN_NOW_CARD_FOR_MEMBERS in lib/now-card.ts is switched on.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DeckCard from "@/components/NowDeckCard";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { translateIn } from "@/lib/i18n";
-import { firstLines, usablePlainCard, PLAIN_NOW_CARD_FOR_MEMBERS, type PlainNowCard } from "@/lib/now-card";
+import { firstLines, plainCardFor, previewRequests, usablePlainCard, PLAIN_NOW_CARD_FOR_MEMBERS, type PlainNowCard } from "@/lib/now-card";
 
 type Lang = "en" | "es";
 
@@ -89,19 +89,30 @@ function NowCardPreview() {
 
   const readingReady = !!(today?.day_title && today?.reading && !today?._ai_error);
 
+  // Only the latest request may fill the card: a slower answer for the
+  // language the admin just left never lands under the new language's labels.
+  const requests = useRef(previewRequests());
   const loadPlain = async (which: Lang, refresh = false) => {
     if (!token) return;
+    const req = requests.current.start(which);
+    setPlain(null);
     setBusy(true); setPlainErr("");
     try {
       const q = `?lang=${which}${refresh ? "&refresh=true" : ""}`;
-      setPlain(await apiFetch(`/admin/now-card/plain${q}`, {}, token) as PlainNowCard);
+      const got = await apiFetch(`/admin/now-card/plain${q}`, {}, token) as PlainNowCard;
+      if (!req.current()) return;
+      if (!plainCardFor(got, which)) {
+        setPlainErr(`The plain card came back in ${got?.language || "another language"}, not ${which}.`);
+        return;
+      }
+      setPlain(got);
     } catch (e: any) {
-      setPlain(null);
+      if (!req.current()) return;
       setPlainErr(e?.status === 403 ? "Admin access required." : e?.status === 429
         ? "Today's limit for this is reached. It resets tomorrow."
         : `Could not load the plain card (status ${e?.status ?? "?"})`);
     } finally {
-      setBusy(false);
+      if (req.current()) setBusy(false);
     }
   };
 

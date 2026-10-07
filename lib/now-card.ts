@@ -57,3 +57,24 @@ export function nowCardContent(
   }
   return { title: forecast.day_title, body: firstLines(forecast.reading), plain: false };
 }
+
+/**
+ * Orders the admin preview's requests. Each start() supersedes every
+ * earlier one; a request's answer may only fill the card while
+ * current() still holds, so an English answer that lands after Spanish
+ * was picked (or after a regenerate) is dropped.
+ */
+export function previewRequests(): { start(lang: string): { lang: string; current(): boolean } } {
+  let seq = 0;
+  return {
+    start(lang: string) {
+      const mine = ++seq;
+      return { lang, current: () => mine === seq };
+    },
+  };
+}
+
+/** A plain card answer that is in the language it was asked for. */
+export function plainCardFor(p: PlainNowCard | null | undefined, lang: string): boolean {
+  return !!p && (typeof p.language !== "string" || p.language === "" || p.language === lang);
+}
