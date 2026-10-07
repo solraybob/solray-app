@@ -74,3 +74,24 @@ test("the chat page sends session_id and no client chart when an id is known", (
   assert.ok(/apiFetch\(`\/souls\/\$\{gone\.connection_id\}`, \{ method: "DELETE" \}/.test(souls));
   assert.ok(!/\/souls\/\$\{[^}]*connection_id\}\/blueprint/.test(souls));
 });
+
+test("F6: a Dynamics conversation names its partner from the transcript on any device", () => {
+  const { soulFromTranscript, soulRequestFields } = load("lib/oracle-request.js");
+  const transcript = [
+    { id: "greeting", role: "assistant", content: "...", soul: { name: "Rut", connection_id: "c-1", saved_person_id: null } },
+    { id: "2", role: "user", content: "and us?" },
+  ];
+  const ref = soulFromTranscript(transcript);
+  assert.deepEqual(ref, { name: "Rut", connectionId: "c-1", savedPersonId: null });
+  assert.deepEqual(soulRequestFields(ref), { soul_connection_id: "c-1" });
+  assert.deepEqual(soulRequestFields(soulFromTranscript([{ soul: { saved_person_id: "p-9" } }])), { saved_person_id: "p-9" });
+  assert.equal(soulFromTranscript([{ id: "1", content: "hi" }]), null);
+  assert.equal(soulFromTranscript([{ soul: { name: "only a name" } }]), null);
+  // The chat page stamps the opening message and reads it back.
+  const src = fs.readFileSync(path.join(__dirname, "..", "app/chat/page.tsx"), "utf8");
+  assert.match(src, /soul: \{\n\s+name: ctx\.soulName \?\? null,\n\s+connection_id: ctx\.soulConnectionId \?\? null,/);
+  assert.match(src, /getSoulCtx\(last\.sessionId, last\.messages\)/);
+  assert.match(src, /getSoulCtx\(session\.sessionId, session\.messages\)/);
+  // No chart rides in the transcript.
+  assert.ok(!/soul: \{[^}]*blueprint/.test(src));
+});

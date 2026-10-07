@@ -30,7 +30,7 @@ import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS } from "@/lib/oracle-errors";
-import { soulRequestFields, historyForServer, type SoulRef } from "@/lib/oracle-request";
+import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
 // isError marks a transport-level error rather than an Oracle reply. It
@@ -75,13 +75,15 @@ function soulRefOf(sc: SoulCtx | null): SoulRef | null {
   if (!sc) return null;
   return { connectionId: sc.connectionId ?? null, savedPersonId: sc.savedPersonId ?? null, blueprint: sc.blueprint ?? null };
 }
-function getSoulCtx(sessionId: string): SoulCtx | null {
+function getSoulCtx(sessionId: string, messages?: Message[]): SoulCtx | null {
   try {
     const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
-    return all[sessionId] || null;
-  } catch {
-    return null;
-  }
+    if (all[sessionId]) return all[sessionId];
+  } catch { /* fall back to the transcript */ }
+  // Not opened on this device (synced from another one, or after a
+  // reinstall): the transcript's opening message names the partner.
+  const fromTranscript = soulFromTranscript(messages);
+  return fromTranscript ? { ...fromTranscript, blueprint: null } : null;
 }
 function setSoulCtx(sessionId: string, ctx: SoulCtx | null) {
   try {
@@ -746,6 +748,15 @@ function ChatPageInner() {
               role: "assistant",
               content: fill(t("prompts.compat_opening"), { name: ctx.soulName }),
               timestamp: new Date().toISOString(),
+              // Travels with the transcript to the member's other devices,
+              // so follow-ups there still name who the reading is with.
+              ...((ctx.soulConnectionId || ctx.savedPersonId) ? {
+                soul: {
+                  name: ctx.soulName ?? null,
+                  connection_id: ctx.soulConnectionId ?? null,
+                  saved_person_id: ctx.savedPersonId ?? null,
+                },
+              } : {}),
             };
             const userMsg: Message = {
               id: `${Date.now()}`,
@@ -846,7 +857,7 @@ function ChatPageInner() {
       if (last && last.messages.length > 0) {
         setSessionId(last.sessionId);
         setMessages(last.messages);
-        const sc = getSoulCtx(last.sessionId);
+        const sc = getSoulCtx(last.sessionId, last.messages);
         setSoulBlueprint(sc?.blueprint ?? null);
         setSoulName(sc?.name ?? null);
         setSoulRef(soulRefOf(sc));
@@ -1004,7 +1015,7 @@ function ChatPageInner() {
       setMessages(session.messages);
       // Restore this conversation's own Dynamics context, or clear the one
       // left over from the conversation we are leaving.
-      const sc = getSoulCtx(session.sessionId);
+      const sc = getSoulCtx(session.sessionId, session.messages);
       setSoulBlueprint(sc?.blueprint ?? null);
       setSoulName(sc?.name ?? null);
       setSoulRef(soulRefOf(sc));
