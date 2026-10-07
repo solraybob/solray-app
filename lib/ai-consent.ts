@@ -3,7 +3,9 @@
 // The backend owns the current version (AI_CONSENT_VERSION in the API). The
 // app sends this value when the member agrees; if the server's version moves
 // on, /users/me reports ai_consent_required and the sheet asks again.
-export const AI_CONSENT_VERSION = "2026-10-06";
+// 2026-10-07: the wording names every provider that receives data
+// (Anthropic, OpenAI, Groq and ElevenLabs for voice).
+export const AI_CONSENT_VERSION = "2026-10-07";
 
 /** Error code the API returns (403) when a route needs AI consent. */
 export const AI_CONSENT_REQUIRED_CODE = "ai_consent_required";

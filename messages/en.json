@@ -132,7 +132,7 @@
     "log_in": "Log in",
     "have_account": "Already have an account?",
     "step_of": "Step {n} of {total}",
-    "ai_consent": "I agree that Solray sends my birth details and what I write or say in the app to its AI providers (Anthropic, OpenAI and Groq) so they can generate my readings and the Oracle's replies. They process it only on Solray's behalf.",
+    "ai_consent": "I agree that Solray sends my birth details and what I write or say in the app to its AI providers, Anthropic, OpenAI, Groq and ElevenLabs (voice), so they can write my readings and the Oracle's replies and turn my voice into text. They process it only on Solray's behalf.",
     "ai_consent_link": "Privacy policy",
     "under_age": "Solray is made for people aged 16 and over, so we cannot open an account for you yet. We would love to welcome you when you turn 16."
   },
@@ -577,7 +577,7 @@
     "ai_consent_given": "You have agreed.",
     "ai_consent_given_on": "You agreed on {date}.",
     "ai_consent_not_given": "Not agreed.",
-    "ai_consent_on_hint": "Solray sends your birth details and what you write or say to its AI providers (Anthropic, OpenAI and Groq) to write your readings and the Oracle's replies.",
+    "ai_consent_on_hint": "Solray sends your birth details and what you write or say to its AI providers, Anthropic, OpenAI, Groq and ElevenLabs (voice), to write your readings and the Oracle's replies and turn your voice into text.",
     "ai_consent_off_hint": "Nothing of yours goes to an AI provider. The Oracle and written readings are paused until you agree.",
     "ai_consent_withdraw": "Withdraw permission",
     "ai_consent_withdraw_body": "From now on nothing of yours is sent to an AI provider. The Oracle and written readings stop until you agree again. Your chart stays.",

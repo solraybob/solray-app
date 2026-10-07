@@ -99,7 +99,7 @@ test("account change sweeps per-account session handoffs", () => {
 
 test("consent flags are read from /users/me at top level or under profile", () => {
   const { consentFromMe, AI_CONSENT_VERSION } = load("lib/ai-consent.js");
-  assert.equal(AI_CONSENT_VERSION, "2026-10-06");
+  assert.equal(AI_CONSENT_VERSION, "2026-10-07");
   assert.deepEqual(consentFromMe({ ai_consent_required: true, ai_consent_version: null }), { required: true, version: null, at: null });
   assert.deepEqual(
     consentFromMe({ profile: { ai_consent_required: false, ai_consent_version: "2026-10-06", ai_consent_at: "2026-10-07T10:00:00" } }),
