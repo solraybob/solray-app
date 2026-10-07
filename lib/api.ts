@@ -3,7 +3,7 @@
 // had a literal \n inside it. trim() strips any whitespace.
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
-import { bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, StaleAccountError } from "./account-session";
+import { bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, runAccountSignOutHooks, StaleAccountError } from "./account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "./ai-consent";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
@@ -142,6 +142,8 @@ export async function apiFetch(
     // is now nothing to bounce back with. Centralized here so it covers every
     // screen, not just /today.
     if (res.status === 401 && accountBound && !extra.keepSessionOn401 && typeof window !== "undefined") {
+      // Session-end work (native push release) runs before storage is wiped.
+      runAccountSignOutHooks(token ?? null);
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");

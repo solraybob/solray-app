@@ -39,3 +39,22 @@ export class StaleAccountError extends Error {
 export function isStaleAccountError(e: unknown): boolean {
   return e instanceof StaleAccountError;
 }
+
+// Sign-out hooks. Work that must run whenever a session ends, on every
+// path (explicit logout, or a dead session wiped by a 401), registered by
+// the module that owns it. Runs BEFORE per-user storage is cleared, with
+// the leaving member's auth token when one is known. Used by native push
+// to queue the release of this phone's binding.
+type SignOutHook = (leavingToken: string | null) => void;
+const signOutHooks = new Set<SignOutHook>();
+
+export function onAccountSignOut(hook: SignOutHook): () => void {
+  signOutHooks.add(hook);
+  return () => { signOutHooks.delete(hook); };
+}
+
+export function runAccountSignOutHooks(leavingToken: string | null): void {
+  signOutHooks.forEach((hook) => {
+    try { hook(leavingToken); } catch { /* a hook never blocks sign-out */ }
+  });
+}

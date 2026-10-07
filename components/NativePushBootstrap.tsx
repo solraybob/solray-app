@@ -25,6 +25,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
 import {
   attachNativePushHandlers,
+  flushPendingReleases,
   getNativePushPermission,
   isNativePushSupported,
   requestNativePushPermission,
@@ -96,6 +97,21 @@ export default function NativePushBootstrap() {
     return () => {
       cancelled = true;
       if (detach) detach();
+    };
+  }, []);
+
+  // Pending logout releases: retried on launch, on resume and when back
+  // online (see lib/native-push).
+  useEffect(() => {
+    if (!isNativePushSupported()) return;
+    void flushPendingReleases();
+    const retry = () => { void flushPendingReleases(); };
+    const onVisible = () => { if (document.visibilityState === "visible") retry(); };
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
