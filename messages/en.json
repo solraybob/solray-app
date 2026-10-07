@@ -773,7 +773,9 @@
     "iap_web_billing_active": "Your membership is already paid by card and active. Nothing was charged in the store.",
     "iap_check_failed": "We could not check your membership just now, so the store was not opened. Check your connection and try again.",
     "store_purchase_pending": "A purchase through the App Store or Google Play was just started on this account. Nothing was charged here. If it did not go through, try again in a little while.",
-    "badge_awaiting_email": "Waiting for your email"
+    "badge_awaiting_email": "Waiting for your email",
+    "store_ended_card_time_left": "Your App Store or Google Play membership has ended. You still have paid time until {date}. Nothing was charged. You can add a card here once that time ends.",
+    "store_ended_card_time_left_nodate": "Your App Store or Google Play membership has ended. You still have paid time left. Nothing was charged. You can add a card here once that time ends."
   },
   "depth": {
     "the_sky": "The Sky",
