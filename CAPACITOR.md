@@ -3,8 +3,11 @@
 This document covers everything needed to build the iOS and Android
 native apps from this repo. The web app at `app.solray.ai` remains the
 canonical product; the native apps are thin Capacitor shells that load
-that URL and add native-only features (push notifications, the iOS
-home-screen widget, Live Activities).
+that URL and add native-only features (push notifications, in-app
+purchases, voice recording). There is no widget or Live Activity target.
+
+For the step-by-step iOS release (build 11 onward) follow
+`CAPACITOR_RUNBOOK.md`; this file is the general reference.
 
 ## One-time setup (per machine)
 
@@ -27,17 +30,15 @@ You also need:
 - **Java 17** (Android Studio bundles this)
 - **CocoaPods** (`sudo gem install cocoapods`)
 
-## Initialize the native projects (one time)
+## Native projects
 
-```bash
-# At the repo root
-npx cap add ios
-npx cap add android
-```
+`ios/` and `android/` already exist and are committed. Do NOT run
+`npx cap add` again; it would recreate the projects and lose signing,
+entitlements, the privacy manifest and build settings. Propagate changes
+to `capacitor.config.ts` or plugins with `npx cap sync`.
 
-This creates `ios/` and `android/` directories. Commit them to git.
-After this, every change to the web app or `capacitor.config.ts` should
-be propagated to native via `npx cap sync`.
+Capacitor is pinned to 6.2.2 (core, cli, ios, android). The Capacitor 8
+upgrade needed for Android API 36 is a separate, planned step.
 
 ## Day-to-day flow
 
@@ -80,29 +81,30 @@ and re-run `npx capacitor-assets generate`.
 
 ### iOS (APNs)
 
-1. In Xcode, select the `App` target → Signing & Capabilities → "+ Capability" →
-   add **Push Notifications** AND **Background Modes** (check "Remote
-   notifications").
-2. Apple Developer portal → Certificates → create an APNs Authentication
-   Key (.p8 file). Note the Key ID and your Team ID.
-3. Upload the .p8 + Key ID + Team ID to whichever push provider the
-   backend uses (likely OneSignal, Firebase, or direct APNs HTTP/2).
-4. Run a test build on a real iPhone (push doesn't work on the
-   simulator). After the user logs in, the app will request notification
-   permission; on grant, it registers with APNs and posts the device
-   token to `POST /push/native-subscribe`. Confirm a row appears in the
-   `native_push_tokens` table.
+- The project has the Push Notifications entitlement (development for
+  Debug, production for Release) and AppDelegate forwards the APNs token
+  to Capacitor. Enable Push Notifications on the `ai.solray.app` App ID
+  and regenerate the **Solray App Store** profile (runbook section 4).
+- No Background Modes: the daily push is an ordinary alert.
+- The app never asks at sign-up. After a first Oracle reply, or Today on a
+  later day, a short sheet on Today offers the daily note; Yes shows the
+  system prompt. When permission is already granted the current token is
+  bound on every launch, login and resume via `POST /push/native-subscribe`.
+  Logout calls `POST /push/native-unsubscribe`. A device token has one
+  owner in `native_push_tokens`; binding it again moves it.
+- Backend variables (`solray-ai/ai/push_apns.py`): `APNS_AUTH_KEY`,
+  `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, optional `APNS_HOST`.
+  TestFlight and App Store builds use production APNs (the default host).
+  Only Xcode development builds get sandbox tokens.
+- The daily teaser wording lives in `solray-ai/ai/push_copy.py`.
 
 ### Android (FCM)
 
-1. Firebase Console → create a Solray project → add an Android app
-   with package name `ai.solray.app`. Download the generated
-   `google-services.json` and place it at
-   `android/app/google-services.json` (gitignored — DO NOT commit).
-2. In `android/app/build.gradle` ensure the Firebase plugins are
-   applied (Capacitor's push plugin documentation has the exact lines).
-3. Run a test build on a real Android device or emulator. Same flow:
-   permission prompt → registration → token POSTed to backend.
+Off for now. The web app does not prompt or register on Android because
+the backend has no FCM sender. Turning it on needs: a Firebase project
+with `google-services.json` at `android/app/google-services.json`
+(gitignored), the Google Services Gradle plugin, an FCM sender in the
+backend, and adding "android" to `PUSH_PLATFORMS` in `lib/native-push.ts`.
 
 ## App identifiers
 
@@ -122,12 +124,12 @@ Pick a different identifier per environment if you want a separate
 1. App Store Connect → My Apps → "+" → New App.
 2. Fill out metadata (privacy policy URL, support URL, marketing URL,
    age rating, category: Lifestyle).
-3. Apply for the **Reader App entitlement** so iOS subscriptions can
-   link out to the web for billing instead of being forced through
-   Apple In-App Purchase (which takes 30%). Apple takes 2-4 weeks to
-   review the entitlement application; file it on day 1.
-4. Archive in Xcode → Distribute App → upload to App Store Connect.
-5. Submit for review. First-time review usually takes 1-3 days.
+3. Subscriptions are sold with Apple In-App Purchase (`solray_monthly`,
+   `solray_yearly`; see `lib/play-billing.ts` and runbook section 8).
+   Solray does not qualify for the Reader App entitlement and does not
+   link out to web payment from the app.
+4. Archive in Xcode, Distribute App, upload to App Store Connect.
+5. Submit for review.
 
 ### Google Play
 
