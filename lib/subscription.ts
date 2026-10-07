@@ -163,3 +163,47 @@ export async function cancelSubscription(token: string) {
 export async function createSecurePaySession(token: string) {
   return billingFetch("/subscribe/securepay", { method: "POST" }, token);
 }
+
+// ---------------------------------------------------------------------------
+// Card save refused: the store membership ended but paid time is left
+// ---------------------------------------------------------------------------
+
+/** 409 from /subscribe/attach-card-token for a member whose App Store or
+ *  Google Play membership ended while they still have paid time. Not a
+ *  failure: nothing was charged, and a card can be added once that time ends. */
+export const STORE_ENDED_CARD_TIME_LEFT_CODE = "store_ended_card_time_left";
+
+/** The paid-until date (ISO) when `e` is that refusal; "" when it is that
+ *  refusal without a readable date; null for anything else. */
+export function storeEndedCardTimeLeft(e: unknown): string | null {
+  const err = e as { code?: unknown; detail?: unknown } | null;
+  if (!err || typeof err !== "object" || err.code !== STORE_ENDED_CARD_TIME_LEFT_CODE) return null;
+  const detail = err.detail as { paid_until?: unknown } | null | undefined;
+  const raw = detail && typeof detail === "object" ? detail.paid_until : undefined;
+  if (typeof raw !== "string" || Number.isNaN(new Date(raw).getTime())) return "";
+  return raw;
+}
+
+/** The calm notice for that refusal in the member's language, with the date
+ *  written in the member's locale; null when `e` is something else. `t` is
+ *  the i18n lookup, `lang` the member's language code. */
+export function storeEndedCardNotice(
+  e: unknown,
+  t: (key: string) => string,
+  lang: string,
+): string | null {
+  const paidUntil = storeEndedCardTimeLeft(e);
+  if (paidUntil === null) return null;
+  if (!paidUntil) return t("subscribe.store_ended_card_time_left_nodate");
+  let date: string;
+  try {
+    date = new Date(paidUntil).toLocaleDateString(lang === "en" ? "en-US" : lang, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return t("subscribe.store_ended_card_time_left_nodate");
+  }
+  return t("subscribe.store_ended_card_time_left").replace("{date}", date);
+}

@@ -11,7 +11,7 @@
 
 import { useState } from "react";
 import { ApiError } from "@/lib/api";
-import { billingFetch, DeadlineError } from "@/lib/subscription";
+import { billingFetch, DeadlineError, storeEndedCardNotice } from "@/lib/subscription";
 import { createSingleUseToken, luhnValid, CardTokenError } from "@/lib/teya-card";
 import { useT } from "@/lib/i18n";
 
@@ -31,13 +31,18 @@ export default function CardForm({
   token,
   onSuccess,
   onUncertain,
+  onNotice,
 }: {
   token: string;
   onSuccess: (r: CardSaveResult) => void;
   /** The save may or may not have gone through (timeout): refresh status. */
   onUncertain?: () => void;
+  /** Not a failure, nothing was charged: the parent closes the form and
+   *  shows `text` as a calm notice (e.g. a store membership ended with
+   *  paid time still left). The save is not retried. */
+  onNotice?: (text: string) => void;
 }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [pan, setPan] = useState("");
   const [expiry, setExpiry] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,7 +90,11 @@ export default function CardForm({
     } catch (e) {
       // One generic, localized message for any card failure; processor
       // detail never reaches the UI.
-      if (e instanceof DeadlineError) {
+      const storeEnded = storeEndedCardNotice(e, t, lang);
+      if (storeEnded !== null) {
+        if (onNotice) onNotice(storeEnded);
+        else setError(storeEnded);
+      } else if (e instanceof DeadlineError) {
         setError(t("subscribe.payment_timeout"));
         onUncertain?.();
       } else if (e instanceof ApiError && e.code === "store_managed") {

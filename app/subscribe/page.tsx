@@ -16,6 +16,7 @@ import {
   announceStorePurchase,
   releaseStorePurchase,
   DeadlineError,
+  storeEndedCardNotice,
 } from "@/lib/subscription";
 import { storeGateErrorCode } from "@/lib/native-iap-helpers";
 import { ApiError } from "@/lib/api";
@@ -85,12 +86,17 @@ function SubscribeContent() {
     if (e instanceof ApiError && e.code === "charge_pending") return t("subscribe.charge_pending");
     if (e instanceof ApiError && e.code === "store_purchase_pending") return t("subscribe.store_purchase_pending");
     if (e instanceof ApiError && e.code === "store_managed") return t("subscribe.store_managed_card");
+    const storeEnded = storeEndedCardNotice(e, t, lang);
+    if (storeEnded !== null) return storeEnded;
     return e instanceof Error && e.message ? e.message : t("subscribe.purchase_failed");
   };
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardSavedNote, setCardSavedNote] = useState("");
+  // A calm, non-error note from the card form (a store membership ended
+  // with paid time left: nothing was charged, the form closes).
+  const [cardNotice, setCardNotice] = useState("");
   const [planBusy, setPlanBusy] = useState(false);
   const [planError, setPlanError] = useState("");
   // Show the spinner only on a true cold load (no cached sub yet);
@@ -214,6 +220,7 @@ function SubscribeContent() {
     // flow ever needs to be disabled in a hurry.
     if (process.env.NEXT_PUBLIC_USE_SECUREPAY !== "1") {
       setCardSavedNote("");
+      setCardNotice("");
       setShowCardForm(true);
       return;
     }
@@ -504,8 +511,15 @@ function SubscribeContent() {
             <CardForm
               token={token}
               onUncertain={() => { void refresh(); }}
+              onNotice={(text: string) => {
+                setShowCardForm(false);
+                setCardSavedNote("");
+                setCardNotice(text);
+                void refresh();
+              }}
               onSuccess={async (r: CardSaveResult) => {
                 setShowCardForm(false);
+                setCardNotice("");
                 setCardSavedNote(
                   r.store_active
                     ? t("subscribe.store_restored")
@@ -516,6 +530,15 @@ function SubscribeContent() {
                 await refreshAfterAction();
               }}
             />
+          )}
+          {!isNative && cardNotice && (
+            <p
+              role="status"
+              className="text-[15px] leading-relaxed"
+              style={{ color: "rgb(var(--rgb-text-secondary))" }}
+            >
+              {cardNotice}
+            </p>
           )}
           {!isNative && cardSavedNote && (
             <p

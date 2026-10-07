@@ -766,7 +766,9 @@
     "iap_card_pending": "Aún se está confirmando un pago con tarjeta en tu cuenta. No se cobró nada en la tienda. Inténtalo de nuevo en unos minutos.",
     "iap_web_billing_active": "Tu membresía ya está pagada con tarjeta y activa. No se cobró nada en la tienda.",
     "iap_check_failed": "No pudimos comprobar tu membresía en este momento, así que no se abrió la tienda. Revisa tu conexión e inténtalo de nuevo.",
-    "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato."
+    "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato.",
+    "store_ended_card_time_left": "Tu membresía de App Store o Google Play ha terminado. Todavía tienes tiempo pagado hasta el {date}. No se cobró nada. Puedes añadir una tarjeta aquí cuando termine ese tiempo.",
+    "store_ended_card_time_left_nodate": "Tu membresía de App Store o Google Play ha terminado. Todavía te queda tiempo pagado. No se cobró nada. Puedes añadir una tarjeta aquí cuando termine ese tiempo."
   },
   "depth": {
     "the_sky": "El Cielo",
