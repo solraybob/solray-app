@@ -37,6 +37,23 @@ export const ORACLE_ERROR_KEYS: Record<string, string> = {
   under_minimum_age: "oracle_errors.under_minimum_age",
 };
 
+/** Refusals that asking again cannot change: the other person keeps their
+ *  chart private or has not agreed to AI, the connection is gone, the
+ *  account is under 16, or today's limit is reached. A screen offers no
+ *  "Try again" for these. Missing consent of one's own is not here: once the
+ *  member agrees in the sheet, trying again works. */
+const FINAL_REFUSAL_CODES = new Set([
+  "chart_private",
+  "partner_ai_consent_required",
+  "soul_connection_gone",
+  "under_minimum_age",
+  "ai_daily_limit",
+]);
+
+export function isFinalRefusal(e: unknown): boolean {
+  return e instanceof ApiError && !!e.code && FINAL_REFUSAL_CODES.has(e.code);
+}
+
 /** The i18n key for a known Oracle refusal, or null for anything else. */
 export function oracleErrorKey(e: unknown): string | null {
   if (!(e instanceof ApiError) || !e.code) return null;

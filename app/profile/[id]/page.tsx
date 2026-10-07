@@ -19,7 +19,7 @@ import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
-import { oracleErrorKey } from "@/lib/oracle-errors";
+import { isFinalRefusal, oracleErrorKey } from "@/lib/oracle-errors";
 import { useT } from "@/lib/i18n";
 import { PageHead, Section, InkButton, HairlineButton } from "@/components/PageHead";
 import Link from "next/link";
@@ -423,6 +423,8 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
   const [index,   setIndex]   = useState<ResonanceIndex | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // False for a refusal that asking again cannot change (a private chart).
+  const [retryable, setRetryable] = useState(true);
   const [paywall, setPaywall] = useState(false);
 
   // Cache key includes the current viewer's token-derived id, not just the
@@ -452,6 +454,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
     }
     setLoading(true);
     setError(null);
+    setRetryable(true);
     const stamp = chartWorkStamp();
     apiFetch(`/souls/${soulId}/compatibility`, {}, token)
       .then((d) => {
@@ -469,6 +472,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
           // open), a private chart, a partner without AI consent, or
           // today's limit. Each says so plainly.
           setError(t(oracleErrorKey(e) as string));
+          setRetryable(!isFinalRefusal(e));
         } else if (e instanceof ApiError && e.status === 403) {
           // Not in an accepted connection; should never happen on this page
           // since the public-profile fetch above already 403'd.
@@ -510,7 +514,9 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       {error && !paywall && (
         <div className="pb-4">
           <p className="font-body mb-4" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{error}</p>
-          <HairlineButton onClick={() => load(true)} loading={loading}>{t("common.retry")}</HairlineButton>
+          {retryable && (
+            <HairlineButton onClick={() => load(true)} loading={loading}>{t("common.retry")}</HairlineButton>
+          )}
         </div>
       )}
 
