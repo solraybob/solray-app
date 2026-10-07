@@ -35,7 +35,8 @@
     "manage_subscription": "Manage subscription",
     "tap_to_collapse": "Tap to collapse",
     "tap_to_open": "Tap to open",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "share_failed": "Sharing did not work this time. Try again in a moment."
   },
   "language": {
     "picker_title": "Choose your language",
@@ -198,7 +199,8 @@
     "energy_high": "High",
     "energy_steady": "Steady",
     "energy_low": "Low",
-    "kick_today": "today"
+    "kick_today": "today",
+    "consent_needed": "Your written reading is made with AI, so it waits for your permission. Your chart is ready whenever you are."
   },
   "moon": {
     "moon_in": "Moon in",
@@ -337,7 +339,9 @@
     "greet_q_moon": "What are you feeling right now that you haven't allowed yourself to feel fully?",
     "greet_q_sun": "What part of yourself are you being asked to step into more completely?",
     "greet_q_default": "What does your body already know about this?",
-    "delete_failed": "That conversation could not be deleted. Try again."
+    "delete_failed": "That conversation could not be deleted. Try again.",
+    "consent_needed": "The Oracle needs your permission to use AI before she can answer. You can give it in the sheet that just opened, or anytime in Settings.",
+    "delete_confirm": "Delete this conversation? It is removed from all your devices."
   },
   "souls": {
     "title": "SOULS",
@@ -471,7 +475,9 @@
     "wheel_unavailable": "Wheel unavailable",
     "wheel_aria": "Natal chart wheel",
     "astro_load_failed": "Could not load astrocartography data.",
-    "astro_no_data": "No astrocartography data available."
+    "astro_no_data": "No astrocartography data available.",
+    "share_soul_map_title": "My Soul Map, Solray",
+    "share_soul_map_text": "My Soul Map on Solray. solray.ai"
   },
   "settings": {
     "title": "Settings",
@@ -850,5 +856,68 @@
     "saving": "Saving...",
     "not_now": "Not now",
     "save_failed": "Your answer did not reach us. Check your connection and try again."
+  },
+  "global_error": {
+    "title": "The cosmos shifted.",
+    "notified": "We have been notified.",
+    "retry": "Try again"
+  },
+  "geo": {
+    "expand": "Expand",
+    "birth_place": "Birth place"
+  },
+  "share": {
+    "energy_mental": "Mental",
+    "energy_emotional": "Emotional",
+    "energy_physical": "Physical",
+    "energy_intuitive": "Intuitive",
+    "todays_vibe": "Today's Vibe",
+    "invited": "You are invited",
+    "tagline": "living by design",
+    "invite_line_1": "Read your chart against today,",
+    "invite_line_2": "and the people in your life.",
+    "join_with_code": "join with code"
+  },
+  "prompts": {
+    "today_deeper": "Today you told me: \"{title}\". {reading} I want to go deeper into this. What do you see?",
+    "cycle_deeper": "{title} is {phase}, peaking {peak}. {summary} What is this asking of me?",
+    "phase_building": "building",
+    "phase_separating": "separating",
+    "insight_deeper": "You left me this while I was away: \"{title}\". {body} I want to sit with it. What do you see?",
+    "echo_topic": "Under a familiar sky",
+    "echo_deeper": "{sentence} Back then I wrote: \"{excerpt}\". I'd like to sit with how far I've come since. What do you see?",
+    "lunar_topic_full": "Full Moon in {sign}",
+    "lunar_topic_new": "New Moon in {sign}",
+    "lunar_full": "Tonight's full moon in {sign} falls in my {house} house. {note} What is reaching completion here, and what am I ready to release?",
+    "lunar_new": "Tonight's new moon in {sign} falls in my {house} house. {note} What intention should I plant here?",
+    "birthday_topic": "My solar return",
+    "birthday": "The Sun has returned to where it stood when I was born, a new year of my life begins today.{facts} Read me the dominant themes of my year ahead, grounded in this chart. Where should I put my energy?",
+    "sr_facts": " My solar return chart this year carries {parts}.",
+    "sr_asc": "a {sign} ascendant",
+    "sr_sun": "the Sun in the {house} house",
+    "sr_moon": "the Moon in {sign} in the {house} house",
+    "sr_aspects": "and {aspects}",
+    "upcoming_deeper": "I want to go deeper on this cycle: \"{title}\". {known}What does this mean for me specifically and how should I work with this energy?",
+    "upcoming_known": "Here's what I know: {summary}. ",
+    "alert_topic": "{planet} {aspect}",
+    "alert_question": "Tell me about {planet} {aspect} my {natal} today. Orb: {orb}°",
+    "alert_fallback": "{planet} {aspect} {natal} today",
+    "tp_transit_topic": "Today's transit",
+    "tp_transit": "What is {phrase} actually doing to me today?",
+    "tp_transit_phrase": "{planet} in {aspect} to my {natal}",
+    "tp_energy_mental": "mental clarity",
+    "tp_energy_emotional": "emotional energy",
+    "tp_energy_physical": "physical energy",
+    "tp_energy_intuitive": "intuitive sense",
+    "tp_energy_topic": "{label}",
+    "tp_energy_low": "My {label} is at {value}/10 today. What is underneath that, and what would help?",
+    "tp_energy_high": "My {label} is at {value}/10 today. How should I work with this charge?",
+    "tp_reading_topic": "Today's reading",
+    "tp_reading_phrase": "What does \"{phrase}\" actually mean for me right now?",
+    "tp_reading_more": "Can you say more about this: \"{first}.\"",
+    "compat_opening": "Reading the dynamic between you and {name}...",
+    "compat_session": "You & {name}",
+    "compat_failed": "The Oracle couldn't open the reading between you and {name} just now. Try again in a moment.",
+    "orb": "orb"
   }
 }

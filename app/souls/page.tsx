@@ -10,6 +10,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { errorText } from "@/lib/errors";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
+import { cardShareAvailable } from "@/lib/share-available";
 import { Wordmark } from "@/components/Wordmark";
 import BirthWheels from "@/components/BirthWheels";
 
@@ -218,6 +219,9 @@ export default function SoulsPage() {
   // recipient is a warm contact of the inviter.
   const inviteShareRef = useRef<HTMLDivElement | null>(null);
   const [inviteSharing, setInviteSharing] = useState(false);
+  const [shareOk, setShareOk] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  useEffect(() => { setShareOk(cardShareAvailable()); }, []);
   const [inviteInfo, setInviteInfo] = useState<{ code: string; link: string } | null>(null);
 
   // Load the user's permanent invite code/link once, so the share card can
@@ -237,6 +241,7 @@ export default function SoulsPage() {
     if (inviteSharing) return;
     if (!inviteShareRef.current) return;
     setInviteSharing(true);
+    setShareError(false);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
       const link = inviteInfo?.link || "https://solray.ai";
@@ -248,6 +253,7 @@ export default function SoulsPage() {
       });
     } catch (err) {
       console.warn("[share] souls invite failed", err);
+      setShareError(true);
     } finally {
       setInviteSharing(false);
     }
@@ -768,7 +774,7 @@ export default function SoulsPage() {
                 one steps aside there rather than printing solray twice. */}
             <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
-              <button
+              {shareOk && <button
                 onClick={handleInviteShare}
                 aria-label={t("souls.share_invitation")}
                 title={t("souls.share_invitation")}
@@ -786,7 +792,7 @@ export default function SoulsPage() {
                     <path d="M13 5.5 10 2.5 7 5.5M10 2.5v10" />
                   </svg>
                 )}
-              </button>
+              </button>}
             </span>
           </div>
           <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
@@ -796,6 +802,11 @@ export default function SoulsPage() {
           >
             {t("souls.your_field")}
           </p>
+          {shareError && (
+            <p role="status" className="font-body" style={{ fontSize: 13, marginTop: 8, color: "rgb(var(--rgb-text-muted))" }}>
+              {t("common.share_failed")}
+            </p>
+          )}
         </div>
 
         <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-6 space-y-6 animate-fade-in">

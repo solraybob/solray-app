@@ -35,7 +35,8 @@
     "tap_to_collapse": "Toca para cerrar",
     "tap_to_open": "Toca para abrir",
     "done": "Listo",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "share_failed": "No se pudo compartir esta vez. Inténtalo de nuevo en un momento."
   },
   "language": {
     "picker_title": "Elige tu idioma",
@@ -153,7 +154,8 @@
     "energy_high": "Alta",
     "energy_steady": "Estable",
     "energy_low": "Baja",
-    "kick_today": "hoy"
+    "kick_today": "hoy",
+    "consent_needed": "Tu lectura escrita se hace con IA, así que espera tu permiso. Tu carta está lista cuando tú lo estés."
   },
   "chat": {
     "placeholder": "Habla desde donde estás.",
@@ -245,7 +247,9 @@
     "greet_q_moon": "¿Qué sientes ahora mismo que no te has permitido sentir del todo?",
     "greet_q_sun": "¿Qué parte de ti se te pide habitar más plenamente?",
     "greet_q_default": "¿Qué sabe ya tu cuerpo sobre esto?",
-    "delete_failed": "No se pudo eliminar esa conversación. Inténtalo de nuevo."
+    "delete_failed": "No se pudo eliminar esa conversación. Inténtalo de nuevo.",
+    "consent_needed": "El Oráculo necesita tu permiso para usar IA antes de responder. Puedes darlo en la ventana que acaba de abrirse o cuando quieras en Ajustes.",
+    "delete_confirm": "¿Eliminar esta conversación? Se borra de todos tus dispositivos."
   },
   "souls": {
     "title": "ALMAS",
@@ -379,7 +383,9 @@
     "wheel_unavailable": "Rueda no disponible",
     "wheel_aria": "Rueda de la carta natal",
     "astro_load_failed": "No se pudieron cargar los datos de astrocartografía.",
-    "astro_no_data": "No hay datos de astrocartografía disponibles."
+    "astro_no_data": "No hay datos de astrocartografía disponibles.",
+    "share_soul_map_title": "Mi Mapa del Alma, Solray",
+    "share_soul_map_text": "Mi Mapa del Alma en Solray. solray.ai"
   },
   "settings": {
     "title": "Ajustes",
@@ -850,5 +856,68 @@
     "saving": "Guardando...",
     "not_now": "Ahora no",
     "save_failed": "Tu respuesta no nos llegó. Revisa tu conexión e inténtalo de nuevo."
+  },
+  "global_error": {
+    "title": "El cosmos se movió.",
+    "notified": "Ya nos ha llegado el aviso.",
+    "retry": "Intentar de nuevo"
+  },
+  "geo": {
+    "expand": "Ampliar",
+    "birth_place": "Lugar de nacimiento"
+  },
+  "share": {
+    "energy_mental": "Mental",
+    "energy_emotional": "Emocional",
+    "energy_physical": "Física",
+    "energy_intuitive": "Intuitiva",
+    "todays_vibe": "La energía de hoy",
+    "invited": "Tienes una invitación",
+    "tagline": "vivir por diseño",
+    "invite_line_1": "Lee tu carta frente al día de hoy",
+    "invite_line_2": "y frente a las personas de tu vida.",
+    "join_with_code": "únete con el código"
+  },
+  "prompts": {
+    "today_deeper": "Hoy me dijiste: \"{title}\". {reading} Quiero profundizar en esto. ¿Qué ves?",
+    "cycle_deeper": "{title} está {phase}, con su punto máximo el {peak}. {summary} ¿Qué me está pidiendo esto?",
+    "phase_building": "creciendo",
+    "phase_separating": "separándose",
+    "insight_deeper": "Me dejaste esto mientras no estaba: \"{title}\". {body} Quiero quedarme con ello. ¿Qué ves?",
+    "echo_topic": "Bajo un cielo conocido",
+    "echo_deeper": "{sentence} Entonces escribí: \"{excerpt}\". Me gustaría mirar cuánto he avanzado desde entonces. ¿Qué ves?",
+    "lunar_topic_full": "Luna llena en {sign}",
+    "lunar_topic_new": "Luna nueva en {sign}",
+    "lunar_full": "La luna llena de esta noche en {sign} cae en mi casa {house}. {note} ¿Qué está llegando a su fin aquí y qué puedo soltar ya?",
+    "lunar_new": "La luna nueva de esta noche en {sign} cae en mi casa {house}. {note} ¿Qué intención debería sembrar aquí?",
+    "birthday_topic": "Mi revolución solar",
+    "birthday": "El Sol ha vuelto a donde estaba cuando nací y hoy empieza un nuevo año de mi vida.{facts} Léeme los temas principales del año que viene, basados en esta carta. ¿Dónde debería poner mi energía?",
+    "sr_facts": " Mi revolución solar de este año tiene {parts}.",
+    "sr_asc": "un ascendente en {sign}",
+    "sr_sun": "el Sol en la casa {house}",
+    "sr_moon": "la Luna en {sign} en la casa {house}",
+    "sr_aspects": "y {aspects}",
+    "upcoming_deeper": "Quiero profundizar en este ciclo: \"{title}\". {known}¿Qué significa esto para mí en concreto y cómo debería trabajar con esta energía?",
+    "upcoming_known": "Esto es lo que sé: {summary}. ",
+    "alert_topic": "{planet} en {aspect}",
+    "alert_question": "Háblame de {planet} en {aspect} con mi {natal} hoy. Orbe: {orb}°",
+    "alert_fallback": "{planet} en {aspect} con {natal} hoy",
+    "tp_transit_topic": "El tránsito de hoy",
+    "tp_transit": "¿Qué está haciendo realmente {phrase} conmigo hoy?",
+    "tp_transit_phrase": "{planet} en {aspect} con mi {natal}",
+    "tp_energy_mental": "claridad mental",
+    "tp_energy_emotional": "energía emocional",
+    "tp_energy_physical": "energía física",
+    "tp_energy_intuitive": "intuición",
+    "tp_energy_topic": "{label}",
+    "tp_energy_low": "Mi {label} está en {value}/10 hoy. ¿Qué hay debajo y qué me ayudaría?",
+    "tp_energy_high": "Mi {label} está en {value}/10 hoy. ¿Cómo debería trabajar con esta carga?",
+    "tp_reading_topic": "La lectura de hoy",
+    "tp_reading_phrase": "¿Qué significa realmente \"{phrase}\" para mí ahora mismo?",
+    "tp_reading_more": "¿Puedes contarme más sobre esto: \"{first}\"?",
+    "compat_opening": "Leyendo la dinámica entre tú y {name}...",
+    "compat_session": "Tú y {name}",
+    "compat_failed": "El Oráculo no pudo abrir ahora la lectura entre tú y {name}. Inténtalo de nuevo en un momento.",
+    "orb": "orbe"
   }
 }

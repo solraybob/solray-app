@@ -15,6 +15,9 @@
  * forecast load instead of on tap.
  */
 
+import { nativePlatform, ShareUnavailableError } from "./share-available";
+export { ShareUnavailableError, cardShareAvailable } from "./share-available";
+
 interface CaptureOptions {
   /** Mounted DOM node containing the card to capture. */
   node: HTMLElement;
@@ -108,6 +111,23 @@ export async function shareOrDownloadCard(opts: CaptureOptions): Promise<"shared
       if (name === "AbortError") return "shared"; // user cancelled, not an error
       throw err;
     }
+  }
+
+  // Inside the native shell a download link is a no-op. Share the words and
+  // the link when the share sheet exists without file support; otherwise
+  // say so, never pretend.
+  if (nativePlatform()) {
+    const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
+    if (typeof nav.share === "function") {
+      try {
+        await nav.share({ title: opts.title, text: opts.text });
+        return "shared";
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError") return "shared";
+        throw err;
+      }
+    }
+    throw new ShareUnavailableError();
   }
 
   // Fallback: trigger a download

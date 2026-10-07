@@ -193,3 +193,22 @@ export function getLanguageDisplayName(code: LanguageCode): string {
       return "English";
   }
 }
+
+/** Replace {name} placeholders in a translated template. */
+export function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+}
+
+/** "1st", "2nd", "3rd", "11th" in English; the bare number elsewhere. */
+export function ordinal(n: number | string, lang: string): string {
+  const v = Number(n);
+  if (!lang.startsWith("en") || !isFinite(v)) return String(n);
+  const mod100 = v % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${v}th`;
+  switch (v % 10) {
+    case 1: return `${v}st`;
+    case 2: return `${v}nd`;
+    case 3: return `${v}rd`;
+    default: return `${v}th`;
+  }
+}

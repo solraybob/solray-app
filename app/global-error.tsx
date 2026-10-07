@@ -1,7 +1,23 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import en from "../messages/en.json";
+import es from "../messages/es.json";
+
+// global-error renders outside the root layout, so the LanguageProvider is
+// not here. Read the saved language directly (the same key the provider
+// uses), falling back to the browser language.
+function readLang(): "en" | "es" {
+  try {
+    const saved = localStorage.getItem("solray_language") || "";
+    if (saved.startsWith("es")) return "es";
+    if (saved) return "en";
+    return (navigator.language || "").toLowerCase().startsWith("es") ? "es" : "en";
+  } catch {
+    return "en";
+  }
+}
 
 export default function GlobalError({
   error,
@@ -13,6 +29,9 @@ export default function GlobalError({
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
+  const [lang, setLang] = useState<"en" | "es">("en");
+  useEffect(() => { setLang(readLang()); }, []);
+  const m = (lang === "es" ? es : en).global_error;
 
   // FOUC-killer + theme detection. global-error renders OUTSIDE the
   // root layout's ThemeProvider tree (Next renders it on a fresh
@@ -22,7 +41,7 @@ export default function GlobalError({
   // the error surface belongs to whichever theme the user chose.
   const themeAttr = `(function(){try{var t=localStorage.getItem('solray-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
   return (
-    <html suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeAttr }} />
         <style dangerouslySetInnerHTML={{
@@ -35,9 +54,9 @@ export default function GlobalError({
       </head>
       <body className="flex items-center justify-center min-h-screen">
         <div className="text-center p-8" style={{ fontFamily: 'var(--font-heading), "Zen Kaku Gothic New", system-ui, sans-serif' }}>
-          <h2 className="text-2xl font-medium mb-3" style={{ fontWeight: 900, letterSpacing: "-.038em", color: "rgb(var(--rgb-text-primary))" }}>The cosmos shifted.</h2>
+          <h2 className="text-2xl font-medium mb-3" style={{ fontWeight: 900, letterSpacing: "-.038em", color: "rgb(var(--rgb-text-primary))" }}>{m.title}</h2>
           <p className="text-xs mb-8" style={{ letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: 'var(--font-body), "Zen Kaku Gothic New", system-ui, sans-serif', color: "rgb(var(--rgb-text-muted))" }}>
-            We&apos;ve been notified.
+            {m.notified}
           </p>
           <button
             onClick={reset}
@@ -48,7 +67,7 @@ export default function GlobalError({
               color: "rgb(var(--rgb-text-secondary))",
             }}
           >
-            Try again
+            {m.retry}
           </button>
         </div>
       </body>

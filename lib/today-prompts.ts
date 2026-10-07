@@ -22,6 +22,12 @@
  * label) and a `question` (the actual seeded message).
  */
 
+import { fill } from "./i18n";
+import { tx } from "./astro-i18n";
+
+/** Translator from useT(), so the prompts follow the member's language. */
+type Translate = (key: string) => string;
+
 export interface ChatPrompt {
   topic: string;
   question: string;
@@ -36,12 +42,6 @@ interface TodayForecast {
   hd_gate_today?: { gate?: number; shadow?: string; gift?: string };
 }
 
-const ENERGY_LABEL: Record<string, string> = {
-  mental: "mental clarity",
-  emotional: "emotional energy",
-  physical: "physical energy",
-  intuitive: "intuitive sense",
-};
 
 /**
  * Pick the energy bar most worth asking about. Heuristic:
@@ -84,13 +84,19 @@ function extractTitlePhrase(dayTitle: string): string {
  * clean phrase fit for a question. Best-effort; falls back to using
  * the raw string when parsing fails.
  */
-function normalizeTransit(raw: string): string {
+function normalizeTransit(raw: string, t: Translate, lang: string): string {
   const cleaned = raw.replace(/\?+/g, "").trim();
   // Parse "<planet> <aspect> natal <natal_planet>" or similar
   const m = cleaned.match(/^([A-Z][a-z]+)\s+([a-z]+)s?\s+natal\s+([A-Z][a-z]+)/i);
   if (m) {
     const [, planet, aspect, natal] = m;
-    return `${planet} ${aspect.toLowerCase()}ing my ${natal}`;
+    const term = (v: string) => (lang === "en" ? v : tx(v, lang));
+    const aspectWord = aspect.charAt(0).toUpperCase() + aspect.slice(1).toLowerCase();
+    return fill(t("prompts.tp_transit_phrase"), {
+      planet: term(planet),
+      aspect: term(aspectWord).toLowerCase(),
+      natal: term(natal),
+    });
   }
   return cleaned.toLowerCase();
 }
@@ -100,29 +106,28 @@ function normalizeTransit(raw: string): string {
  * forecast. Returns an empty array when the forecast is missing or
  * too sparse to produce useful prompts.
  */
-export function buildTodayPrompts(forecast: TodayForecast | null | undefined): ChatPrompt[] {
+export function buildTodayPrompts(forecast: TodayForecast | null | undefined, t: Translate, lang: string): ChatPrompt[] {
   if (!forecast) return [];
   const out: ChatPrompt[] = [];
 
   // 1. Dominant transit
   if (forecast.dominant_transit) {
-    const phrase = normalizeTransit(forecast.dominant_transit);
+    const phrase = normalizeTransit(forecast.dominant_transit, t, lang);
     out.push({
-      topic: "Today's transit",
-      question: `What is ${phrase} actually doing to me today?`,
+      topic: t("prompts.tp_transit_topic"),
+      question: fill(t("prompts.tp_transit"), { phrase }),
     });
   }
 
   // 2. Energy focus
   const focus = pickEnergyFocus(forecast.energy);
   if (focus) {
-    const label = ENERGY_LABEL[focus.key] || focus.key;
+    const labelKey = `prompts.tp_energy_${focus.key}`;
+    const translated = t(labelKey);
+    const label = translated === labelKey ? focus.key : translated;
     out.push({
-      topic: `${focus.key.charAt(0).toUpperCase() + focus.key.slice(1)} energy`,
-      question:
-        focus.value <= 4
-          ? `My ${label} is at ${focus.value}/10 today. What is underneath that, and what would help?`
-          : `My ${label} is at ${focus.value}/10 today. How should I work with this charge?`,
+      topic: label.charAt(0).toUpperCase() + label.slice(1),
+      question: fill(t(focus.value <= 4 ? "prompts.tp_energy_low" : "prompts.tp_energy_high"), { label, value: focus.value }),
     });
   }
 
@@ -130,16 +135,16 @@ export function buildTodayPrompts(forecast: TodayForecast | null | undefined): C
   if (forecast.day_title) {
     const phrase = extractTitlePhrase(forecast.day_title);
     out.push({
-      topic: "Today's reading",
-      question: `What does "${phrase}" actually mean for me right now?`,
+      topic: t("prompts.tp_reading_topic"),
+      question: fill(t("prompts.tp_reading_phrase"), { phrase }),
     });
   } else if (forecast.reading) {
     // Fall back to the first sentence of the reading
     const first = forecast.reading.split(/[.!?]/)[0]?.trim();
     if (first && first.length > 10) {
       out.push({
-        topic: "Today's reading",
-        question: `Can you say more about this: "${first}."`,
+        topic: t("prompts.tp_reading_topic"),
+        question: fill(t("prompts.tp_reading_more"), { first }),
       });
     }
   }

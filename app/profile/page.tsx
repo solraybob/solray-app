@@ -10,6 +10,7 @@ import { planetText, GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { cardShareAvailable } from "@/lib/share-available";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 
@@ -759,6 +760,9 @@ export default function ProfilePage() {
   const toggleSection = (title: string) =>
     setOpenSection((cur) => (cur === title ? null : title));
   const [soulMapSharing, setSoulMapSharing] = useState(false);
+  const [shareOk, setShareOk] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  useEffect(() => { setShareOk(cardShareAvailable()); }, []);
   // /users/me failed with no cache to fall back on. Must not be read as
   // "no birth data yet": show an error with Retry instead.
   const [loadError, setLoadError] = useState(false);
@@ -767,18 +771,20 @@ export default function ProfilePage() {
   const handleSoulMapShare = async () => {
     if (soulMapSharing || !soulMapRef.current) return;
     setSoulMapSharing(true);
+    setShareError(false);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
       await shareOrDownloadCard({
         node: soulMapRef.current,
         filename: "solray-soul-map.png",
-        title: "My Soul Map, Solray",
-        text: "My Soul Map on Solray. solray.ai",
+        title: t("profile.share_soul_map_title"),
+        text: t("profile.share_soul_map_text"),
         naturalSize: true,      // capture the card exactly as it appears, not a screen
         background: "rgb(var(--rgb-card))",  // the card plane behind the translucent layer
       });
     } catch (err) {
       console.warn("[share] soul map failed", err);
+      setShareError(true);
     } finally {
       setSoulMapSharing(false);
     }
@@ -1187,7 +1193,7 @@ export default function ProfilePage() {
                     <div ref={soulMapRef}>
                       <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
-                      <button
+                      {shareOk && (<button
                         onClick={handleSoulMapShare}
                         disabled={soulMapSharing}
                         className="font-body disabled:opacity-50"
@@ -1199,7 +1205,12 @@ export default function ProfilePage() {
                         }}
                       >
                         {t("profile.share_soul_map")}
-                      </button>
+                      </button>)}
+                      {shareError && (
+                        <p role="status" className="font-body" style={{ fontSize: 13, marginTop: 8, color: "rgb(var(--rgb-text-muted))" }}>
+                          {t("common.share_failed")}
+                        </p>
+                      )}
                     </div>
                   </CollapsibleSection>
                 </div>

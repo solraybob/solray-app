@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, fill } from "@/lib/i18n";
 
 // Each transiting planet tints its own card, drawn from the orb. Photographs
 // used to sit here; lettering over them had to be pinned to the night palette
@@ -77,11 +77,20 @@ const CYCLE_TITLE_MAP: Record<string, string> = {
   "Uranus meets your ASC": "Your outer self breaks free",
 };
 
-export function humanizeCycleTitle(title: string): string {
+const CYCLE_TITLE_MAP_ES: Record<string, string> = {
+  "Jupiter meets your Chiron": "Júpiter convierte tu herida más honda en sabiduría",
+  "Nodal Return": "Se completa tu capítulo de 18 años",
+  "Pluto meets your Moon": "Tus cimientos emocionales se transforman",
+  "Neptune meets your Sun": "Tu identidad se disuelve y se rehace",
+  "Uranus meets your ASC": "Tu yo exterior se libera",
+};
+
+export function humanizeCycleTitle(title: string, lang: string = "en"): string {
+  const map = lang.startsWith("es") ? CYCLE_TITLE_MAP_ES : CYCLE_TITLE_MAP;
   // Exact match first
-  if (CYCLE_TITLE_MAP[title]) return CYCLE_TITLE_MAP[title];
+  if (map[title]) return map[title];
   // Partial match
-  for (const [key, value] of Object.entries(CYCLE_TITLE_MAP)) {
+  for (const [key, value] of Object.entries(map)) {
     if (title.toLowerCase().includes(key.toLowerCase())) return value;
   }
   return title;
@@ -101,7 +110,7 @@ function fmtDate(dateStr: string, lang: string): string {
 }
 
 // Format date like "May 31, 2026"
-function fmtDateLong(dateStr: string, lang: string): string {
+export function fmtDateLong(dateStr: string, lang: string): string {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00:00Z");
   return d.toLocaleDateString(dateLocale(lang), { day: "numeric", month: "long", year: "numeric" });
@@ -150,7 +159,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           {/* Title row */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <h3 className="font-heading text-text-primary leading-tight" style={{ fontSize: "1.08rem", fontWeight: 900, letterSpacing: "-.03em" }}>
-              {humanizeCycleTitle(cycle.title)}
+              {humanizeCycleTitle(cycle.title, lang)}
             </h3>
             <span
               className="text-text-muted text-[15px] font-body shrink-0 mt-0.5 transition-transform duration-200"
@@ -209,7 +218,10 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: cycle.title,
-        question: `I want to go deeper on this cycle: "${cycle.title}". ${summary ? `Here's what I know: ${summary.slice(0, 200)}. ` : ""}What does this mean for me specifically and how should I work with this energy?`,
+        question: fill(t("prompts.upcoming_deeper"), {
+          title: cycle.title,
+          known: summary ? fill(t("prompts.upcoming_known"), { summary: summary.slice(0, 200) }) : "",
+        }),
       }));
     } catch (_) {}
     router.push("/chat");
@@ -228,7 +240,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
               className="font-heading text-text-primary leading-tight"
               style={{ fontSize: "1rem", fontWeight: 700 }}
             >
-              {humanizeCycleTitle(cycle.title)}
+              {humanizeCycleTitle(cycle.title, lang)}
             </h4>
             <span
               className="text-[13px] font-body tracking-widest uppercase px-2 py-0.5 rounded-full border border-amber-sun/20 text-amber-sun shrink-0 font-bold"
