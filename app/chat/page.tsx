@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, detailCode, isAiConsentError } from "@/lib/api";
+import { apiFetch, ApiError, detailCode } from "@/lib/api";
 import { getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
@@ -14,6 +14,8 @@ import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
+import { oracleErrorKey, ORACLE_ERROR_KEYS } from "@/lib/oracle-errors";
+import { soulRequestFields, historyForServer, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
 interface Message {
@@ -325,7 +327,17 @@ async function syncSessionsFromServer(token: string | null, gen: number = getAut
 // was opened for. Kept per session on this device so reopening that
 // conversation restores it, and opening any other conversation clears it.
 const SOUL_CTX_KEY = "solray_chat_soul_ctx";
-type SoulCtx = { name: string | null; blueprint: Record<string, unknown> | null };
+type SoulCtx = {
+  name: string | null;
+  blueprint: Record<string, unknown> | null;
+  // Who the Dynamics reading is with; the server loads the chart (A14).
+  connectionId?: string | null;
+  savedPersonId?: string | null;
+};
+function soulRefOf(sc: SoulCtx | null): SoulRef | null {
+  if (!sc) return null;
+  return { connectionId: sc.connectionId ?? null, savedPersonId: sc.savedPersonId ?? null, blueprint: sc.blueprint ?? null };
+}
 function getSoulCtx(sessionId: string): SoulCtx | null {
   try {
     const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
@@ -423,6 +435,9 @@ function ChatPageInner() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [soulBlueprint, setSoulBlueprint] = useState<any>(null);
   const [soulName, setSoulName] = useState<string | null>(null);
+  // Who the Dynamics conversation is with (connection or saved person id),
+  // sent on every message so the server loads that chart itself.
+  const [soulRef, setSoulRef] = useState<SoulRef | null>(null);
   const [input, setInput] = useState("");
   // Opening suggestions: three doors, one per theme, each rotating daily.
   //   SKY: what the sky is doing today or in the coming days. The
@@ -635,9 +650,7 @@ function ChatPageInner() {
     const msgs = messagesRef.current;
     if (!tok || !msgs.length) return;
 
-    const history = msgs
-      .filter((m) => m.id !== "greeting")
-      .map((m) => ({ role: m.role, content: m.content }));
+    const history = historyForServer(msgs);
     const userCount = history.filter((m) => m.role === "user").length;
     // Match the backend threshold: any 2+ turn exchange is worth synthesizing
     if (userCount < 2) return;
@@ -861,6 +874,7 @@ function ChatPageInner() {
           // A seeded question is never a Dynamics conversation.
           setSoulBlueprint(null);
           setSoulName(null);
+          setSoulRef(null);
           setSending(true);
           // The member may open another conversation before this answer
           // arrives. Then it is stored with its own conversation instead of
@@ -878,7 +892,7 @@ function ChatPageInner() {
           try {
             const data = await apiFetch("/chat", {
               method: "POST",
-              body: JSON.stringify({ message: ctx.question, conversation_history: [] }),
+              body: JSON.stringify({ message: ctx.question, conversation_history: [], session_id: sid }),
             }, token);
             // Honest empty-response handling, parallel to sendMessage.
             // The previous version of this branch fell back to "I
@@ -913,7 +927,7 @@ function ChatPageInner() {
             const errMsg: Message = {
               id: (Date.now() + 1).toString(),
               role: "assistant",
-              content: isAiConsentError(err) ? t("chat.consent_needed") : t("chat.error_unreachable"),
+              content: t(oracleErrorKey(err) ?? "chat.error_unreachable"),
               timestamp: new Date().toISOString(),
               isError: true,
             };
@@ -936,6 +950,8 @@ function ChatPageInner() {
               soulName: string;
               introMessage: string;
               soulBlueprint?: Record<string, unknown> | null;
+              soulConnectionId?: string | null;
+              savedPersonId?: string | null;
             };
             sessionStorage.removeItem("solray_compat_context");
 
@@ -945,6 +961,12 @@ function ChatPageInner() {
             // soul context and the Oracle "forgot" their chart on msg 2+.
             setSoulBlueprint(ctx.soulBlueprint ?? null);
             setSoulName(ctx.soulName ?? null);
+            const compatRef: SoulRef = {
+              connectionId: ctx.soulConnectionId ?? null,
+              savedPersonId: ctx.savedPersonId ?? null,
+              blueprint: ctx.soulBlueprint ?? null,
+            };
+            setSoulRef(compatRef);
 
             const sid = generateSessionId();
             setSessionId(sid);
@@ -969,7 +991,12 @@ function ChatPageInner() {
               messages: [greeting, userMsg],
             };
             // The partner's chart belongs to this conversation only.
-            setSoulCtx(sid, { name: ctx.soulName ?? null, blueprint: ctx.soulBlueprint ?? null });
+            setSoulCtx(sid, {
+              name: ctx.soulName ?? null,
+              blueprint: ctx.soulBlueprint ?? null,
+              connectionId: ctx.soulConnectionId ?? null,
+              savedPersonId: ctx.savedPersonId ?? null,
+            });
             persistSession(newSession);
             setMessages([greeting, userMsg]);
             setSending(true);
@@ -997,7 +1024,8 @@ function ChatPageInner() {
                   body: JSON.stringify({
                     message: ctx.introMessage,
                     conversation_history: [],
-                    soul_blueprint: ctx.soulBlueprint || null,
+                    session_id: sid,
+                    ...soulRequestFields(compatRef),
                   }),
                 },
                 token
@@ -1024,7 +1052,9 @@ function ChatPageInner() {
               const errMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: isAiConsentError(err) ? t("chat.consent_needed") : fill(t("prompts.compat_failed"), { name: ctx.soulName }),
+                content: oracleErrorKey(err)
+                  ? t(oracleErrorKey(err) as string)
+                  : fill(t("prompts.compat_failed"), { name: ctx.soulName }),
                 timestamp: new Date().toISOString(),
                 isError: true,
               };
@@ -1049,6 +1079,7 @@ function ChatPageInner() {
         const sc = getSoulCtx(last.sessionId);
         setSoulBlueprint(sc?.blueprint ?? null);
         setSoulName(sc?.name ?? null);
+        setSoulRef(soulRefOf(sc));
       } else {
         const sid = generateSessionId();
         setSessionId(sid);
@@ -1176,6 +1207,7 @@ function ChatPageInner() {
     // into Bob's regular Higher Self chat.
     setSoulBlueprint(null);
     setSoulName(null);
+    setSoulRef(null);
     const sid = generateSessionId();
     setSessionId(sid);
     // A new chat opens on the quiet anchor (the empty state); the Oracle
@@ -1205,6 +1237,7 @@ function ChatPageInner() {
       const sc = getSoulCtx(session.sessionId);
       setSoulBlueprint(sc?.blueprint ?? null);
       setSoulName(sc?.name ?? null);
+      setSoulRef(soulRefOf(sc));
       setShowHistory(false);
       setRenamingId(null);
     }
@@ -1337,22 +1370,20 @@ function ChatPageInner() {
     setSending(true);
     const sentSessionId = sessionId;
 
-    const history = updatedMessages
-      .filter((m) => m.id !== "greeting")
-      .slice(0, -1)
-      .map((m) => ({ role: m.role, content: m.content }));
+    // Error bubbles go along marked isError, so the server drops them
+    // instead of reading them back as the Oracle's own words.
+    const history = historyForServer(updatedMessages.slice(0, -1));
 
     try {
-      // Build the request body. If we're in a soul-compatibility chat,
-      // re-pass the cached soul_blueprint on every message so the Oracle
-      // keeps full chart context across the whole session, not just msg 1.
+      // Build the request body. In a Dynamics chat every message names who
+      // it is with (connection or saved person), so the server keeps the
+      // other chart in view for the whole session, not just message 1.
       const body: Record<string, unknown> = {
         message: userMsg.content,
         conversation_history: history,
+        session_id: sentSessionId,
+        ...soulRequestFields(soulRef),
       };
-      if (soulBlueprint) {
-        body.soul_blueprint = soulBlueprint;
-      }
 
       const data = await apiFetch(
         "/chat",
@@ -1403,14 +1434,17 @@ function ChatPageInner() {
       // the new page they're trying to use.
       if (!isMountedRef.current) return;
       if (isStaleAccountError(err)) return;
-      // Missing AI consent is not a billing problem: the consent sheet is
-      // already open (lib/api). Say so in the thread, no paywall redirect.
-      if (isAiConsentError(err)) {
+      // Missing AI consent (the consent sheet is already open, lib/api), a
+      // private or unconsented partner chart, today's limit or a message
+      // that is too long: none is a billing problem. Say so plainly in the
+      // thread, no paywall redirect.
+      const known = oracleErrorKey(err);
+      if (known) {
         if (activeSessionRef.current !== sentSessionId) return;
         const note: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: t("chat.consent_needed"),
+          content: t(known),
           timestamp: new Date().toISOString(),
           isError: true,
         };
@@ -1446,6 +1480,10 @@ function ChatPageInner() {
       if (isMountedRef.current) setSending(false);
     }
   };
+
+  // Latest sendMessage for callbacks created once (the voice transcriber).
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1549,6 +1587,10 @@ function ChatPageInner() {
           openAiConsentSheet();
           throw new Error(t("chat.consent_needed"));
         }
+        // Today's voice limit and the other known refusals: plain words.
+        if (code && ORACLE_ERROR_KEYS[code]) {
+          throw new Error(t(ORACLE_ERROR_KEYS[code]));
+        }
         // If the backend says transcription isn't configured, show a calm
         // user-facing line instead of the raw server string.
         if (res.status === 503 && /configured|GROQ|OPENAI/i.test(detail)) {
@@ -1560,6 +1602,16 @@ function ChatPageInner() {
       const transcript = (data?.transcript || "").trim();
       if (!transcript) {
         setVoiceError(t("chat.voice_nothing_heard"));
+        return;
+      }
+      // The server heard someone in crisis. Send what they said straight
+      // away, as a normal message: /chat answers it with the crisis lines
+      // in their language. No editing step in between.
+      if (data?.crisis === true) {
+        const typed = (inputRef.current?.value || "").replace(/\s+$/, "");
+        const text = typed ? typed + " " + transcript : transcript;
+        setInput("");
+        void sendMessageRef.current(text);
         return;
       }
       setInput((prev) => {
@@ -2109,7 +2161,7 @@ function ChatPageInner() {
                 input and auto-sends, removing typing friction on the
                 first interaction. Hidden as soon as the user types or
                 taps one. Codex UX hook 2. */}
-            {suggestions.length > 0 && !soulBlueprint &&
+            {suggestions.length > 0 && !soulBlueprint && !soulRef &&
               !messages.some((m) => m.role === "user") &&
               !sending && !streamingId && (
                 <div className="flex flex-col gap-0 items-start pt-2 pb-1 animate-fade-in" style={{ borderTop: "1px solid rgb(var(--rgb-border))", marginTop: 18 }}>

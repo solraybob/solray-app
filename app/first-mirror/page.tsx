@@ -24,7 +24,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { oracleErrorKey } from "@/lib/oracle-errors";
 import { useT } from "@/lib/i18n";
 import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
 
@@ -48,6 +49,9 @@ function FirstMirrorContent() {
   const router = useRouter();
   const [mirror, setMirror] = useState<FirstMirrorData | null>(null);
   const [loading, setLoading] = useState(true);
+  // i18n key of a plain explanation shown instead of the mirror: the chart
+  // is not complete yet (409), or a known AI refusal (consent, today's limit).
+  const [notice, setNotice] = useState<string | null>(null);
   const [revealStage, setRevealStage] = useState(0); // 0=eyebrow, 1=pattern, 2=shadow, 3=question, 4=cta
   // First Words: after the mirror, one invitation to ask the Oracle a real
   // question. The first conversation IS the product; this makes sure every
@@ -89,9 +93,22 @@ function FirstMirrorContent() {
           // skip rather than render half a mirror.
           router.replace("/today");
         }
-      } catch {
+      } catch (e) {
+        if (cancelled) return;
+        // Missing chart: say so, and let the member move on.
+        if (e instanceof ApiError && e.status === 409) {
+          setNotice("first_mirror.missing_chart");
+          setLoading(false);
+          return;
+        }
+        const known = oracleErrorKey(e);
+        if (known) {
+          setNotice(known);
+          setLoading(false);
+          return;
+        }
         // Backend was unavailable. Honest skip; no invented content.
-        if (!cancelled) router.replace("/today");
+        router.replace("/today");
       }
     })();
     return () => { cancelled = true; };
@@ -117,6 +134,22 @@ function FirstMirrorContent() {
           <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
             {t("first_mirror.reading")}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notice) {
+    return (
+      <div className="min-h-[100dvh] bg-forest-deep" style={{ paddingBottom: "calc(48px + var(--sab, 0px))" }}>
+        <PageHead label={t("first_mirror.title")} />
+        <div className="max-w-lg mx-auto px-5" style={{ paddingTop: 18 }}>
+          <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-secondary))" }}>
+            {t(notice)}
+          </p>
+          <div className="mt-8">
+            <InkButton onClick={() => router.replace("/today")}>{t("common.continue")}</InkButton>
+          </div>
         </div>
       </div>
     );

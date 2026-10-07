@@ -149,7 +149,8 @@
     "chip_yes": "Why do I keep saying yes when I mean no?",
     "chip_forcing": "What am I forcing right now?",
     "chip_own": "Ask in your own words...",
-    "not_now": "Not now"
+    "not_now": "Not now",
+    "missing_chart": "Your chart is not complete yet, so the First Mirror has to wait. You can finish it from your profile."
   },
   "today": {
     "title": "Today",
@@ -351,7 +352,7 @@
     "share_invitation": "Share an invitation",
     "intro": "Add someone's birth details, pick how you relate and read what the charts say about your dynamic.",
     "find_a_soul": "Find a Soul",
-    "search_placeholder": "Name, @username, or email",
+    "search_placeholder": "Name or @username",
     "pending_requests": "Pending Requests",
     "connections": "Connections",
     "no_connections": "Nobody here yet. Add someone to the reading above, or find them on Solray.",
@@ -444,7 +445,13 @@
     "bond_and_last": ", and ",
     "bond_family_intro": "Read the family dynamic between me, {names}. Here are their charts: {charts}. What is the energy of this family as a whole? Where is there harmony, friction, and what does each person bring to the group?",
     "bond_intro_chart": "Read the {lens} between me and {name}. Their chart: {chart}. Where does our energy meet, and where does it create friction?",
-    "bond_intro": "Read the {lens} between me and {name}. Where does our energy meet, and where does it create friction?"
+    "bond_intro": "Read the {lens} between me and {name}. Where does our energy meet, and where does it create friction?",
+    "remove_connection": "Remove connection",
+    "remove_connection_sub": "End the connection with {name}",
+    "remove_confirm_title": "Remove {name}?",
+    "remove_confirm_body": "You stop being connected for both of you. The Oracle forgets what she kept about each of you from this connection, and your shared readings are removed.",
+    "remove_confirm_yes": "Remove",
+    "remove_connection_failed": "Could not remove the connection just now. Try again."
   },
   "profile": {
     "title": "Profile",
@@ -957,5 +964,12 @@
     "compat_session": "You & {name}",
     "compat_failed": "The Oracle couldn't open the reading between you and {name} just now. Try again in a moment.",
     "orb": "orb"
+  },
+  "oracle_errors": {
+    "chart_private": "This reading needs the other person's chart, and they keep it private. They can share it from their profile settings.",
+    "partner_ai_consent_required": "This reading needs the other person's chart, and they have not agreed to AI processing yet. Once they do, you can read it together.",
+    "ai_daily_limit": "You have reached today's limit for this. It resets tomorrow.",
+    "message_too_long": "That message is too long. Try saying it in fewer words.",
+    "soul_connection_gone": "This connection has ended, so the reading between you is closed. You can still talk with the Oracle about yourself."
   }
 }

@@ -257,7 +257,7 @@
     "share_invitation": "Compartir una invitación",
     "intro": "Agrega los datos de nacimiento de alguien, elige cómo se relacionan y lee lo que dicen las cartas sobre su dinámica.",
     "find_a_soul": "Encuentra un Alma",
-    "search_placeholder": "Nombre, @usuario o correo",
+    "search_placeholder": "Nombre o @usuario",
     "pending_requests": "Solicitudes Pendientes",
     "connections": "Conexiones",
     "no_connections": "Aún no hay nadie. Añade a alguien a la lectura de arriba, o búscale en Solray.",
@@ -350,7 +350,13 @@
     "bond_and_last": " y ",
     "bond_family_intro": "Lee la dinámica familiar entre yo, {names}. Estas son sus cartas: {charts}. ¿Cuál es la energía de esta familia en conjunto? ¿Dónde hay armonía, dónde fricción, y qué aporta cada persona al grupo?",
     "bond_intro_chart": "Lee la {lens} entre {name} y yo. Su carta: {chart}. ¿Dónde se encuentra nuestra energía y dónde crea fricción?",
-    "bond_intro": "Lee la {lens} entre {name} y yo. ¿Dónde se encuentra nuestra energía y dónde crea fricción?"
+    "bond_intro": "Lee la {lens} entre {name} y yo. ¿Dónde se encuentra nuestra energía y dónde crea fricción?",
+    "remove_connection": "Eliminar conexión",
+    "remove_connection_sub": "Terminar la conexión con {name}",
+    "remove_confirm_title": "¿Eliminar a {name}?",
+    "remove_confirm_body": "La conexión termina para los dos. El Oráculo olvida lo que guardaba de cada uno sobre esta conexión, y sus lecturas compartidas se eliminan.",
+    "remove_confirm_yes": "Eliminar",
+    "remove_connection_failed": "No se pudo eliminar la conexión ahora mismo. Inténtalo de nuevo."
   },
   "profile": {
     "title": "Perfil",
@@ -594,7 +600,8 @@
     "chip_yes": "¿Por qué sigo diciendo que sí cuando quiero decir que no?",
     "chip_forcing": "¿Qué estoy forzando ahora mismo?",
     "chip_own": "Pregunta con tus propias palabras...",
-    "not_now": "Ahora no"
+    "not_now": "Ahora no",
+    "missing_chart": "Tu carta aún no está completa, así que el Primer Espejo tiene que esperar. Puedes completarla desde tu perfil."
   },
   "planets": {
     "sun": "Sol",
@@ -957,5 +964,12 @@
     "compat_session": "Tú y {name}",
     "compat_failed": "El Oráculo no pudo abrir ahora la lectura entre tú y {name}. Inténtalo de nuevo en un momento.",
     "orb": "orbe"
+  },
+  "oracle_errors": {
+    "chart_private": "Esta lectura necesita la carta de la otra persona, y la mantiene privada. Puede compartirla desde los ajustes de su perfil.",
+    "partner_ai_consent_required": "Esta lectura necesita la carta de la otra persona, y aún no ha aceptado el procesamiento con IA. Cuando lo haga, podrán leerla juntos.",
+    "ai_daily_limit": "Has llegado al límite de hoy para esto. Se renueva mañana.",
+    "message_too_long": "Ese mensaje es demasiado largo. Intenta decirlo con menos palabras.",
+    "soul_connection_gone": "Esta conexión terminó, así que la lectura entre ustedes está cerrada. Aún puedes hablar con el Oráculo sobre ti."
   }
 }

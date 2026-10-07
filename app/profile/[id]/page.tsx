@@ -17,7 +17,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { oracleErrorKey } from "@/lib/oracle-errors";
 import { useT } from "@/lib/i18n";
 import { PageHead, Section, InkButton, HairlineButton } from "@/components/PageHead";
 import Link from "next/link";
@@ -461,9 +462,11 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       .catch((e: unknown) => {
         if (e instanceof ApiError && e.status === 402) {
           setPaywall(true);
-        } else if (isAiConsentError(e)) {
-          // The reading is written with AI: the consent sheet is open.
-          setError(t("chat.consent_needed"));
+        } else if (oracleErrorKey(e)) {
+          // The reading is written with AI: missing consent (the sheet is
+          // open), a private chart, a partner without AI consent, or
+          // today's limit. Each says so plainly.
+          setError(t(oracleErrorKey(e) as string));
         } else if (e instanceof ApiError && e.status === 403) {
           // Not in an accepted connection; should never happen on this page
           // since the public-profile fetch above already 403'd.

@@ -135,6 +135,15 @@ function forServer(p: SavedPerson): Omit<SavedPerson, "_synced"> {
   return rest;
 }
 
+// Who a Dynamics reading is with, for the chat request. The server loads
+// a connection's chart itself and computes a synced saved person's chart
+// from their stored birth details; a chart only rides along for a saved
+// person the server has not confirmed yet (it recomputes from it).
+function partnerSoulRef(p: BondPartner): { soulConnectionId?: string; savedPersonId?: string } {
+  if (p.kind === "connection") return { soulConnectionId: p.connection.connection_id };
+  return p.person._synced ? { savedPersonId: p.person.id } : {};
+}
+
 function partnerName(p: BondPartner): string {
   return p.kind === "saved" ? p.person.name : p.connection.soul.name;
 }
@@ -174,10 +183,28 @@ interface SoulActionsProps {
   onClose: () => void;
   onSoloReading: () => void;
   onViewProfile: () => void;
+  // Ends the connection for both people (DELETE /souls/{connection_id}).
+  // Resolves on success; rejects so the sheet can say it failed.
+  onRemove: () => Promise<void>;
 }
 
-function SoulActions({ soul, onClose, onSoloReading, onViewProfile }: SoulActionsProps) {
+function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: SoulActionsProps) {
   const { t } = useT();
+  // Removing is permanent for both people, so it asks once more first.
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeFailed, setRemoveFailed] = useState(false);
+  const doRemove = async () => {
+    if (removing) return;
+    setRemoving(true);
+    setRemoveFailed(false);
+    try {
+      await onRemove();
+    } catch {
+      setRemoveFailed(true);
+      setRemoving(false);
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
@@ -227,6 +254,42 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile }: SoulAction
               <span className="font-body text-indigo text-[14px]">{t("souls.open")}</span>
             </div>
           </button>
+          {!confirmRemove ? (
+            <button
+              onClick={() => { setConfirmRemove(true); setRemoveFailed(false); }}
+              className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
+              style={{ minHeight: 44 }}
+            >
+              <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.remove_connection")}</p>
+              <p className="font-body text-text-secondary text-[14px] mt-0.5">{fill(t("souls.remove_connection_sub"), { name: soul.soul.name })}</p>
+            </button>
+          ) : (
+            <div className="px-5 py-4 bg-forest-card border border-forest-border rounded-2xl" role="alertdialog" aria-live="polite">
+              <p className="font-body text-text-primary font-semibold text-[17px]">{fill(t("souls.remove_confirm_title"), { name: soul.soul.name })}</p>
+              <p className="font-body text-text-secondary text-[14px] mt-1" style={{ lineHeight: 1.5 }}>{t("souls.remove_confirm_body")}</p>
+              {removeFailed && (
+                <p className="font-body text-[14px] mt-2" style={{ color: "rgb(var(--rgb-text-primary))" }}>{t("souls.remove_connection_failed")}</p>
+              )}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => { setConfirmRemove(false); setRemoveFailed(false); }}
+                  disabled={removing}
+                  className="flex-1 py-3 rounded-full border border-forest-border font-body text-[14px] text-text-secondary"
+                  style={{ minHeight: 44 }}
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={doRemove}
+                  disabled={removing}
+                  className="flex-1 py-3 rounded-full font-body text-[14px] font-bold"
+                  style={{ minHeight: 44, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", opacity: removing ? 0.6 : 1 }}
+                >
+                  {t("souls.remove_confirm_yes")}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -520,16 +583,9 @@ export default function SoulsPage() {
   const openSoloReading = async (soul: ConnectedSoul) => {
     setActiveSoul(null);
     setErrorMessage(null);
-    // Fetch their full blueprint for the chat, proceed even if it fails,
-    // the chat still works from the summary chart data
-    let soulBlueprint = null;
-    try {
-      const data = await apiFetch(`/souls/${soul.connection_id}/blueprint`, {}, token);
-      soulBlueprint = data?.blueprint || null;
-    } catch {
-      // Non-blocking: surface a quiet note but continue
-      setErrorMessage(t("souls.error_partial_chart"));
-    }
+    // The chat names the connection; the server loads their chart itself
+    // (and says so plainly if they keep it private or have not agreed to
+    // AI processing). No chart travels through the app.
 
     const chartSummary = [
       soul.soul.sun_sign && `Sun in ${soul.soul.sun_sign}`,
@@ -544,7 +600,7 @@ export default function SoulsPage() {
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
       soulName: soul.soul.name,
       introMessage,
-      soulBlueprint,
+      soulConnectionId: soul.connection_id,
     }));
 
     router.push("/chat?compat=1");
@@ -696,6 +752,8 @@ export default function SoulsPage() {
     if (bondLens === "family" && bondPartners.length > 1) {
       const lines: string[] = [];
       let primaryBlueprint: unknown = null;
+      // The family reading's focal person is the first partner.
+      const primaryRef = partnerSoulRef(bondPartners[0]);
 
       for (const p of bondPartners) {
         const chart = partnerChart(p);
@@ -708,15 +766,8 @@ export default function SoulsPage() {
         // blueprint for the chat (it's the focal lens for the whole
         // family reading); the rest of the family's charts stay in
         // the summary-line text.
-        if (!primaryBlueprint) {
-          if (p.kind === "connection") {
-            try {
-              const data = await apiFetch(`/souls/${p.connection.connection_id}/blueprint`, {}, token);
-              primaryBlueprint = data?.blueprint || null;
-            } catch { /* non-fatal */ }
-          } else if (p.person.blueprint) {
-            primaryBlueprint = p.person.blueprint;
-          }
+        if (!primaryBlueprint && p === bondPartners[0] && p.kind === "saved" && p.person.blueprint) {
+          primaryBlueprint = p.person.blueprint;
         }
       }
 
@@ -731,6 +782,7 @@ export default function SoulsPage() {
         soulName: nameList,
         introMessage,
         soulBlueprint: primaryBlueprint,
+        ...primaryRef,
         lens: bondLens,
       }));
 
@@ -756,14 +808,8 @@ export default function SoulsPage() {
     // Without this, the AI gets only a 3-field summary and asks the
     // user for moon sign and defined centres mid-reading.
     let soulBlueprint: unknown = null;
-    if (bondPartner.kind === "connection") {
-      try {
-        const data = await apiFetch(`/souls/${bondPartner.connection.connection_id}/blueprint`, {}, token);
-        soulBlueprint = data?.blueprint || null;
-      } catch {
-        setErrorMessage(t("souls.error_partial_chart"));
-      }
-    } else {
+    // A connection's chart is loaded by the server (soulConnectionId).
+    if (bondPartner.kind === "saved") {
       const saved = bondPartner.person;
       if (saved.blueprint) {
         soulBlueprint = saved.blueprint;
@@ -810,6 +856,7 @@ export default function SoulsPage() {
       soulName: pName,
       introMessage,
       soulBlueprint,
+      ...partnerSoulRef(bondPartner),
       lens: bondLens,
     }));
 
@@ -1184,6 +1231,19 @@ export default function SoulsPage() {
               // and private (name + photo only) cases via the
               // /users/:id/public-profile endpoint.
               router.push(`/profile/${activeSoul.soul.id}`);
+              setActiveSoul(null);
+            }}
+            onRemove={async () => {
+              const gone = activeSoul;
+              await apiFetch(`/souls/${gone.connection_id}`, { method: "DELETE" }, token);
+              // The server ends every connection row between the two of
+              // you, so drop them all (either direction) from the list.
+              setConnectedSouls((prev) => prev.filter(
+                (c) => c.connection_id !== gone.connection_id && c.soul.id !== gone.soul.id,
+              ));
+              setBondPartners((prev) => prev.filter(
+                (p) => !(p.kind === "connection" && p.connection.soul.id === gone.soul.id),
+              ));
               setActiveSoul(null);
             }}
           />
