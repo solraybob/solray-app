@@ -38,7 +38,7 @@ import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef }
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
 import { asCrisisCard } from "@/lib/crisis-card";
-import { accountKey } from "@/lib/account-session";
+import { accountKey, takeHandoff } from "@/lib/account-session";
 
 // isError marks a transport-level error rather than an Oracle reply. It
 // renders with distinct styling so the member is never misled into thinking
@@ -647,11 +647,12 @@ function ChatPageInner() {
     async function init() {
       // Check for compatibility context injected from Souls page
       // Check for profile-element prompt (from Ask buttons on profile page)
-      const profilePromptRaw = sessionStorage.getItem("solray_chat_prompt");
+      // Handoffs are taken (read and removed) only when this tab still
+      // belongs to the member who wrote them (lib/account-session).
+      const profilePromptRaw = takeHandoff("solray_chat_prompt");
       if (profilePromptRaw) {
         try {
           const ctx = JSON.parse(profilePromptRaw) as { topic: string; question: string };
-          sessionStorage.removeItem("solray_chat_prompt");
           const sid = generateSessionId();
           setSessionId(sid);
           const userMsg: Message = {
@@ -747,7 +748,7 @@ function ChatPageInner() {
       const isCompat = searchParams?.get("compat") === "1";
       if (isCompat) {
         try {
-          const raw = sessionStorage.getItem("solray_compat_context");
+          const raw = takeHandoff("solray_compat_context");
           if (raw) {
             const ctx = JSON.parse(raw) as {
               soulName: string;
@@ -758,7 +759,6 @@ function ChatPageInner() {
               // A saved person the server had not confirmed yet.
               localPersonId?: string | null;
             };
-            sessionStorage.removeItem("solray_compat_context");
 
             // Hoist the soul context into component state so every
             // follow-up message in this session re-passes the blueprint

@@ -167,6 +167,7 @@ let boundAccount: string | null | undefined;
 export function bindAccount(id: string | null): void {
   boundAccount = id === null || id === undefined || id === "" ? null : String(id);
   if (boundAccount && boundAccount === storedAccountId()) migrateAccountCaches(boundAccount);
+  claimTabHandoffs(boundAccount);
 }
 
 /** The account this tab belongs to (resolved from storage on first use). */
@@ -235,6 +236,61 @@ export function identityStorageChange(key: string | null, tabToken: string | nul
   if (change === "signed-out" || change === "switched") {
     bumpAuthGeneration();
     boundAccount = null;
+    // This tab's one-shot handoffs were written for the member who just
+    // left: they go now, before the tab redirects or reloads.
+    claimTabHandoffs(null);
   }
   return change;
+}
+
+// ── One-shot handoffs between screens (sessionStorage) ─────────────────────
+//
+// A question seeded into the Oracle, a Dynamics context: written by one
+// screen, read once by another. sessionStorage belongs to the tab and
+// survives a reload, so a handoff left behind by an interrupted navigation
+// could otherwise be read after the tab changed member. The tab records
+// which member its handoffs belong to (`solray_tab_owner`); whenever the
+// tab is bound to a different member (or to none), every `solray_` key in
+// its sessionStorage is dropped first, and takeHandoff() checks the owner
+// again before it hands anything over.
+
+const TAB_OWNER_KEY = "solray_tab_owner";
+const SIGNED_OUT_OWNER = "-";
+
+function clearTabHandoffs(): void {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith("solray_")) sessionStorage.removeItem(k);
+    }
+  } catch {
+    /* storage unavailable: nothing to drop */
+  }
+}
+
+/** Make `owner` the member this tab's handoffs belong to, dropping any
+ *  left by someone else (or of unknown owner). */
+function claimTabHandoffs(owner: string | null): void {
+  const want = owner ?? SIGNED_OUT_OWNER;
+  let current: string | null;
+  try { current = sessionStorage.getItem(TAB_OWNER_KEY); } catch { return; }
+  if (current === want) return;
+  clearTabHandoffs();
+  try { sessionStorage.setItem(TAB_OWNER_KEY, want); } catch { /* best-effort */ }
+}
+
+/**
+ * Read and remove a one-shot handoff, only when it belongs to the member
+ * this tab is bound to. Returns null when there is none, or when it was
+ * left by another member (it is dropped).
+ */
+export function takeHandoff(key: string): string | null {
+  claimTabHandoffs(boundAccountId());
+  try {
+    const v = sessionStorage.getItem(key);
+    if (v !== null) sessionStorage.removeItem(key);
+    return v;
+  } catch {
+    return null;
+  }
 }

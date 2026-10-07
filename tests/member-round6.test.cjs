@@ -120,3 +120,69 @@ test("finding 1: the chat page marks a rename as pending", () => {
   const fn = helper.slice(helper.indexOf("function serverName"), helper.indexOf("function storeServerCopy"));
   assert.doesNotMatch(fn, /getUnsent\(\)/, "unsent turns are not a rename");
 });
+
+// ── 2. sessionStorage handoffs belong to the tab's account ─────────────────
+
+test("finding 2: a cross-tab switch sweeps this tab's handoffs", () => {
+  win.localStorage.clear();
+  win.sessionStorage.clear();
+  signIn("A", "tok-A");
+  session.bindAccount("A");
+  win.sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic: "t", question: "A private question" }));
+  win.sessionStorage.setItem("solray_compat_context", JSON.stringify({ soulName: "S", introMessage: "x" }));
+  win.sessionStorage.setItem("swipe_dir", "back");
+  win.localStorage.removeItem("solray_token");
+  win.localStorage.removeItem("solray_user");
+  signIn("B", "tok-B");
+  assert.equal(session.identityStorageChange("solray_user", "tok-A"), "switched");
+  assert.equal(win.sessionStorage.getItem("solray_chat_prompt"), null);
+  assert.equal(win.sessionStorage.getItem("solray_compat_context"), null);
+  assert.equal(win.sessionStorage.getItem("swipe_dir"), "back", "non-account keys are left alone");
+});
+
+test("finding 2: a cross-tab sign-out sweeps this tab's handoffs", () => {
+  win.localStorage.clear();
+  win.sessionStorage.clear();
+  signIn("A", "tok-A");
+  session.bindAccount("A");
+  win.sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic: "t", question: "q" }));
+  win.localStorage.removeItem("solray_token");
+  assert.equal(session.identityStorageChange("solray_token", "tok-A"), "signed-out");
+  assert.equal(win.sessionStorage.getItem("solray_chat_prompt"), null);
+});
+
+test("finding 2: a handoff written under A is rejected once the tab belongs to B", () => {
+  win.localStorage.clear();
+  win.sessionStorage.clear();
+  signIn("A", "tok-A");
+  session.bindAccount("A");
+  win.sessionStorage.setItem("solray_chat_prompt", JSON.stringify({ topic: "t", question: "A private question" }));
+  // The storage event never reached this tab (interrupted navigation); it
+  // reloads with B's session in shared storage and binds to B.
+  win.localStorage.removeItem("solray_token");
+  win.localStorage.removeItem("solray_user");
+  signIn("B", "tok-B");
+  session.bindAccount("B");
+  assert.equal(session.takeHandoff("solray_chat_prompt"), null);
+  assert.equal(win.sessionStorage.getItem("solray_chat_prompt"), null);
+});
+
+test("finding 2: the same member's handoff is taken once", () => {
+  win.localStorage.clear();
+  win.sessionStorage.clear();
+  signIn("A", "tok-A");
+  session.bindAccount("A");
+  const v = JSON.stringify({ topic: "t", question: "mine" });
+  win.sessionStorage.setItem("solray_chat_prompt", v);
+  session.bindAccount("A");         // a reload of the same member
+  assert.equal(session.takeHandoff("solray_chat_prompt"), v);
+  assert.equal(session.takeHandoff("solray_chat_prompt"), null);
+});
+
+test("finding 2: the chat page consumes handoffs only through takeHandoff", () => {
+  const src = read("app/chat/page.tsx");
+  assert.doesNotMatch(src, /sessionStorage\.getItem\("solray_chat_prompt"\)/);
+  assert.doesNotMatch(src, /sessionStorage\.getItem\("solray_compat_context"\)/);
+  assert.match(src, /takeHandoff\("solray_chat_prompt"\)/);
+  assert.match(src, /takeHandoff\("solray_compat_context"\)/);
+});
