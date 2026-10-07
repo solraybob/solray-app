@@ -106,3 +106,33 @@ test("consent flags are read from /users/me at top level or under profile", () =
     { required: false, version: "2026-10-06", at: "2026-10-07T10:00:00" },
   );
 });
+
+test("F1: captureAccount goes stale when the account changes, and check() throws", () => {
+  const acct = session.captureAccount();
+  assert.equal(acct.live, true);
+  acct.check();
+  session.bumpAuthGeneration();
+  assert.equal(acct.live, false);
+  assert.throws(() => acct.check(), (e) => session.isStaleAccountError(e));
+  assert.equal(session.captureAccount().live, true);
+});
+
+test("F1: raw callbacks check the account before writing caches or calling back", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const root = path.join(__dirname, "..");
+  const souls = fs.readFileSync(path.join(root, "app/souls/page.tsx"), "utf8");
+  // Add-person sheet: the chart is only added for the same account, sheet open.
+  const sheet = souls.slice(souls.indexOf("function AddPersonSheet"));
+  const submit = sheet.slice(sheet.indexOf("const submit = async"), sheet.indexOf("onAdded(person);"));
+  assert.match(submit, /const acct = captureAccount\(\);/);
+  assert.ok((submit.match(/if \(!stillHere\(\)\) return;/g) || []).length >= 2, "checked after fetch and after decoding");
+  // Bond reading: legacy recalculation and the chat handoff are guarded.
+  const bond = souls.slice(souls.indexOf("const readTheBond"), souls.indexOf("<ProtectedRoute>"));
+  assert.match(bond, /const acct = captureAccount\(\);/);
+  const pushes = bond.split('router.push("/chat?compat=1")').length - 1;
+  const guards = (bond.match(/if \(!stillHere\(\)\) return abandon\(\);/g) || []).length;
+  assert.ok(guards >= pushes + 2, "every handoff and the cache write are guarded");
+  const i18n = fs.readFileSync(path.join(root, "lib/i18n.tsx"), "utf8");
+  assert.match(i18n, /if \(!acct\.live\) return true;/);
+});

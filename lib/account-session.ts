@@ -39,3 +39,25 @@ export class StaleAccountError extends Error {
 export function isStaleAccountError(e: unknown): boolean {
   return e instanceof StaleAccountError;
 }
+
+/**
+ * The account a piece of raw work (a fetch outside apiFetch, a chain of
+ * awaits, a callback that lands later) belongs to. Capture it before the
+ * first request, then read `live` after every await and before every cache
+ * write, callback, upload or navigation; `check()` throws StaleAccountError
+ * instead, for code that unwinds through a catch.
+ */
+export interface AccountGuard {
+  readonly generation: number;
+  readonly live: boolean;
+  check(): void;
+}
+
+export function captureAccount(): AccountGuard {
+  const g = generation;
+  return {
+    generation: g,
+    get live() { return g === generation; },
+    check() { if (g !== generation) throw new StaleAccountError(); },
+  };
+}

@@ -7,7 +7,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch, ApiError } from "@/lib/api";
-import { isStaleAccountError } from "@/lib/account-session";
+import { captureAccount, isStaleAccountError } from "@/lib/account-session";
 import { mergeSavedPeople, peopleToUpload } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -376,6 +376,14 @@ export default function SoulsPage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [retryingLoad, setRetryingLoad] = useState(false);
 
+  // False once the member has left Souls: work that lands later (a chart
+  // recalculation) must not navigate or write from a screen that is gone.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
   const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
@@ -732,6 +740,13 @@ export default function SoulsPage() {
   // Fire the Bond reading, route to /chat?compat=1 with context
   const readTheBond = async () => {
     if (bondPartners.length === 0) return;
+    // Everything below (a chart recalculation, the cache write, the handoff
+    // to chat) belongs to the account signed in now. If that changes or the
+    // member leaves Souls while it runs, nothing is written and no one is
+    // sent anywhere.
+    const acct = captureAccount();
+    const stillHere = () => acct.live && mountedRef.current;
+    const abandon = () => { if (mountedRef.current) setReadingBond(false); };
     setReadingBond(true);
     setErrorMessage(null);
 
@@ -786,6 +801,7 @@ export default function SoulsPage() {
         lens: bondLens,
       }));
 
+      if (!stillHere()) return abandon();
       setReadingBond(false);
       router.push("/chat?compat=1");
       return;
@@ -830,19 +846,27 @@ export default function SoulsPage() {
               birth_city: saved.birth_city,
             }),
           });
+          if (!stillHere()) return abandon();
           if (res.ok) {
             const data = await res.json();
+            if (!stillHere()) return abandon();
             soulBlueprint = data?.blueprint || null;
             // Persist for next time so this user doesn't pay the cost again.
+            // Against the CURRENT list: the snapshot this function started
+            // with may be out of date by now (a sync or a removal ran).
             if (soulBlueprint) {
-              const next = savedPeople.map((p) =>
-                p.id === saved.id ? { ...p, blueprint: soulBlueprint } : p
-              );
-              setSavedPeople(next);
-              writeSavedPeople(next);
+              setSavedPeople((prev) => {
+                if (!prev.some((p) => p.id === saved.id)) return prev;
+                const next = prev.map((p) =>
+                  p.id === saved.id ? { ...p, blueprint: soulBlueprint } : p
+                );
+                writeSavedPeople(next);
+                return next;
+              });
             }
           }
         } catch {
+          if (!stillHere()) return abandon();
           setErrorMessage(t("souls.error_partial_chart"));
         }
       }
@@ -852,6 +876,7 @@ export default function SoulsPage() {
       ? fill(t("souls.bond_intro_chart"), { lens: lensLabel, name: pName, chart: chartSummary })
       : fill(t("souls.bond_intro"), { lens: lensLabel, name: pName });
 
+    if (!stillHere()) return abandon();
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
       soulName: pName,
       introMessage,
@@ -1627,6 +1652,13 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   // chart, and to its AI providers when the member asks about them), so the
   // member confirms they have that person's permission first.
   const [hasPermission, setHasPermission] = useState(false);
+  // A chart that lands after the sheet closed, or after the account
+  // changed, is dropped: it must never be added to anyone's list.
+  const sheetMountedRef = useRef(true);
+  useEffect(() => {
+    sheetMountedRef.current = true;
+    return () => { sheetMountedRef.current = false; };
+  }, []);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -1658,6 +1690,8 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     setSubmitting(true);
     setError(null);
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+    const acct = captureAccount();
+    const stillHere = () => acct.live && sheetMountedRef.current;
     try {
       const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
         method: "POST",
@@ -1670,11 +1704,13 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           birth_city: birthCity,
         }),
       });
+      if (!stillHere()) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(errorText(err?.detail, t("souls.error_read_chart")));
       }
       const data = await res.json();
+      if (!stillHere()) return;
       const person: SavedPerson = {
         id: typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -1698,10 +1734,11 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       };
       onAdded(person);
     } catch (e: unknown) {
+      if (!stillHere()) return;
       const msg = e instanceof Error ? e.message : t("souls.error_drifted_short");
       setError(msg);
     } finally {
-      setSubmitting(false);
+      if (sheetMountedRef.current) setSubmitting(false);
     }
   };
 

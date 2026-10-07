@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode } from "@/lib/api";
-import { getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
+import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import ReactMarkdown from "react-markdown";
@@ -1302,7 +1302,12 @@ function ChatPageInner() {
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
       if (token) {
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+        // The answer may land after a sign-out (and the next account's
+        // sign-in): then it belongs to nobody on this device and must not
+        // write the old conversation back into the shared cache.
+        const acct = captureAccount();
         const restore = () => {
+          if (!acct.live) return;
           if (snapshot) {
             try { localStorage.setItem(`solray_chat_${sid}`, JSON.stringify(snapshot)); } catch { /* ignore */ }
           }
@@ -1312,6 +1317,7 @@ function ChatPageInner() {
             current.splice(Math.min(at, current.length), 0, sid);
             saveSessionIds(current);
           }
+          if (!isMountedRef.current) return;
           setPastSessions(
             getSessionIds()
               .map((id) => loadSession(id))
@@ -1324,6 +1330,7 @@ function ChatPageInner() {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => {
+            if (!acct.live) return;
             // 404 means the server no longer has it: already deleted.
             if (res.ok || res.status === 404) {
               unmarkServerConfirmed(sid);

@@ -21,6 +21,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import en from "../messages/en.json";
 import es from "../messages/es.json";
+import { captureAccount } from "./account-session";
 
 export const SUPPORTED_LANGUAGES = ["en", "es", "es-419"] as const;
 export type LanguageCode = typeof SUPPORTED_LANGUAGES[number];
@@ -129,6 +130,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem("solray_token");
       if (token) {
+        const acct = captureAccount();
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
         const res = await fetch(`${apiUrl}/users/language`, {
           method: "PATCH",
@@ -139,6 +141,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ language: code }),
         });
         if (!res.ok) return false;
+        // Signed out (or into another account) while saving: the cached
+        // user blob now belongs to someone else.
+        if (!acct.live) return true;
         // Mirror onto the cached user blob so a refresh keeps the choice
         // without an extra round-trip.
         try {
