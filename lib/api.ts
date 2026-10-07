@@ -85,6 +85,13 @@ export interface ApiFetchExtra {
    * account-deletion re-check). The session is kept; the caller shows it.
    */
   keepSessionOn401?: boolean;
+  /**
+   * The account generation this request belongs to, when it was decided
+   * earlier than the call (a write queued behind others). If that account
+   * has signed out by the time the request would start, it is not sent:
+   * StaleAccountError. Defaults to the generation at call time.
+   */
+  generation?: number;
 }
 
 export async function apiFetch(
@@ -141,8 +148,11 @@ export async function apiFetch(
   // the answer is dropped (StaleAccountError) so it can never be written
   // into the next account's screens or caches, and its 401 can never sign
   // the next account out.
-  const startedGen = getAuthGeneration();
+  const startedGen = typeof extra.generation === "number" ? extra.generation : getAuthGeneration();
   const accountBound = !!token;
+  if (accountBound && !isCurrentGeneration(startedGen)) {
+    throw new StaleAccountError();
+  }
 
   inflight += 1;
   try {
@@ -171,6 +181,10 @@ async function finishApiFetch(
   }
 
   if (!res.ok) {
+    // The generation this error belongs to. The handled 401 below ends the
+    // session itself and moves the generation on purpose; its caller still
+    // gets the 401 (not a stale-account drop).
+    let ownGen = startedGen;
     // 401 = dead session (expired or invalid token). Previously the app kept
     // the stale token in storage, so /today bounced the user to /login and
     // /login bounced them back to /today (it still saw a token): an infinite
@@ -189,12 +203,17 @@ async function finishApiFetch(
         // astrocartography, chat, etc. readable. Shared with the login path.
         clearUserScopedCaches();
       } catch (_) { /* ignore storage errors */ }
-      bumpAuthGeneration();
+      ownGen = bumpAuthGeneration();
       if (!window.location.pathname.startsWith("/login")) {
         window.location.replace("/login?expired=1");
       }
     }
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
+    // The account may have changed while the body was decoding: then this
+    // error belongs to nobody here (no consent sheet, no failure handling).
+    if (accountBound && !isCurrentGeneration(ownGen)) {
+      throw new StaleAccountError();
+    }
     const code = detailCode(err?.detail);
     // Third-party AI consent missing: open the consent sheet wherever the
     // member is. The caller still gets the error and keeps its own state.

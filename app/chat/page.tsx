@@ -25,6 +25,8 @@ import {
   type ChatMessage,
   type StoredSession as ChatStoredSession,
 } from "@/lib/chat-sync";
+import { readSoulCtx, resolveSoulCtx, writeSoulCtx, type SoulCtx } from "@/lib/chat-soul";
+import { registerDraftSource } from "@/lib/draft-guard";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -62,36 +64,25 @@ function todayLabel() {
 // Device cache and server sync for chat history: lib/chat-sync.ts.
 
 // Dynamics context (the other person's chart) belongs to the conversation it
-// was opened for. Kept per session on this device so reopening that
-// conversation restores it, and opening any other conversation clears it.
-const SOUL_CTX_KEY = "solray_chat_soul_ctx";
-type SoulCtx = {
-  name: string | null;
-  blueprint: Record<string, unknown> | null;
-  // Who the Dynamics reading is with; the server loads the chart (A14).
-  connectionId?: string | null;
-  savedPersonId?: string | null;
-};
+// was opened for. Kept per session on this device (lib/chat-soul) so
+// reopening that conversation restores it, and opening any other
+// conversation clears it.
 function soulRefOf(sc: SoulCtx | null): SoulRef | null {
   if (!sc) return null;
   return { connectionId: sc.connectionId ?? null, savedPersonId: sc.savedPersonId ?? null, blueprint: sc.blueprint ?? null };
 }
 function getSoulCtx(sessionId: string, messages?: Message[]): SoulCtx | null {
-  try {
-    const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
-    if (all[sessionId]) return all[sessionId];
-  } catch { /* fall back to the transcript */ }
+  // A saved person who was not confirmed yet when the reading began is
+  // named by their confirmed id once the server has them.
+  const local = resolveSoulCtx(readSoulCtx(sessionId));
+  if (local) return local;
   // Not opened on this device (synced from another one, or after a
   // reinstall): the transcript's opening message names the partner.
   const fromTranscript = soulFromTranscript(messages);
   return fromTranscript ? { ...fromTranscript, blueprint: null } : null;
 }
 function setSoulCtx(sessionId: string, ctx: SoulCtx | null) {
-  try {
-    const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
-    if (ctx) all[sessionId] = ctx; else delete all[sessionId];
-    localStorage.setItem(SOUL_CTX_KEY, JSON.stringify(all));
-  } catch { /* best-effort */ }
+  writeSoulCtx(sessionId, ctx);
 }
 
 // ─── Text renderer ──────────────────────────────────────────────────────────
@@ -310,6 +301,13 @@ function ChatPageInner() {
   // Keep refs in sync so beforeunload and cleanup can read current values
   // without stale closures
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // The composer's unsent text counts as a draft for the update reload
+  // (components/VersionCheck), however it got there: typed, or filled in by
+  // voice transcription through state, which fires no input event. Sending
+  // clears it, and so does the member removing it.
+  const composerValueRef = useRef("");
+  useEffect(() => { composerValueRef.current = input; }, [input]);
+  useEffect(() => registerDraftSource(() => composerValueRef.current.trim() !== ""), []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   // Active session id, read when a /chat reply lands so a reply to one
   // conversation never appends into another.
@@ -725,6 +723,8 @@ function ChatPageInner() {
               soulBlueprint?: Record<string, unknown> | null;
               soulConnectionId?: string | null;
               savedPersonId?: string | null;
+              // A saved person the server had not confirmed yet.
+              localPersonId?: string | null;
             };
             sessionStorage.removeItem("solray_compat_context");
 
@@ -773,11 +773,15 @@ function ChatPageInner() {
               messages: [greeting, userMsg],
             };
             // The partner's chart belongs to this conversation only.
+            // An unconfirmed saved person's local id is kept too: once the
+            // server confirms them, the upload writes their id into this
+            // transcript (lib/chat-soul withSoulBackfill).
             setSoulCtx(sid, {
               name: ctx.soulName ?? null,
               blueprint: ctx.soulBlueprint ?? null,
               connectionId: ctx.soulConnectionId ?? null,
               savedPersonId: ctx.savedPersonId ?? null,
+              localPersonId: ctx.localPersonId ?? null,
             });
             persistSession(newSession);
             setMessages([greeting, userMsg]);

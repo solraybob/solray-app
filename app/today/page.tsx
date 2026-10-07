@@ -1688,8 +1688,15 @@ export default function TodayPage() {
 
         if (cancelled) return;
 
-        if (!chartStampCurrent(stamp) && !retried) {
-          return fetchAndUpdate(isBackground, true);
+        // Fetched for a chart that changed meanwhile: asked for once more,
+        // and if it is still not for the current chart, a retryable
+        // failure, never a reading of the old chart.
+        if (!chartStampCurrent(stamp)) {
+          if (!retried) return fetchAndUpdate(isBackground, true);
+          setForecast(null);
+          setError("today.error_no_sky");
+          setLoading(false);
+          return;
         }
 
         const parsed = parseForecastData(forecastData);
@@ -1870,6 +1877,11 @@ export default function TodayPage() {
         try {
           const stamp = chartWorkStamp();
           const data = await apiFetch("/forecast/today", {}, token);
+          // The chart changed while refreshing: load again for the new one.
+          if (!chartStampCurrent(stamp)) {
+            setReloadNonce((n) => n + 1);
+            return;
+          }
           const parsed = parseForecastData(data);
           if (parsed && parsed._pending !== true) writeChartCache(stamp, cacheKey, parsed);
           setForecast(parsed);

@@ -6,7 +6,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import { apiFetch, ApiError, trackRequest } from "@/lib/api";
+import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
+import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
+import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
 import { captureAccount, getAuthGeneration, isStaleAccountError } from "@/lib/account-session";
 import {
   absenceConfirmsDelete,
@@ -28,6 +30,7 @@ import {
   serverIdOf,
   unmarkDeletedHere,
   wasDeletedHere,
+  hasQueuedWrites,
 } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -97,6 +100,10 @@ interface SavedPerson {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   blueprint?: any;           // full blueprint dict (optional for back-compat with older saved entries)
   created_at: number;
+  // A birth time on a night the clocks went back happened twice: which one
+  // the member chose. Also kept in the chart (blueprint.meta), which is how
+  // it travels with the person to the server and other devices.
+  birth_time_fold?: "first" | "second";
   // Local bookkeeping, never sent: true once the server has confirmed it
   // holds this person. A confirmed person later missing from the server was
   // deleted on another device and must not be uploaded again.
@@ -147,6 +154,12 @@ function writeTombstones(ids: Set<string>) {
 }
 function addTombstone(id: string) { const t = loadTombstones(); t.add(id); writeTombstones(t); }
 function dropTombstone(id: string) { const t = loadTombstones(); if (t.delete(id)) writeTombstones(t); }
+
+/** The chosen clock-change occurrence: the person's own field, or their chart's. */
+function savedFold(p: SavedPerson): "first" | "second" | undefined {
+  const f = p.birth_time_fold ?? p.blueprint?.meta?.birth_time_fold;
+  return f === "first" || f === "second" ? f : undefined;
+}
 
 /** The person as the server stores it, without local bookkeeping. */
 function forServer(p: SavedPerson): Omit<SavedPerson, "_synced"> {
@@ -407,6 +420,14 @@ export default function SoulsPage() {
   // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
   const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
+  // Saved people as the server confirmed them, by the id they were added
+  // under. Set as soon as a save lands (before React renders it), so a
+  // reading started right after still names the confirmed person.
+  const confirmedPeopleRef = useRef(new Map<string, SavedPerson>());
+  const confirmedPartner = (p: BondPartner): BondPartner =>
+    p.kind === "saved" && !p.person._synced && confirmedPeopleRef.current.has(p.person.id)
+      ? { kind: "saved", person: confirmedPeopleRef.current.get(p.person.id) as SavedPerson }
+      : p;
   const [bondLens, setBondLens] = useState<BondLens>("family");
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
@@ -471,13 +492,18 @@ export default function SoulsPage() {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
+    // Every write below belongs to this account; one whose turn comes after
+    // a sign-out is never sent (lib/saved-people-sync forPerson).
+    const acct = captureAccount();
+    const gen = acct.generation;
     (async () => {
       try {
         // 1. Finish deletions made offline or that failed earlier.
         for (const id of Array.from(loadTombstones())) {
           noteDeleteAttempt(id);
           try {
-            const r = await forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token));
+            const r = await forPerson(id, gen, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token, { generation: gen }));
+            acct.check();
             if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
           } catch (e) {
             if (isStaleAccountError(e)) throw e;
@@ -509,11 +535,12 @@ export default function SoulsPage() {
         const idRemap: Record<string, string> = {};
         for (const p of toMigrate) {
           try {
-            const r = await forPerson(p.id, async () => {
+            const r = await forPerson(p.id, gen, async () => {
               // Removed while waiting its turn: do not create it.
               if (wasDeletedHere(p.id) || loadTombstones().has(p.id)) return null;
-              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(p)) }, token);
+              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(p)) }, token, { generation: gen });
             });
+            acct.check();
             if (r?.person) {
               const sp = { ...(r.person as SavedPerson), _synced: true };
               if (sp.id && sp.id !== p.id) {
@@ -530,7 +557,7 @@ export default function SoulsPage() {
             /* offline / error: the local copy stays and is retried next load */
           }
         }
-        if (cancelled) return;
+        if (cancelled || !acct.live) return;
         const replacedIds = new Set(Object.keys(idRemap));
         const confirmed = [...migrated, ...server].filter((p) => !gone().has(p.id));
         const confirmedIds = new Set(confirmed.map((p) => p.id));
@@ -541,17 +568,20 @@ export default function SoulsPage() {
           writeSavedPeople(final);
           return final;
         });
-        // If migration changed any ids, reconcile selected bond partners too.
-        if (Object.keys(idRemap).length) {
-          const byId = new Map(confirmed.map((p) => [p.id, p] as const));
-          setBondPartners(prev => prev.map(bp => {
-            if (bp.kind === "saved" && idRemap[bp.person.id]) {
-              const np = byId.get(idRemap[bp.person.id]);
-              return np ? { kind: "saved", person: np } : bp;
-            }
-            return bp;
-          }));
+        // Selected bond partners take the confirmed person (the server's id
+        // when it minted one, and _synced either way), so a reading names
+        // them by id and the conversation keeps its partner on every device.
+        const byId = new Map(confirmed.map((p) => [p.id, p] as const));
+        for (const [from, to] of Object.entries(idRemap)) {
+          const np = byId.get(to);
+          if (np) confirmedPeopleRef.current.set(from, np);
         }
+        for (const p of confirmed) confirmedPeopleRef.current.set(p.id, p);
+        setBondPartners(prev => prev.map(bp => {
+          if (bp.kind !== "saved") return bp;
+          const np = byId.get(idRemap[bp.person.id] || bp.person.id);
+          return np && np !== bp.person ? { kind: "saved", person: np } : bp;
+        }));
         // Partners removed on another device leave the bond too.
         setBondPartners(prev => prev.filter(bp => bp.kind !== "saved" || confirmedIds.has(bp.person.id) || !bp.person._synced));
       } catch {
@@ -725,22 +755,28 @@ export default function SoulsPage() {
     // Persist to the server so the person survives reinstalls and syncs across
     // devices. Optimistic above; reconcile the id if the server minted its own.
     if (token) {
+      // Queued under this account: never sent, and its answer never
+      // applied, once the account has changed.
+      const acct = captureAccount();
+      const gen = acct.generation;
       (async () => {
         try {
-          const r = await forPerson(person.id, async () => {
+          const r = await forPerson(person.id, gen, async () => {
             // Removed before the save got its turn: do not create it.
             if (wasDeletedHere(person.id)) return null;
             return apiFetch("/saved-people", {
               method: "POST",
               body: JSON.stringify(forServer(person)),
-            }, token);
+            }, token, { generation: gen });
           });
+          if (!acct.live) return;
           const raw = r?.person as SavedPerson | undefined;
           const saved = raw ? { ...raw, _synced: true } : undefined;
           if (saved && saved.id && saved.id !== person.id) {
             rememberServerId(person.id, saved.id);
             moveSharingPermission(person.id, saved.id);
           }
+          if (saved && saved.id) confirmedPeopleRef.current.set(person.id, saved);
           // Removed while the save ran: the delete queued behind it takes it
           // off the server again; nothing is put back on screen.
           if (wasDeletedHere(person.id)) return;
@@ -753,7 +789,10 @@ export default function SoulsPage() {
               return updated;
             });
           }
-          if (saved && saved.id && saved.id !== person.id) {
+          // Every successful save, the id changed or not: the selected
+          // partner becomes the confirmed person, so a reading names them by
+          // id (savedPersonId) and the conversation records who it is with.
+          if (saved && saved.id) {
             setBondPartners(prev => prev.map(bp =>
               bp.kind === "saved" && bp.person.id === person.id
                 ? { kind: "saved", person: saved }
@@ -782,9 +821,13 @@ export default function SoulsPage() {
       markDeletedHere(id);
       noteDeleteAttempt(id);
       // After any save still on its way for this person, and against the id
-      // the server ended up giving them.
-      forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token))
+      // the server ended up giving them. Bound to this account: never sent
+      // (and its answer never applied) after a sign-out.
+      const acct = captureAccount();
+      const gen = acct.generation;
+      forPerson(id, gen, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token, { generation: gen }))
         .then((r: unknown) => {
+          if (!acct.live) return;
           // {ok:true}: gone. {ok:false}: the server did not remove anything
           // (it never had the person, or the delete failed there). The
           // tombstone stays, the delete is retried on the next sync, and it
@@ -792,7 +835,7 @@ export default function SoulsPage() {
           if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
         })
         .catch((e: unknown) => {
-          if (isStaleAccountError(e)) return;
+          if (isStaleAccountError(e) || !acct.live) return;
           // 404: the server never had it (local-only person), so it is gone.
           if (e instanceof ApiError && e.status === 404) { dropTombstone(id); forgetSharingPermission(id); return; }
           // No answer (offline): the tombstone stays and the next sync
@@ -838,6 +881,21 @@ export default function SoulsPage() {
     setReadingBond(true);
     setErrorMessage(null);
 
+    // A person added a moment ago may still be on the way to the server:
+    // wait for that save, so the reading names them by their confirmed id
+    // (and the conversation keeps its partner on the member's other
+    // devices). Offline, the reading goes ahead with their chart and the
+    // id is written into the conversation once the save lands.
+    const pendingSaves = bondPartners.filter((p) => p.kind === "saved" && !p.person._synced && hasQueuedWrites(p.person.id));
+    if (pendingSaves.length > 0) {
+      await Promise.all(pendingSaves.map((p) =>
+        p.kind === "saved" ? forPerson(p.person.id, acct.generation, async () => null).catch(() => null) : null));
+      if (!stillHere()) return abandon();
+    }
+    const partners = bondPartners.map(confirmedPartner);
+    // A saved person still unconfirmed: their local id travels along.
+    const localIdOf = (p: BondPartner) => (p.kind === "saved" && !p.person._synced ? p.person.id : null);
+
     // The opening question is shown in the chat as the member's own words,
     // so it is written in their language.
     const lensLabel = t(
@@ -852,13 +910,13 @@ export default function SoulsPage() {
     ].filter(Boolean).join(", ");
 
     // Family with multiple people: build a group context
-    if (bondLens === "family" && bondPartners.length > 1) {
+    if (bondLens === "family" && partners.length > 1) {
       const lines: string[] = [];
       let primaryBlueprint: unknown = null;
       // The family reading's focal person is the first partner.
-      const primaryRef = partnerSoulRef(bondPartners[0]);
+      const primaryRef = partnerSoulRef(partners[0]);
 
-      for (const p of bondPartners) {
+      for (const p of partners) {
         const chart = partnerChart(p);
         const name  = partnerName(p);
         const summary = summarize(chart);
@@ -869,12 +927,12 @@ export default function SoulsPage() {
         // blueprint for the chat (it's the focal lens for the whole
         // family reading); the rest of the family's charts stay in
         // the summary-line text.
-        if (!primaryBlueprint && p === bondPartners[0] && p.kind === "saved" && p.person.blueprint) {
+        if (!primaryBlueprint && p === partners[0] && p.kind === "saved" && p.person.blueprint) {
           primaryBlueprint = p.person.blueprint;
         }
       }
 
-      const names = bondPartners.map(partnerName);
+      const names = partners.map(partnerName);
       const nameList = names.length === 2
         ? names.join(t("souls.bond_and"))
         : `${names.slice(0, -1).join(", ")}${t("souls.bond_and_last")}${names[names.length - 1]}`;
@@ -886,6 +944,7 @@ export default function SoulsPage() {
         introMessage,
         soulBlueprint: primaryBlueprint,
         ...primaryRef,
+        localPersonId: localIdOf(partners[0]),
         lens: bondLens,
       }));
 
@@ -896,7 +955,7 @@ export default function SoulsPage() {
     }
 
     // Single partner reading (all non-family lenses, or family with one person)
-    const bondPartner = bondPartners[0];
+    const bondPartner = partners[0];
     const chart  = partnerChart(bondPartner);
     const pName  = partnerName(bondPartner);
 
@@ -933,6 +992,7 @@ export default function SoulsPage() {
                 birth_date: saved.birth_date,
                 birth_time: saved.birth_time,
                 birth_city: saved.birth_city,
+                birth_time_fold: savedFold(saved),
               }),
             });
             return { ok: res.ok, data: res.ok ? await res.json() : null };
@@ -971,6 +1031,7 @@ export default function SoulsPage() {
       introMessage,
       soulBlueprint,
       ...partnerSoulRef(bondPartner),
+      localPersonId: localIdOf(bondPartner),
       lens: bondLens,
     }));
 
@@ -1815,6 +1876,10 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   // chart, and to its AI providers when the member asks about them), so the
   // member confirms they have that person's permission first.
   const [hasPermission, setHasPermission] = useState(false);
+  // The "which one was it" question for a birth time that happened twice.
+  const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  const askFold = (options: FoldChoice[]) =>
+    new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
   // A chart that lands after the sheet closed, or after the account
   // changed, is dropped: it must never be added to anyone's list.
   const sheetMountedRef = useRef(true);
@@ -1856,25 +1921,41 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     const acct = captureAccount();
     const stillHere = () => acct.live && sheetMountedRef.current;
     try {
-      const { ok, data } = await trackRequest(async () => {
-        const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            sex: sex || null,
-            birth_date: birthDate,
-            birth_time: timeUnknown ? "12:00" : birthTime,
-            birth_city: birthCity,
-          }),
+      const body = {
+        name,
+        sex: sex || null,
+        birth_date: birthDate,
+        birth_time: timeUnknown ? "12:00" : birthTime,
+        birth_city: birthCity,
+      };
+      // A birth time in the hour the clocks went back happened twice: the
+      // member says which one and the chart is drawn again with it. One that
+      // never happened (clocks went forward) comes back to be corrected.
+      const calculate = async (fold: BirthFold | null) => {
+        const { ok, status, data } = await trackRequest(async () => {
+          const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fold ? { ...body, birth_time_fold: fold } : body),
+          });
+          if (!stillHere()) return { ok: false, status: 0, data: null };
+          return { ok: res.ok, status: res.status, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
         });
-        if (!stillHere()) return { ok: false, data: null };
-        return { ok: res.ok, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
-      });
+        if (!stillHere()) return null;
+        if (!ok) {
+          throw new ApiError(errorText(data?.detail, t("souls.error_read_chart")), status, detailCode(data?.detail), data?.detail);
+        }
+        return data;
+      };
+      const outcome = await sendBirthRequest(calculate, askFold);
       if (!stillHere()) return;
-      if (!ok) {
-        throw new Error(errorText(data?.detail, t("souls.error_read_chart")));
+      if (outcome.status === "cancelled") return;
+      if (outcome.status === "nonexistent") {
+        setError(t("birth_fold.nonexistent"));
+        return;
       }
+      const data = outcome.value;
+      if (!data) return;
       const person: SavedPerson = {
         id: typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -1895,6 +1976,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         // We already had the data, we were just throwing it away.
         blueprint: data?.blueprint ?? undefined,
         created_at: Date.now(),
+        birth_time_fold: outcome.fold ?? undefined,
       };
       onAdded(person);
     } catch (e: unknown) {
@@ -1907,6 +1989,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
@@ -2068,6 +2151,15 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         </div>
       </div>
     </div>
+    {/* Above the add-person sheet. */}
+    {foldAsk && (
+      <BirthTimeFoldSheet
+        options={foldAsk.options}
+        onChoose={(f) => { foldAsk.resolve(f); setFoldAsk(null); }}
+        onCancel={() => { foldAsk.resolve(null); setFoldAsk(null); }}
+      />
+    )}
+    </>
   );
 }
 

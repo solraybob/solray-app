@@ -21,6 +21,7 @@
     "../lib/local-cache.ts",
     "../lib/chart-revision.ts",
     "../lib/chat-merge.ts",
+    "../lib/chat-soul.ts",
     "../lib/age.ts",
     "../lib/deck.ts",
     "../lib/saved-people-sync.ts",

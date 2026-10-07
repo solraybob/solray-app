@@ -26,6 +26,7 @@ import { useTheme } from "@/lib/theme-context";
 import { apiFetch, ApiError, isUnderMinimumAgeError } from "@/lib/api";
 import { AI_CONSENT_CHANGED_EVENT, ageRestrictedFromMe, consentFromMe, openAiConsentSheet } from "@/lib/ai-consent";
 import { clearChartDerivedCaches, syncBirthRevision } from "@/lib/chart-revision";
+import { captureAccount, isStaleAccountError, type AccountGuard } from "@/lib/account-session";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 import { useT } from "@/lib/i18n";
@@ -349,8 +350,14 @@ export default function SettingsPage() {
   // After a successful PATCH /users/birth: drop every chart-derived cache,
   // refresh the local blueprint cache, and take the new clock-change check
   // and saved birth details from the server.
+  //
+  // `acct` is the account the save was made under. The member may sign out
+  // (and another sign in) while the PATCH or /users/me is on its way; then
+  // this throws StaleAccountError before touching anything the next account
+  // reads, so A's chart can never land in B's blueprint cache.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const storeBirthResult = async (res: any) => {
+  const storeBirthResult = async (res: any, acct: AccountGuard) => {
+    acct.check();
     // Every chart computed from the old birth details is now wrong:
     // astrocartography, cycles, forecasts, the week, compatibility.
     clearChartDerivedCaches();
@@ -370,7 +377,13 @@ export default function SettingsPage() {
     // point of the call and is authoritative regardless.
     try {
       if (res?.blueprint) {
-        const me = await apiFetch("/users/me", {}, token).catch(() => null);
+        // Offline is fine (the previous cache keeps the identity fields);
+        // a changed account is not.
+        const me = await apiFetch("/users/me", {}, token, { generation: acct.generation }).catch((e: unknown) => {
+          if (isStaleAccountError(e)) throw e;
+          return null;
+        });
+        acct.check();
         if (me) {
           syncBirthRevision(me);
           setBirthCheck(storedBirthTimeCheck(me));
@@ -392,9 +405,12 @@ export default function SettingsPage() {
         bp._username     = me?.profile?.username       ?? prev?._username       ?? "";
         bp._profile_photo= me?.profile?.profile_photo  ?? prev?._profile_photo  ?? null;
         bp._cachedAt = Date.now();
+        acct.check();
         localStorage.setItem("solray_blueprint", JSON.stringify(bp));
       }
-    } catch {}
+    } catch (e) {
+      if (isStaleAccountError(e)) throw e;
+    }
   };
 
   const saveBirth = async () => {
@@ -417,6 +433,8 @@ export default function SettingsPage() {
     }
     setBirthStatus("saving");
     setBirthError(null);
+    // The account this save belongs to, captured before the PATCH.
+    const acct = captureAccount();
     try {
       const body: Record<string, unknown> = {
         birth_date: birthDate,
@@ -432,9 +450,10 @@ export default function SettingsPage() {
         (fold) => apiFetch("/users/birth", {
           method: "PATCH",
           body: JSON.stringify(fold ? { ...body, birth_time_fold: fold } : body),
-        }, token),
+        }, token, { generation: acct.generation }),
         askFold,
       );
+      acct.check();
       if (outcome.status === "cancelled") {
         setBirthStatus("idle");
         return;
@@ -445,10 +464,12 @@ export default function SettingsPage() {
         return;
       }
       const res = outcome.value;
-      await storeBirthResult(res);
+      await storeBirthResult(res, acct);
       setBirthStatus("saved");
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
+      // Signed out meanwhile: this save belongs to nobody on this device.
+      if (isStaleAccountError(e)) return;
       // Under 16 by the new date: the server refuses and the chart stays.
       const msg = isUnderMinimumAgeError(e)
         ? t("settings.birth_under_age")
@@ -464,8 +485,9 @@ export default function SettingsPage() {
   const confirmBirthFold = async () => {
     const saved = savedBirthRef.current;
     if (!token || !saved || birthCheck.status !== "ambiguous" || birthStatus === "saving") return;
+    const acct = captureAccount();
     const fold = await askFold(birthCheck.options);
-    if (!fold) return;
+    if (!fold || !acct.live) return;
     setBirthStatus("saving");
     setBirthError(null);
     try {
@@ -477,13 +499,14 @@ export default function SettingsPage() {
       };
       if (saved.lat != null) body.birth_lat = saved.lat;
       if (saved.lon != null) body.birth_lon = saved.lon;
-      const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
-      await storeBirthResult(res);
+      const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token, { generation: acct.generation });
+      await storeBirthResult(res, acct);
       setBirthCheck((c) => ({ ...c, fold, needsConfirmation: false }));
       setBirthConfirmed(true);
       setBirthStatus("saved");
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
+      if (isStaleAccountError(e)) return;
       setBirthError(e instanceof Error ? e.message : t("settings.could_not_save"));
       setBirthStatus("error");
     }

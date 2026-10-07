@@ -41,11 +41,33 @@ function textOf(f: FieldLike): string {
   return typeof f.value === "string" ? f.value : "";
 }
 
-/** True while some field the member typed into is on screen and not empty. */
+// Screens that know their own unsent text, whatever put it there: the chat
+// composer is filled by voice transcription through React state, which fires
+// no input event, so the field-based tracking above never sees it.
+const sources = new Set<() => boolean>();
+
+/**
+ * Register a check for unsent text a screen holds (true while there is
+ * some). Returns the cleanup, to call when the screen goes away.
+ */
+export function registerDraftSource(hasDraft: () => boolean): () => void {
+  sources.add(hasDraft);
+  return () => { sources.delete(hasDraft); };
+}
+
+/** True while some field the member typed into is on screen and not empty,
+ *  or a registered screen holds unsent text. */
 export function hasTypedDraft(): boolean {
   for (const f of Array.from(typed)) {
     if (f.isConnected === false) { typed.delete(f); continue; }
     if (textOf(f).trim() !== "") return true;
+  }
+  for (const has of Array.from(sources)) {
+    try {
+      if (has()) return true;
+    } catch {
+      return true; // unknown: never risk losing what the member wrote
+    }
   }
   return false;
 }
@@ -60,4 +82,5 @@ export function installDraftTracking(doc: { addEventListener: Document["addEvent
 /** For tests. */
 export function resetDraftTracking(): void {
   typed.clear();
+  sources.clear();
 }

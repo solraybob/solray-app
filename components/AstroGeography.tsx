@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { chartStampCurrent, chartWorkStamp, currentBirthRevision, writeChartCache } from "@/lib/chart-revision";
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { tx } from "@/lib/astro-i18n";
 import { GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 
@@ -229,6 +230,9 @@ export default function AstroGeography({ token }: { token: string | null }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [powerSpots, setPowerSpots] = useState<PowerSpot[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
+  // Changes when the birth chart changes; the retry button bumps the other.
+  const chartRev = useChartRevision();
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     if (!token) return;
@@ -241,6 +245,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
       if (parsed && (parsed._birth_rev ?? null) === currentBirthRevision()) {
         setData(parsed);
         setPowerSpots(calculatePowerSpots(parsed.lines));
+        setError("");
         setLoading(false);
         return;
       }
@@ -248,15 +253,24 @@ export default function AstroGeography({ token }: { token: string | null }) {
 
     // The birth details may change while the map is on its way (an edit,
     // or Profile noticing one made on another device). A map requested
-    // before that change is not shown as current or cached: it is asked
-    // for again under the new chart.
+    // before that change is never shown or cached: it is asked for again
+    // under the new chart, and if the chart keeps changing the member gets
+    // a retryable failure, not the old map.
+    setData(null);
+    setError("");
+    setLoading(true);
     let cancelled = false;
     const load = (attempt: number) => {
       const stamp = chartWorkStamp();
       apiFetch("/astrocartography", {}, token)
         .then((d: AstroData) => {
           if (cancelled) return;
-          if (!chartStampCurrent(stamp) && attempt < 2) { load(attempt + 1); return; }
+          if (!chartStampCurrent(stamp)) {
+            if (attempt < 2) { load(attempt + 1); return; }
+            setError("load_failed");
+            setLoading(false);
+            return;
+          }
           setData(d);
           setPowerSpots(calculatePowerSpots(d.lines));
           writeChartCache(stamp, cacheKey, { ...d, _birth_rev: stamp.rev });
@@ -270,7 +284,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
     };
     load(0);
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, chartRev, retryNonce]);
 
   const togglePlanet = (planet: string) => {
     setActivePlanets(prev => {
@@ -309,6 +323,17 @@ export default function AstroGeography({ token }: { token: string | null }) {
     return (
       <div className="text-text-secondary text-sm font-body text-center py-6">
         {error ? t("profile.astro_load_failed") : t("profile.astro_no_data")}
+        {error && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setRetryNonce((n) => n + 1)}
+              className="font-body text-[14px] tracking-[0.12em] uppercase text-amber-sun underline underline-offset-4"
+            >
+              {t("common.retry")}
+            </button>
+          </div>
+        )}
       </div>
     );
   }

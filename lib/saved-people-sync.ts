@@ -5,6 +5,8 @@
 // dropped, never uploaded again. Tombstones are local deletions the server
 // has not confirmed yet; they win over the server list.
 
+import { isCurrentGeneration, StaleAccountError } from "./account-session";
+
 export interface SyncablePerson {
   id: string;
   _synced?: boolean;
@@ -48,14 +50,26 @@ export function mergeSavedPeople<T extends SyncablePerson>(
 // one person runs after the previous one has finished, and a delete always
 // targets the id the server ended up using.
 
+//
+// Each write belongs to the account it was queued under (`generation`, from
+// getAuthGeneration() at the moment it is queued, never when it starts):
+// one whose turn comes after that account signed out is rejected with
+// StaleAccountError without being sent, so a queued request can never go
+// out with the old account's token under the next account (whose 401 would
+// sign the next member out). Pass the same generation to apiFetch.
+
 const chains = new Map<string, Promise<unknown>>();
 const serverIdFor = new Map<string, string>();
 const deletedHere = new Set<string>();
 
-/** Runs `work` after every write already queued for this person. */
-export function forPerson<T>(id: string, work: () => Promise<T>): Promise<T> {
+/** Runs `work` after every write already queued for this person, only while
+ *  the account it was queued under is still signed in. */
+export function forPerson<T>(id: string, generation: number, work: () => Promise<T>): Promise<T> {
   const prev = chains.get(id) || Promise.resolve();
-  const next = prev.catch(() => undefined).then(work);
+  const next = prev.catch(() => undefined).then(() => {
+    if (!isCurrentGeneration(generation)) throw new StaleAccountError();
+    return work();
+  });
   chains.set(id, next);
   void next.finally(() => { if (chains.get(id) === next) chains.delete(id); }).catch(() => undefined);
   return next;

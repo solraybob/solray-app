@@ -4,11 +4,25 @@
 // compatibility readings are all computed from the member's birth moment and
 // cached in localStorage. When the birth details change (an edit here, or on
 // another device) every one of them is stale. The revision is a fingerprint
-// of the birth fields; whenever the app reads the profile it compares the
+// of the birth fields (including the chosen clock-change occurrence); whenever the app reads the profile it compares the
 // fingerprint with the one the caches were built under and drops them all on
 // a mismatch.
 
 const REV_KEY = "solray_birth_rev";
+/** localStorage key of the stored fingerprint (another tab changing it fires `storage`). */
+export const BIRTH_REV_STORAGE_KEY = REV_KEY;
+
+/**
+ * Window event fired whenever the chart-derived caches are dropped (a birth
+ * change here, or one noticed from another device). Screens showing chart
+ * results refetch on it (lib/use-chart-revision), so nothing computed from
+ * the old chart stays on screen.
+ */
+export const CHART_CHANGED_EVENT = "solray:chart-changed";
+
+function announceChartChanged(): void {
+  try { window.dispatchEvent(new CustomEvent(CHART_CHANGED_EVENT)); } catch { /* no window */ }
+}
 
 const DERIVED_EXACT = ["solray_blueprint", "solray_astrocarto"];
 const DERIVED_PREFIX = ["solray_cycles_", "solray_forecast_", "solray_week_", "solray_compat_"];
@@ -19,12 +33,18 @@ type BirthFields = {
   birth_city?: unknown;
   birth_lat?: unknown;
   birth_lon?: unknown;
+  birth_time_fold?: unknown;
 };
 
 export function birthRevision(p: BirthFields | null | undefined): string | null {
   if (!p || !p.birth_date) return null;
   const n = (v: unknown) => (typeof v === "number" && isFinite(v) ? v.toFixed(4) : "");
-  return [String(p.birth_date), String(p.birth_time ?? ""), String(p.birth_city ?? ""), n(p.birth_lat), n(p.birth_lon)].join("|");
+  const parts = [String(p.birth_date), String(p.birth_time ?? ""), String(p.birth_city ?? ""), n(p.birth_lat), n(p.birth_lon)];
+  // Which occurrence of a repeated clock-change birth time the member chose:
+  // the same displayed time gives a different chart. Only added when set, so
+  // members without one keep their fingerprint.
+  if (p.birth_time_fold === "first" || p.birth_time_fold === "second") parts.push(`fold:${p.birth_time_fold}`);
+  return parts.join("|");
 }
 
 export function currentBirthRevision(): string | null {
@@ -53,6 +73,7 @@ export function clearChartDerivedCaches(): void {
       }
     } catch { /* storage unavailable: nothing cached */ }
   }
+  announceChartChanged();
 }
 
 /**
@@ -101,5 +122,8 @@ export function syncBirthRevision(meOrProfile: unknown): boolean {
   // so they are rebuilt once.
   clearChartDerivedCaches();
   try { localStorage.setItem(REV_KEY, rev); } catch { /* ignore */ }
+  // Again now the new fingerprint is stored, so a screen refetching on the
+  // event stamps its request with it.
+  announceChartChanged();
   return true;
 }

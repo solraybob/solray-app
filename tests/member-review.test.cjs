@@ -52,10 +52,10 @@ test("F5: an answer requested before a birth change is never cached as current",
 test("F5: chart-derived screens stamp before requesting and cache through the stamp", () => {
   const astro = read("components/AstroGeography.tsx");
   assert.match(astro, /const stamp = chartWorkStamp\(\);\n\s+apiFetch\("\/astrocartography"/);
-  assert.match(astro, /if \(!chartStampCurrent\(stamp\) && attempt < 2\) \{ load\(attempt \+ 1\); return; \}/);
+  assert.match(astro, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(attempt < 2\) \{ load\(attempt \+ 1\); return; \}/);
   assert.ok(!/localStorage\.setItem\(cacheKey/.test(astro));
   const today = read("app/today/page.tsx");
-  assert.match(today, /if \(!chartStampCurrent\(stamp\) && !retried\) \{\n\s+return fetchAndUpdate\(isBackground, true\);/);
+  assert.match(today, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(!retried\) return fetchAndUpdate\(isBackground, true\);/);
   assert.ok(!/localStorage\.setItem\(cacheKey/.test(today));
   for (const f of ["components/CurrentCycles.tsx", "components/WeekSummaryCard.tsx", "app/widget/page.tsx", "app/profile/[id]/page.tsx"]) {
     assert.match(read(f), /writeChartCache\(stamp, /, f);
@@ -67,9 +67,9 @@ test("F3: a delete waits for the person's pending save and targets the server's 
   sp.resetPersonWrites();
   const log = [];
   let finishPost;
-  const post = sp.forPerson("local-1", () => new Promise((r) => { finishPost = () => { log.push("POST"); sp.rememberServerId("local-1", "srv-1"); r({ person: { id: "srv-1" } }); }; }));
+  const post = sp.forPerson("local-1", load("lib/account-session.js").getAuthGeneration(), () => new Promise((r) => { finishPost = () => { log.push("POST"); sp.rememberServerId("local-1", "srv-1"); r({ person: { id: "srv-1" } }); }; }));
   sp.markDeletedHere("local-1");
-  const del = sp.forPerson("local-1", async () => { log.push(`DELETE ${sp.serverIdOf("local-1")}`); return { ok: true }; });
+  const del = sp.forPerson("local-1", load("lib/account-session.js").getAuthGeneration(), async () => { log.push(`DELETE ${sp.serverIdOf("local-1")}`); return { ok: true }; });
   await new Promise((r) => setImmediate(r));
   assert.deepEqual(log, [], "delete has not overtaken the save");
   finishPost();
