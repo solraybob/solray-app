@@ -45,4 +45,16 @@ export function clearUserScopedCaches(): void {
   } catch {
     /* ignore storage errors (private mode / unavailable) */
   }
+  // sessionStorage carries one-shot handoffs between screens (a question
+  // seeded into the Oracle, a Dynamics context, a group draft). They are
+  // per-account too: a handoff written by one account must never be
+  // consumed by the next one on the same device.
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith("solray_")) sessionStorage.removeItem(k);
+    }
+  } catch {
+    /* ignore storage errors */
+  }
 }

@@ -5,12 +5,16 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { humanizeCycleTitle } from "@/components/CurrentCycles";
+import { humanizeCycleTitle, fmtDateLong } from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
+import { isStaleAccountError } from "@/lib/account-session";
+import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
+import { syncBirthRevision } from "@/lib/chart-revision";
+import { activeCardIndex } from "@/lib/deck";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import { ShareCardOffscreen } from "@/components/ShareCard";
-import { useT } from "@/lib/i18n";
+import { useT, fill, ordinal } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
@@ -466,7 +470,7 @@ function DeckCard({
       className="sol-deck-card"
       style={{
         scrollSnapAlign: "center",
-        flex: "0 0 calc(100% - 40px)",
+        flex: "0 0 100%",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -602,11 +606,15 @@ function SkyNowFold({ planets }: { planets: Planet[] }) {
 function Deck({ children, count }: { children: React.ReactNode; count: number }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [here, setHere] = useState(0);
+  // The lit dot is the card whose centre is nearest the track's centre,
+  // measured from the cards themselves rather than from an assumed stride,
+  // so it is right at every width (and the last dot lights at the end even
+  // when the last card cannot scroll fully to the centre).
   const onScroll = () => {
     const el = ref.current;
     if (!el) return;
-    const card = el.clientWidth - 40 + 16;            // flex-basis + gap
-    setHere(Math.max(0, Math.min(count - 1, Math.round(el.scrollLeft / card))));
+    const cards = (Array.from(el.children) as HTMLElement[]).map((c) => ({ left: c.offsetLeft, width: c.offsetWidth }));
+    setHere(activeCardIndex(el.scrollLeft, el.clientWidth, el.scrollWidth, cards, count));
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0 }}>
@@ -623,8 +631,14 @@ function Deck({ children, count }: { children: React.ReactNode; count: number })
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none",
+          // The track runs edge to edge (it bleeds 20px past the page
+          // gutter on each side) and pads 40px on each side, so a card at
+          // 100% of the content box sits exactly in the middle with the
+          // same 40px either side, and the next card peeks in by the gap.
+          position: "relative",
           margin: "0 -20px",
-          padding: "18px 20px 16px",
+          padding: "18px 40px 16px",
+          scrollPaddingInline: 40,
           alignItems: "stretch",
         }}
       >
@@ -853,7 +867,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
         <button
           onClick={onDismiss}
           aria-label={t("common.close")}
-          className="absolute"
+          className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1015,7 +1029,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
         <button
           onClick={onDismiss}
           aria-label={t("common.close")}
-          className="absolute"
+          className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1107,7 +1121,7 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
         }}
       >
         <button
-          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1220,7 +1234,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
         }}
       >
         <button
-          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1272,6 +1286,11 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
   );
 }
 
+function localDayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function TodayPage() {
   const [forecast, setForecast] = useState<ForecastView | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1296,6 +1315,14 @@ export default function TodayPage() {
   const dateLocale = lang === "en" ? "en-GB" : lang;
   const router = useRouter();
   const backgroundFetchDone = useRef(false);
+  // The member's local calendar day. Now is keyed by it: when the app comes
+  // back after midnight (resume, tab visible again, or a timer at midnight
+  // while open) the day moves on and the reading is fetched for the new day,
+  // instead of yesterday's card sitting there until a manual reload.
+  const [dayKey, setDayKey] = useState(localDayKey);
+  const lastFetchAt = useRef(0);
+  // Bumped after consent is given, to fetch the reading that was refused.
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   // Refs and state for the Energy Bars share card. The card itself
   // renders into a hidden off-screen container via
@@ -1407,7 +1434,7 @@ export default function TodayPage() {
       } catch (_) { /* the deck simply carries one card */ }
     })();
     return () => { off = true; };
-  }, [token]);
+  }, [token, dayKey]);
 
   const askOracle = (topic: string, question: string) => {
     try {
@@ -1423,7 +1450,7 @@ export default function TodayPage() {
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: insight.title,
-        question: `You left me this while I was away: "${insight.title}". ${insight.body} I want to sit with it. What do you see?`,
+        question: fill(t("prompts.insight_deeper"), { title: insight.title, body: insight.body }),
       }));
     } catch (_) {}
     router.push("/chat");
@@ -1436,8 +1463,8 @@ export default function TodayPage() {
     try { localStorage.setItem(`solray_echo_seen_${key}`, "1"); } catch (_) {}
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-        topic: "Under a familiar sky",
-        question: `${sentence} Back then I wrote: "${excerpt}". I'd like to sit with how far I've come since. What do you see?`,
+        topic: t("prompts.echo_topic"),
+        question: fill(t("prompts.echo_deeper"), { sentence, excerpt }),
       }));
     } catch (_) {}
     router.push("/chat");
@@ -1487,12 +1514,12 @@ export default function TodayPage() {
     const key = `${ev.date}_${ev.type}`;
     try { localStorage.setItem(`solray_lunar_seen_${key}`, "1"); } catch (_) {}
     const isFull = ev.type === "Full Moon";
+    const sign = lang === "en" ? ev.sign : tx(ev.sign, lang);
+    const house = ordinal(ev.house, lang);
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-        topic: `${ev.type} in ${ev.sign}`,
-        question: isFull
-          ? `Tonight's full moon in ${ev.sign} falls in my ${ev.house}th house. ${ev.note} What is reaching completion here, and what am I ready to release?`
-          : `Tonight's new moon in ${ev.sign} falls in my ${ev.house}th house. ${ev.note} What intention should I plant here?`,
+        topic: fill(t(isFull ? "prompts.lunar_topic_full" : "prompts.lunar_topic_new"), { sign }),
+        question: fill(t(isFull ? "prompts.lunar_full" : "prompts.lunar_new"), { sign, house, note: ev.note || "" }).replace(/\s+/g, " ").trim(),
       }));
     } catch (_) {}
     router.push("/chat");
@@ -1543,20 +1570,21 @@ export default function TodayPage() {
       const sr = data?.solar_return;
       if (sr) {
         const parts: string[] = [];
-        if (sr.ascendant_sign) parts.push(`a ${sr.ascendant_sign} ascendant`);
-        if (sr.sun_house) parts.push(`the Sun in the ${sr.sun_house}th house`);
-        if (sr.moon_sign && sr.moon_house) parts.push(`the Moon in ${sr.moon_sign} in the ${sr.moon_house}th house`);
+        const term = (v: string) => (lang === "en" ? v : tx(v, lang));
+        if (sr.ascendant_sign) parts.push(fill(t("prompts.sr_asc"), { sign: term(sr.ascendant_sign) }));
+        if (sr.sun_house) parts.push(fill(t("prompts.sr_sun"), { house: ordinal(sr.sun_house, lang) }));
+        if (sr.moon_sign && sr.moon_house) parts.push(fill(t("prompts.sr_moon"), { sign: term(sr.moon_sign), house: ordinal(sr.moon_house, lang) }));
         if (Array.isArray(sr.aspects) && sr.aspects.length) {
-          const a = sr.aspects.slice(0, 2).map((x: any) => `${x.a} ${x.aspect} ${x.b}`).join(", ");
-          if (a) parts.push(`and ${a}`);
+          const a = sr.aspects.slice(0, 2).map((x: any) => `${term(x.a)} ${term(x.aspect)} ${term(x.b)}`).join(", ");
+          if (a) parts.push(fill(t("prompts.sr_aspects"), { aspects: a }));
         }
-        if (parts.length) facts = ` My solar return chart this year carries ${parts.join(", ")}.`;
+        if (parts.length) facts = fill(t("prompts.sr_facts"), { parts: parts.join(", ") });
       }
     } catch (_) { /* non-fatal */ }
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
-        topic: "My solar return",
-        question: `The Sun has returned to where it stood when I was born, a new year of my life begins today.${facts} Read me the dominant themes of my year ahead, grounded in this chart. Where should I put my energy?`,
+        topic: t("prompts.birthday_topic"),
+        question: fill(t("prompts.birthday"), { facts }),
       }));
     } catch (_) {}
     router.push("/chat");
@@ -1607,18 +1635,22 @@ export default function TodayPage() {
     // call inside fetchAndUpdate.
     let cancelled = false;
 
-    const _d = new Date();
-    const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
-    const cacheKey = `solray_forecast_${dateKey}`;
+    const cacheKey = `solray_forecast_${dayKey}`;
 
     async function fetchAndUpdate(isBackground: boolean) {
+      lastFetchAt.current = Date.now();
       try {
         // Run /forecast/today and /users/me in parallel
         const [forecastData] = await Promise.all([
           apiFetch("/forecast/today", {}, token),
           apiFetch("/users/me", {}, token).then((userData) => {
             if (cancelled) return;
-            if (userData?.birth_date) setBirthDate(userData.birth_date);
+            // Birth details changed (here or on another device): drop the
+            // charts built from the old ones before anything is cached.
+            syncBirthRevision(userData);
+            // /users/me nests the birth date under profile.
+            const bd = userData?.profile?.birth_date ?? userData?.birth_date;
+            if (typeof bd === "string" && bd) setBirthDate(bd);
             if (typeof userData?.email_verified === "boolean") setEmailVerified(userData.email_verified);
             if (userData.blueprint) {
               try {
@@ -1670,6 +1702,18 @@ export default function TodayPage() {
         // page the user is now on handle its own auth/access state.
         if (cancelled) return;
 
+        // The account changed mid-flight: this answer is not for this screen.
+        if (isStaleAccountError(err)) return;
+        // 403 because AI consent is missing: the consent sheet is already
+        // open (lib/api). Not a billing problem, so no paywall redirect.
+        if (isAiConsentError(err)) {
+          if (!isBackground) {
+            setForecast(null);
+            setError("today.consent_needed");
+            setLoading(false);
+          }
+          return;
+        }
         // 403 = trial expired or subscription lapsed. Redirect from
         // both foreground AND background fetches; otherwise an expired
         // user reading from cache is stranded with no UI cue.
@@ -1725,9 +1769,65 @@ export default function TodayPage() {
     }
 
     // No cache, fetch and show skeleton while loading
+    setLoading(true);
     fetchAndUpdate(false);
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, dayKey, reloadNonce]);
+
+  // A new day, or back after a long while: refresh Now. Runs on native
+  // resume, when the tab becomes visible again, on focus, and on a timer
+  // set for the next local midnight while the screen stays open.
+  useEffect(() => {
+    if (!token) return;
+    const check = () => {
+      const k = localDayKey();
+      if (k !== dayKey) {
+        backgroundFetchDone.current = false;
+        setDayKey(k);
+        return;
+      }
+      // Same day, but the app sat in the background for a while: refresh
+      // in place (no skeleton) so the reading is current.
+      if (Date.now() - lastFetchAt.current > 30 * 60 * 1000) {
+        lastFetchAt.current = Date.now();
+        try { window.dispatchEvent(new CustomEvent("solray:refresh", { detail: {} })); } catch { /* ignore */ }
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", check);
+    let removeNative: (() => void) | null = null;
+    let disposed = false;
+    void (async () => {
+      try {
+        const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+        if (!cap?.isNativePlatform?.()) return;
+        const { App } = await import("@capacitor/app");
+        const h = await App.addListener("resume", check);
+        if (disposed) { void h.remove(); return; }
+        removeNative = () => { void h.remove(); };
+      } catch { /* plugin unavailable: visibility and focus still cover it */ }
+    })();
+    const now = new Date();
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5).getTime();
+    const timer = window.setTimeout(check, Math.max(1000, nextMidnight - now.getTime()));
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", check);
+      window.clearTimeout(timer);
+      removeNative?.();
+    };
+  }, [token, dayKey]);
+
+  // Consent given in the sheet: fetch the reading that was refused.
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      if ((e as CustomEvent).detail?.granted) setReloadNonce((n) => n + 1);
+    };
+    window.addEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+  }, []);
 
   // Pull-to-refresh: refetch today's forecast in place. No loading skeleton,
   // existing content stays visible until the new data replaces it (so the
@@ -1736,9 +1836,7 @@ export default function TodayPage() {
     const onRefresh = (e: Event) => {
       const done = (e as CustomEvent).detail?.done as (() => void) | undefined;
       if (!token) { done?.(); return; }
-      const _d = new Date();
-      const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
-      const cacheKey = `solray_forecast_${dateKey}`;
+      const cacheKey = `solray_forecast_${localDayKey()}`;
       (async () => {
         try {
           const data = await apiFetch("/forecast/today", {}, token);
@@ -1901,7 +1999,7 @@ export default function TodayPage() {
                     onAction={() =>
                       askOracle(
                         forecast.day_title,
-                        `Today you told me: "${forecast.day_title}". ${forecast.reading} I want to go deeper into this. What do you see?`
+                        fill(t("prompts.today_deeper"), { title: forecast.day_title, reading: forecast.reading })
                       )
                     }
                   />
@@ -1909,13 +2007,18 @@ export default function TodayPage() {
                     <DeckCard
                       key={`${c.transit_planet}-${c.natal_point}-${c.aspect}`}
                       kick={c.phase === "applying" ? t("cycles.applying") : t("cycles.separating")}
-                      title={humanizeCycleTitle(c.title)}
+                      title={humanizeCycleTitle(c.title, lang)}
                       body={c.summary || ""}
                       action={t("insight.go_deeper")}
                       onAction={() =>
                         askOracle(
                           c.title,
-                          `${humanizeCycleTitle(c.title)} is ${c.phase === "applying" ? "building" : "separating"}, peaking ${c.peak}. ${c.summary || ""} What is this asking of me?`
+                          fill(t("prompts.cycle_deeper"), {
+                            title: humanizeCycleTitle(c.title, lang),
+                            phase: t(c.phase === "applying" ? "prompts.phase_building" : "prompts.phase_separating"),
+                            peak: fmtDateLong(c.peak, lang) || c.peak,
+                            summary: c.summary || "",
+                          }).replace(/\s+/g, " ").trim()
                         )
                       }
                     />
@@ -1948,14 +2051,14 @@ export default function TodayPage() {
               {error ? t(error) : t("today.error_no_reading")}
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => (error === "today.consent_needed" ? openAiConsentSheet() : window.location.reload())}
               className="inline-block px-8 py-3 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
               style={{
                 background: "rgb(var(--rgb-text-primary))",
                 color: "rgb(var(--rgb-bg-deep))",
               }}
             >
-              {t("common.retry")}
+              {error === "today.consent_needed" ? t("settings.ai_consent_give") : t("common.retry")}
             </button>
           </div>
         )}

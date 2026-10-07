@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, detailCode, isAiConsentError } from "@/lib/api";
+import { getAuthGeneration, isCurrentGeneration, isStaleAccountError, StaleAccountError } from "@/lib/account-session";
+import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
+import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import ReactMarkdown from "react-markdown";
-import { useT } from "@/lib/i18n";
+import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { Orb, Wordmark } from "@/components/Wordmark";
@@ -39,7 +42,11 @@ function generateSessionId() {
 }
 
 function todayLabel() {
-  return new Date().toLocaleDateString("en-GB", {
+  // The label names the conversation in history, so it follows the app
+  // language (the same saved choice the language provider reads).
+  let locale = "en-GB";
+  try { if ((localStorage.getItem("solray_language") || "").startsWith("es")) locale = "es"; } catch { /* default */ }
+  return new Date().toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -91,8 +98,27 @@ function saveSession(session: StoredSession) {
 // Push a session to the server. Best-effort: failures don't block local save.
 // On success we record the server's last_message_at into the local meta so
 // the next sync compares like-with-like.
-async function pushSessionToServer(session: StoredSession, token: string | null): Promise<boolean> {
-  if (!token) return false;
+// Writes for one conversation run one after another, in the order they were
+// made, so an older transcript can never land after a newer one and replace
+// it on the server.
+const pushChains = new Map<string, Promise<boolean>>();
+
+function pushSessionToServer(session: StoredSession, token: string | null, gen: number = getAuthGeneration()): Promise<boolean> {
+  if (!token) return Promise.resolve(false);
+  const prev = pushChains.get(session.sessionId) || Promise.resolve(true);
+  const next = prev
+    .catch(() => false)
+    .then(() => pushSessionNow(session, token, gen));
+  pushChains.set(session.sessionId, next);
+  void next.finally(() => {
+    if (pushChains.get(session.sessionId) === next) pushChains.delete(session.sessionId);
+  });
+  return next;
+}
+
+async function pushSessionNow(session: StoredSession, token: string, gen: number): Promise<boolean> {
+  // Written under an account that has since signed out: drop it.
+  if (!isCurrentGeneration(gen)) return false;
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
   try {
     const res = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(session.sessionId)}`, {
@@ -108,6 +134,7 @@ async function pushSessionToServer(session: StoredSession, token: string | null)
         messages: session.messages || [],
       }),
     });
+    if (!isCurrentGeneration(gen)) return false;
     if (res.ok) {
       markServerConfirmed([session.sessionId]);
       const out = await res.json().catch(() => ({} as Record<string, string>));
@@ -181,16 +208,22 @@ const MIGRATION_FLAG = "solray_chat_migrated_v1";
 
 // Pull all sessions from server, reconcile against local cache, return
 // the unified id list. Falls back to local on network failure.
-async function syncSessionsFromServer(token: string | null): Promise<string[]> {
+async function syncSessionsFromServer(token: string | null, gen: number = getAuthGeneration()): Promise<string[]> {
   if (!token) return getSessionIds();
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+  // Every await below is followed by this check: once the account has
+  // changed, nothing from this sync may touch the cache the next account
+  // reads, and nothing local may be uploaded with this token.
+  const live = () => { if (!isCurrentGeneration(gen)) throw new StaleAccountError(); };
   try {
     // 1. Fetch the lightweight list (includes last_message_at).
     const listRes = await fetch(`${apiUrl}/chat/sessions`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    live();
     if (!listRes.ok) return getSessionIds();
     const listJson = await listRes.json();
+    live();
     const remoteSessions: Array<{ session_id: string; custom_name: string | null; date_label: string | null; message_count: number; last_message_at: string | null }> =
       listJson.sessions || [];
 
@@ -210,8 +243,10 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
           const fullRes = await fetch(`${apiUrl}/chat/sessions/${encodeURIComponent(s.session_id)}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          live();
           if (fullRes.ok) {
             const full = await fullRes.json();
+            live();
             const stored: StoredSession = {
               sessionId: full.session_id,
               date: full.date_label || "",
@@ -223,7 +258,10 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
               setSessionLocalMeta(stored.sessionId, full.last_message_at);
             }
           }
-        } catch { /* skip; will retry on next sync */ }
+        } catch (e) {
+          if (isStaleAccountError(e)) throw e;
+          /* skip; will retry on next sync */
+        }
       }
     }
 
@@ -258,7 +296,8 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
       }
       const local = loadSession(localId);
       if (local) {
-        const ok = await pushSessionToServer(local, token);
+        const ok = await pushSessionToServer(local, token, gen);
+        live();
         if (!ok) allUploadsOk = false;
         if (ok && local.messages?.length) {
           setSessionLocalMeta(localId, new Date().toISOString());
@@ -272,11 +311,34 @@ async function syncSessionsFromServer(token: string | null): Promise<string[]> {
 
     // 4. Save unified id list, server-order takes precedence.
     const allIds = Array.from(new Set(fetched));
+    live();
     saveSessionIds(allIds);
     return allIds;
-  } catch {
+  } catch (e) {
+    if (isStaleAccountError(e)) throw e;
     return getSessionIds();
   }
+}
+
+// Dynamics context (the other person's chart) belongs to the conversation it
+// was opened for. Kept per session on this device so reopening that
+// conversation restores it, and opening any other conversation clears it.
+const SOUL_CTX_KEY = "solray_chat_soul_ctx";
+type SoulCtx = { name: string | null; blueprint: Record<string, unknown> | null };
+function getSoulCtx(sessionId: string): SoulCtx | null {
+  try {
+    const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
+    return all[sessionId] || null;
+  } catch {
+    return null;
+  }
+}
+function setSoulCtx(sessionId: string, ctx: SoulCtx | null) {
+  try {
+    const all = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}") as Record<string, SoulCtx>;
+    if (ctx) all[sessionId] = ctx; else delete all[sessionId];
+    localStorage.setItem(SOUL_CTX_KEY, JSON.stringify(all));
+  } catch { /* best-effort */ }
 }
 
 // ─── Text renderer ──────────────────────────────────────────────────────────
@@ -398,7 +460,7 @@ function ChatPageInner() {
         const sky: string[] = [];
         try {
           const { buildTodayPrompts, readCachedForecast } = await import("@/lib/today-prompts");
-          const tp = buildTodayPrompts(readCachedForecast());
+          const tp = buildTodayPrompts(readCachedForecast(), t, lang);
           if (tp.length > 0) sky.push(tp[day % tp.length].question);
         } catch { /* no forecast cache */ }
         sky.push(
@@ -456,6 +518,8 @@ function ChatPageInner() {
 
   // Rename state
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  // History delete asks once before removing a conversation for good.
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -500,18 +564,66 @@ function ChatPageInner() {
   // reads; the server is the source of truth. On mount (or whenever a
   // fresh token arrives), pull the user's sessions from the server and
   // migrate any local-only sessions up. Runs once per token change.
+  //
+  // Until that first sync has reconciled, nothing is uploaded: a device
+  // holding an older copy of a conversation must not PUT it over the
+  // server's newer one. Writes made meanwhile stay local and are queued;
+  // once the sync lands, the open conversation is rebuilt from the server's
+  // copy plus anything only this device has, and the queue is flushed.
+  //
+  // The account generation this render belongs to. Every write below checks
+  // it, so work finishing after a sign-out never lands in the next account.
+  const accountGen = useMemo(() => getAuthGeneration(), [token]);
+  const syncReadyRef = useRef(false);
+  const pendingPushRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!token) return;
-    void syncSessionsFromServer(token);
-  }, [token]);
+    const gen = accountGen;
+    syncReadyRef.current = false;
+    let off = false;
+    syncSessionsFromServer(token, gen)
+      .then(() => {
+        if (off || !isCurrentGeneration(gen)) return;
+        const sid = activeSessionRef.current;
+        if (sid) {
+          const reconciled = loadSession(sid);
+          const current = messagesRef.current;
+          const merged = mergeMessages(reconciled?.messages || [], current);
+          if (!sameTranscript(merged, current)) {
+            // The persist effect saves and uploads the merged transcript.
+            setMessages(merged);
+          }
+        }
+        syncReadyRef.current = true;
+        const pending = Array.from(pendingPushRef.current);
+        pendingPushRef.current.clear();
+        for (const id of pending) {
+          if (id === sid) continue; // handled by the merge above
+          const local = loadSession(id);
+          if (local) void pushSessionToServer(local, token, gen);
+        }
+      })
+      .catch(() => {
+        // Offline or the account changed: uploads stay off for this token
+        // unless it is still the live account (then allow them, the local
+        // copy is all there is).
+        if (!off && isCurrentGeneration(gen)) syncReadyRef.current = true;
+      });
+    return () => { off = true; };
+  }, [token, accountGen]);
 
   // persistSession: local first (instant render), server second (cross-device).
   // Use this everywhere in the component instead of saveSession() so the
   // session log syncs to the server. Server failure is non-fatal; local
   // copy is always saved so the user never loses a message.
   const persistSession = (session: StoredSession) => {
+    if (!token || !isCurrentGeneration(accountGen)) return;
     saveSession(session);
-    void pushSessionToServer(session, token);
+    if (syncReadyRef.current) {
+      void pushSessionToServer(session, token, accountGen);
+    } else {
+      pendingPushRef.current.add(session.sessionId);
+    }
   };
 
   // ── Session-close synthesis ───────────────────────────────────────────────
@@ -745,7 +857,23 @@ function ChatPageInner() {
           };
           persistSession(newSession);
           setMessages(seed);
+          // A seeded question is never a Dynamics conversation.
+          setSoulBlueprint(null);
+          setSoulName(null);
           setSending(true);
+          // The member may open another conversation before this answer
+          // arrives. Then it is stored with its own conversation instead of
+          // being written over the one on screen.
+          const land = (next: Message[], stream?: Message) => {
+            if (activeSessionRef.current === sid) {
+              setMessages(next);
+              if (stream) {
+                setStreamedLength(0);
+                setStreamingId(stream.id);
+              }
+            }
+            persistSession({ ...newSession, messages: next });
+          };
           try {
             const data = await apiFetch("/chat", {
               method: "POST",
@@ -764,9 +892,7 @@ function ChatPageInner() {
                 timestamp: new Date().toISOString(),
                 isError: true,
               };
-              const next = [...seed, errMsg];
-              setMessages(next);
-              persistSession({ ...newSession, messages: next });
+              land([...seed, errMsg]);
               return;
             }
             const reply: Message = {
@@ -775,12 +901,10 @@ function ChatPageInner() {
               content,
               timestamp: new Date().toISOString(),
             };
-            const next = [...seed, reply];
-            setMessages(next);
-            setStreamedLength(0);
-            setStreamingId(reply.id);
-            persistSession({ ...newSession, messages: next });
-          } catch {
+            land([...seed, reply], reply);
+          } catch (err) {
+            // The account changed while waiting: nothing to show or store.
+            if (isStaleAccountError(err)) return;
             // Surface the failure as a visible error message rather
             // than silently swallowing it. Previous version left the
             // user with their seeded question and no honest signal
@@ -788,15 +912,13 @@ function ChatPageInner() {
             const errMsg: Message = {
               id: (Date.now() + 1).toString(),
               role: "assistant",
-              content: t("chat.error_unreachable"),
+              content: isAiConsentError(err) ? t("chat.consent_needed") : t("chat.error_unreachable"),
               timestamp: new Date().toISOString(),
               isError: true,
             };
-            const next = [...seed, errMsg];
-            setMessages(next);
-            persistSession({ ...newSession, messages: next });
+            land([...seed, errMsg]);
           } finally {
-            setSending(false);
+            if (isMountedRef.current) setSending(false);
           }
           return;
         } catch {
@@ -829,7 +951,7 @@ function ChatPageInner() {
             const greeting: Message = {
               id: "greeting",
               role: "assistant",
-              content: `Reading the dynamic between you and ${ctx.soulName}…`,
+              content: fill(t("prompts.compat_opening"), { name: ctx.soulName }),
               timestamp: new Date().toISOString(),
             };
             const userMsg: Message = {
@@ -842,11 +964,28 @@ function ChatPageInner() {
             const newSession: StoredSession = {
               sessionId: sid,
               date: todayLabel(),
-              customName: `You & ${ctx.soulName}`,
+              customName: fill(t("prompts.compat_session"), { name: ctx.soulName }),
               messages: [greeting, userMsg],
             };
+            // The partner's chart belongs to this conversation only.
+            setSoulCtx(sid, { name: ctx.soulName ?? null, blueprint: ctx.soulBlueprint ?? null });
             persistSession(newSession);
             setMessages([greeting, userMsg]);
+            setSending(true);
+            // Same guard as a normal send: if another conversation is open by
+            // the time the reading arrives, it is stored with its own
+            // conversation, never appended to the one on screen.
+            const land = (extra: Message, stream: boolean) => {
+              const next = [...newSession.messages, extra];
+              if (activeSessionRef.current === sid) {
+                setMessages(next);
+                if (stream) {
+                  setStreamedLength(0);
+                  setStreamingId(extra.id);
+                }
+              }
+              persistSession({ ...newSession, messages: next });
+            };
 
             // Auto-send the compatibility message
             try {
@@ -870,11 +1009,9 @@ function ChatPageInner() {
               };
               // An empty reply is a failure, not a license to invent one.
               if (!reply.content) throw new Error("empty souls reply");
-              setMessages((prev) => [...prev, reply]);
-              setStreamedLength(0);
-              setStreamingId(reply.id);
-              persistSession({ ...newSession, messages: [...newSession.messages, reply] });
-            } catch {
+              land(reply, true);
+            } catch (err) {
+              if (isStaleAccountError(err)) return;
               // The previous version of this branch shipped an
               // Oracle-flavored fallback string for the souls compat
               // flow that asserted vague mirror-energy-grow content
@@ -886,11 +1023,13 @@ function ChatPageInner() {
               const errMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: `The Oracle couldn't open the reading between you and ${ctx.soulName} just now. Try again in a moment.`,
+                content: isAiConsentError(err) ? t("chat.consent_needed") : fill(t("prompts.compat_failed"), { name: ctx.soulName }),
                 timestamp: new Date().toISOString(),
                 isError: true,
               };
-              setMessages((prev) => [...prev, errMsg]);
+              land(errMsg, false);
+            } finally {
+              if (isMountedRef.current) setSending(false);
             }
             return;
           }
@@ -906,6 +1045,9 @@ function ChatPageInner() {
       if (last && last.messages.length > 0) {
         setSessionId(last.sessionId);
         setMessages(last.messages);
+        const sc = getSoulCtx(last.sessionId);
+        setSoulBlueprint(sc?.blueprint ?? null);
+        setSoulName(sc?.name ?? null);
       } else {
         const sid = generateSessionId();
         setSessionId(sid);
@@ -1057,6 +1199,11 @@ function ChatPageInner() {
     if (session) {
       setSessionId(session.sessionId);
       setMessages(session.messages);
+      // Restore this conversation's own Dynamics context, or clear the one
+      // left over from the conversation we are leaving.
+      const sc = getSoulCtx(session.sessionId);
+      setSoulBlueprint(sc?.blueprint ?? null);
+      setSoulName(sc?.name ?? null);
       setShowHistory(false);
       setRenamingId(null);
     }
@@ -1072,6 +1219,7 @@ function ChatPageInner() {
     setHistoryError(null);
     setShowHistory(true);
     setRenamingId(null);
+    setConfirmDeleteId(null);
   }, []);
 
   // ── Rename helpers ────────────────────────────────────────────────────────
@@ -1114,6 +1262,7 @@ function ChatPageInner() {
       // Local removal first (instant UX), then propagate to server so the
       // session doesn't reappear on the next sync from another device.
       try { localStorage.removeItem(`solray_chat_${sid}`); } catch { /* ignore */ }
+      setSoulCtx(sid, null);
       const ids = prevIds.filter((id) => id !== sid);
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
@@ -1250,6 +1399,21 @@ function ChatPageInner() {
       // router.replace from a stale chat handler, it yanks the user off
       // the new page they're trying to use.
       if (!isMountedRef.current) return;
+      if (isStaleAccountError(err)) return;
+      // Missing AI consent is not a billing problem: the consent sheet is
+      // already open (lib/api). Say so in the thread, no paywall redirect.
+      if (isAiConsentError(err)) {
+        if (activeSessionRef.current !== sentSessionId) return;
+        const note: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: t("chat.consent_needed"),
+          timestamp: new Date().toISOString(),
+          isError: true,
+        };
+        setMessages((prev) => [...prev, note]);
+        return;
+      }
       if (err instanceof ApiError && err.status === 403) {
         router.replace("/subscribe");
         return;
@@ -1368,11 +1532,19 @@ function ChatPageInner() {
       });
       if (!res.ok) {
         let detail = "";
+        let code = "";
         try {
           const j = await res.json();
           detail = errorText(j?.detail, "");
+          code = detailCode(j?.detail) || "";
         } catch {
           // ignore
+        }
+        // Voice goes to a transcription provider: without AI consent the
+        // server refuses, and the consent sheet explains why.
+        if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
+          openAiConsentSheet();
+          throw new Error(t("chat.consent_needed"));
         }
         // If the backend says transcription isn't configured, show a calm
         // user-facing line instead of the raw server string.
@@ -1457,8 +1629,15 @@ function ChatPageInner() {
     try {
       const { isRunningInCapacitor } = await import("@/lib/native-push");
       if (isRunningInCapacitor()) {
-        const { startNativeRecording } = await import("@/lib/native-voice");
+        const { startNativeRecording, cancelNativeRecording } = await import("@/lib/native-voice");
         const ok = await startNativeRecording();
+        // The member left the chat while the microphone was starting (the
+        // permission prompt can take a while): stop it at once instead of
+        // leaving a recording running with no screen to end it.
+        if (!isMountedRef.current) {
+          if (ok) await cancelNativeRecording().catch(() => {});
+          return;
+        }
         if (ok) {
           nativeRecordingRef.current = true;
           setIsRecording(true);
@@ -1546,6 +1725,11 @@ function ChatPageInner() {
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Left the chat while the permission prompt was open: release the mic.
+      if (!isMountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
     } catch (err: unknown) {
       const e = err as { name?: string; message?: string };
       const name = e?.name || "";
@@ -2110,7 +2294,12 @@ function ChatPageInner() {
               {/* Fixed header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
                 <h2 className="font-heading text-text-primary" style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("chat.previous_chats")}</h2>
-                <button onClick={() => setShowHistory(false)} className="text-text-secondary hover:text-text-primary">
+                <button
+                  onClick={() => setShowHistory(false)}
+                  aria-label={t("common.close")}
+                  className="text-text-secondary hover:text-text-primary flex items-center justify-center"
+                  style={{ width: 44, height: 44, marginRight: -12 }}
+                >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -2152,6 +2341,30 @@ function ChatPageInner() {
                               {t("common.save")}
                             </button>
                           </div>
+                        ) : confirmDeleteId === s.sessionId ? (
+                          /* Delete confirmation: one conversation, gone for good */
+                          <div className="px-4 py-3 rounded-xl bg-forest-card" style={{ border: "1px solid rgb(var(--rgb-ember) / .5)" }}>
+                            <p className="font-body text-text-primary text-[15px] mb-2">
+                              {t("chat.delete_confirm")}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => { setConfirmDeleteId(null); deleteSession(e, s.sessionId); }}
+                                disabled={sending}
+                                className="font-body font-bold text-[14px] rounded-full px-4"
+                                style={{ minHeight: 44, color: "rgb(var(--rgb-ember))", border: "1px solid rgb(var(--rgb-ember) / .5)" }}
+                              >
+                                {t("chat.delete_chat")}
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                                className="font-body text-[14px] text-text-secondary rounded-full px-4"
+                                style={{ minHeight: 44 }}
+                              >
+                                {t("common.cancel")}
+                              </button>
+                            </div>
+                          </div>
                         ) : (
                           <div className="flex items-center gap-1">
                             <button
@@ -2175,7 +2388,8 @@ function ChatPageInner() {
                             <button
                               onClick={(e) => startRename(e, s.sessionId, s.customName || s.date)}
                               title={t("chat.rename_chat")}
-                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
+                              aria-label={t("chat.rename_chat")}
+                              className="w-11 h-11 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgb(var(--rgb-wisteria))"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >
@@ -2186,10 +2400,11 @@ function ChatPageInner() {
                             </button>
                             {/* Delete trash */}
                             <button
-                              onClick={(e) => deleteSession(e, s.sessionId)}
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(s.sessionId); }}
                               disabled={sending}
                               title={t("chat.delete_chat")}
-                              className="w-8 h-8 flex items-center justify-center text-text-secondary transition-colors shrink-0"
+                              aria-label={t("chat.delete_chat")}
+                              className="w-11 h-11 flex items-center justify-center text-text-secondary transition-colors shrink-0"
                               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgb(var(--rgb-ember))"}
                               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ""}
                             >

@@ -7,8 +7,13 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
 import { apiFetch, ApiError } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { isStaleAccountError } from "@/lib/account-session";
+import { mergeSavedPeople, peopleToUpload } from "@/lib/saved-people-sync";
+import { useT, fill } from "@/lib/i18n";
+import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
+import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
+import { cardShareAvailable } from "@/lib/share-available";
 import { Wordmark } from "@/components/Wordmark";
 import BirthWheels from "@/components/BirthWheels";
 
@@ -72,6 +77,10 @@ interface SavedPerson {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   blueprint?: any;           // full blueprint dict (optional for back-compat with older saved entries)
   created_at: number;
+  // Local bookkeeping, never sent: true once the server has confirmed it
+  // holds this person. A confirmed person later missing from the server was
+  // deleted on another device and must not be uploaded again.
+  _synced?: boolean;
 }
 
 type BondLens = "romantic" | "friendship" | "working" | "family";
@@ -99,6 +108,31 @@ function writeSavedPeople(people: SavedPerson[]) {
   } catch {
     // quota etc, fail quiet
   }
+}
+
+// Deletions the server has not confirmed yet (offline, or the request
+// failed). Kept so the next sync finishes the delete instead of pulling the
+// person back from the server.
+const SAVED_TOMBSTONES_KEY = "solray_saved_people_deleted";
+function loadTombstones(): Set<string> {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SAVED_TOMBSTONES_KEY) || "[]");
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+function writeTombstones(ids: Set<string>) {
+  try { localStorage.setItem(SAVED_TOMBSTONES_KEY, JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
+}
+function addTombstone(id: string) { const t = loadTombstones(); t.add(id); writeTombstones(t); }
+function dropTombstone(id: string) { const t = loadTombstones(); if (t.delete(id)) writeTombstones(t); }
+
+/** The person as the server stores it, without local bookkeeping. */
+function forServer(p: SavedPerson): Omit<SavedPerson, "_synced"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _synced, ...rest } = p;
+  return rest;
 }
 
 function partnerName(p: BondPartner): string {
@@ -203,7 +237,7 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile }: SoulAction
 // Main page
 export default function SoulsPage() {
   const { token, user } = useAuth();
-  const { t } = useT();
+  const { t, lang } = useT();
   const router = useRouter();
 
   const [myUsername, setMyUsername] = useState<string | null>(null);
@@ -217,6 +251,9 @@ export default function SoulsPage() {
   // recipient is a warm contact of the inviter.
   const inviteShareRef = useRef<HTMLDivElement | null>(null);
   const [inviteSharing, setInviteSharing] = useState(false);
+  const [shareOk, setShareOk] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  useEffect(() => { setShareOk(cardShareAvailable()); }, []);
   const [inviteInfo, setInviteInfo] = useState<{ code: string; link: string } | null>(null);
 
   // Load the user's permanent invite code/link once, so the share card can
@@ -236,6 +273,7 @@ export default function SoulsPage() {
     if (inviteSharing) return;
     if (!inviteShareRef.current) return;
     setInviteSharing(true);
+    setShareError(false);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
       const link = inviteInfo?.link || "https://solray.ai";
@@ -247,6 +285,7 @@ export default function SoulsPage() {
       });
     } catch (err) {
       console.warn("[share] souls invite failed", err);
+      setShareError(true);
     } finally {
       setInviteSharing(false);
     }
@@ -331,44 +370,58 @@ export default function SoulsPage() {
     let cancelled = false;
     (async () => {
       try {
+        // 1. Finish deletions made offline or that failed earlier.
+        for (const id of Array.from(loadTombstones())) {
+          try {
+            await apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token);
+            dropTombstone(id);
+          } catch (e) {
+            if (isStaleAccountError(e)) throw e;
+            if (e instanceof ApiError && e.status === 404) dropTombstone(id);
+          }
+        }
         const res = await apiFetch("/saved-people", {}, token);
-        const server: SavedPerson[] = Array.isArray(res?.people) ? res.people : [];
+        const server: SavedPerson[] = (Array.isArray(res?.people) ? res.people : [])
+          .map((p: SavedPerson) => ({ ...p, _synced: true }));
         const serverIds = new Set(server.map((p) => p.id));
+        const tomb = loadTombstones();
+        // 2. Upload only people this device created and the server has never
+        //    confirmed. A confirmed person missing from the server was
+        //    deleted on another device: it is dropped here, not re-created.
         const local = loadSavedPeople();
-        const toMigrate = local.filter((p) => p && p.id && !serverIds.has(p.id));
+        const toMigrate = peopleToUpload(local, serverIds, tomb);
         const migrated: SavedPerson[] = [];
-        const failed: SavedPerson[] = [];
         const idRemap: Record<string, string> = {};
         for (const p of toMigrate) {
           try {
             const r = await apiFetch("/saved-people", {
               method: "POST",
-              body: JSON.stringify(p),
+              body: JSON.stringify(forServer(p)),
             }, token);
             if (r?.person) {
-              const sp = r.person as SavedPerson;
+              const sp = { ...(r.person as SavedPerson), _synced: true };
               migrated.push(sp);
               if (sp.id && sp.id !== p.id) idRemap[p.id] = sp.id;
-            } else {
-              failed.push(p); // keep local copy so it is not lost
             }
-          } catch {
-            failed.push(p); // offline / error: keep local copy, retried next load
+          } catch (e) {
+            if (isStaleAccountError(e)) throw e;
+            /* offline / error: the local copy stays and is retried next load */
           }
         }
         if (cancelled) return;
-        const seen = new Set<string>();
-        // failed (still local-only) first so a dropped POST never loses the person
-        const final = [...failed, ...migrated, ...server].filter((p) => {
-          if (!p || !p.id || seen.has(p.id)) return false;
-          seen.add(p.id);
-          return true;
+        const replacedIds = new Set(Object.keys(idRemap));
+        const confirmed = [...migrated, ...server];
+        const confirmedIds = new Set(confirmed.map((p) => p.id));
+        // 3. Merge against the CURRENT list, not the snapshot read above, so a
+        //    person added or removed while this sync ran is respected.
+        setSavedPeople((prev) => {
+          const final = mergeSavedPeople(prev, confirmed, replacedIds, loadTombstones());
+          writeSavedPeople(final);
+          return final;
         });
-        setSavedPeople(final);
-        writeSavedPeople(final);
         // If migration changed any ids, reconcile selected bond partners too.
         if (Object.keys(idRemap).length) {
-          const byId = new Map(final.map((p) => [p.id, p] as const));
+          const byId = new Map(confirmed.map((p) => [p.id, p] as const));
           setBondPartners(prev => prev.map(bp => {
             if (bp.kind === "saved" && idRemap[bp.person.id]) {
               const np = byId.get(idRemap[bp.person.id]);
@@ -377,6 +430,8 @@ export default function SoulsPage() {
             return bp;
           }));
         }
+        // Partners removed on another device leave the bond too.
+        setBondPartners(prev => prev.filter(bp => bp.kind !== "saved" || confirmedIds.has(bp.person.id) || !bp.person._synced));
       } catch {
         // offline or error: keep whatever localStorage already gave us
       }
@@ -556,15 +611,20 @@ export default function SoulsPage() {
         try {
           const r = await apiFetch("/saved-people", {
             method: "POST",
-            body: JSON.stringify(person),
+            body: JSON.stringify(forServer(person)),
           }, token);
-          const saved = r?.person as SavedPerson | undefined;
-          if (saved && saved.id && saved.id !== person.id) {
+          const raw = r?.person as SavedPerson | undefined;
+          const saved = raw ? { ...raw, _synced: true } : undefined;
+          if (saved && saved.id) {
+            // Confirmed by the server (with its own id, if it minted one).
             setSavedPeople(prev => {
+              if (!prev.some(p => p.id === person.id)) return prev; // removed meanwhile
               const updated = prev.map(p => (p.id === person.id ? saved : p));
               writeSavedPeople(updated);
               return updated;
             });
+          }
+          if (saved && saved.id && saved.id !== person.id) {
             setBondPartners(prev => prev.map(bp =>
               bp.kind === "saved" && bp.person.id === person.id
                 ? { kind: "saved", person: saved }
@@ -587,10 +647,18 @@ export default function SoulsPage() {
     setBondPartners(prev => prev.filter(p => !(p.kind === "saved" && p.person.id === id)));
     setErrorMessage(null);
     if (token) {
-      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).catch((e: unknown) => {
+      // Recorded until the server confirms, so a sync running right now (or
+      // another device's copy) cannot bring the person back.
+      addTombstone(id);
+      apiFetch(`/saved-people/${id}`, { method: "DELETE" }, token).then(() => dropTombstone(id)).catch((e: unknown) => {
+        if (isStaleAccountError(e)) return;
         // 404: the server never had it (local-only person), so it is gone.
-        if (e instanceof ApiError && e.status === 404) return;
-        // Otherwise the delete did not happen: put the person back.
+        if (e instanceof ApiError && e.status === 404) { dropTombstone(id); return; }
+        // No answer (offline): the tombstone stays and the next sync
+        // finishes the delete. The person stays removed here.
+        if (!(e instanceof ApiError)) return;
+        dropTombstone(id);
+        // The server refused: the delete did not happen, put the person back.
         if (removed) {
           setSavedPeople((prev) => {
             if (prev.some((p) => p.id === id)) return prev;
@@ -611,11 +679,18 @@ export default function SoulsPage() {
     setReadingBond(true);
     setErrorMessage(null);
 
-    const lensLabel =
-      bondLens === "romantic"   ? "romantic dynamic"
-      : bondLens === "friendship" ? "friendship dynamic"
-      : bondLens === "family"     ? "family dynamic"
-      : "working dynamic";
+    // The opening question is shown in the chat as the member's own words,
+    // so it is written in their language.
+    const lensLabel = t(
+      bondLens === "romantic"   ? "souls.bond_lens_romantic"
+      : bondLens === "friendship" ? "souls.bond_lens_friendship"
+      : bondLens === "family"     ? "souls.bond_lens_family"
+      : "souls.bond_lens_work");
+    const term = (v: string) => (lang === "en" ? v : tx(v, lang));
+    const summarize = (chart: { sun_sign: string | null; hd_type: string | null; hd_profile: string | null }) => [
+      chart.sun_sign && fill(t("souls.bond_sun_in"), { sign: term(chart.sun_sign) }),
+      chart.hd_type  && fill(t("souls.bond_hd"), { type: term(chart.hd_type) + (chart.hd_profile ? ` ${chart.hd_profile}` : "") }),
+    ].filter(Boolean).join(", ");
 
     // Family with multiple people: build a group context
     if (bondLens === "family" && bondPartners.length > 1) {
@@ -625,11 +700,8 @@ export default function SoulsPage() {
       for (const p of bondPartners) {
         const chart = partnerChart(p);
         const name  = partnerName(p);
-        const summary = [
-          chart.sun_sign && `Sun in ${chart.sun_sign}`,
-          chart.hd_type  && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
-        ].filter(Boolean).join(", ");
-        lines.push(`${name}: ${summary || "chart not yet computed"}`);
+        const summary = summarize(chart);
+        lines.push(`${name}: ${summary || t("souls.bond_no_chart")}`);
 
         // Same priority order as single-partner: connection > cached
         // saved blueprint > fall through. We only need ONE primary
@@ -650,13 +722,10 @@ export default function SoulsPage() {
 
       const names = bondPartners.map(partnerName);
       const nameList = names.length === 2
-        ? names.join(" and ")
-        : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+        ? names.join(t("souls.bond_and"))
+        : `${names.slice(0, -1).join(", ")}${t("souls.bond_and_last")}${names[names.length - 1]}`;
 
-      const introMessage =
-        `Read the family dynamic between me, ${nameList}. ` +
-        `Here are their charts: ${lines.join("; ")}. ` +
-        `What is the energy of this family as a whole? Where is there harmony, friction, and what does each person bring to the group?`;
+      const introMessage = fill(t("souls.bond_family_intro"), { names: nameList, charts: lines.join("; ") });
 
       sessionStorage.setItem("solray_compat_context", JSON.stringify({
         soulName: nameList,
@@ -675,10 +744,7 @@ export default function SoulsPage() {
     const chart  = partnerChart(bondPartner);
     const pName  = partnerName(bondPartner);
 
-    const chartSummary = [
-      chart.sun_sign && `Sun in ${chart.sun_sign}`,
-      chart.hd_type  && `Human Design: ${chart.hd_type}${chart.hd_profile ? ` ${chart.hd_profile}` : ""}`,
-    ].filter(Boolean).join(", ");
+    const chartSummary = summarize(chart);
 
     // Pull the full blueprint to hand to the Oracle. Three sources, in
     // priority order:
@@ -737,8 +803,8 @@ export default function SoulsPage() {
     }
 
     const introMessage = chartSummary
-      ? `Read the ${lensLabel} between me and ${pName}. Their chart: ${chartSummary}. Where does our energy meet, and where does it friction?`
-      : `Read the ${lensLabel} between me and ${pName}. Where does our energy meet, and where does it friction?`;
+      ? fill(t("souls.bond_intro_chart"), { lens: lensLabel, name: pName, chart: chartSummary })
+      : fill(t("souls.bond_intro"), { lens: lensLabel, name: pName });
 
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
       soulName: pName,
@@ -767,7 +833,7 @@ export default function SoulsPage() {
                 one steps aside there rather than printing solray twice. */}
             <Wordmark size={17} className="text-text-primary lg:hidden" style={{ letterSpacing: "-.045em" }} />
             <span className="flex items-center" style={{ marginRight: -8 }}>
-              <button
+              {shareOk && <button
                 onClick={handleInviteShare}
                 aria-label={t("souls.share_invitation")}
                 title={t("souls.share_invitation")}
@@ -785,7 +851,7 @@ export default function SoulsPage() {
                     <path d="M13 5.5 10 2.5 7 5.5M10 2.5v10" />
                   </svg>
                 )}
-              </button>
+              </button>}
             </span>
           </div>
           <div style={{ height: 1, background: "rgb(var(--rgb-border))", marginTop: 12 }} />
@@ -795,6 +861,11 @@ export default function SoulsPage() {
           >
             {t("souls.your_field")}
           </p>
+          {shareError && (
+            <p role="status" className="font-body" style={{ fontSize: 13, marginTop: 8, color: "rgb(var(--rgb-text-muted))" }}>
+              {t("common.share_failed")}
+            </p>
+          )}
         </div>
 
         <div className="max-w-lg lg:max-w-3xl mx-auto px-5 pt-6 space-y-6 animate-fade-in">
@@ -1225,7 +1296,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           style={{ background: "rgb(var(--rgb-text-primary) / 0.04)", border: "1px solid rgb(var(--rgb-text-primary) / 0.12)" }}
         >
           {myAvatar ? (
-            <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
+            <img src={myAvatar} alt={t("souls.you")} className="w-7 h-7 rounded-full object-cover shrink-0" />
           ) : (
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-text-primary font-heading text-sm shrink-0"
                  style={{ background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))" }}>
@@ -1483,53 +1554,19 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   const [birthTime, setBirthTime] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
   const [birthCity, setBirthCity] = useState("");
-  const [citySuggestions, setCitySuggestions] = useState<{ display: string }[]>([]);
-  const [cityLoading, setCityLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const city = useCityAutocomplete(birthCity);
+  const pickCity = (c: CitySuggestion) => {
+    setBirthCity(c.display);
+    city.settle(c.display);
+  };
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // City autocomplete debounce
-  useEffect(() => {
-    if (birthCity.trim().length < 2) {
-      setCitySuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    setCityLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(birthCity)}&type=city&limit=6&format=json&addressdetails=1`,
-          { headers: { "Accept-Language": "en" } }
-        );
-        const data = await res.json();
-        const suggestions = data
-          .map((item: { address: { city?: string; town?: string; village?: string; municipality?: string; country?: string } }) => {
-            const city = item.address.city || item.address.town || item.address.village || item.address.municipality;
-            const country = item.address.country;
-            if (!city) return null;
-            return { display: country ? `${city}, ${country}` : city };
-          })
-          .filter(Boolean) as { display: string }[];
-        const seen = new Set<string>();
-        const unique = suggestions.filter((s) => {
-          if (seen.has(s.display)) return false;
-          seen.add(s.display);
-          return true;
-        });
-        setCitySuggestions(unique);
-        setShowSuggestions(unique.length > 0);
-      } catch {
-        // silently fail
-      } finally {
-        setCityLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [birthCity]);
+  // Another person's birth details leave this device (to Solray to draw the
+  // chart, and to its AI providers when the member asks about them), so the
+  // member confirms they have that person's permission first.
+  const [hasPermission, setHasPermission] = useState(false);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -1540,7 +1577,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         cityInputRef.current &&
         !cityInputRef.current.contains(e.target as Node)
       ) {
-        setShowSuggestions(false);
+        city.close();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -1553,6 +1590,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     birthDate.length === 10 &&
     (timeUnknown || birthTime.length === 5) &&
     birthCity.trim().length > 0 &&
+    hasPermission &&
     !submitting;
 
   const submit = async () => {
@@ -1686,16 +1724,19 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                 ref={cityInputRef}
                 type="text"
                 value={birthCity}
-                onChange={(e) => {
-                  setBirthCity(e.target.value);
-                  setShowSuggestions(true);
-                }}
+                onChange={(e) => setBirthCity(e.target.value)}
+                onKeyDown={(e) => { city.onKeyDown(e, pickCity); }}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={city.open && city.suggestions.length > 0}
+                aria-controls="souls-city-list"
+                aria-activedescendant={city.active >= 0 ? `souls-city-${city.active}` : undefined}
                 placeholder={t("onboard.city_placeholder")}
                 autoComplete="off"
                 className="w-full bg-transparent border-b border-forest-border text-text-primary font-body py-2 focus:outline-none focus:border-mist transition-colors"
-                style={{ paddingRight: cityLoading ? "2rem" : undefined }}
+                style={{ paddingRight: city.loading ? "2rem" : undefined }}
               />
-              {cityLoading && (
+              {city.loading && (
                 <span className="absolute right-0 top-1/2 -translate-y-1/2 text-text-secondary">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -1703,9 +1744,9 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                   </svg>
                 </span>
               )}
-              {showSuggestions && citySuggestions.length > 0 && (
+              {city.open && city.suggestions.length > 0 && (
                 <div
-                  ref={suggestionsRef}
+                  ref={suggestionsRef} role="listbox" id="souls-city-list"
                   className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl overflow-hidden shadow-xl"
                   style={{
                     background: "rgb(var(--rgb-card))",
@@ -1714,17 +1755,17 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
                     overflowY: "auto",
                   }}
                 >
-                  {citySuggestions.map((s, i) => (
+                  {city.suggestions.map((s, i) => (
                     <button
-                      key={i}
+                      key={s.display}
+                      id={`souls-city-${i}`}
                       type="button"
-                      className="w-full text-left px-4 py-2.5 font-body text-[17px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setBirthCity(s.display);
-                        setCitySuggestions([]);
-                        setShowSuggestions(false);
-                      }}
+                      role="option"
+                      aria-selected={i === city.active}
+                      className={`w-full text-left px-4 py-2.5 font-body text-[17px] text-text-primary hover:bg-white/5 transition-colors border-b border-forest-border/40 last:border-b-0${i === city.active ? " is-active" : ""}`}
+                      style={{ minHeight: 44, ...(i === city.active ? { background: "rgb(var(--rgb-text-primary) / 0.06)" } : {}) }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => pickCity(s)}
                     >
                       {s.display}
                     </button>
@@ -1737,6 +1778,19 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
           {error && (
             <p className="text-ember text-[15px] font-body">{error}</p>
           )}
+
+          <label className="flex items-start gap-3 cursor-pointer select-none" style={{ minHeight: 44 }}>
+            <input
+              type="checkbox"
+              checked={hasPermission}
+              onChange={(e) => setHasPermission(e.target.checked)}
+              className="mt-1 w-4 h-4 cursor-pointer flex-shrink-0"
+              style={{ accentColor: "rgb(var(--rgb-text-primary))" }}
+            />
+            <span className="font-body text-[15px] leading-relaxed text-text-secondary">
+              {t("souls.permission_confirm").replace("{name}", name.trim() || t("souls.permission_this_person"))}
+            </span>
+          </label>
 
           <button
             type="button"

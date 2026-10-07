@@ -57,6 +57,24 @@
     // stranded on a "check your network" dead end. This version actively probes
     // the server and slips back into the app the instant it is reachable, so a
     // transient first-load failure recovers on its own within a second or two.
+    // Language: the same saved choice the app uses (solray_language), then
+    // the device language. This page is served without the app around it.
+    (function () {
+      var lang = 'en';
+      try {
+        var saved = localStorage.getItem('solray_language') || '';
+        if (saved) { lang = saved.indexOf('es') === 0 ? 'es' : 'en'; }
+        else if ((navigator.language || '').toLowerCase().indexOf('es') === 0) { lang = 'es'; }
+      } catch (e) {
+        if ((navigator.language || '').toLowerCase().indexOf('es') === 0) { lang = 'es'; }
+      }
+      if (lang === 'es') {
+        document.documentElement.lang = 'es';
+        document.getElementById('msg').textContent = 'Volviendo a conectarte con el cielo\u2026';
+        document.getElementById('retry').textContent = 'Intentar de nuevo';
+      }
+    })();
+
     var APP = 'https://app.solray.ai/';
     var done = false;
     var pending = false;

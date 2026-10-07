@@ -4,6 +4,7 @@ import { WORLD_PATHS } from "@/lib/world-paths";
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { currentBirthRevision } from "@/lib/chart-revision";
 import { tx } from "@/lib/astro-i18n";
 import { GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 
@@ -234,8 +235,10 @@ export default function AstroGeography({ token }: { token: string | null }) {
     const cacheKey = "solray_astrocarto";
     try {
       const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
+      const parsed = cached ? JSON.parse(cached) : null;
+      // Built from the current birth details? A cache written under other
+      // birth details (edited here or on another device) is refetched.
+      if (parsed && (parsed._birth_rev ?? null) === currentBirthRevision()) {
         setData(parsed);
         setPowerSpots(calculatePowerSpots(parsed.lines));
         setLoading(false);
@@ -247,7 +250,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
       .then((d: AstroData) => {
         setData(d);
         setPowerSpots(calculatePowerSpots(d.lines));
-        try { localStorage.setItem(cacheKey, JSON.stringify(d)); } catch (_) {}
+        try { localStorage.setItem(cacheKey, JSON.stringify({ ...d, _birth_rev: currentBirthRevision() })); } catch (_) {}
       })
       .catch(() => setError("load_failed"))
       .finally(() => setLoading(false));
@@ -383,7 +386,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
           {/* Expand hint */}
           <div className="absolute bottom-3 right-3 text-text-muted text-xs font-body flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <span>⤢</span>
-            <span>Expand</span>
+            <span>{t("geo.expand")}</span>
           </div>
 
           {/* Legend */}
@@ -398,7 +401,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
             </div>
             <div className="flex items-center gap-1">
               <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(var(--rgb-amber))" /></svg>
-              <span className="text-text-secondary text-[13px] font-body">Birth place</span>
+              <span className="text-text-secondary text-[13px] font-body">{t("geo.birth_place")}</span>
             </div>
           </div>
         </div>
@@ -488,7 +491,7 @@ function FullscreenMap({
   powerSpots: PowerSpot[];
   onClose: () => void;
 }) {
-  const { lang } = useT();
+  const { lang, t } = useT();
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const draggingRef = useRef(false);
@@ -603,7 +606,7 @@ function FullscreenMap({
         <button
           onClick={onClose}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-forest-card border border-forest-border text-text-secondary hover:text-amber-sun transition-colors"
-          aria-label="Close"
+          aria-label={t("common.close")}
         >
           ×
         </button>

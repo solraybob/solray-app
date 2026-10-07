@@ -77,12 +77,23 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
       spinner.firstElementChild?.classList.toggle("is-refreshing", spinning);
     };
 
+    // At rest the content wrapper carries no transform and no will-change:
+    // either one turns it into the containing block for position:fixed
+    // descendants, which pinned overlays (Souls sheets, the chat history)
+    // to the page instead of the screen.
+    const clearIfIdle = () => {
+      if (armed.v || refreshing.v) return;
+      content.style.transition = "";
+      content.style.transform = "";
+      content.style.willChange = "";
+    };
     const reset = () => {
       armed.v = false; vertical.v = false; decided.v = false; pulled.v = 0;
       content.style.transition = "transform 0.46s cubic-bezier(0.34, 1.3, 0.64, 1)";
       content.style.transform = "translate3d(0, 0, 0)";
       spinner.style.transition = "opacity 0.2s ease, transform 0.3s ease";
       setSpinner(0, false);
+      window.setTimeout(clearIfIdle, 500);
     };
 
     const finishRefresh = () => {
@@ -117,10 +128,11 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
         if (!vertical.v) { armed.v = false; return; }
       }
       if (!vertical.v) return;
-      if (dy <= 0) { content.style.transform = "translate3d(0,0,0)"; pulled.v = 0; return; }
+      if (dy <= 0) { content.style.transform = ""; pulled.v = 0; return; }
 
       // We own a downward pull: suppress native overscroll and follow finger.
       e.preventDefault();
+      content.style.willChange = "transform";
       pulled.v = rubberBand(dy);
       content.style.transform = `translate3d(0, ${pulled.v}px, 0)`;
       setSpinner(pulled.v / TRIGGER_PX, false);
@@ -188,9 +200,6 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
         ref={wrapRef}
         style={{
           minHeight: "100%",
-          willChange: "transform",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
         }}
       >
         {children}

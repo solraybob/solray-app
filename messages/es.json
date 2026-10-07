@@ -35,7 +35,8 @@
     "tap_to_collapse": "Toca para cerrar",
     "tap_to_open": "Toca para abrir",
     "done": "Listo",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "share_failed": "No se pudo compartir esta vez. Inténtalo de nuevo en un momento."
   },
   "language": {
     "picker_title": "Elige tu idioma",
@@ -100,7 +101,8 @@
     "have_account": "¿Ya tienes una cuenta?",
     "step_of": "Paso {n} de {total}",
     "ai_consent": "Acepto que Solray envíe mis datos de nacimiento y lo que escribo o digo en la app a sus proveedores de IA (Anthropic, OpenAI y Groq) para que generen mis lecturas y las respuestas del Oráculo. Solo los procesan en nombre de Solray.",
-    "ai_consent_link": "Política de privacidad"
+    "ai_consent_link": "Política de privacidad",
+    "under_age": "Solray está hecho para personas de 16 años o más, así que todavía no podemos abrirte una cuenta. Nos encantará recibirte cuando cumplas 16."
   },
   "today": {
     "title": "Hoy",
@@ -152,7 +154,8 @@
     "energy_high": "Alta",
     "energy_steady": "Estable",
     "energy_low": "Baja",
-    "kick_today": "hoy"
+    "kick_today": "hoy",
+    "consent_needed": "Tu lectura escrita se hace con IA, así que espera tu permiso. Tu carta está lista cuando tú lo estés."
   },
   "chat": {
     "placeholder": "Habla desde donde estás.",
@@ -244,7 +247,9 @@
     "greet_q_moon": "¿Qué sientes ahora mismo que no te has permitido sentir del todo?",
     "greet_q_sun": "¿Qué parte de ti se te pide habitar más plenamente?",
     "greet_q_default": "¿Qué sabe ya tu cuerpo sobre esto?",
-    "delete_failed": "No se pudo eliminar esa conversación. Inténtalo de nuevo."
+    "delete_failed": "No se pudo eliminar esa conversación. Inténtalo de nuevo.",
+    "consent_needed": "El Oráculo necesita tu permiso para usar IA antes de responder. Puedes darlo en la ventana que acaba de abrirse o cuando quieras en Ajustes.",
+    "delete_confirm": "¿Eliminar esta conversación? Se borra de todos tus dispositivos."
   },
   "souls": {
     "title": "ALMAS",
@@ -283,7 +288,7 @@
     "label_birth_date": "Fecha de nacimiento",
     "label_birth_time": "Hora de nacimiento",
     "label_birth_city": "Ciudad de nacimiento",
-    "birth_data_local": "Sus datos de nacimiento quedan en tu dispositivo",
+    "birth_data_local": "Sus datos de nacimiento van a Solray para trazar su carta, y a sus proveedores de IA cuando preguntas al Oráculo sobre esa persona. Añade a alguien solo con su permiso.",
     "unknown_birth_time": "Hora de nacimiento desconocida",
     "your_people": "Tus Personas",
     "read_their_chart": "Leer su carta",
@@ -302,12 +307,12 @@
     "lens_romantic_hint": "intimidad, atracción, unión",
     "lens_working_hint": "colaboración, fricción, flujo",
     "add_someone_new": "Agregar a alguien nuevo",
-    "add_someone_new_hint": "Sus datos de nacimiento quedan en tu dispositivo",
+    "add_someone_new_hint": "Solo con su permiso. Sus datos de nacimiento van a Solray y a sus proveedores de IA.",
     "no_one_here": "Nadie aquí todavía. Agrega a tu primera persona arriba.",
     "no_one_yet": "Nadie aquí todavía. Agrega a tu primera persona arriba.",
     "add_someone": "Agregar a alguien",
-    "add_someone_subtitle": "Sus datos de nacimiento quedan en tu dispositivo. Nada se comparte sin su consentimiento.",
-    "add_someone_sub": "Sus datos de nacimiento quedan en tu dispositivo. Nada se comparte sin su consentimiento.",
+    "add_someone_subtitle": "Sus datos de nacimiento van a Solray para trazar su carta, y a sus proveedores de IA cuando preguntas al Oráculo sobre esa persona. Añade a alguien solo con su permiso.",
+    "add_someone_sub": "Sus datos de nacimiento van a Solray para trazar su carta, y a sus proveedores de IA cuando preguntas al Oráculo sobre esa persona. Añade a alguien solo con su permiso.",
     "using_noon": "Usando mediodía",
     "name_placeholder": "Su nombre",
     "view_profile": "Ver Perfil",
@@ -331,7 +336,21 @@
     "invite_share_title": "Te invito a Solray",
     "invite_share_text": "Lee tu carta frente al cielo de hoy, y las dinámicas con las personas de tu vida. Únete a mí en Solray: {link}",
     "search_failed": "La búsqueda no está disponible ahora. Inténtalo de nuevo en un momento.",
-    "remove_failed": "No se pudo eliminar a esa persona. Inténtalo de nuevo."
+    "remove_failed": "No se pudo eliminar a esa persona. Inténtalo de nuevo.",
+    "permission_confirm": "Tengo el permiso de {name} para compartir sus datos de nacimiento con Solray y sus proveedores de IA.",
+    "permission_this_person": "esta persona",
+    "bond_lens_romantic": "dinámica romántica",
+    "bond_lens_friendship": "dinámica de amistad",
+    "bond_lens_family": "dinámica familiar",
+    "bond_lens_work": "dinámica de trabajo",
+    "bond_sun_in": "Sol en {sign}",
+    "bond_hd": "Diseño Humano: {type}",
+    "bond_no_chart": "carta aún sin calcular",
+    "bond_and": " y ",
+    "bond_and_last": " y ",
+    "bond_family_intro": "Lee la dinámica familiar entre yo, {names}. Estas son sus cartas: {charts}. ¿Cuál es la energía de esta familia en conjunto? ¿Dónde hay armonía, dónde fricción, y qué aporta cada persona al grupo?",
+    "bond_intro_chart": "Lee la {lens} entre {name} y yo. Su carta: {chart}. ¿Dónde se encuentra nuestra energía y dónde crea fricción?",
+    "bond_intro": "Lee la {lens} entre {name} y yo. ¿Dónde se encuentra nuestra energía y dónde crea fricción?"
   },
   "profile": {
     "title": "Perfil",
@@ -378,7 +397,10 @@
     "wheel_unavailable": "Rueda no disponible",
     "wheel_aria": "Rueda de la carta natal",
     "astro_load_failed": "No se pudieron cargar los datos de astrocartografía.",
-    "astro_no_data": "No hay datos de astrocartografía disponibles."
+    "astro_no_data": "No hay datos de astrocartografía disponibles.",
+    "share_soul_map_title": "Mi Mapa del Alma, Solray",
+    "share_soul_map_text": "Mi Mapa del Alma en Solray. solray.ai",
+    "bodygraph_label": "Gráfico corporal de Diseño Humano"
   },
   "settings": {
     "title": "Ajustes",
@@ -436,7 +458,22 @@
     "legal_section": "Legal y soporte",
     "terms_privacy": "Términos y política de privacidad",
     "support": "Soporte",
-    "deletion_info": "Cómo funciona la eliminación de la cuenta"
+    "deletion_info": "Cómo funciona la eliminación de la cuenta",
+    "switch_failed": "Ese cambio no se guardó. El interruptor muestra lo que está guardado ahora.",
+    "ai_consent_section": "Procesamiento con IA",
+    "ai_consent_given": "Has dado tu permiso.",
+    "ai_consent_given_on": "Diste tu permiso el {date}.",
+    "ai_consent_not_given": "Sin permiso.",
+    "ai_consent_on_hint": "Solray envía tus datos de nacimiento y lo que escribes o dices a sus proveedores de IA (Anthropic, OpenAI y Groq) para escribir tus lecturas y las respuestas del Oráculo.",
+    "ai_consent_off_hint": "Nada tuyo va a un proveedor de IA. El Oráculo y las lecturas escritas quedan en pausa hasta que aceptes.",
+    "ai_consent_withdraw": "Retirar el permiso",
+    "ai_consent_withdraw_body": "A partir de ahora no se envía nada tuyo a un proveedor de IA. El Oráculo y las lecturas escritas se detienen hasta que vuelvas a aceptar. Tu carta se queda.",
+    "ai_consent_withdraw_confirm": "Retirar",
+    "ai_consent_withdraw_failed": "No se pudo retirar ahora. Inténtalo de nuevo.",
+    "ai_consent_give": "Revisar y aceptar",
+    "delete_password_prompt": "Escribe tu contraseña para confirmar que eres tú.",
+    "delete_password_placeholder": "Contraseña",
+    "delete_wrong_password": "Esa contraseña no coincide. Inténtalo de nuevo."
   },
   "nav": {
     "today": "Ahora",
@@ -722,7 +759,9 @@
     "both_present": "Ambos están presentes",
     "both_present_body": "La guía sostiene ambas cartas. Cualquiera de los dos puede hacer una pregunta. La IA se dirigirá a ti por tu nombre.",
     "ask_as": "Pregunta como {name}...",
-    "yourself": "tú"
+    "yourself": "tú",
+    "unavailable_title": "Este enlace no abre una sesión",
+    "unavailable_body": "Las sesiones de grupo compartidas no se pueden abrir desde un enlace. En Dinámicas puedes leer a las dos personas juntas."
   },
   "welcome": {
     "eyebrow": "Bienvenido a Solray",
@@ -826,5 +865,76 @@
     "cta_create": "Crea tu perfil gratis",
     "error_forming": "Tu mapa aún se está formando. Inténtalo otra vez.",
     "error_generic": "Algo no encajó en el cosmos. Inténtalo otra vez."
+  },
+  "ai_consent": {
+    "title": "Antes de que hable el Oráculo",
+    "not_now_hint": "Sin esto, tu carta, las cartas de Almas y los ajustes siguen funcionando. El Oráculo y las lecturas escritas esperan hasta que aceptes. Puedes cambiarlo cuando quieras en Ajustes.",
+    "accept": "Acepto",
+    "saving": "Guardando...",
+    "not_now": "Ahora no",
+    "save_failed": "Tu respuesta no nos llegó. Revisa tu conexión e inténtalo de nuevo."
+  },
+  "global_error": {
+    "title": "El cosmos se movió.",
+    "notified": "Ya nos ha llegado el aviso.",
+    "retry": "Intentar de nuevo"
+  },
+  "geo": {
+    "expand": "Ampliar",
+    "birth_place": "Lugar de nacimiento"
+  },
+  "share": {
+    "energy_mental": "Mental",
+    "energy_emotional": "Emocional",
+    "energy_physical": "Física",
+    "energy_intuitive": "Intuitiva",
+    "todays_vibe": "La energía de hoy",
+    "invited": "Tienes una invitación",
+    "tagline": "vivir por diseño",
+    "invite_line_1": "Lee tu carta frente al día de hoy",
+    "invite_line_2": "y frente a las personas de tu vida.",
+    "join_with_code": "únete con el código"
+  },
+  "prompts": {
+    "today_deeper": "Hoy me dijiste: \"{title}\". {reading} Quiero profundizar en esto. ¿Qué ves?",
+    "cycle_deeper": "{title} está {phase}, con su punto máximo el {peak}. {summary} ¿Qué me está pidiendo esto?",
+    "phase_building": "creciendo",
+    "phase_separating": "separándose",
+    "insight_deeper": "Me dejaste esto mientras no estaba: \"{title}\". {body} Quiero quedarme con ello. ¿Qué ves?",
+    "echo_topic": "Bajo un cielo conocido",
+    "echo_deeper": "{sentence} Entonces escribí: \"{excerpt}\". Me gustaría mirar cuánto he avanzado desde entonces. ¿Qué ves?",
+    "lunar_topic_full": "Luna llena en {sign}",
+    "lunar_topic_new": "Luna nueva en {sign}",
+    "lunar_full": "La luna llena de esta noche en {sign} cae en mi casa {house}. {note} ¿Qué está llegando a su fin aquí y qué puedo soltar ya?",
+    "lunar_new": "La luna nueva de esta noche en {sign} cae en mi casa {house}. {note} ¿Qué intención debería sembrar aquí?",
+    "birthday_topic": "Mi revolución solar",
+    "birthday": "El Sol ha vuelto a donde estaba cuando nací y hoy empieza un nuevo año de mi vida.{facts} Léeme los temas principales del año que viene, basados en esta carta. ¿Dónde debería poner mi energía?",
+    "sr_facts": " Mi revolución solar de este año tiene {parts}.",
+    "sr_asc": "un ascendente en {sign}",
+    "sr_sun": "el Sol en la casa {house}",
+    "sr_moon": "la Luna en {sign} en la casa {house}",
+    "sr_aspects": "y {aspects}",
+    "upcoming_deeper": "Quiero profundizar en este ciclo: \"{title}\". {known}¿Qué significa esto para mí en concreto y cómo debería trabajar con esta energía?",
+    "upcoming_known": "Esto es lo que sé: {summary}. ",
+    "alert_topic": "{planet} en {aspect}",
+    "alert_question": "Háblame de {planet} en {aspect} con mi {natal} hoy. Orbe: {orb}°",
+    "alert_fallback": "{planet} en {aspect} con {natal} hoy",
+    "tp_transit_topic": "El tránsito de hoy",
+    "tp_transit": "¿Qué está haciendo realmente {phrase} conmigo hoy?",
+    "tp_transit_phrase": "{planet} en {aspect} con mi {natal}",
+    "tp_energy_mental": "claridad mental",
+    "tp_energy_emotional": "energía emocional",
+    "tp_energy_physical": "energía física",
+    "tp_energy_intuitive": "intuición",
+    "tp_energy_topic": "{label}",
+    "tp_energy_low": "Mi {label} está en {value}/10 hoy. ¿Qué hay debajo y qué me ayudaría?",
+    "tp_energy_high": "Mi {label} está en {value}/10 hoy. ¿Cómo debería trabajar con esta carga?",
+    "tp_reading_topic": "La lectura de hoy",
+    "tp_reading_phrase": "¿Qué significa realmente \"{phrase}\" para mí ahora mismo?",
+    "tp_reading_more": "¿Puedes contarme más sobre esto: \"{first}\"?",
+    "compat_opening": "Leyendo la dinámica entre tú y {name}...",
+    "compat_session": "Tú y {name}",
+    "compat_failed": "El Oráculo no pudo abrir ahora la lectura entre tú y {name}. Inténtalo de nuevo en un momento.",
+    "orb": "orbe"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/lib/theme-context";
+import { useT } from "@/lib/i18n";
 
 /**
  * BodyGraph: Human Design bodygraph. June 2026 redesign (Bob-approved mockup
@@ -40,10 +41,13 @@ const GATE_TO_CENTER: Record<number, CenterKey> = {
   47: "Ajna", 24: "Ajna", 4: "Ajna", 17: "Ajna", 43: "Ajna", 11: "Ajna",
   // Throat
   62: "Throat", 23: "Throat", 56: "Throat", 35: "Throat", 12: "Throat",
-  45: "Throat", 33: "Throat", 8: "Throat", 31: "Throat", 7: "Throat",
-  1: "Throat", 13: "Throat", 16: "Throat", 20: "Throat",
-  // G center
-  25: "G", 46: "G", 2: "G", 15: "G", 10: "G",
+  45: "Throat", 33: "Throat", 8: "Throat", 31: "Throat",
+  16: "Throat", 20: "Throat",
+  // G center. Gates 1, 7 and 13 live here (channels 1-8, 7-31 and 13-33
+  // run from the G to the Throat); they were filed under the Throat, which
+  // made those three channels look like a centre joined to itself, so they
+  // never drew. Matches the backend's canonical map in human_design.py.
+  1: "G", 7: "G", 13: "G", 25: "G", 46: "G", 2: "G", 15: "G", 10: "G",
   // Heart / Will
   21: "Heart", 40: "Heart", 26: "Heart", 51: "Heart",
   // Sacral
@@ -282,6 +286,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
   // treatment carries more weight and a brighter outline, rather than the same
   // geometry with the colours swapped.
   const { theme } = useTheme();
+  const { t } = useT();
   const isDark = theme !== "light";
   const labelFill = "rgb(var(--rgb-text-secondary))";
   const chanW = isDark ? 3.6 : 3;
@@ -349,7 +354,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width="100%"
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
-      aria-label="Human Design bodygraph"
+      role="img"
+      aria-label={t("profile.bodygraph_label")}
     >
       {/* Channel lines behind the centers, full-bodied amber */}
       {Array.from(centerPairs).map((key) => {

@@ -11,10 +11,13 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading) {
+      // replace, not push: "/" is only a doorway. With push, Android Back
+      // from Now returned here and was pushed straight back to Now, a loop
+      // the member could not leave.
       if (token) {
-        router.push("/today");
+        router.replace("/today");
       } else {
-        router.push("/login");
+        router.replace("/login");
       }
     }
   }, [token, loading, router]);

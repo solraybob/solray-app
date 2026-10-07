@@ -10,8 +10,10 @@ import { planetText, GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { cardShareAvailable } from "@/lib/share-available";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
+import { syncBirthRevision } from "@/lib/chart-revision";
 
 // Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
 // inside a collapsed section that rarely opens, so code-split it into its own
@@ -298,7 +300,7 @@ interface SoulMapRadarChartProps {
 
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
-  const { lang } = useT();
+  const { lang, t } = useT();
   // The grid is the one hairline token, so there is no theme branch here.
   const gridStroke = "rgb(var(--rgb-border))";
   const progress = useAnimatedProgress(0);
@@ -322,7 +324,8 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       height={TOTAL}
       viewBox={`0 0 ${TOTAL} ${TOTAL}`}
       className="w-full max-w-[360px] mx-auto"
-      aria-label="Soul Map radar chart"
+      role="img"
+      aria-label={t("profile.soul_map")}
     >
       <defs>
         <radialGradient id="soulMapGlow" cx="50%" cy="50%" r="60%">
@@ -759,6 +762,9 @@ export default function ProfilePage() {
   const toggleSection = (title: string) =>
     setOpenSection((cur) => (cur === title ? null : title));
   const [soulMapSharing, setSoulMapSharing] = useState(false);
+  const [shareOk, setShareOk] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  useEffect(() => { setShareOk(cardShareAvailable()); }, []);
   // /users/me failed with no cache to fall back on. Must not be read as
   // "no birth data yet": show an error with Retry instead.
   const [loadError, setLoadError] = useState(false);
@@ -767,18 +773,20 @@ export default function ProfilePage() {
   const handleSoulMapShare = async () => {
     if (soulMapSharing || !soulMapRef.current) return;
     setSoulMapSharing(true);
+    setShareError(false);
     try {
       const { shareOrDownloadCard } = await import("@/lib/share-card");
       await shareOrDownloadCard({
         node: soulMapRef.current,
         filename: "solray-soul-map.png",
-        title: "My Soul Map, Solray",
-        text: "My Soul Map on Solray. solray.ai",
+        title: t("profile.share_soul_map_title"),
+        text: t("profile.share_soul_map_text"),
         naturalSize: true,      // capture the card exactly as it appears, not a screen
         background: "rgb(var(--rgb-card))",  // the card plane behind the translucent layer
       });
     } catch (err) {
       console.warn("[share] soul map failed", err);
+      setShareError(true);
     } finally {
       setSoulMapSharing(false);
     }
@@ -821,6 +829,8 @@ export default function ProfilePage() {
         } else if (!bp._name) {
           apiFetch("/users/me", {}, token)
             .then((data) => {
+              // Birth details changed since this cache was built: rebuild.
+              if (syncBirthRevision(data)) { setLoadAttempt((n) => n + 1); return; }
               const bpWithUser = {
                 ...bp,
                 _name: data.profile?.name || data.name || "",
@@ -834,6 +844,12 @@ export default function ProfilePage() {
           return;
         } else {
           loadFromBlueprint(bp);
+          // Paint from cache, then check in the background that the cache
+          // was built from the current birth details (an edit on another
+          // device leaves it stale); if not, rebuild from the server.
+          apiFetch("/users/me", {}, token)
+            .then((data) => { if (syncBirthRevision(data)) setLoadAttempt((n) => n + 1); })
+            .catch(() => { /* offline: the cached chart stays */ });
           return;
         }
       }
@@ -842,6 +858,7 @@ export default function ProfilePage() {
     // No cache, fetch full blueprint (first load or after cache bust)
     apiFetch("/users/me", {}, token)
       .then((data) => {
+        syncBirthRevision(data);
         if (data.blueprint) {
           const bpWithUser = {
             ...data.blueprint,
@@ -1187,7 +1204,7 @@ export default function ProfilePage() {
                     <div ref={soulMapRef}>
                       <SoulMapRadarChart radar={profile.radar} radarDisplay={profile.radarDisplay} />
 
-                      <button
+                      {shareOk && (<button
                         onClick={handleSoulMapShare}
                         disabled={soulMapSharing}
                         className="font-body disabled:opacity-50"
@@ -1199,7 +1216,12 @@ export default function ProfilePage() {
                         }}
                       >
                         {t("profile.share_soul_map")}
-                      </button>
+                      </button>)}
+                      {shareError && (
+                        <p role="status" className="font-body" style={{ fontSize: 13, marginTop: 8, color: "rgb(var(--rgb-text-muted))" }}>
+                          {t("common.share_failed")}
+                        </p>
+                      )}
                     </div>
                   </CollapsibleSection>
                 </div>

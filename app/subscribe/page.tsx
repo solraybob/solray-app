@@ -26,6 +26,7 @@ import {
   NativeIAPError,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
+import { termsOfUseUrl } from "@/lib/legal-links";
 import CardForm, { type CardSaveResult } from "@/components/CardForm";
 import { PageHead, PageTitle, Section, HairlineButton } from "@/components/PageHead";
 
@@ -837,7 +838,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
           </p>
           <p className="text-[14px]">
             <a
-              href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+              href={termsOfUseUrl()}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "rgb(var(--rgb-text-primary))", textDecoration: "underline", textUnderlineOffset: 3 }}

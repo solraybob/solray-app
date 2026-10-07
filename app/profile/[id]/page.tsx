@@ -17,7 +17,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import NatalWheel from "@/components/NatalWheel";
 import BodyGraph from "@/components/BodyGraph";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { PageHead, Section, InkButton, HairlineButton } from "@/components/PageHead";
 import Link from "next/link";
@@ -86,7 +86,7 @@ export default function ConnectionProfilePage() {
               onClick={() => { if (window.history.length > 1) router.back(); else router.push("/souls"); }}
               aria-label={t("common.back")}
               className="font-body uppercase font-bold flex items-center gap-1"
-              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 32 }}
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 44 }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="15 18 9 12 15 6"/>
@@ -461,6 +461,9 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       .catch((e: unknown) => {
         if (e instanceof ApiError && e.status === 402) {
           setPaywall(true);
+        } else if (isAiConsentError(e)) {
+          // The reading is written with AI: the consent sheet is open.
+          setError(t("chat.consent_needed"));
         } else if (e instanceof ApiError && e.status === 403) {
           // Not in an accepted connection; should never happen on this page
           // since the public-profile fetch above already 403'd.

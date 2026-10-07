@@ -515,6 +515,18 @@ html {
   transition: color .18s ease, background .18s ease;
 }
 .sol-ico svg { width: 17px; height: 17px; display: block; }
+/* Touch targets: the header icons stay 34px to the eye, but the area that
+   answers a finger is 44px (Apple HIG and Android minimums). */
+.sol-ico { position: relative; }
+.sol-ico::after, .hit-44::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+/* .hit-44 is only used on elements that are already positioned (absolute),
+   so it sets no position of its own. */
+/* For the 32px round close buttons: 6px each way makes 44px. */
+.hit-44.hit-44-32::after { inset: -6px; }
 .sol-ico:hover { color: rgb(var(--rgb-text-primary)); }
 .sol-ico:active { background: rgb(var(--rgb-text-primary) / 0.06); }
 

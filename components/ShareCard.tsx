@@ -23,6 +23,7 @@
  */
 
 import { type RefObject } from "react";
+import { useT } from "@/lib/i18n";
 
 // The one lockup: lowercase, the orb standing in for the o, set at the
 // wordmark's own weight. Sized in px because these cards render at a fixed
@@ -247,6 +248,13 @@ const ENERGY_COLORS_FOR_CARD = {
  * + the date + Solray branding are all that ships.
  */
 export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
+  const { t } = useT();
+  const ROW_LABEL: Record<string, string> = {
+    Mental: t("share.energy_mental"),
+    Emotional: t("share.energy_emotional"),
+    Physical: t("share.energy_physical"),
+    Intuitive: t("share.energy_intuitive"),
+  };
   // Same display-pct mapping as the live energy bars so the share
   // card matches what the user just looked at on /today.
   const toDisplayPct = (v: number) => Math.round(Math.max(1, Math.min(10, v)) * 9 + 3);
@@ -302,7 +310,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
           color: "#22201C",
         }}
       >
-        Today&apos;s Vibe
+        {t("share.todays_vibe")}
       </div>
 
       {/* Bars block, centered vertically in the lower half */}
@@ -340,7 +348,7 @@ export function EnergyBarsCard({ data }: { data: EnergyBarsCardData }) {
                     fontWeight: 500,
                   }}
                 >
-                  {label}
+                  {ROW_LABEL[label] || label}
                 </span>
                 <span
                   style={{
@@ -459,6 +467,7 @@ export interface SoulsInviteCardData {
  * consents by tapping share. No recipient data, no birth data.
  */
 export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
+  const { t } = useT();
   const code = (data.code || "").trim();
 
   return (
@@ -498,7 +507,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           color: "#6E6659",
         }}
       >
-        You are invited
+        {t("share.invited")}
       </div>
 
       {/* Brand lockup, exactly the website: sun, SOLRAY, living by design. */}
@@ -533,7 +542,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
             marginTop: "18px",
           }}
         >
-          living by design
+          {t("share.tagline")}
         </div>
       </div>
 
@@ -554,9 +563,9 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
           color: "#5C5548",
         }}
       >
-        Read your chart against today,
+        {t("share.invite_line_1")}
         <br />
-        and the people in your life.
+        {t("share.invite_line_2")}
       </div>
 
       {/* Invite code + url. */}
@@ -574,7 +583,7 @@ export function SoulsInviteCard({ data }: { data: SoulsInviteCardData }) {
               marginBottom: "18px",
             }}
           >
-            join with code{" "}
+            {t("share.join_with_code")}{" "}
             <span style={{ color: "rgb(var(--rgb-amber) / 0.95)", letterSpacing: "0.18em" }}>{code}</span>
           </div>
         ) : null}
