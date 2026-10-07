@@ -28,6 +28,7 @@ import {
   serverIdOf,
   unmarkDeletedHere,
   wasDeletedHere,
+  hasQueuedWrites,
 } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -407,6 +408,14 @@ export default function SoulsPage() {
   // Quick Bond state, hybrid local-chart flow
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>([]);
   const [bondPartners, setBondPartners] = useState<BondPartner[]>([]);
+  // Saved people as the server confirmed them, by the id they were added
+  // under. Set as soon as a save lands (before React renders it), so a
+  // reading started right after still names the confirmed person.
+  const confirmedPeopleRef = useRef(new Map<string, SavedPerson>());
+  const confirmedPartner = (p: BondPartner): BondPartner =>
+    p.kind === "saved" && !p.person._synced && confirmedPeopleRef.current.has(p.person.id)
+      ? { kind: "saved", person: confirmedPeopleRef.current.get(p.person.id) as SavedPerson }
+      : p;
   const [bondLens, setBondLens] = useState<BondLens>("family");
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
@@ -547,17 +556,20 @@ export default function SoulsPage() {
           writeSavedPeople(final);
           return final;
         });
-        // If migration changed any ids, reconcile selected bond partners too.
-        if (Object.keys(idRemap).length) {
-          const byId = new Map(confirmed.map((p) => [p.id, p] as const));
-          setBondPartners(prev => prev.map(bp => {
-            if (bp.kind === "saved" && idRemap[bp.person.id]) {
-              const np = byId.get(idRemap[bp.person.id]);
-              return np ? { kind: "saved", person: np } : bp;
-            }
-            return bp;
-          }));
+        // Selected bond partners take the confirmed person (the server's id
+        // when it minted one, and _synced either way), so a reading names
+        // them by id and the conversation keeps its partner on every device.
+        const byId = new Map(confirmed.map((p) => [p.id, p] as const));
+        for (const [from, to] of Object.entries(idRemap)) {
+          const np = byId.get(to);
+          if (np) confirmedPeopleRef.current.set(from, np);
         }
+        for (const p of confirmed) confirmedPeopleRef.current.set(p.id, p);
+        setBondPartners(prev => prev.map(bp => {
+          if (bp.kind !== "saved") return bp;
+          const np = byId.get(idRemap[bp.person.id] || bp.person.id);
+          return np && np !== bp.person ? { kind: "saved", person: np } : bp;
+        }));
         // Partners removed on another device leave the bond too.
         setBondPartners(prev => prev.filter(bp => bp.kind !== "saved" || confirmedIds.has(bp.person.id) || !bp.person._synced));
       } catch {
@@ -752,6 +764,7 @@ export default function SoulsPage() {
             rememberServerId(person.id, saved.id);
             moveSharingPermission(person.id, saved.id);
           }
+          if (saved && saved.id) confirmedPeopleRef.current.set(person.id, saved);
           // Removed while the save ran: the delete queued behind it takes it
           // off the server again; nothing is put back on screen.
           if (wasDeletedHere(person.id)) return;
@@ -764,7 +777,10 @@ export default function SoulsPage() {
               return updated;
             });
           }
-          if (saved && saved.id && saved.id !== person.id) {
+          // Every successful save, the id changed or not: the selected
+          // partner becomes the confirmed person, so a reading names them by
+          // id (savedPersonId) and the conversation records who it is with.
+          if (saved && saved.id) {
             setBondPartners(prev => prev.map(bp =>
               bp.kind === "saved" && bp.person.id === person.id
                 ? { kind: "saved", person: saved }
@@ -853,6 +869,21 @@ export default function SoulsPage() {
     setReadingBond(true);
     setErrorMessage(null);
 
+    // A person added a moment ago may still be on the way to the server:
+    // wait for that save, so the reading names them by their confirmed id
+    // (and the conversation keeps its partner on the member's other
+    // devices). Offline, the reading goes ahead with their chart and the
+    // id is written into the conversation once the save lands.
+    const pendingSaves = bondPartners.filter((p) => p.kind === "saved" && !p.person._synced && hasQueuedWrites(p.person.id));
+    if (pendingSaves.length > 0) {
+      await Promise.all(pendingSaves.map((p) =>
+        p.kind === "saved" ? forPerson(p.person.id, acct.generation, async () => null).catch(() => null) : null));
+      if (!stillHere()) return abandon();
+    }
+    const partners = bondPartners.map(confirmedPartner);
+    // A saved person still unconfirmed: their local id travels along.
+    const localIdOf = (p: BondPartner) => (p.kind === "saved" && !p.person._synced ? p.person.id : null);
+
     // The opening question is shown in the chat as the member's own words,
     // so it is written in their language.
     const lensLabel = t(
@@ -867,13 +898,13 @@ export default function SoulsPage() {
     ].filter(Boolean).join(", ");
 
     // Family with multiple people: build a group context
-    if (bondLens === "family" && bondPartners.length > 1) {
+    if (bondLens === "family" && partners.length > 1) {
       const lines: string[] = [];
       let primaryBlueprint: unknown = null;
       // The family reading's focal person is the first partner.
-      const primaryRef = partnerSoulRef(bondPartners[0]);
+      const primaryRef = partnerSoulRef(partners[0]);
 
-      for (const p of bondPartners) {
+      for (const p of partners) {
         const chart = partnerChart(p);
         const name  = partnerName(p);
         const summary = summarize(chart);
@@ -884,12 +915,12 @@ export default function SoulsPage() {
         // blueprint for the chat (it's the focal lens for the whole
         // family reading); the rest of the family's charts stay in
         // the summary-line text.
-        if (!primaryBlueprint && p === bondPartners[0] && p.kind === "saved" && p.person.blueprint) {
+        if (!primaryBlueprint && p === partners[0] && p.kind === "saved" && p.person.blueprint) {
           primaryBlueprint = p.person.blueprint;
         }
       }
 
-      const names = bondPartners.map(partnerName);
+      const names = partners.map(partnerName);
       const nameList = names.length === 2
         ? names.join(t("souls.bond_and"))
         : `${names.slice(0, -1).join(", ")}${t("souls.bond_and_last")}${names[names.length - 1]}`;
@@ -901,6 +932,7 @@ export default function SoulsPage() {
         introMessage,
         soulBlueprint: primaryBlueprint,
         ...primaryRef,
+        localPersonId: localIdOf(partners[0]),
         lens: bondLens,
       }));
 
@@ -911,7 +943,7 @@ export default function SoulsPage() {
     }
 
     // Single partner reading (all non-family lenses, or family with one person)
-    const bondPartner = bondPartners[0];
+    const bondPartner = partners[0];
     const chart  = partnerChart(bondPartner);
     const pName  = partnerName(bondPartner);
 
@@ -986,6 +1018,7 @@ export default function SoulsPage() {
       introMessage,
       soulBlueprint,
       ...partnerSoulRef(bondPartner),
+      localPersonId: localIdOf(bondPartner),
       lens: bondLens,
     }));
 

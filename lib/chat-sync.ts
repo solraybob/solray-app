@@ -23,6 +23,7 @@
 // another in the order they were made.
 
 import { mergeMessages, sameTranscript } from "./chat-merge";
+import { withSoulBackfill } from "./chat-soul";
 import { isCurrentGeneration, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
 
@@ -231,8 +232,15 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
         }
       }
 
-      // The newest local copy (the member may have written more meanwhile).
-      const latest = loadSession(sessionId) || local;
+      // The newest local copy (the member may have written more meanwhile),
+      // with this device's Dynamics partner reference written in if the
+      // transcript does not name it yet.
+      let latest = loadSession(sessionId) || local;
+      const backfilled = withSoulBackfill(sessionId, latest.messages || []);
+      if (backfilled !== latest.messages) {
+        latest = { ...latest, messages: backfilled };
+        saveSession(latest);
+      }
       const sent = latest.messages || [];
       const baseRevision = getLocalMeta()[sessionId]?.revision;
       const putRes = await fetch(url, {
@@ -369,6 +377,18 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
 
   const localIds = new Set(getSessionIds());
   const localMeta = getLocalMeta();
+  // Conversations opened here as Dynamics readings whose transcript does not
+  // name the partner yet (from before transcripts carried it, or started
+  // before the saved person was confirmed): written in now and uploaded.
+  for (const id of Array.from(localIds)) {
+    const s = loadSession(id);
+    if (!s) continue;
+    const backfilled = withSoulBackfill(id, s.messages || []);
+    if (backfilled !== s.messages) {
+      saveSession({ ...s, messages: backfilled });
+      markUnsent(id);
+    }
+  }
   const unsent = getUnsent();
   const fetched: string[] = [];
 

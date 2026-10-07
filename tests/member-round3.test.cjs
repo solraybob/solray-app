@@ -168,3 +168,88 @@ test("R3-8: the chat composer's unsent text counts as a draft, however it got th
   assert.match(src, /useEffect\(\(\) => \{ composerValueRef\.current = input; \}, \[input\]\);/);
   assert.match(src, /registerDraftSource\(\(\) => composerValueRef\.current\.trim\(\) !== ""\)/);
 });
+
+// ── Finding 7: Dynamics conversations keep their partner on every device ────
+
+test("R3-7: merging keeps a partner reference only one copy has", () => {
+  const cm = load("lib/chat-merge.js");
+  const server = [{ id: "greeting", content: "hi", timestamp: "1" }];
+  const local = [{ id: "greeting", content: "hi", timestamp: "1", soul: { saved_person_id: "p1" } }];
+  const merged = cm.mergeMessages(server, local);
+  assert.deepEqual(merged[0].soul, { saved_person_id: "p1" });
+  assert.equal(cm.sameTranscript(server, local), false, "a new partner reference is a change to upload");
+  assert.equal(cm.sameTranscript(local, merged), true);
+});
+
+test("R3-7: a conversation's local partner reference is written into its transcript", () => {
+  const cs = load("lib/chat-soul.js");
+  win.localStorage.clear();
+  const msgs = [{ id: "greeting", role: "assistant", content: "x", timestamp: "1" }, { id: "2", role: "user", content: "y", timestamp: "2" }];
+  assert.equal(cs.withSoulBackfill("s1", msgs), msgs, "nothing known: unchanged");
+  cs.writeSoulCtx("s1", { name: "Ana", blueprint: null, connectionId: null, savedPersonId: "p1" });
+  const out = cs.withSoulBackfill("s1", msgs);
+  assert.deepEqual(out[0].soul, { name: "Ana", connection_id: null, saved_person_id: "p1" });
+  assert.equal(out[1], msgs[1]);
+  assert.equal(cs.withSoulBackfill("s1", out), out, "already there: unchanged");
+  // Started before the person was confirmed: the local id resolves once the
+  // saved person is confirmed by the server.
+  cs.writeSoulCtx("s2", { name: "Bo", blueprint: { x: 1 }, connectionId: null, savedPersonId: null, localPersonId: "loc-9" });
+  assert.equal(cs.withSoulBackfill("s2", msgs), msgs);
+  win.localStorage.setItem("solray_saved_people", JSON.stringify([{ id: "loc-9", name: "Bo", _synced: true }]));
+  assert.equal(cs.withSoulBackfill("s2", msgs)[0].soul.saved_person_id, "loc-9");
+  assert.equal(cs.resolveSoulCtx(cs.readSoulCtx("s2")).savedPersonId, "loc-9");
+});
+
+test("R3-7: uploads and the startup sync carry backfilled partner references", async () => {
+  const sync = load("lib/chat-sync.js");
+  const cs = load("lib/chat-soul.js");
+  win.localStorage.clear();
+  win.localStorage.setItem("solray_chat_migrated_v1", "1");
+  const store = new Map([["d1", { session_id: "d1", revision: 1, last_message_at: "2026-10-07T09:00:00Z",
+    messages: [{ id: "greeting", role: "assistant", content: "x", timestamp: "1" }] }]]);
+  const puts = [];
+  global.fetch = async (url, init = {}) => {
+    const method = (init.method || "GET").toUpperCase();
+    const u = new URL(url);
+    const json = (status, body) => ({ ok: status < 300, status, json: async () => body });
+    if (u.pathname === "/chat/sessions") return json(200, { sessions: Array.from(store.values()).map((s) => ({ session_id: s.session_id, last_message_at: s.last_message_at })) });
+    const id = decodeURIComponent(u.pathname.split("/").pop());
+    if (method === "GET") return json(200, store.get(id));
+    if (method === "PUT") {
+      const body = JSON.parse(init.body);
+      puts.push(body);
+      const cur = store.get(id);
+      const messages = cur.messages.map((m) => { const mine = body.messages.find((x) => x.id === m.id); return mine && mine.soul && !m.soul ? { ...m, soul: mine.soul } : m; });
+      store.set(id, { ...cur, messages, revision: cur.revision + 1 });
+      return json(200, { session_id: id, revision: cur.revision + 1, last_message_at: cur.last_message_at, messages });
+    }
+    return json(405, {});
+  };
+  // This device opened d1 as a Dynamics reading before round 2.
+  sync.saveSession({ sessionId: "d1", date: "", messages: [{ id: "greeting", role: "assistant", content: "x", timestamp: "1" }] });
+  sync.setSessionLocalMeta("d1", "2026-10-07T09:00:00Z", 1);
+  sync.markServerConfirmed(["d1"]);
+  cs.writeSoulCtx("d1", { name: "Ana", blueprint: null, connectionId: "c1", savedPersonId: null });
+  await sync.syncSessionsFromServer("tok", session.getAuthGeneration());
+  assert.equal(puts.length, 1, "the backfill is uploaded");
+  assert.deepEqual(puts[0].messages[0].soul, { name: "Ana", connection_id: "c1", saved_person_id: null });
+  assert.deepEqual(store.get("d1").messages[0].soul, { name: "Ana", connection_id: "c1", saved_person_id: null });
+});
+
+test("R3-7: Souls hands the confirmed saved-person id to every reading", () => {
+  const src = read("app/souls/page.tsx");
+  const added = src.slice(src.indexOf("const handlePersonAdded"), src.indexOf("const handlePersonRemove"));
+  // Selected partners are replaced on every successful save, ids changed or not.
+  assert.ok(!/if \(saved && saved\.id && saved\.id !== person\.id\) \{\n\s+setBondPartners/.test(added));
+  assert.match(added, /confirmedPeopleRef\.current\.set\(person\.id, saved\);/);
+  assert.match(added, /bp\.kind === "saved" && bp\.person\.id === person\.id\n?\s*\? \{ kind: "saved", person: saved \}/);
+  const bond = src.slice(src.indexOf("const readTheBond"), src.indexOf("<ProtectedRoute>"));
+  assert.match(bond, /hasQueuedWrites\(p\.person\.id\)/);
+  assert.match(bond, /forPerson\(p\.person\.id, acct\.generation, async \(\) => null\)/);
+  assert.match(bond, /const partners = bondPartners\.map\(confirmedPartner\);/);
+  assert.ok(!/partnerSoulRef\(bondPartners\[0\]\)/.test(bond));
+  assert.match(bond, /localPersonId:/);
+  const chat = read("app/chat/page.tsx");
+  assert.match(chat, /from "@\/lib\/chat-soul"/);
+  assert.match(chat, /localPersonId: ctx\.localPersonId \?\? null/);
+});
