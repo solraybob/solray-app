@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
+import { releaseNativePush } from "./native-push";
 
 interface User {
   id: string;
@@ -124,21 +125,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Release this phone's push binding for the member who is leaving,
+    // while their auth token is still valid, and cancel any registration
+    // in flight. Otherwise the next account on this phone could get this
+    // member's teaser on the lock screen. Falls back to the stored token
+    // in case state has not settled yet. No-op on the web.
+    let leavingToken: string | null = token;
+    try { leavingToken = leavingToken || localStorage.getItem("solray_token"); } catch { /* ignore */ }
+    releaseNativePush(leavingToken);
     localStorage.removeItem("solray_token");
     localStorage.removeItem("solray_user");
     // Clear per-user cached reading data so the next account on this device
     // can never read the previous user's cached forecast or chart.
     clearReadingCaches();
-    // Clear the native-push "registered" flags so the next user signing
-    // in on the same device actually re-registers their device against
-    // APNs and the backend records THEIR token. Codex audit P1.4.
-    try {
-      // Lazy import to keep this file SSR-safe; the helper itself is
-      // a no-op on web.
-      import("./native-push").then(({ clearNativePushRegistration }) => {
-        clearNativePushRegistration();
-      });
-    } catch { /* ignore */ }
     setTokenState(null);
     setUser(null);
   };
