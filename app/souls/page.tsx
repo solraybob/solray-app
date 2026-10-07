@@ -471,13 +471,18 @@ export default function SoulsPage() {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
+    // Every write below belongs to this account; one whose turn comes after
+    // a sign-out is never sent (lib/saved-people-sync forPerson).
+    const acct = captureAccount();
+    const gen = acct.generation;
     (async () => {
       try {
         // 1. Finish deletions made offline or that failed earlier.
         for (const id of Array.from(loadTombstones())) {
           noteDeleteAttempt(id);
           try {
-            const r = await forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token));
+            const r = await forPerson(id, gen, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token, { generation: gen }));
+            acct.check();
             if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
           } catch (e) {
             if (isStaleAccountError(e)) throw e;
@@ -509,11 +514,12 @@ export default function SoulsPage() {
         const idRemap: Record<string, string> = {};
         for (const p of toMigrate) {
           try {
-            const r = await forPerson(p.id, async () => {
+            const r = await forPerson(p.id, gen, async () => {
               // Removed while waiting its turn: do not create it.
               if (wasDeletedHere(p.id) || loadTombstones().has(p.id)) return null;
-              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(p)) }, token);
+              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(p)) }, token, { generation: gen });
             });
+            acct.check();
             if (r?.person) {
               const sp = { ...(r.person as SavedPerson), _synced: true };
               if (sp.id && sp.id !== p.id) {
@@ -530,7 +536,7 @@ export default function SoulsPage() {
             /* offline / error: the local copy stays and is retried next load */
           }
         }
-        if (cancelled) return;
+        if (cancelled || !acct.live) return;
         const replacedIds = new Set(Object.keys(idRemap));
         const confirmed = [...migrated, ...server].filter((p) => !gone().has(p.id));
         const confirmedIds = new Set(confirmed.map((p) => p.id));
@@ -725,16 +731,21 @@ export default function SoulsPage() {
     // Persist to the server so the person survives reinstalls and syncs across
     // devices. Optimistic above; reconcile the id if the server minted its own.
     if (token) {
+      // Queued under this account: never sent, and its answer never
+      // applied, once the account has changed.
+      const acct = captureAccount();
+      const gen = acct.generation;
       (async () => {
         try {
-          const r = await forPerson(person.id, async () => {
+          const r = await forPerson(person.id, gen, async () => {
             // Removed before the save got its turn: do not create it.
             if (wasDeletedHere(person.id)) return null;
             return apiFetch("/saved-people", {
               method: "POST",
               body: JSON.stringify(forServer(person)),
-            }, token);
+            }, token, { generation: gen });
           });
+          if (!acct.live) return;
           const raw = r?.person as SavedPerson | undefined;
           const saved = raw ? { ...raw, _synced: true } : undefined;
           if (saved && saved.id && saved.id !== person.id) {
@@ -782,9 +793,13 @@ export default function SoulsPage() {
       markDeletedHere(id);
       noteDeleteAttempt(id);
       // After any save still on its way for this person, and against the id
-      // the server ended up giving them.
-      forPerson(id, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token))
+      // the server ended up giving them. Bound to this account: never sent
+      // (and its answer never applied) after a sign-out.
+      const acct = captureAccount();
+      const gen = acct.generation;
+      forPerson(id, gen, () => apiFetch(`/saved-people/${serverIdOf(id)}`, { method: "DELETE" }, token, { generation: gen }))
         .then((r: unknown) => {
+          if (!acct.live) return;
           // {ok:true}: gone. {ok:false}: the server did not remove anything
           // (it never had the person, or the delete failed there). The
           // tombstone stays, the delete is retried on the next sync, and it
@@ -792,7 +807,7 @@ export default function SoulsPage() {
           if (deleteConfirmed(r)) { dropTombstone(id); forgetSharingPermission(id); }
         })
         .catch((e: unknown) => {
-          if (isStaleAccountError(e)) return;
+          if (isStaleAccountError(e) || !acct.live) return;
           // 404: the server never had it (local-only person), so it is gone.
           if (e instanceof ApiError && e.status === 404) { dropTombstone(id); forgetSharingPermission(id); return; }
           // No answer (offline): the tombstone stays and the next sync

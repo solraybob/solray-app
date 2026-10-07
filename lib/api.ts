@@ -85,6 +85,13 @@ export interface ApiFetchExtra {
    * account-deletion re-check). The session is kept; the caller shows it.
    */
   keepSessionOn401?: boolean;
+  /**
+   * The account generation this request belongs to, when it was decided
+   * earlier than the call (a write queued behind others). If that account
+   * has signed out by the time the request would start, it is not sent:
+   * StaleAccountError. Defaults to the generation at call time.
+   */
+  generation?: number;
 }
 
 export async function apiFetch(
@@ -141,8 +148,11 @@ export async function apiFetch(
   // the answer is dropped (StaleAccountError) so it can never be written
   // into the next account's screens or caches, and its 401 can never sign
   // the next account out.
-  const startedGen = getAuthGeneration();
+  const startedGen = typeof extra.generation === "number" ? extra.generation : getAuthGeneration();
   const accountBound = !!token;
+  if (accountBound && !isCurrentGeneration(startedGen)) {
+    throw new StaleAccountError();
+  }
 
   inflight += 1;
   try {

@@ -67,9 +67,9 @@ test("F3: a delete waits for the person's pending save and targets the server's 
   sp.resetPersonWrites();
   const log = [];
   let finishPost;
-  const post = sp.forPerson("local-1", () => new Promise((r) => { finishPost = () => { log.push("POST"); sp.rememberServerId("local-1", "srv-1"); r({ person: { id: "srv-1" } }); }; }));
+  const post = sp.forPerson("local-1", load("lib/account-session.js").getAuthGeneration(), () => new Promise((r) => { finishPost = () => { log.push("POST"); sp.rememberServerId("local-1", "srv-1"); r({ person: { id: "srv-1" } }); }; }));
   sp.markDeletedHere("local-1");
-  const del = sp.forPerson("local-1", async () => { log.push(`DELETE ${sp.serverIdOf("local-1")}`); return { ok: true }; });
+  const del = sp.forPerson("local-1", load("lib/account-session.js").getAuthGeneration(), async () => { log.push(`DELETE ${sp.serverIdOf("local-1")}`); return { ok: true }; });
   await new Promise((r) => setImmediate(r));
   assert.deepEqual(log, [], "delete has not overtaken the save");
   finishPost();
