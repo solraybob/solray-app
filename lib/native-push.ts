@@ -17,11 +17,16 @@
  *     "already registered" flag any more.
  *   - A bind only counts when the backend answers {subscribed: true}.
  *     Anything else is a failure and is retried on the next launch/resume.
- *   - Logout releases this device's binding on the backend, and
+ *   - Logout clears this app's delivered notifications (they may name the
+ *     leaving member's forecast) and releases this device's binding on
+ *     the backend, and
  *     invalidates any registration in flight (if a bind lands after
  *     logout, it is undone). A release that cannot be confirmed (offline,
  *     backend down) stays pending and is retried, and the install stays
  *     unregistered with the OS meanwhile. See "session" below.
+ *   - OS register/unregister calls are serialised across sessions, so a
+ *     signed-out member's late registration cleanup always finishes before
+ *     the next member registers.
  *   - Registration listeners are removed after every attempt; the tap
  *     handler is attached once and can be detached.
  *   - Android is off until an FCM sender exists on the backend: no prompt,
@@ -274,13 +279,45 @@ export function hasPendingReleases(): boolean {
   return readPendingReleases().length > 0;
 }
 
-/** Stop OS-level delivery to this install (no network needed). */
-async function unregisterWithOs(): Promise<void> {
+// OS registration state is one per install, shared by every session. Each
+// register (with any undo it needs) and each unregister runs alone, in the
+// order it was asked for. Without this, a previous member's registration
+// whose OS callback is still pending could finish and undo itself AFTER the
+// next member's registration succeeded, leaving the new member bound on the
+// backend but unregistered with the OS. The queue is enqueued synchronously,
+// so a logout's unregister is always ordered before any later sign-in.
+let osQueue: Promise<unknown> = Promise.resolve();
+
+function withOsLock<T>(op: () => Promise<T>): Promise<T> {
+  const run = osQueue.then(op, op);
+  osQueue = run.catch(() => undefined);
+  return run;
+}
+
+async function unregisterWithOsNow(): Promise<void> {
   if (!isNativePushSupported()) return;
   try {
     const PushNotifications = await loadPlugin();
     await PushNotifications.unregister();
   } catch { /* plugin missing or not registered */ }
+}
+
+/** Stop OS-level delivery to this install (no network needed). */
+function unregisterWithOs(): Promise<void> {
+  return withOsLock(unregisterWithOsNow);
+}
+
+/**
+ * Remove this app's notifications from Notification Center, so a note
+ * written for the member who is leaving is not left on the phone for the
+ * next person to read. Runs at once, outside the OS queue.
+ */
+async function clearDeliveredNotifications(): Promise<void> {
+  if (!isNativePushSupported()) return;
+  try {
+    const PushNotifications = await loadPlugin();
+    await PushNotifications.removeAllDeliveredNotifications();
+  } catch { /* plugin missing */ }
 }
 
 /**
@@ -305,6 +342,7 @@ export function releaseNativePush(authToken: string | null): void {
   if (!isRunningInCapacitor()) return;
   if (binding?.s) addPendingRelease(binding);
   else if (binding && authToken) void unbindOnServer(authToken, binding.t);
+  void clearDeliveredNotifications();
   void unregisterWithOs();
   void flushPendingReleases();
 }
@@ -368,12 +406,20 @@ async function registerAndBind(authToken: string, epoch: number): Promise<boolea
   if (!(await flushPendingReleases())) return false;
   if (epoch !== sessionEpoch) return false;
 
-  const deviceToken = await obtainDeviceToken();
-  if (epoch !== sessionEpoch) {
-    // Logged out while the OS was registering: undo that registration.
-    if (deviceToken) await unregisterWithOs();
-    return false;
-  }
+  // Register with the OS under the OS lock, and undo it inside the same
+  // turn if the member logged out meanwhile, so the next member's
+  // registration cannot start until this one is fully settled.
+  const deviceToken = await withOsLock(async () => {
+    if (epoch !== sessionEpoch) return null;
+    const t = await obtainDeviceToken();
+    if (epoch !== sessionEpoch) {
+      // Logged out while the OS was registering: undo that registration.
+      if (t) await unregisterWithOsNow();
+      return null;
+    }
+    return t;
+  });
+  if (epoch !== sessionEpoch) return false;
   if (!deviceToken) return false;
 
   // Record the binding BEFORE the request, so a logout while it is on the
