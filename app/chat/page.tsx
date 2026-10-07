@@ -25,6 +25,7 @@ import {
   type ChatMessage,
   type StoredSession as ChatStoredSession,
 } from "@/lib/chat-sync";
+import { registerDraftSource } from "@/lib/draft-guard";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -310,6 +311,13 @@ function ChatPageInner() {
   // Keep refs in sync so beforeunload and cleanup can read current values
   // without stale closures
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // The composer's unsent text counts as a draft for the update reload
+  // (components/VersionCheck), however it got there: typed, or filled in by
+  // voice transcription through state, which fires no input event. Sending
+  // clears it, and so does the member removing it.
+  const composerValueRef = useRef("");
+  useEffect(() => { composerValueRef.current = input; }, [input]);
+  useEffect(() => registerDraftSource(() => composerValueRef.current.trim() !== ""), []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   // Active session id, read when a /chat reply lands so a reply to one
   // conversation never appends into another.

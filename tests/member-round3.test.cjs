@@ -145,3 +145,26 @@ test("R3-6: chart screens show a result only under the chart it was fetched for"
   const refresh = today.slice(today.indexOf("const onRefresh = (e: Event)"));
   assert.ok(refresh.indexOf("if (!chartStampCurrent(stamp))") < refresh.indexOf("setForecast(parsed)"));
 });
+
+// ── Finding 8: a dictated, unsent message blocks the update reload ──────────
+
+test("R3-8: the chat composer's unsent text counts as a draft, however it got there", () => {
+  const dg = load("lib/draft-guard.js");
+  dg.resetDraftTracking();
+  let composer = "";
+  const stop = dg.registerDraftSource(() => composer.trim() !== "");
+  assert.equal(dg.hasTypedDraft(), false);
+  composer = "words from the microphone";   // set by setInput, no input event
+  assert.equal(dg.hasTypedDraft(), true);
+  composer = "";                            // sent, or removed by the member
+  assert.equal(dg.hasTypedDraft(), false);
+  composer = "again";
+  stop();                                   // the chat page left
+  assert.equal(dg.hasTypedDraft(), false);
+  const stopBad = dg.registerDraftSource(() => { throw new Error("x"); });
+  assert.equal(dg.hasTypedDraft(), true, "unknown counts as a draft");
+  stopBad();
+  const src = read("app/chat/page.tsx");
+  assert.match(src, /useEffect\(\(\) => \{ composerValueRef\.current = input; \}, \[input\]\);/);
+  assert.match(src, /registerDraftSource\(\(\) => composerValueRef\.current\.trim\(\) !== ""\)/);
+});
