@@ -9,6 +9,9 @@
 //   2. Whenever any API call answers 403 with code "ai_consent_required"
 //      (lib/api.ts fires AI_CONSENT_EVENT), and when Settings asks for it.
 //
+// Never shown to an account under 16 (/users/me age_restricted): the server
+// refuses its consent (403 under_minimum_age) and keeps the AI closed.
+//
 // Accept records consent on the server. Not now closes the sheet; the parts
 // of Solray that do not use AI (chart, Souls charts, settings) keep working,
 // and the sheet comes back the next time an AI feature is used.
@@ -26,6 +29,7 @@ import {
   AI_CONSENT_CHANGED_EVENT,
   AI_CONSENT_EVENT,
   AI_CONSENT_VERSION,
+  ageRestrictedFromMe,
   consentFromMe,
 } from "@/lib/ai-consent";
 import { safeGet, safeSet } from "@/lib/safe-storage";
@@ -60,7 +64,9 @@ export default function AiConsentSheet() {
     // an account change makes the answer irrelevant.
     apiFetch("/users/me", {}, tok)
       .then((me) => {
-        if (checkedFor.current === tok && consentFromMe(me).required) setOpen(true);
+        // An account under 16 (age_restricted) is never asked: consenting
+        // cannot open the AI for it, the AI surfaces show a note instead.
+        if (checkedFor.current === tok && consentFromMe(me).required && !ageRestrictedFromMe(me)) setOpen(true);
       })
       .catch(() => { /* the 403 path will ask when an AI feature is used */ });
   }, [token, pathname]);

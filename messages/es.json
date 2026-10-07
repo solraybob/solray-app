@@ -483,7 +483,9 @@
     "ai_consent_give": "Revisar y aceptar",
     "delete_password_prompt": "Escribe tu contraseña para confirmar que eres tú.",
     "delete_password_placeholder": "Contraseña",
-    "delete_wrong_password": "Esa contraseña no coincide. Inténtalo de nuevo."
+    "delete_wrong_password": "Esa contraseña no coincide. Inténtalo de nuevo.",
+    "birth_under_age": "Solray está hecho para personas de 16 años o más, así que esta fecha de nacimiento no se puede guardar. Si el año tiene un error, revísalo.",
+    "ai_consent_age_restricted": "El Oráculo y las lecturas escritas son para miembros de 16 años o más, así que quedan cerrados por ahora. Todo lo demás en Solray funciona como siempre."
   },
   "nav": {
     "today": "Ahora",
@@ -977,7 +979,8 @@
     "partner_ai_consent_required": "Esta lectura necesita la carta de la otra persona, y aún no ha aceptado el procesamiento con IA. Cuando lo haga, podrán leerla juntos.",
     "ai_daily_limit": "Has llegado al límite de hoy para esto. Se renueva mañana.",
     "message_too_long": "Ese mensaje es demasiado largo. Intenta decirlo con menos palabras.",
-    "soul_connection_gone": "Esta conexión terminó, así que la lectura entre ustedes está cerrada. Aún puedes hablar con el Oráculo sobre ti."
+    "soul_connection_gone": "Esta conexión terminó, así que la lectura entre ustedes está cerrada. Aún puedes hablar con el Oráculo sobre ti.",
+    "under_minimum_age": "El Oráculo es para miembros de 16 años o más, así que esta parte de Solray queda cerrada por ahora. Tu carta y el resto de la app siguen aquí para ti."
   },
   "birth_fold": {
     "title": "¿Cuál de las dos fue?",
@@ -987,5 +990,16 @@
     "hint": "Si no lo sabes, puede que lo diga tu partida de nacimiento o lo recuerde tu familia. Puedes cambiarlo después en Ajustes.",
     "back": "Volver",
     "nonexistent": "Esa hora no existió donde naciste: esa noche se adelantaron los relojes una hora. Revisa tu hora de nacimiento. Puede que fuera una hora más tarde."
+  },
+  "birth_check": {
+    "prompt_title": "Una revisión rápida de tu hora de nacimiento",
+    "prompt_ambiguous": "La noche en que naciste se atrasaron los relojes, así que tu hora de nacimiento ocurrió dos veces. Dinos cuál fue y tu carta será exacta.",
+    "prompt_nonexistent": "La noche en que naciste se adelantaron los relojes, así que la hora guardada no existió allí. Revísala en Ajustes.",
+    "check_now": "Revisar ahora",
+    "later": "Más tarde",
+    "settings_ambiguous": "Tu hora de nacimiento ocurrió dos veces esa noche porque se atrasaron los relojes. Dinos cuál fue.",
+    "settings_choose": "Elegir",
+    "settings_nonexistent": "La hora de nacimiento guardada no existió donde naciste: esa noche se adelantaron los relojes. Corrígela abajo y guarda.",
+    "confirmed": "Gracias. Tu carta ya usa la hora que elegiste."
   }
 }

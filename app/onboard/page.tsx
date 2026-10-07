@@ -15,7 +15,7 @@ import { AI_CONSENT_VERSION } from "@/lib/ai-consent";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 
 import { ageFromBirthDate, MIN_AGE } from "@/lib/age";
-import { ApiError, detailCode, trackRequest } from "@/lib/api";
+import { ApiError, detailCode, isUnderMinimumAgeError, trackRequest } from "@/lib/api";
 import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
 import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
 
@@ -294,6 +294,14 @@ export default function OnboardPage() {
         router.push("/first-mirror");
       }
     } catch (err: unknown) {
+      // The server's own age check (16+): back to the birth moment with the
+      // same kind word the local check shows, and no account is made.
+      if (isUnderMinimumAgeError(err)) {
+        setStep(3);
+        setError(t("onboard.under_age"));
+        setCalculatingBlueprint(false);
+        return;
+      }
       const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : t("common.error_generic");
       setError(msg);
       setCalculatingBlueprint(false);

@@ -4,7 +4,7 @@
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
 import { bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, runAccountSignOutHooks, StaleAccountError } from "./account-session";
-import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "./ai-consent";
+import { AI_CONSENT_REQUIRED_CODE, UNDER_MINIMUM_AGE_CODE, openAiConsentSheet } from "./ai-consent";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
 
@@ -28,6 +28,15 @@ export class ApiError extends Error {
 /** True when the API refused because the member has not agreed to AI processing. */
 export function isAiConsentError(e: unknown): boolean {
   return e instanceof ApiError && e.status === 403 && e.code === AI_CONSENT_REQUIRED_CODE;
+}
+
+/**
+ * True when the API refused because the account is under the minimum age
+ * (16): 400 at signup or on a birth-date update, 403 on an AI route or the
+ * consent POST. Never a billing problem, never a reason for the paywall.
+ */
+export function isUnderMinimumAgeError(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 400 || e.status === 403) && e.code === UNDER_MINIMUM_AGE_CODE;
 }
 
 /** Pulls `code` out of a FastAPI detail object, if there is one. */

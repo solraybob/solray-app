@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { humanizeCycleTitle, fmtDateLong } from "@/components/CurrentCycles";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
+import { apiFetch, ApiError, isAiConsentError, isUnderMinimumAgeError } from "@/lib/api";
+import BirthTimeCheckBanner from "@/components/BirthTimeCheckBanner";
+import { storedBirthTimeCheck, type StoredBirthTimeCheck } from "@/lib/birth-time-fold";
 import { captureAccount, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
 import { chartStampCurrent, chartWorkStamp, syncBirthRevision, writeChartCache } from "@/lib/chart-revision";
@@ -1309,6 +1311,8 @@ export default function TodayPage() {
   const [birthDate, setBirthDate] = useState<string | null>(null);
   // From /users/me. undefined until known, so the banner never flashes.
   const [emailVerified, setEmailVerified] = useState<boolean | undefined>(undefined);
+  // The saved birth time's clock-change check, for the one-time prompt.
+  const [birthCheck, setBirthCheck] = useState<StoredBirthTimeCheck | null>(null);
   const [showBirthday, setShowBirthday] = useState(false);
   const birthdayChecked = useRef(false);
   const { token } = useAuth();
@@ -1661,6 +1665,7 @@ export default function TodayPage() {
             const bd = userData?.profile?.birth_date ?? userData?.birth_date;
             if (typeof bd === "string" && bd) setBirthDate(bd);
             if (typeof userData?.email_verified === "boolean") setEmailVerified(userData.email_verified);
+            setBirthCheck(storedBirthTimeCheck(userData));
             if (userData.blueprint) {
               try {
                 const bpCacheKey = "solray_blueprint";
@@ -1724,6 +1729,16 @@ export default function TodayPage() {
           if (!isBackground) {
             setForecast(null);
             setError("today.consent_needed");
+            setLoading(false);
+          }
+          return;
+        }
+        // 403 because the account is under 16: the Oracle stays closed. A
+        // gentle note, never the paywall; the rest of the app keeps working.
+        if (isUnderMinimumAgeError(err)) {
+          if (!isBackground) {
+            setForecast(null);
+            setError("oracle_errors.under_minimum_age");
             setLoading(false);
           }
           return;
@@ -1949,6 +1964,7 @@ export default function TodayPage() {
         </div>
 
         <VerifyEmailBanner emailVerified={emailVerified} />
+        <BirthTimeCheckBanner check={birthCheck} />
 
         {loading ? (
           <SkeletonToday />
@@ -2069,6 +2085,7 @@ export default function TodayPage() {
             <p className="text-text-secondary font-body text-[17px] leading-relaxed mb-8">
               {error ? t(error) : t("today.error_no_reading")}
             </p>
+            {error !== "oracle_errors.under_minimum_age" && (
             <button
               onClick={() => (error === "today.consent_needed" ? openAiConsentSheet() : window.location.reload())}
               className="inline-block px-8 py-3 rounded-full text-[13px] tracking-[0.3em] uppercase transition-all font-bold"
@@ -2079,6 +2096,7 @@ export default function TodayPage() {
             >
               {error === "today.consent_needed" ? t("settings.ai_consent_give") : t("common.retry")}
             </button>
+            )}
           </div>
         )}
 

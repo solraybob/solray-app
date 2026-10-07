@@ -23,8 +23,8 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
-import { apiFetch, ApiError } from "@/lib/api";
-import { AI_CONSENT_CHANGED_EVENT, consentFromMe, openAiConsentSheet } from "@/lib/ai-consent";
+import { apiFetch, ApiError, isUnderMinimumAgeError } from "@/lib/api";
+import { AI_CONSENT_CHANGED_EVENT, ageRestrictedFromMe, consentFromMe, openAiConsentSheet } from "@/lib/ai-consent";
 import { clearChartDerivedCaches, syncBirthRevision } from "@/lib/chart-revision";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
@@ -33,7 +33,10 @@ import BirthWheels from "@/components/BirthWheels";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
 import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
-import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
+import {
+  sendBirthRequest, storedBirthTimeCheck,
+  type BirthFold, type FoldChoice, type StoredBirthTimeCheck,
+} from "@/lib/birth-time-fold";
 
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -59,6 +62,17 @@ export default function SettingsPage() {
   // Third-party AI consent as the server holds it.
   const [aiConsent, setAiConsent] = useState<{ required: boolean; version: string | null; at: string | null }>({ required: false, version: null, at: null });
   const [aiWithdrawOpen, setAiWithdrawOpen] = useState(false);
+  // Under 16 (the server says age_restricted): the Oracle stays closed and
+  // there is no consent to give, so the section shows a note instead.
+  const [ageRestricted, setAgeRestricted] = useState(false);
+  // The saved birth time checked against clock changes (/users/me). When
+  // needs_confirmation is true the member is asked once which occurrence it
+  // was (or to correct a time that never happened).
+  const [birthCheck, setBirthCheck] = useState<StoredBirthTimeCheck>({ status: "ok", fold: null, options: [], needsConfirmation: false });
+  const [birthConfirmed, setBirthConfirmed] = useState(false);
+  // The birth details as the server holds them: confirming an occurrence
+  // re-sends exactly these, never unsaved edits in the form.
+  const savedBirthRef = useRef<{ date: string; time: string; city: string; lat: number | null; lon: number | null } | null>(null);
   const [aiStatus, setAiStatus] = useState<SaveStatus>("idle");
   const [aiError, setAiError] = useState<string | null>(null);
   const [photo, setPhoto]       = useState<string | null>(null);
@@ -120,6 +134,12 @@ export default function SettingsPage() {
         // reads as not participating.
         setHiveConsent(p.hive_consent === true);
         setAiConsent(consentFromMe(data));
+        setAgeRestricted(ageRestrictedFromMe(data));
+        setBirthCheck(storedBirthTimeCheck(data));
+        savedBirthRef.current = {
+          date: p.birth_date || "", time: p.birth_time || "", city: p.birth_city || "",
+          lat: p.birth_lat ?? null, lon: p.birth_lon ?? null,
+        };
         // Birth details changed elsewhere: drop charts built from the old ones.
         syncBirthRevision(data);
         setPhoto(p.profile_photo || null);
@@ -326,6 +346,57 @@ export default function SettingsPage() {
   const askFold = (options: FoldChoice[]) =>
     new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
 
+  // After a successful PATCH /users/birth: drop every chart-derived cache,
+  // refresh the local blueprint cache, and take the new clock-change check
+  // and saved birth details from the server.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storeBirthResult = async (res: any) => {
+    // Every chart computed from the old birth details is now wrong:
+    // astrocartography, cycles, forecasts, the week, compatibility.
+    clearChartDerivedCaches();
+    // Refresh the local blueprint cache from authoritative server data.
+    // We DO NOT inject local React state (name/username/photo) here , 
+    // an earlier draft did, and it could overwrite the cached identity
+    // fields with unsaved form input.
+    //
+    // Order of preference for the identity fields:
+    //   1. Fresh /users/me response (best, known committed values)
+    //   2. Whatever was in the previous cache (preserves last-known-good
+    //      when /users/me fails on a network blip)
+    //   3. Empty (only when there's no cache and no network response , 
+    //      effectively the "first save ever" path)
+    //
+    // The blueprint payload itself ALWAYS gets written; that's the whole
+    // point of the call and is authoritative regardless.
+    try {
+      if (res?.blueprint) {
+        const me = await apiFetch("/users/me", {}, token).catch(() => null);
+        if (me) {
+          syncBirthRevision(me);
+          setBirthCheck(storedBirthTimeCheck(me));
+          const mp = me.profile || {};
+          savedBirthRef.current = {
+            date: mp.birth_date || "", time: mp.birth_time || "", city: mp.birth_city || "",
+            lat: mp.birth_lat ?? null, lon: mp.birth_lon ?? null,
+          };
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let prev: any = null;
+        try {
+          const raw = localStorage.getItem("solray_blueprint");
+          prev = raw ? JSON.parse(raw) : null;
+        } catch {}
+        const bp = res.blueprint;
+        bp._cache_version = 4;
+        bp._name         = me?.profile?.name           ?? prev?._name           ?? "";
+        bp._username     = me?.profile?.username       ?? prev?._username       ?? "";
+        bp._profile_photo= me?.profile?.profile_photo  ?? prev?._profile_photo  ?? null;
+        bp._cachedAt = Date.now();
+        localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+      }
+    } catch {}
+  };
+
   const saveBirth = async () => {
     if (!token) return;
     if (!birthDate || !birthTime) {
@@ -374,50 +445,63 @@ export default function SettingsPage() {
         return;
       }
       const res = outcome.value;
-      // Every chart computed from the old birth details is now wrong:
-      // astrocartography, cycles, forecasts, the week, compatibility.
-      clearChartDerivedCaches();
-      // Refresh the local blueprint cache from authoritative server data.
-      // We DO NOT inject local React state (name/username/photo) here , 
-      // an earlier draft did, and it could overwrite the cached identity
-      // fields with unsaved form input.
-      //
-      // Order of preference for the identity fields:
-      //   1. Fresh /users/me response (best, known committed values)
-      //   2. Whatever was in the previous cache (preserves last-known-good
-      //      when /users/me fails on a network blip)
-      //   3. Empty (only when there's no cache and no network response , 
-      //      effectively the "first save ever" path)
-      //
-      // The blueprint payload itself ALWAYS gets written; that's the whole
-      // point of the call and is authoritative regardless.
-      try {
-        if (res?.blueprint) {
-          const me = await apiFetch("/users/me", {}, token).catch(() => null);
-          if (me) syncBirthRevision(me);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let prev: any = null;
-          try {
-            const raw = localStorage.getItem("solray_blueprint");
-            prev = raw ? JSON.parse(raw) : null;
-          } catch {}
-          const bp = res.blueprint;
-          bp._cache_version = 4;
-          bp._name         = me?.profile?.name           ?? prev?._name           ?? "";
-          bp._username     = me?.profile?.username       ?? prev?._username       ?? "";
-          bp._profile_photo= me?.profile?.profile_photo  ?? prev?._profile_photo  ?? null;
-          bp._cachedAt = Date.now();
-          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
-        }
-      } catch {}
+      await storeBirthResult(res);
       setBirthStatus("saved");
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("settings.could_not_save");
+      // Under 16 by the new date: the server refuses and the chart stays.
+      const msg = isUnderMinimumAgeError(e)
+        ? t("settings.birth_under_age")
+        : e instanceof Error ? e.message : t("settings.could_not_save");
       setBirthError(msg);
       setBirthStatus("error");
     }
   };
+
+  // An existing member whose saved birth time happened twice: ask which
+  // occurrence it was (the same chooser as signup) and confirm it with the
+  // saved details, unchanged, plus birth_time_fold.
+  const confirmBirthFold = async () => {
+    const saved = savedBirthRef.current;
+    if (!token || !saved || birthCheck.status !== "ambiguous" || birthStatus === "saving") return;
+    const fold = await askFold(birthCheck.options);
+    if (!fold) return;
+    setBirthStatus("saving");
+    setBirthError(null);
+    try {
+      const body: Record<string, unknown> = {
+        birth_date: saved.date,
+        birth_time: saved.time,
+        birth_city: saved.city || undefined,
+        birth_time_fold: fold,
+      };
+      if (saved.lat != null) body.birth_lat = saved.lat;
+      if (saved.lon != null) body.birth_lon = saved.lon;
+      const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
+      await storeBirthResult(res);
+      setBirthCheck((c) => ({ ...c, fold, needsConfirmation: false }));
+      setBirthConfirmed(true);
+      setBirthStatus("saved");
+      setTimeout(() => setBirthStatus("idle"), 1800);
+    } catch (e: unknown) {
+      setBirthError(e instanceof Error ? e.message : t("settings.could_not_save"));
+      setBirthStatus("error");
+    }
+  };
+
+  // Arriving from the gentle prompt (/profile/settings?birth=confirm): open
+  // the chooser once, as soon as the saved check is known.
+  const autoAskedRef = useRef(false);
+  useEffect(() => {
+    if (autoAskedRef.current || loading) return;
+    if (!birthCheck.needsConfirmation || birthCheck.status !== "ambiguous") return;
+    let wanted = false;
+    try { wanted = new URLSearchParams(window.location.search).get("birth") === "confirm"; } catch { /* ignore */ }
+    if (!wanted) return;
+    autoAskedRef.current = true;
+    void confirmBirthFold();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, birthCheck]);
 
   const handleSignOut = () => {
     logout();
@@ -695,10 +779,15 @@ export default function SettingsPage() {
               label={t("settings.ai_consent_section")}
               status={aiStatus}
               error={aiError}
-              hint={aiConsent.version && !aiConsent.required
+              hint={ageRestricted ? undefined : aiConsent.version && !aiConsent.required
                 ? t("settings.ai_consent_on_hint")
                 : t("settings.ai_consent_off_hint")}
             >
+              {ageRestricted ? (
+                <p className="font-body" style={{ fontSize: 16, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                  {t("settings.ai_consent_age_restricted")}
+                </p>
+              ) : (
               <div className="space-y-3">
                 <p className="font-body text-[17px] text-text-primary">
                   {aiConsent.version && !aiConsent.required
@@ -735,6 +824,7 @@ export default function SettingsPage() {
                   </HairlineButton>
                 )}
               </div>
+              )}
             </Section>
 
             {/* ── 5. Birth details ─────────────────────────────────────── */}
@@ -745,6 +835,27 @@ export default function SettingsPage() {
               hint={t("settings.birth_details_hint")}
             >
               <div className="space-y-4">
+                {/* Saved birth time on a clock-change night: asked once. */}
+                {birthCheck.needsConfirmation && birthCheck.status === "ambiguous" && (
+                  <div className="space-y-3" id="birth-confirm">
+                    <p className="font-body" style={{ fontSize: 16, lineHeight: 1.6, color: "rgb(var(--rgb-text-primary))" }}>
+                      {t("birth_check.settings_ambiguous")}
+                    </p>
+                    <HairlineButton onClick={() => { void confirmBirthFold(); }} disabled={birthStatus === "saving"}>
+                      {t("birth_check.settings_choose")}
+                    </HairlineButton>
+                  </div>
+                )}
+                {birthCheck.needsConfirmation && birthCheck.status === "nonexistent" && (
+                  <p id="birth-confirm" className="font-body" style={{ fontSize: 16, lineHeight: 1.6, color: "rgb(var(--rgb-text-primary))" }}>
+                    {t("birth_check.settings_nonexistent")}
+                  </p>
+                )}
+                {birthConfirmed && !birthCheck.needsConfirmation && (
+                  <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                    {t("birth_check.confirmed")}
+                  </p>
+                )}
                 {/* The birth moment as one instrument, mundane's wheel.
                     Two native pickers made a birth into two unrelated form
                     fields, and on a phone each one opened a modal of its own. */}

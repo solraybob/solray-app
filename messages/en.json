@@ -578,7 +578,9 @@
     "ai_consent_give": "Review and agree",
     "delete_password_prompt": "Enter your password to confirm it is you.",
     "delete_password_placeholder": "Password",
-    "delete_wrong_password": "That password does not match. Try again."
+    "delete_wrong_password": "That password does not match. Try again.",
+    "birth_under_age": "Solray is made for people aged 16 and over, so this birth date cannot be saved. If the year is a typo, please check it.",
+    "ai_consent_age_restricted": "The Oracle and written readings are for members aged 16 and over, so they stay closed for now. Everything else in Solray works as usual."
   },
   "nav": {
     "today": "Now",
@@ -977,7 +979,8 @@
     "partner_ai_consent_required": "This reading needs the other person's chart, and they have not agreed to AI processing yet. Once they do, you can read it together.",
     "ai_daily_limit": "You have reached today's limit for this. It resets tomorrow.",
     "message_too_long": "That message is too long. Try saying it in fewer words.",
-    "soul_connection_gone": "This connection has ended, so the reading between you is closed. You can still talk with the Oracle about yourself."
+    "soul_connection_gone": "This connection has ended, so the reading between you is closed. You can still talk with the Oracle about yourself.",
+    "under_minimum_age": "The Oracle is for members aged 16 and over, so this part of Solray stays closed for now. Your chart and the rest of the app are here for you."
   },
   "birth_fold": {
     "title": "Which one was it?",
@@ -987,5 +990,16 @@
     "hint": "If you are not sure, a birth certificate or a parent may know. You can change it later in Settings.",
     "back": "Go back",
     "nonexistent": "That time did not happen where you were born: the clocks jumped forward an hour that night. Please check your birth time. It may have been an hour later."
+  },
+  "birth_check": {
+    "prompt_title": "One quick check on your birth time",
+    "prompt_ambiguous": "The clocks went back on the night you were born, so your birth time happened twice. Tell us which one it was and your chart will be exact.",
+    "prompt_nonexistent": "The clocks jumped forward on the night you were born, so your saved birth time did not happen there. Please check it in Settings.",
+    "check_now": "Check now",
+    "later": "Later",
+    "settings_ambiguous": "Your birth time happened twice that night because the clocks went back. Say which one it was.",
+    "settings_choose": "Choose",
+    "settings_nonexistent": "Your saved birth time did not happen where you were born: the clocks jumped forward that night. Please correct it below and save.",
+    "confirmed": "Thank you. Your chart now uses the time you chose."
   }
 }

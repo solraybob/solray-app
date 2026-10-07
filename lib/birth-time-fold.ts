@@ -11,6 +11,18 @@
 // same request is sent again with birth_time_fold: "first" | "second"
 // ("first" is the earlier of the two). A nonexistent time is sent back to
 // the member to correct.
+//
+// utc_offset is a number of hours east of UTC (1.0, 0.0, 5.5, -3.5) and the
+// options always come first, then second.
+//
+// Existing members: GET /users/me carries
+//   birth_time_check: {status: "ok" | "ambiguous" | "nonexistent",
+//                      fold: "first" | "second" | null,
+//                      options: [...same shape...], needs_confirmation: bool}
+// Stored charts are never moved by the server. When needs_confirmation is
+// true the app asks once (a gentle prompt, and the chooser in Settings) and
+// confirms through PATCH /users/birth with birth_time_fold, or, for a
+// nonexistent time, asks the member to correct the time.
 
 export type BirthFold = "first" | "second";
 
@@ -61,6 +73,45 @@ function detailOf(err: unknown): { status: number | null; detail: unknown } {
   return { status: typeof e.status === "number" ? e.status : null, detail: e.detail };
 }
 
+function foldChoices(raw: unknown): FoldChoice[] {
+  const list = Array.isArray(raw) ? raw : [];
+  const options: FoldChoice[] = [];
+  for (const fold of ["first", "second"] as const) {
+    const o = list.find((x) => x && typeof x === "object" && (x as { fold?: unknown }).fold === fold) as { utc_offset?: unknown } | undefined;
+    options.push({ fold, offset: formatUtcOffset(o?.utc_offset) });
+  }
+  return options;
+}
+
+export interface StoredBirthTimeCheck {
+  status: "ok" | "ambiguous" | "nonexistent";
+  fold: BirthFold | null;
+  options: FoldChoice[];
+  needsConfirmation: boolean;
+}
+
+/**
+ * The saved birth time's clock-change check from a /users/me payload (top
+ * level, or under profile). Anything missing or unknown reads as "ok, nothing
+ * to ask", so an older server never triggers a prompt.
+ */
+export function storedBirthTimeCheck(me: unknown): StoredBirthTimeCheck {
+  const none: StoredBirthTimeCheck = { status: "ok", fold: null, options: [], needsConfirmation: false };
+  const o = (me && typeof me === "object" ? me : {}) as Record<string, unknown>;
+  const p = (o.profile && typeof o.profile === "object" ? o.profile : {}) as Record<string, unknown>;
+  const raw = (o.birth_time_check ?? p.birth_time_check) as Record<string, unknown> | undefined;
+  if (!raw || typeof raw !== "object") return none;
+  const status = raw.status === "ambiguous" || raw.status === "nonexistent" ? raw.status : "ok";
+  const fold = raw.fold === "first" || raw.fold === "second" ? raw.fold : null;
+  if (status === "ok") return { ...none, fold };
+  return {
+    status,
+    fold,
+    options: status === "ambiguous" ? foldChoices(raw.options) : [],
+    needsConfirmation: raw.needs_confirmation === true,
+  };
+}
+
 /** The clock-change problem a failed birth request reports, if any. */
 export function birthTimeIssue(err: unknown): BirthTimeIssue | null {
   const { status, detail } = detailOf(err);
@@ -68,13 +119,7 @@ export function birthTimeIssue(err: unknown): BirthTimeIssue | null {
   const d = detail as { code?: unknown; options?: unknown };
   if (d.code === BIRTH_TIME_NONEXISTENT) return { kind: "nonexistent" };
   if (d.code !== BIRTH_TIME_AMBIGUOUS) return null;
-  const raw = Array.isArray(d.options) ? d.options : [];
-  const options: FoldChoice[] = [];
-  for (const fold of ["first", "second"] as const) {
-    const o = raw.find((x) => x && typeof x === "object" && (x as { fold?: unknown }).fold === fold) as { utc_offset?: unknown } | undefined;
-    options.push({ fold, offset: formatUtcOffset(o?.utc_offset) });
-  }
-  return { kind: "ambiguous", options };
+  return { kind: "ambiguous", options: foldChoices(d.options) };
 }
 
 export type BirthRequestOutcome<T> =

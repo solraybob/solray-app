@@ -11,6 +11,9 @@
 //   429 ai_daily_limit               today's generous cap for this feature is reached
 //   413 message_too_long             the message is over the length limit
 //   403 soul_connection_gone         the Dynamics connection no longer exists
+//   403 under_minimum_age            the account is under 16: the Oracle stays closed
+//                                    (400 with the same code at signup and on a
+//                                    birth-date update, where the change is refused)
 import { ApiError } from "./api";
 
 export const ORACLE_ERROR_KEYS: Record<string, string> = {
@@ -20,6 +23,7 @@ export const ORACLE_ERROR_KEYS: Record<string, string> = {
   ai_daily_limit: "oracle_errors.ai_daily_limit",
   message_too_long: "oracle_errors.message_too_long",
   soul_connection_gone: "oracle_errors.soul_connection_gone",
+  under_minimum_age: "oracle_errors.under_minimum_age",
 };
 
 /** The i18n key for a known Oracle refusal, or null for anything else. */
