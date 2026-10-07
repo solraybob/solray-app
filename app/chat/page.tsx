@@ -32,7 +32,7 @@ import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
-import { oracleErrorKey, ORACLE_ERROR_KEYS } from "@/lib/oracle-errors";
+import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
 import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
@@ -290,6 +290,13 @@ function ChatPageInner() {
   const [transcribing, setTranscribing] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  // A notice over the composer after the server closed a conversation (403
+  // partner_ai_consent_required): "closed" in the fresh conversation that
+  // replaced an ordinary one; "dynamics" in a Dynamics conversation whose
+  // partner is no longer sharing, with the offer of an ordinary one.
+  const [chatNotice, setChatNotice] = useState<
+    { kind: "closed" } | { kind: "dynamics"; sessionId: string } | null
+  >(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -419,7 +426,12 @@ function ChatPageInner() {
   const triggerSessionSynthesis = useCallback(() => {
     const tok = tokenRef.current;
     const msgs = messagesRef.current;
-    if (!tok || !msgs.length) return;
+    // The conversation being closed: read from the ref (this callback is
+    // memoised, and is called before a switch commits the next session id).
+    // The server checks this session's provenance before synthesizing and
+    // keeps nothing without it.
+    const sid = activeSessionRef.current;
+    if (!tok || !msgs.length || !sid) return;
 
     const history = historyForServer(msgs);
     const userCount = history.filter((m) => m.role === "user").length;
@@ -433,7 +445,7 @@ function ChatPageInner() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${tok}`,
       },
-      body: JSON.stringify({ conversation_history: history }),
+      body: JSON.stringify({ conversation_history: history, session_id: sid }),
       keepalive: true,
     }).catch(() => {});
   }, []);
@@ -988,6 +1000,7 @@ function ChatPageInner() {
     // the new one. Without this, clicking "+ New" loses everything that
     // wasn't already checkpointed in-session.
     triggerSessionSynthesis();
+    setChatNotice(null);
     // A fresh chat is NOT a compat session unless the user re-enters via
     // Souls. Clear any cached soul context so we don't leak Rut's chart
     // into Bob's regular Higher Self chat.
@@ -1016,6 +1029,7 @@ function ChatPageInner() {
     triggerSessionSynthesis();
     const session = loadSession(sid);
     if (session) {
+      setChatNotice(null);
       setSessionId(session.sessionId);
       setMessages(session.messages);
       // Restore this conversation's own Dynamics context, or clear the one
@@ -1152,7 +1166,11 @@ function ChatPageInner() {
     setMessages(updatedMessages);
     setInput("");
     setSending(true);
+    setChatNotice(null);
     const sentSessionId = sessionId;
+    // Whether this turn is a Dynamics reading (decides how a closed
+    // conversation is handled below).
+    const sentSoulRef = soulRef;
 
     // Error bubbles go along marked isError, so the server drops them
     // instead of reading them back as the Oracle's own words.
@@ -1218,6 +1236,48 @@ function ChatPageInner() {
       // the new page they're trying to use.
       if (!isMountedRef.current) return;
       if (isStaleAccountError(err)) return;
+      // A member this conversation carries is no longer sharing their chart
+      // (withdrew AI consent, went Private, ended the connection): the
+      // server closed the conversation.
+      if (isPartnerConsentRefusal(err)) {
+        if (activeSessionRef.current !== sentSessionId) return;
+        if (sentSoulRef) {
+          // Dynamics with that partner: the existing partner-consent copy in
+          // the thread, and the offer of an ordinary conversation.
+          const note: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: t(ORACLE_ERROR_KEYS.partner_ai_consent_required),
+            timestamp: new Date().toISOString(),
+            isError: true,
+          };
+          setMessages((prev) => [...prev, note]);
+          setChatNotice({ kind: "dynamics", sessionId: sentSessionId });
+          return;
+        }
+        // Ordinary conversation: it cannot continue. The unsent message
+        // leaves the closed conversation and waits in the composer of a
+        // fresh one (never sent on its own). No session-close synthesis:
+        // the server keeps nothing from a conversation in this state.
+        persistSession({
+          sessionId: sentSessionId,
+          date: todayLabel(),
+          customName: loadSession(sentSessionId)?.customName,
+          messages: updatedMessages.slice(0, -1),
+        });
+        setSoulBlueprint(null);
+        setSoulName(null);
+        setSoulRef(null);
+        const freshId = generateSessionId();
+        setSessionId(freshId);
+        persistSession({ sessionId: freshId, date: todayLabel(), messages: [] });
+        setMessages([]);
+        setShowHistory(false);
+        setInput((prev) => (prev.trim() ? `${text}\n\n${prev}` : text));
+        setChatNotice({ kind: "closed" });
+        requestAnimationFrame(() => inputRef.current?.focus());
+        return;
+      }
       // Missing AI consent (the consent sheet is already open, lib/api), a
       // private or unconsented partner chart, today's limit or a message
       // that is too long: none is a billing problem. Say so plainly in the
@@ -2000,6 +2060,39 @@ function ChatPageInner() {
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + var(--sab, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
           <div className="max-w-lg lg:max-w-[620px] mx-auto">
+            {chatNotice && (chatNotice.kind === "closed" || chatNotice.sessionId === sessionId) && (
+              <div
+                role="status"
+                className="mb-3 rounded-2xl px-4 py-3"
+                style={{
+                  background: "rgb(var(--rgb-ember) / 0.08)",
+                  border: "1px solid rgb(var(--rgb-ember) / 0.30)",
+                }}
+              >
+                {chatNotice.kind === "closed" && (
+                  <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                    {t("chat.conversation_closed_partner")}
+                  </p>
+                )}
+                <div className="flex items-center gap-5 mt-2">
+                  {chatNotice.kind === "dynamics" && (
+                    <button
+                      onClick={() => { setChatNotice(null); startNewChat(); }}
+                      disabled={sending}
+                      className="font-body text-[15px] underline underline-offset-4 text-amber-sun hover:opacity-80 transition-opacity"
+                    >
+                      {t("chat.start_ordinary_conversation")}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setChatNotice(null)}
+                    className="font-body text-[15px] text-text-secondary hover:opacity-80 transition-opacity"
+                  >
+                    {t("chat.dismiss_notice")}
+                  </button>
+                </div>
+              </div>
+            )}
             {isRecording && (
               <div className="flex items-center gap-2 mb-2 font-body text-[15px] tracking-[0.14em] uppercase font-bold" style={{ color: "rgb(var(--rgb-ember))" }}>
                 <span

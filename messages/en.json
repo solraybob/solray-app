@@ -344,7 +344,10 @@
     "greet_q_default": "What does your body already know about this?",
     "delete_failed": "That conversation could not be deleted. Try again.",
     "consent_needed": "The Oracle needs your permission to use AI before she can answer. You can give it in the sheet that just opened, or anytime in Settings.",
-    "delete_confirm": "Delete this conversation? It is removed from all your devices."
+    "delete_confirm": "Delete this conversation? It is removed from all your devices.",
+    "conversation_closed_partner": "Someone in this conversation is no longer sharing their chart, so this conversation is closed. Starting a fresh one.",
+    "start_ordinary_conversation": "Start an ordinary conversation",
+    "dismiss_notice": "Dismiss"
   },
   "souls": {
     "title": "SOULS",
