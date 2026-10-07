@@ -447,7 +447,7 @@ export default function SettingsPage() {
               onClick={() => router.push("/profile")}
               aria-label={t("settings.back_to_profile")}
               className="font-body uppercase font-bold flex items-center gap-1"
-              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 32 }}
+              style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgb(var(--rgb-text-secondary))", minHeight: 44 }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="15 18 9 12 15 6"/>

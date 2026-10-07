@@ -41,7 +41,11 @@ function generateSessionId() {
 }
 
 function todayLabel() {
-  return new Date().toLocaleDateString("en-GB", {
+  // The label names the conversation in history, so it follows the app
+  // language (the same saved choice the language provider reads).
+  let locale = "en-GB";
+  try { if ((localStorage.getItem("solray_language") || "").startsWith("es")) locale = "es"; } catch { /* default */ }
+  return new Date().toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",

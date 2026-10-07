@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/lib/theme-context";
+import { useT } from "@/lib/i18n";
 
 /**
  * BodyGraph: Human Design bodygraph. June 2026 redesign (Bob-approved mockup
@@ -285,6 +286,7 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
   // treatment carries more weight and a brighter outline, rather than the same
   // geometry with the colours swapped.
   const { theme } = useTheme();
+  const { t } = useT();
   const isDark = theme !== "light";
   const labelFill = "rgb(var(--rgb-text-secondary))";
   const chanW = isDark ? 3.6 : 3;
@@ -352,7 +354,8 @@ export default function BodyGraph({ definedCenters, definedChannels, size = 280 
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width="100%"
       style={{ maxWidth: size, display: "block", margin: "0 auto" }}
-      aria-label="Human Design bodygraph"
+      role="img"
+      aria-label={t("profile.bodygraph_label")}
     >
       {/* Channel lines behind the centers, full-bodied amber */}
       {Array.from(centerPairs).map((key) => {

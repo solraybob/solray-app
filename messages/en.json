@@ -491,7 +491,8 @@
     "astro_load_failed": "Could not load astrocartography data.",
     "astro_no_data": "No astrocartography data available.",
     "share_soul_map_title": "My Soul Map, Solray",
-    "share_soul_map_text": "My Soul Map on Solray. solray.ai"
+    "share_soul_map_text": "My Soul Map on Solray. solray.ai",
+    "bodygraph_label": "Human Design bodygraph"
   },
   "settings": {
     "title": "Settings",

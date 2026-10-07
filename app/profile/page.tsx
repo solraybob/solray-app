@@ -300,7 +300,7 @@ interface SoulMapRadarChartProps {
 
 
 function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
-  const { lang } = useT();
+  const { lang, t } = useT();
   // The grid is the one hairline token, so there is no theme branch here.
   const gridStroke = "rgb(var(--rgb-border))";
   const progress = useAnimatedProgress(0);
@@ -324,7 +324,8 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
       height={TOTAL}
       viewBox={`0 0 ${TOTAL} ${TOTAL}`}
       className="w-full max-w-[360px] mx-auto"
-      aria-label="Soul Map radar chart"
+      role="img"
+      aria-label={t("profile.soul_map")}
     >
       <defs>
         <radialGradient id="soulMapGlow" cx="50%" cy="50%" r="60%">

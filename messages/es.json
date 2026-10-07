@@ -399,7 +399,8 @@
     "astro_load_failed": "No se pudieron cargar los datos de astrocartografía.",
     "astro_no_data": "No hay datos de astrocartografía disponibles.",
     "share_soul_map_title": "Mi Mapa del Alma, Solray",
-    "share_soul_map_text": "Mi Mapa del Alma en Solray. solray.ai"
+    "share_soul_map_text": "Mi Mapa del Alma en Solray. solray.ai",
+    "bodygraph_label": "Gráfico corporal de Diseño Humano"
   },
   "settings": {
     "title": "Ajustes",

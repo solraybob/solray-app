@@ -173,7 +173,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
           <div className="mb-3">
             <div className="relative h-1.5 bg-forest-border rounded-full overflow-visible">
               <div className="absolute left-0 top-0 h-full bg-amber-sun/60 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
-              <div className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3 bg-amber-sun rounded-full shadow-sm" style={{ left: `${peakPos}%`, transform: "translateX(-50%) translateY(-50%)" }} title="Peak" />
+              <div className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3 bg-amber-sun rounded-full shadow-sm" style={{ left: `${peakPos}%`, transform: "translateX(-50%) translateY(-50%)" }} title={t("cycles.peak")} />
               <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-sun rounded-full shadow-md border border-forest-deep" style={{ left: `${progress}%`, transform: "translateX(-50%) translateY(-50%)" }} />
             </div>
             <div className="flex justify-between mt-1.5">

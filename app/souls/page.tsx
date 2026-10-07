@@ -1308,7 +1308,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           style={{ background: "rgb(var(--rgb-text-primary) / 0.04)", border: "1px solid rgb(var(--rgb-text-primary) / 0.12)" }}
         >
           {myAvatar ? (
-            <img src={myAvatar} alt="You" className="w-7 h-7 rounded-full object-cover shrink-0" />
+            <img src={myAvatar} alt={t("souls.you")} className="w-7 h-7 rounded-full object-cover shrink-0" />
           ) : (
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-text-primary font-heading text-sm shrink-0"
                  style={{ background: "linear-gradient(135deg, rgb(var(--rgb-mist)), rgb(var(--rgb-mist)))" }}>

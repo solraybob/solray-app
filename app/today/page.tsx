@@ -878,7 +878,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
         <button
           onClick={onDismiss}
           aria-label={t("common.close")}
-          className="absolute"
+          className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1040,7 +1040,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
         <button
           onClick={onDismiss}
           aria-label={t("common.close")}
-          className="absolute"
+          className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1132,7 +1132,7 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
         }}
       >
         <button
-          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
@@ -1245,7 +1245,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
         }}
       >
         <button
-          onClick={onDismiss} aria-label={t("common.close")} className="absolute"
+          onClick={onDismiss} aria-label={t("common.close")} className="absolute hit-44 hit-44-32"
           style={{ top: 14, right: 16, width: 32, height: 32, borderRadius: 999, border: "1px solid rgb(var(--rgb-border))", color: "rgb(var(--rgb-text-secondary))", background: "transparent", fontSize: 18, lineHeight: 1 }}
         >×</button>
 
