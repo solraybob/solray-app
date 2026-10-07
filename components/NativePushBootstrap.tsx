@@ -7,16 +7,22 @@
  * (no FCM sender yet). In the iOS shell:
  *
  *   1. Attaches the push-tap handler once (detached on unmount).
- *   2. On launch, login and resume: if the member already allowed
+ *   2. Retries any logout release still pending (launch, resume, back
+ *      online), see lib/native-push.
+ *   3. On launch, login and resume: if the member already allowed
  *      notifications, binds the current device token (syncNativePush).
  *      Never prompts.
- *   3. Asks only after the member has seen value, never at sign-up:
+ *   4. Asks only after THIS member has seen value, never at sign-up:
  *        - their first Oracle reply (chat dispatches "solray:oracle-reply"),
- *        - or opening Today on a later day than their first Today.
- *      Once value is seen, a short sheet appears on Today explaining the one
- *      note we send. "Yes" shows the system prompt; "Not now" waits ten
- *      days, and we offer at most three times. If the OS has already been
- *      answered (granted or denied) the sheet never shows.
+ *        - or a Today reading actually displayed on a later day than their
+ *          first one (Today dispatches "solray:reading-shown" only once a
+ *          complete reading is on screen; entering the route counts for
+ *          nothing).
+ *      Eligibility is stored per member (lib/push-eligibility). The sheet
+ *      appears on Today, a moment after a reading is shown. "Yes" shows
+ *      the system prompt; "Not now" waits ten days, and we offer at most
+ *      three times. If the OS has already been answered (granted or
+ *      denied) the sheet never shows.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,59 +37,31 @@ import {
   requestNativePushPermission,
   syncNativePush,
   ORACLE_REPLY_EVENT,
+  READING_SHOWN_EVENT,
 } from "@/lib/native-push";
+import {
+  mayOfferPushAsk,
+  noteOracleReply,
+  noteReadingShown,
+  recordSoftAsk,
+  sweepLegacyEligibility,
+} from "@/lib/push-eligibility";
 
-const VALUE_SEEN_KEY = "solray_push_value_seen";
-const FIRST_TODAY_KEY = "solray_push_first_today";
-const SOFT_ASK_KEY = "solray_push_soft_ask";
-
-const SOFT_ASK_MAX = 3;
-const SOFT_ASK_SNOOZE_MS = 10 * 24 * 60 * 60 * 1000;
 const SHOW_DELAY_MS = 2500;
 
-function localDay(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function read(key: string): string | null {
-  try { return localStorage.getItem(key); } catch { return null; }
-}
-
-function write(key: string, value: string): void {
-  try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
-}
-
-function softAskState(): { count: number; at: number } {
-  try {
-    const raw = read(SOFT_ASK_KEY);
-    if (!raw) return { count: 0, at: 0 };
-    const v = JSON.parse(raw);
-    return { count: Number(v.count) || 0, at: Number(v.at) || 0 };
-  } catch {
-    return { count: 0, at: 0 };
-  }
-}
-
-function softAskAllowed(): boolean {
-  const s = softAskState();
-  if (s.count >= SOFT_ASK_MAX) return false;
-  return !s.at || Date.now() - s.at >= SOFT_ASK_SNOOZE_MS;
-}
-
-function recordSoftAsk(): void {
-  const s = softAskState();
-  write(SOFT_ASK_KEY, JSON.stringify({ count: s.count + 1, at: Date.now() }));
-}
-
 export default function NativePushBootstrap() {
-  const { token, loading } = useAuth();
+  const { token, user, loading } = useAuth();
   const { t } = useT();
   const pathname = usePathname();
   const [showAsk, setShowAsk] = useState(false);
   const [busy, setBusy] = useState(false);
   const tokenRef = useRef<string | null>(null);
   tokenRef.current = token;
+  const memberId = token && user?.id ? user.id : null;
+  const memberRef = useRef<string | null>(null);
+  memberRef.current = memberId;
+  const pathRef = useRef<string | null>(null);
+  pathRef.current = pathname;
 
   // 1. Tap handler, once.
   useEffect(() => {
@@ -100,10 +78,10 @@ export default function NativePushBootstrap() {
     };
   }, []);
 
-  // Pending logout releases: retried on launch, on resume and when back
-  // online (see lib/native-push).
+  // 2. Pending logout releases: on launch, on resume and when back online.
   useEffect(() => {
     if (!isNativePushSupported()) return;
+    sweepLegacyEligibility();
     void flushPendingReleases();
     const retry = () => { void flushPendingReleases(); };
     const onVisible = () => { if (document.visibilityState === "visible") retry(); };
@@ -115,7 +93,7 @@ export default function NativePushBootstrap() {
     };
   }, []);
 
-  // 2. Bind the current device token on launch/login, and on resume.
+  // 3. Bind the current device token on launch/login, and on resume.
   useEffect(() => {
     if (loading || !token || !isNativePushSupported()) return;
     void syncNativePush(token, true);
@@ -128,56 +106,65 @@ export default function NativePushBootstrap() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [token, loading]);
 
-  // 3a. First Oracle reply counts as value.
+  // 4a. An Oracle reply counts as value for the member it was for.
   useEffect(() => {
     if (!isNativePushSupported()) return;
-    const onReply = () => write(VALUE_SEEN_KEY, "1");
+    const onReply = () => {
+      if (memberRef.current) noteOracleReply(memberRef.current);
+    };
     window.addEventListener(ORACLE_REPLY_EVENT, onReply);
     return () => window.removeEventListener(ORACLE_REPLY_EVENT, onReply);
   }, []);
 
-  // 3b. Today on a later day counts as value; the sheet itself only ever
-  //     appears on Today, a moment after the reading has had time to load.
+  // 4b. A reading shown on Today: record it for this member, then offer the
+  //     sheet a moment later if they qualify.
   useEffect(() => {
-    if (loading || !token || pathname !== "/today" || !isNativePushSupported()) return;
-    const today = localDay();
-    const first = read(FIRST_TODAY_KEY);
-    if (!first) write(FIRST_TODAY_KEY, today);
-    else if (first < today) write(VALUE_SEEN_KEY, "1");
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      if (cancelled || read(VALUE_SEEN_KEY) !== "1" || !softAskAllowed()) return;
-      if ((await getNativePushPermission()) !== "prompt") return;
-      if (!cancelled) setShowAsk(true);
-    }, SHOW_DELAY_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
+    if (!isNativePushSupported()) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onReading = () => {
+      const member = memberRef.current;
+      if (!member || pathRef.current !== "/today") return;
+      noteReadingShown(member);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        timer = null;
+        if (memberRef.current !== member || pathRef.current !== "/today") return;
+        if (!mayOfferPushAsk(member)) return;
+        if ((await getNativePushPermission()) !== "prompt") return;
+        if (memberRef.current === member && pathRef.current === "/today") setShowAsk(true);
+      }, SHOW_DELAY_MS);
     };
-  }, [pathname, token, loading]);
+    window.addEventListener(READING_SHOWN_EVENT, onReading);
+    return () => {
+      window.removeEventListener(READING_SHOWN_EVENT, onReading);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
-  // Leaving Today or signing out closes the sheet.
+  // Leaving Today, signing out or switching account closes the sheet.
+  useEffect(() => {
+    setShowAsk(false);
+  }, [memberId]);
   useEffect(() => {
     if (pathname !== "/today" || !token) setShowAsk(false);
   }, [pathname, token]);
 
   const onYes = useCallback(async () => {
-    if (!token) return;
+    if (!token || !memberId) return;
     setBusy(true);
-    recordSoftAsk();
+    recordSoftAsk(memberId);
     try {
       await requestNativePushPermission(token);
     } finally {
       setBusy(false);
       setShowAsk(false);
     }
-  }, [token]);
+  }, [token, memberId]);
 
   const onNotNow = useCallback(() => {
-    recordSoftAsk();
+    if (memberId) recordSoftAsk(memberId);
     setShowAsk(false);
-  }, []);
+  }, [memberId]);
 
   if (!showAsk) return null;
 

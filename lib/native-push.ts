@@ -481,10 +481,22 @@ export async function requestNativePushPermission(authToken: string): Promise<bo
 /** Window event chat fires when an Oracle reply arrives (see the bootstrap). */
 export const ORACLE_REPLY_EVENT = "solray:oracle-reply";
 
+/** Window event Today fires once a complete reading is on screen. */
+export const READING_SHOWN_EVENT = "solray:reading-shown";
+
 /** Tell the push bootstrap the member just got an Oracle reply. Cheap no-op off-native. */
 export function signalOracleReply(): void {
   if (typeof window === "undefined" || !isNativePushSupported()) return;
   try { window.dispatchEvent(new Event(ORACLE_REPLY_EVENT)); } catch { /* ignore */ }
+}
+
+/**
+ * Tell the push bootstrap a complete Today reading is displayed (not a
+ * skeleton, an error or a still-preparing state). Cheap no-op off-native.
+ */
+export function signalReadingShown(): void {
+  if (typeof window === "undefined" || !isNativePushSupported()) return;
+  try { window.dispatchEvent(new Event(READING_SHOWN_EVENT)); } catch { /* ignore */ }
 }
 
 // ------------------------------------------------------------------- taps

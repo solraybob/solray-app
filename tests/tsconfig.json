@@ -30,6 +30,7 @@
     "../lib/i18n.tsx",
     "../lib/oracle-errors.ts",
     "../lib/oracle-request.ts",
-    "../lib/native-push.ts"
+    "../lib/native-push.ts",
+    "../lib/push-eligibility.ts"
   ]
 }

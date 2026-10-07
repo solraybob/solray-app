@@ -17,7 +17,8 @@
 // deliberately NOT preserved: they are per-account, so a switch forces the
 // new user to re-register push and see their own trial state (logout
 // already releases push via the native-push helper). Kept: the list of
-// push releases still awaiting backend confirmation.
+// push releases still awaiting backend confirmation, and push-ask
+// eligibility that is already keyed by member id.
 const PRESERVE_EXACT = new Set<string>([
   "solray_token",                       // session — re-set immediately after login
   "solray_user",                        // session — re-set immediately after login
@@ -33,7 +34,15 @@ const PRESERVE_EXACT = new Set<string>([
   "solray_native_push_pending_release",
 ]);
 
-const PRESERVE_PREFIX = ["solray_cache_cleared", "solray_track_once_"];
+const PRESERVE_PREFIX = [
+  "solray_cache_cleared",
+  "solray_track_once_",
+  // Push-ask eligibility, keyed by member id (lib/push-eligibility), so
+  // keeping it across an account switch leaks nothing between accounts.
+  "solray_push_value_seen:",
+  "solray_push_first_reading:",
+  "solray_push_soft_ask:",
+];
 
 /**
  * Remove every per-user solray_* localStorage key, preserving only the
