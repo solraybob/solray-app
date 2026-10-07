@@ -6,7 +6,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import { apiFetch, ApiError, trackRequest } from "@/lib/api";
+import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
+import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
+import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
 import { captureAccount, getAuthGeneration, isStaleAccountError } from "@/lib/account-session";
 import {
   absenceConfirmsDelete,
@@ -98,6 +100,10 @@ interface SavedPerson {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   blueprint?: any;           // full blueprint dict (optional for back-compat with older saved entries)
   created_at: number;
+  // A birth time on a night the clocks went back happened twice: which one
+  // the member chose. Also kept in the chart (blueprint.meta), which is how
+  // it travels with the person to the server and other devices.
+  birth_time_fold?: "first" | "second";
   // Local bookkeeping, never sent: true once the server has confirmed it
   // holds this person. A confirmed person later missing from the server was
   // deleted on another device and must not be uploaded again.
@@ -148,6 +154,12 @@ function writeTombstones(ids: Set<string>) {
 }
 function addTombstone(id: string) { const t = loadTombstones(); t.add(id); writeTombstones(t); }
 function dropTombstone(id: string) { const t = loadTombstones(); if (t.delete(id)) writeTombstones(t); }
+
+/** The chosen clock-change occurrence: the person's own field, or their chart's. */
+function savedFold(p: SavedPerson): "first" | "second" | undefined {
+  const f = p.birth_time_fold ?? p.blueprint?.meta?.birth_time_fold;
+  return f === "first" || f === "second" ? f : undefined;
+}
 
 /** The person as the server stores it, without local bookkeeping. */
 function forServer(p: SavedPerson): Omit<SavedPerson, "_synced"> {
@@ -980,6 +992,7 @@ export default function SoulsPage() {
                 birth_date: saved.birth_date,
                 birth_time: saved.birth_time,
                 birth_city: saved.birth_city,
+                birth_time_fold: savedFold(saved),
               }),
             });
             return { ok: res.ok, data: res.ok ? await res.json() : null };
@@ -1863,6 +1876,10 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   // chart, and to its AI providers when the member asks about them), so the
   // member confirms they have that person's permission first.
   const [hasPermission, setHasPermission] = useState(false);
+  // The "which one was it" question for a birth time that happened twice.
+  const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  const askFold = (options: FoldChoice[]) =>
+    new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
   // A chart that lands after the sheet closed, or after the account
   // changed, is dropped: it must never be added to anyone's list.
   const sheetMountedRef = useRef(true);
@@ -1904,25 +1921,41 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     const acct = captureAccount();
     const stillHere = () => acct.live && sheetMountedRef.current;
     try {
-      const { ok, data } = await trackRequest(async () => {
-        const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            sex: sex || null,
-            birth_date: birthDate,
-            birth_time: timeUnknown ? "12:00" : birthTime,
-            birth_city: birthCity,
-          }),
+      const body = {
+        name,
+        sex: sex || null,
+        birth_date: birthDate,
+        birth_time: timeUnknown ? "12:00" : birthTime,
+        birth_city: birthCity,
+      };
+      // A birth time in the hour the clocks went back happened twice: the
+      // member says which one and the chart is drawn again with it. One that
+      // never happened (clocks went forward) comes back to be corrected.
+      const calculate = async (fold: BirthFold | null) => {
+        const { ok, status, data } = await trackRequest(async () => {
+          const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fold ? { ...body, birth_time_fold: fold } : body),
+          });
+          if (!stillHere()) return { ok: false, status: 0, data: null };
+          return { ok: res.ok, status: res.status, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
         });
-        if (!stillHere()) return { ok: false, data: null };
-        return { ok: res.ok, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
-      });
+        if (!stillHere()) return null;
+        if (!ok) {
+          throw new ApiError(errorText(data?.detail, t("souls.error_read_chart")), status, detailCode(data?.detail), data?.detail);
+        }
+        return data;
+      };
+      const outcome = await sendBirthRequest(calculate, askFold);
       if (!stillHere()) return;
-      if (!ok) {
-        throw new Error(errorText(data?.detail, t("souls.error_read_chart")));
+      if (outcome.status === "cancelled") return;
+      if (outcome.status === "nonexistent") {
+        setError(t("birth_fold.nonexistent"));
+        return;
       }
+      const data = outcome.value;
+      if (!data) return;
       const person: SavedPerson = {
         id: typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -1943,6 +1976,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         // We already had the data, we were just throwing it away.
         blueprint: data?.blueprint ?? undefined,
         created_at: Date.now(),
+        birth_time_fold: outcome.fold ?? undefined,
       };
       onAdded(person);
     } catch (e: unknown) {
@@ -1955,6 +1989,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-forest-deep/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-forest-dark border-t border-forest-border rounded-t-3xl px-6 pt-5 pb-16 max-h-[96dvh] overflow-y-auto">
@@ -2116,6 +2151,15 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         </div>
       </div>
     </div>
+    {/* Above the add-person sheet. */}
+    {foldAsk && (
+      <BirthTimeFoldSheet
+        options={foldAsk.options}
+        onChoose={(f) => { foldAsk.resolve(f); setFoldAsk(null); }}
+        onCancel={() => { foldAsk.resolve(null); setFoldAsk(null); }}
+      />
+    )}
+    </>
   );
 }
 

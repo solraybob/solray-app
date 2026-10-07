@@ -253,3 +253,28 @@ test("R3-7: Souls hands the confirmed saved-person id to every reading", () => {
   assert.match(chat, /from "@\/lib\/chat-soul"/);
   assert.match(chat, /localPersonId: ctx\.localPersonId \?\? null/);
 });
+
+// ── C5 (out2-4): Souls asks which occurrence of a clock-change birth time ───
+
+test("C5: the Souls add-person sheet asks for the occurrence and keeps it", () => {
+  const src = read("app/souls/page.tsx");
+  const sheet = src.slice(src.indexOf("function AddPersonSheet"));
+  const submit = sheet.slice(sheet.indexOf("const submit = async"), sheet.indexOf("onAdded(person);"));
+  assert.match(submit, /await sendBirthRequest\(/);
+  assert.match(submit, /fold \? \{ \.\.\.body, birth_time_fold: fold \} : body/);
+  assert.match(submit, /if \(outcome\.status === "nonexistent"\) \{\n\s+setError\(t\("birth_fold\.nonexistent"\)\);/);
+  assert.match(submit, /if \(outcome\.status === "cancelled"\) return;/);
+  assert.match(submit, /birth_time_fold: outcome\.fold \?\? undefined,/);
+  assert.match(sheet, /<BirthTimeFoldSheet\n\s+options=\{foldAsk\.options\}/);
+  // Kept in the person's data, and used when the chart is recomputed.
+  assert.match(src, /birth_time_fold\?: "first" \| "second";/);
+  const bond = src.slice(src.indexOf("const readTheBond"), src.indexOf("<ProtectedRoute>"));
+  assert.match(bond, /birth_time_fold: savedFold\(saved\)/);
+  // A late answer is still dropped after the chooser (account and sheet checks).
+  assert.ok((submit.match(/!stillHere\(\)/g) || []).length >= 3);
+});
+
+test("C5: a saved person's occurrence is read from its field or its chart", () => {
+  const src = read("app/souls/page.tsx");
+  assert.match(src, /function savedFold\(p: SavedPerson\): "first" \| "second" \| undefined \{/);
+});
