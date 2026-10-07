@@ -36,17 +36,22 @@ function fakePlugin() {
       return { receive: p.perm };
     },
     async requestPermissions() { p.calls.push("requestPermissions"); return { receive: "granted" }; },
+    // The OS fires every registration listener that is attached when the
+    // token arrives, so two overlapping sessions both hear it.
     async addListener(ev, cb) {
-      listeners[ev] = cb;
-      return { remove: async () => { delete listeners[ev]; } };
+      (listeners[ev] = listeners[ev] || new Set()).add(cb);
+      return { remove: async () => { listeners[ev] && listeners[ev].delete(cb); } };
     },
     async register() {
       p.calls.push("register");
-      const fire = () => listeners.registration && listeners.registration({ value: p.token });
+      const fire = () => {
+        for (const cb of [...(listeners.registration || [])]) cb({ value: p.token });
+      };
       if (p.registerGate) p.registerGate.promise.then(fire);
       else setImmediate(fire);
     },
     async unregister() { p.calls.push("unregister"); },
+    async removeAllDeliveredNotifications() { p.calls.push("removeAllDelivered"); },
   };
   return p;
 }
@@ -166,8 +171,8 @@ test("an offline logout keeps the release, survives the next sign-in's cache wip
   const sub = await signInAndBind("token-A");
   np.releaseNativePush("token-A");
   (await nextCall("/push/native-release")).fail(); // offline
+  await settle(); // the OS unregister runs through the serialised OS queue
   assert.ok(plugin.calls.includes("unregister"));
-  await settle();
   assert.equal(pendingCount(), 1);
 
   cache.clearUserScopedCaches(); // B signs in on the same phone
@@ -233,4 +238,55 @@ test("a legacy binding (no secret) is released once with the leaving auth token"
   await settle();
   assert.equal(pendingCount(), 0);
   assert.ok(plugin.calls.includes("unregister"));
+});
+
+// ---- round 3, finding 3: OS registration is serialised across sessions
+
+test("a stale registration's cleanup finishes before the next account registers", async () => {
+  plugin.registerGate = deferred();
+  const pA = np.syncNativePush("token-A", true);
+  for (let i = 0; i < 50 && !plugin.calls.includes("register"); i++) await tick();
+  assert.ok(plugin.calls.includes("register"));
+
+  // A signs out and B signs in at once, while A's OS callback is pending.
+  np.releaseNativePush("token-A");
+  const pB = np.syncNativePush("token-B", true);
+  await settle();
+  assert.equal(plugin.calls.filter((c) => c === "register").length, 1,
+    "B waits for A's registration and its cleanup before registering");
+
+  plugin.registerGate.resolve();
+  assert.equal(await pA, false);
+  const sub = await nextCall("/push/native-subscribe");
+  sub.respond(200, { subscribed: true, platform: "ios" });
+  assert.equal(await pB, true);
+  await settle();
+
+  const os = plugin.calls.filter((c) => c === "register" || c === "unregister");
+  assert.equal(os[os.length - 1], "register",
+    "nothing unregisters the OS after B's registration: " + os.join(","));
+  assert.equal(os.filter((c) => c === "register").length, 2);
+});
+
+// ---- round 3, finding 2: delivered notes leave the phone with the member
+
+test("logout clears the leaving member's delivered notifications", async () => {
+  await signInAndBind("token-A");
+  np.releaseNativePush("token-A");
+  await settle();
+  assert.ok(plugin.calls.includes("removeAllDelivered"));
+  (await nextCall("/push/native-release")).respond(200, { released: true, removed: 1 });
+  await settle();
+});
+
+test("a dead session (401) also clears delivered notifications", async () => {
+  await signInAndBind("token-A");
+  win.localStorage.setItem("solray_token", "token-A");
+  const p = api.apiFetch("/forecast/today", {}, "token-A");
+  (await nextCall("/forecast/today")).respond(401, { detail: "expired" });
+  await assert.rejects(p);
+  await settle();
+  assert.ok(plugin.calls.includes("removeAllDelivered"));
+  (await nextCall("/push/native-release")).respond(200, { released: true, removed: 1 });
+  await settle();
 });
