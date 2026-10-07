@@ -61,3 +61,75 @@ test("F5: chart-derived screens stamp before requesting and cache through the st
     assert.match(read(f), /writeChartCache\(stamp, /, f);
   }
 });
+
+test("F3: a delete waits for the person's pending save and targets the server's id", async () => {
+  const sp = load("lib/saved-people-sync.js");
+  sp.resetPersonWrites();
+  const log = [];
+  let finishPost;
+  const post = sp.forPerson("local-1", () => new Promise((r) => { finishPost = () => { log.push("POST"); sp.rememberServerId("local-1", "srv-1"); r({ person: { id: "srv-1" } }); }; }));
+  sp.markDeletedHere("local-1");
+  const del = sp.forPerson("local-1", async () => { log.push(`DELETE ${sp.serverIdOf("local-1")}`); return { ok: true }; });
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(log, [], "delete has not overtaken the save");
+  finishPost();
+  await post;
+  assert.equal(sp.deleteConfirmed(await del), true);
+  assert.deepEqual(log, ["POST", "DELETE srv-1"]);
+  assert.equal(sp.wasDeletedHere("local-1"), true);
+});
+
+test("F3: {ok:false} is not a confirmed delete; absence only counts from a later list read", () => {
+  const sp = load("lib/saved-people-sync.js");
+  sp.resetPersonWrites();
+  assert.equal(sp.deleteConfirmed({ ok: false }), false);
+  assert.equal(sp.deleteConfirmed({}), false);
+  assert.equal(sp.deleteConfirmed(null), false);
+  assert.equal(sp.deleteConfirmed({ ok: true }), true);
+  const before = sp.nextSeq();          // a list read began
+  sp.noteDeleteAttempt("p");            // then the delete was sent
+  const after = sp.nextSeq();           // a later list read
+  assert.equal(sp.absenceConfirmsDelete("p", before, new Set()), false, "older list proves nothing");
+  assert.equal(sp.absenceConfirmsDelete("p", after, new Set(["p"])), false, "still on the server");
+  assert.equal(sp.absenceConfirmsDelete("p", after, new Set()), true);
+});
+
+test("F3: an older server list cannot bring back someone removed here", () => {
+  const sp = load("lib/saved-people-sync.js");
+  sp.resetPersonWrites();
+  sp.markDeletedHere("gone");
+  // The delete was confirmed, so the tombstone is already cleared; the list
+  // was read before it.
+  const staleList = [{ id: "gone", _synced: true }, { id: "kept", _synced: true }];
+  const removed = new Set([...sp.deletedHereIds()]);
+  const final = sp.mergeSavedPeople([{ id: "kept", _synced: true }], staleList.filter((p) => !removed.has(p.id)), new Set(), removed);
+  assert.deepEqual(final.map((p) => p.id), ["kept"]);
+  const src = read("app/souls/page.tsx");
+  assert.match(src, /const server = listed\.filter\(\(p\) => !gone\(\)\.has\(p\.id\)\);/);
+  assert.match(src, /if \(deleteConfirmed\(r\)\) \{ dropTombstone\(id\); forgetSharingPermission\(id\); \}/);
+  assert.ok(!/\.then\(\(\) => dropTombstone\(id\)\)/.test(src), "a 200 is no longer taken as a confirmed delete");
+  assert.match(src, /if \(wasDeletedHere\(person\.id\)\) return null;/);
+});
+
+test("F4: permission is recorded per person and gates uploads and readings", () => {
+  const sp = load("lib/saved-people-sync.js");
+  sp.resetPersonWrites();
+  win.localStorage.removeItem("solray_saved_people_permission");
+  const legacy = [{ id: "old-1" }, { id: "old-2", _synced: true }];
+  assert.deepEqual(sp.needingPermission(legacy).map((p) => p.id), ["old-1", "old-2"]);
+  sp.recordSharingPermission(["old-1"]);
+  assert.deepEqual(sp.needingPermission(legacy).map((p) => p.id), ["old-2"]);
+  // The server gave old-1 a new id: the permission follows.
+  sp.rememberServerId("old-1", "srv-9");
+  sp.moveSharingPermission("old-1", "srv-9");
+  assert.equal(sp.hasSharingPermission("srv-9"), true);
+  assert.equal(sp.hasSharingPermission("old-1"), true, "looked up through the server id");
+  sp.forgetSharingPermission("srv-9");
+  assert.equal(sp.hasSharingPermission("srv-9"), false);
+  const src = read("app/souls/page.tsx");
+  assert.match(src, /peopleToUpload\(local, serverIds, gone\(\)\)\.filter\(\(p\) => hasSharingPermission\(p\.id\)\)/);
+  const bond = src.slice(src.indexOf("const readTheBond"), src.indexOf("const acct = captureAccount();", src.indexOf("const readTheBond")));
+  assert.match(bond, /needingPermission\(/);
+  assert.match(bond, /setPermissionAsk\(unconfirmed\);\n\s+return;/);
+  assert.match(src, /recordSharingPermission\(\[person\.id\]\);/);
+});

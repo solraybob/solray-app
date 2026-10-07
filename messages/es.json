@@ -356,7 +356,11 @@
     "remove_confirm_title": "¿Eliminar a {name}?",
     "remove_confirm_body": "La conexión termina para los dos. El Oráculo olvida lo que guardaba de cada uno sobre esta conexión, y sus lecturas compartidas se eliminan.",
     "remove_confirm_yes": "Eliminar",
-    "remove_connection_failed": "No se pudo eliminar la conexión ahora mismo. Inténtalo de nuevo."
+    "remove_connection_failed": "No se pudo eliminar la conexión ahora mismo. Inténtalo de nuevo.",
+    "permission_needed_title": "Antes de seguir",
+    "permission_needed_body": "Para esta lectura, los datos de nacimiento de {names} van a Solray y a sus proveedores de IA. Solray lo pregunta una vez por cada persona que guardaste.",
+    "permission_continue": "Continuar",
+    "permission_not_now": "Ahora no"
   },
   "profile": {
     "title": "Perfil",

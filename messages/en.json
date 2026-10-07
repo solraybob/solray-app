@@ -451,7 +451,11 @@
     "remove_confirm_title": "Remove {name}?",
     "remove_confirm_body": "You stop being connected for both of you. The Oracle forgets what she kept about each of you from this connection, and your shared readings are removed.",
     "remove_confirm_yes": "Remove",
-    "remove_connection_failed": "Could not remove the connection just now. Try again."
+    "remove_connection_failed": "Could not remove the connection just now. Try again.",
+    "permission_needed_title": "One thing first",
+    "permission_needed_body": "For this reading, the birth details of {names} go to Solray and its AI providers. Solray asks once for each person you saved.",
+    "permission_continue": "Continue",
+    "permission_not_now": "Not now"
   },
   "profile": {
     "title": "Profile",
