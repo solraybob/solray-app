@@ -10,10 +10,16 @@ export default function BirthTimeFoldSheet({
   options,
   onChoose,
   onCancel,
+  body,
+  hint,
 }: {
   options: FoldChoice[];
   onChoose: (fold: BirthFold) => void;
   onCancel: () => void;
+  /** Wording for someone else's birth time (a saved Souls person); the
+   * member's own wording by default. */
+  body?: string;
+  hint?: string;
 }) {
   const { t } = useT();
   return (
@@ -24,7 +30,7 @@ export default function BirthTimeFoldSheet({
         <h3 id="birth-fold-title" className="font-heading text-text-primary mb-2" style={{ fontSize: "1.2rem", fontWeight: 700 }}>
           {t("birth_fold.title")}
         </h3>
-        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-5">{t("birth_fold.body")}</p>
+        <p className="font-body text-text-secondary text-[15px] leading-relaxed mb-5">{body ?? t("birth_fold.body")}</p>
         <div className="space-y-3">
           {options.map((o) => (
             <button
@@ -41,7 +47,7 @@ export default function BirthTimeFoldSheet({
             </button>
           ))}
         </div>
-        <p className="font-body text-text-secondary text-[14px] leading-relaxed mt-4">{t("birth_fold.hint")}</p>
+        <p className="font-body text-text-secondary text-[14px] leading-relaxed mt-4">{hint ?? t("birth_fold.hint")}</p>
         <button type="button" onClick={onCancel} className="w-full mt-3 py-3 font-body text-[15px] text-text-secondary" style={{ minHeight: 44 }}>
           {t("birth_fold.back")}
         </button>

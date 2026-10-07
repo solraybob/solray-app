@@ -722,6 +722,12 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const trialEligible = sub?.trial_eligible;
   const trialEligibleRef = useRef<boolean | undefined>(trialEligible);
   trialEligibleRef.current = trialEligible;
+  // Server switch (default off): only when on is a plan refused whose sole
+  // store offer is the free intro of a used trial. Off, that plan is sold
+  // on the store's own terms with no trial promised here.
+  const strictTrial = sub?.strict_cross_channel_trial === true;
+  const strictTrialRef = useRef<boolean>(strictTrial);
+  strictTrialRef.current = strictTrial;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingNote, setPendingNote] = useState("");
@@ -736,13 +742,16 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   // Store-localized recurring prices per plan (null until the store is ready).
   const [prices, setPrices] = useState<{ monthly: string | null; yearly: string | null }>({ monthly: null, yearly: null });
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
-  // What each plan can do for this member (trial, paid, unavailable,
-  // checking). Only "trial" gets the free-trial wording and button; an
-  // "unavailable" plan (trial used, the store offers this product only with
-  // a free trial) cannot be bought here and says so.
+  // What each plan can do for this member (trial, paid, store_intro,
+  // unavailable, checking). Only "trial" gets the free-trial wording and
+  // button; "store_intro" (trial used, the store lists only its free intro)
+  // is sold with neutral wording ("Start membership") and never promises a
+  // trial; an "unavailable" plan (no offer, or the server's strict mode)
+  // cannot be bought here and says so.
   const [planStates, setPlanStates] = useState<{ monthly: NativePlanState; yearly: NativePlanState }>({ monthly: "loading", yearly: "loading" });
   const selectedState = plan === "yearly" ? planStates.yearly : planStates.monthly;
   const planHasTrial = selectedState === "trial";
+  const planStoreIntro = selectedState === "store_intro";
 
   // Load the store on mount so (a) tapping Subscribe opens the sheet
   // instantly and (b) the paywall shows the localized recurring price, which
@@ -753,15 +762,15 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const readPrices = () => {
     setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
     setPlanStates({
-      monthly: nativePlanState(MONTHLY_PRODUCT_ID, trialEligibleRef.current),
-      yearly: nativePlanState(YEARLY_PRODUCT_ID, trialEligibleRef.current),
+      monthly: nativePlanState(MONTHLY_PRODUCT_ID, trialEligibleRef.current, strictTrialRef.current),
+      yearly: nativePlanState(YEARLY_PRODUCT_ID, trialEligibleRef.current, strictTrialRef.current),
     });
   };
   // Eligibility can arrive after the store loaded: re-read the offers.
   useEffect(() => {
     if (storeState === "ready") readPrices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trialEligible]);
+  }, [trialEligible, strictTrial]);
   const loadStore = () => {
     let cancelled = false;
     setStoreState("loading");
@@ -855,9 +864,11 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     // and answers trial eligibility fresh. No answer, no sheet: this check
     // is what keeps the store and the card from both charging.
     let eligible: boolean;
+    let strict: boolean;
     try {
       const gate = await announceStorePurchase(token);
       eligible = gate.trial_eligible === true;
+      strict = gate.strict_cross_channel_trial === true;
     } catch (e) {
       setLoading(false);
       const code = e instanceof ApiError ? storeGateErrorCode(e.status, e.code) : "check_failed";
@@ -865,18 +876,22 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       void refresh();
       return;
     }
-    // Finding 7: order a free trial only with confirmed eligibility; when
-    // the trial was used and this product only has a free introductory
-    // offer, order nothing and say so.
-    const state = nativePlanState(productId, eligible);
-    if (state !== "trial" && state !== "paid") {
+    // Finding 7: a free trial is promised only with confirmed eligibility.
+    // When the trial was used and this product only has a free
+    // introductory offer, the purchase still goes ahead on the store's own
+    // terms (the server records it for reconciliation), unless the server's
+    // strict mode is on: then nothing is ordered and the paywall says so.
+    const state = nativePlanState(productId, eligible, strict);
+    trialEligibleRef.current = eligible;
+    strictTrialRef.current = strict;
+    if (state !== "trial" && state !== "paid" && state !== "store_intro") {
       release();
       setLoading(false);
       setError(state === "unavailable" ? t("subscribe.iap_trial_used") : t("subscribe.iap_loading"));
-      trialEligibleRef.current = eligible;
       readPrices();
       return;
     }
+    if (state !== selectedState) readPrices(); // the wording follows the fresh answer
 
     clearPurchaseTimer();
     purchaseTimer.current = setTimeout(() => {
@@ -890,7 +905,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       // Opens the native store sheet for the chosen plan. The approved ->
       // verify -> finish flow runs in play-billing.ts; the listener above
       // flips state on success.
-      const started = await launchNativePurchase(productId, accountToken, eligible);
+      const started = await launchNativePurchase(productId, accountToken, eligible, strict);
       if (started === "cancelled") {
         // Closing the store sheet is a choice, not an error.
         clearPurchaseTimer();
@@ -957,7 +972,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
               border: "1.5px solid rgb(var(--rgb-text-primary))",
             }}
           >
-            {loading ? t("subscribe.opening") : planHasTrial ? t("subscribe.start_free_trial") : t("subscribe.subscribe_now")}
+            {loading ? t("subscribe.opening") : planHasTrial ? t("subscribe.start_free_trial") : planStoreIntro ? t("subscribe.start_membership") : t("subscribe.subscribe_now")}
           </button>
 
           {onContinue && (
@@ -1005,7 +1020,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
             className="text-[14px] leading-relaxed"
             style={{ color: "rgb(var(--rgb-text-secondary))" }}
           >
-            {planHasTrial ? t("subscribe.auto_renew_terms") : t("subscribe.auto_renew_terms_paid")}
+            {planHasTrial ? t("subscribe.auto_renew_terms") : planStoreIntro ? t("subscribe.auto_renew_terms_store") : t("subscribe.auto_renew_terms_paid")}
           </p>
           <p className="text-[14px]">
             <a

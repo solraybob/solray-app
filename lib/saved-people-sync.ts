@@ -6,6 +6,7 @@
 // has not confirmed yet; they win over the server list.
 
 import { isCurrentGeneration, StaleAccountError } from "./account-session";
+import { storedBirthTimeCheck, type StoredBirthTimeCheck } from "./birth-time-fold";
 
 export interface SyncablePerson {
   id: string;
@@ -194,4 +195,40 @@ export function forgetSharingPermission(id: string): void {
 /** The people in `people` the member has not confirmed permission for. */
 export function needingPermission<T extends SyncablePerson>(people: T[]): T[] {
   return people.filter((p) => p && p.id && !hasSharingPermission(p.id));
+}
+
+// ── Clock-change occurrence of a saved person's birth time ───────────────
+
+export interface FoldablePerson extends SyncablePerson {
+  birth_time_fold?: "first" | "second";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  blueprint?: any;
+  birth_time_check?: unknown;
+}
+
+/** The chosen occurrence: the person's own field, or their chart's meta. */
+export function savedPersonFold(p: FoldablePerson): "first" | "second" | undefined {
+  const f = p.birth_time_fold ?? p.blueprint?.meta?.birth_time_fold;
+  return f === "first" || f === "second" ? f : undefined;
+}
+
+/**
+ * The body for POST /saved-people: no local bookkeeping (_synced) and not
+ * the server's read-only birth_time_check, and the chosen occurrence always
+ * top level (the server stores it from there), even for a person whose
+ * choice so far lived only in their chart's meta.
+ */
+export function savedPersonForServer<T extends FoldablePerson>(p: T): Omit<T, "_synced" | "birth_time_check"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _synced, birth_time_check, ...rest } = p;
+  const fold = savedPersonFold(p);
+  return (fold ? { ...rest, birth_time_fold: fold } : rest) as Omit<T, "_synced" | "birth_time_check">;
+}
+
+/** The server's clock-change check for a saved person (GET and POST
+ * /saved-people). needsConfirmation: ask which occurrence it was, or to
+ * correct a time that never happened. No check (older server, not synced
+ * yet) asks nothing. */
+export function savedPersonBirthCheck(p: FoldablePerson): StoredBirthTimeCheck {
+  return storedBirthTimeCheck({ birth_time_check: p.birth_time_check });
 }

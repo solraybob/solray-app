@@ -23,7 +23,7 @@ export function offerStartsFree(offer: StoreOfferLike | null | undefined): boole
 /**
  * What the native paywall can do for one plan (review 2, finding 7). One
  * free trial per person across web, App Store and Google Play, and a free
- * trial is offered ONLY when the server has confirmed this member is still
+ * trial is PROMISED only when the server has confirmed this member is still
  * eligible (trialEligible === true):
  *
  *   checking     eligibility not known yet: order nothing
@@ -31,17 +31,29 @@ export function offerStartsFree(offer: StoreOfferLike | null | undefined): boole
  *   paid         an offer that starts paid (Google lists the base plan next
  *                to the free-trial offer; Apple lists only paid phases for a
  *                customer it already considers ineligible)
- *   unavailable  the trial was used and this product only exposes a free
- *                introductory offer: never order it, say so instead
+ *   store_intro  the trial was used and this product only exposes a free
+ *                introductory offer: the purchase still goes ahead (the
+ *                store's own intro terms apply, and the server records it for
+ *                reconciliation), but nothing on the paywall promises a trial
+ *   unavailable  nothing can be ordered: the product lists no offer, or the
+ *                server switched on strict mode (strict_cross_channel_trial)
+ *                and the only offer is the free intro of a used trial
+ *
+ * strict comes from the server (/subscribe/status and the store gate,
+ * env STRICT_CROSS_CHANNEL_TRIAL, default off): blocking a plan whose only
+ * offer is a free intro would leave a paying member, or an App Review
+ * tester, with a plan they cannot buy until paid or promotional offers
+ * exist in the stores.
  */
 export type PlanOffer<T> =
-  | { state: "trial" | "paid"; offer: T }
+  | { state: "trial" | "paid" | "store_intro"; offer: T }
   | { state: "checking" | "unavailable"; offer?: undefined };
 
 export function planOffer<T extends StoreOfferLike>(
   offers: T[] | undefined,
   defaultOffer: T | null | undefined,
   trialEligible: boolean | undefined,
+  strict: boolean = false,
 ): PlanOffer<T> {
   if (trialEligible === undefined) return { state: "checking" };
   const list = offers || [];
@@ -52,17 +64,21 @@ export function planOffer<T extends StoreOfferLike>(
   }
   if (fallback && !offerStartsFree(fallback)) return { state: "paid", offer: fallback };
   const paid = list.find((o) => !offerStartsFree(o));
-  return paid ? { state: "paid", offer: paid } : { state: "unavailable" };
+  if (paid) return { state: "paid", offer: paid };
+  if (fallback && !strict) return { state: "store_intro", offer: fallback };
+  return { state: "unavailable" };
 }
 
 /** The offer to order, or undefined when nothing may be ordered for this
- * member yet (eligibility unknown) or at all (trial used, no paid offer). */
+ * member yet (eligibility unknown) or at all (no offer, or strict mode with
+ * only the free intro of a used trial). */
 export function chooseOffer<T extends StoreOfferLike>(
   offers: T[] | undefined,
   defaultOffer: T | null | undefined,
   trialEligible: boolean | undefined,
+  strict: boolean = false,
 ): T | undefined {
-  return planOffer(offers, defaultOffer, trialEligible).offer;
+  return planOffer(offers, defaultOffer, trialEligible, strict).offer;
 }
 
 export type StoreGateErrorCode = "card_pending" | "web_billing_active" | "check_failed";

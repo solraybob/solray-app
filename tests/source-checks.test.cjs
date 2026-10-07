@@ -77,3 +77,23 @@ test("review 2 finding 2: the native paywall asks the server before it opens the
   assert.ok(gate > 0 && order > gate, "store-intent gate comes before the order");
   assert.ok(body.includes("releaseStorePurchase("), "a closed sheet releases the intent");
 });
+
+test("round 3: a plan sold on the store's intro after a used trial never promises a free trial", () => {
+  const src = fs.readFileSync(path.join(root, "app/subscribe/page.tsx"), "utf8");
+  const en = JSON.parse(fs.readFileSync(path.join(root, "messages/en.json"), "utf8"));
+  const es = JSON.parse(fs.readFileSync(path.join(root, "messages/es.json"), "utf8"));
+  // The free-trial wording is tied to the "trial" state only.
+  assert.match(src, /const planHasTrial = selectedState === "trial";/);
+  assert.match(src, /planStoreIntro \? t\("subscribe\.start_membership"\)/);
+  assert.match(src, /planStoreIntro \? t\("subscribe\.auto_renew_terms_store"\)/);
+  // The strict switch comes from the server, at load and from the store gate.
+  assert.match(src, /sub\?\.strict_cross_channel_trial === true/);
+  assert.match(src, /gate\.strict_cross_channel_trial === true/);
+  assert.match(src, /launchNativePurchase\(productId, accountToken, eligible, strict\)/);
+  for (const m of [en, es]) {
+    for (const k of ["start_membership", "auto_renew_terms_store"]) {
+      assert.ok(m.subscribe[k], k);
+      assert.ok(!/free|gratis|prueba/i.test(m.subscribe[k]), `${k} promises no trial`);
+    }
+  }
+});

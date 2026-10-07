@@ -30,6 +30,9 @@ import {
   serverIdOf,
   unmarkDeletedHere,
   wasDeletedHere,
+  savedPersonFold,
+  savedPersonForServer,
+  savedPersonBirthCheck,
   hasQueuedWrites,
 } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
@@ -104,6 +107,10 @@ interface SavedPerson {
   // the member chose. Also kept in the chart (blueprint.meta), which is how
   // it travels with the person to the server and other devices.
   birth_time_fold?: "first" | "second";
+  // The server's clock-change check of the saved birth time (GET/POST
+  // /saved-people): needs_confirmation asks the member which occurrence it
+  // was (or to correct a time that never happened). Read-only, never sent.
+  birth_time_check?: unknown;
   // Local bookkeeping, never sent: true once the server has confirmed it
   // holds this person. A confirmed person later missing from the server was
   // deleted on another device and must not be uploaded again.
@@ -155,17 +162,16 @@ function writeTombstones(ids: Set<string>) {
 function addTombstone(id: string) { const t = loadTombstones(); t.add(id); writeTombstones(t); }
 function dropTombstone(id: string) { const t = loadTombstones(); if (t.delete(id)) writeTombstones(t); }
 
-/** The chosen clock-change occurrence: the person's own field, or their chart's. */
+// The chosen clock-change occurrence, the POST body, and the server's
+// birth time check for a saved person (lib/saved-people-sync).
 function savedFold(p: SavedPerson): "first" | "second" | undefined {
-  const f = p.birth_time_fold ?? p.blueprint?.meta?.birth_time_fold;
-  return f === "first" || f === "second" ? f : undefined;
+  return savedPersonFold(p);
 }
-
-/** The person as the server stores it, without local bookkeeping. */
-function forServer(p: SavedPerson): Omit<SavedPerson, "_synced"> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { _synced, ...rest } = p;
-  return rest;
+function forServer(p: SavedPerson) {
+  return savedPersonForServer(p);
+}
+function savedBirthCheck(p: SavedPerson) {
+  return savedPersonBirthCheck(p);
 }
 
 // Who a Dynamics reading is with, for the chat request. The server loads
@@ -803,6 +809,89 @@ export default function SoulsPage() {
           // offline: local copy remains and migrates on the next load
         }
       })();
+    }
+  };
+
+  // An existing saved person whose birth time fell on a clock-change night
+  // (the server's birth_time_check.needs_confirmation): ask which occurrence
+  // it was with the same chooser as signup, redraw the chart with it, and
+  // save the choice back (top-level birth_time_fold) so every device and
+  // every later recalculation uses it. A time that never happened cannot be
+  // chosen; the member is told to add the person again with the right time.
+  const [savedFoldAsk, setSavedFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  const confirmSavedBirthTime = async (person: SavedPerson) => {
+    const check = savedBirthCheck(person);
+    if (!check.needsConfirmation) return;
+    setErrorMessage(null);
+    if (check.status === "nonexistent" || check.options.length === 0) {
+      setErrorMessage(fill(t("souls.birth_check_nonexistent"), { name: person.name }));
+      return;
+    }
+    const fold = await new Promise<BirthFold | null>((resolve) => setSavedFoldAsk({ options: check.options, resolve }));
+    if (!fold) return;
+    const acct = captureAccount();
+    const gen = acct.generation;
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
+    try {
+      const { ok, data } = await trackRequest(async () => {
+        const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: person.name,
+            sex: person.sex,
+            birth_date: person.birth_date,
+            birth_time: person.birth_time,
+            birth_city: person.birth_city,
+            birth_time_fold: fold,
+          }),
+        });
+        return { ok: res.ok, data: res.ok ? await res.json() : null };
+      });
+      if (!acct.live) return;
+      if (!ok || !data?.blueprint) {
+        setErrorMessage(t("souls.birth_check_failed"));
+        return;
+      }
+      const updated: SavedPerson = {
+        ...person,
+        profile: {
+          sun_sign: data?.profile?.sun_sign ?? person.profile.sun_sign,
+          hd_type: data?.profile?.hd_type ?? person.profile.hd_type,
+          hd_profile: data?.profile?.hd_profile ?? person.profile.hd_profile,
+        },
+        blueprint: data.blueprint,
+        birth_time_fold: fold,
+        birth_time_check: data?.birth_time_check,
+      };
+      const apply = (next: SavedPerson) => {
+        setSavedPeople((prev) => {
+          if (!prev.some((p) => p.id === person.id)) return prev; // removed meanwhile
+          const list = prev.map((p) => (p.id === person.id ? next : p));
+          writeSavedPeople(list);
+          return list;
+        });
+        setBondPartners((prev) => prev.map((bp) =>
+          bp.kind === "saved" && bp.person.id === person.id ? { kind: "saved", person: next } : bp));
+      };
+      apply(updated);
+      if (!token) return;
+      const r = await forPerson(person.id, gen, async () => {
+        if (wasDeletedHere(person.id)) return null;
+        return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer(updated)) }, token, { generation: gen });
+      });
+      if (!acct.live || wasDeletedHere(person.id)) return;
+      const raw = r?.person as SavedPerson | undefined;
+      if (raw && raw.id === person.id) {
+        const saved = { ...raw, _synced: true };
+        confirmedPeopleRef.current.set(person.id, saved);
+        apply(saved);
+      }
+    } catch (e) {
+      if (isStaleAccountError(e) || !acct.live) return;
+      // Offline: the choice is kept here and in the chart, and is sent with
+      // this person's next save.
+      setErrorMessage(t("souls.birth_check_failed"));
     }
   };
 
@@ -1445,6 +1534,7 @@ export default function SoulsPage() {
               setAddPersonOpen(true);
             }}
             onRemoveSaved={handlePersonRemove}
+            onConfirmSaved={(p) => { setPartnerPickerOpen(false); void confirmSavedBirthTime(p); }}
             onClose={() => setPartnerPickerOpen(false)}
           />
         )}
@@ -1468,6 +1558,16 @@ export default function SoulsPage() {
           <AddPersonSheet
             onClose={() => setAddPersonOpen(false)}
             onAdded={handlePersonAdded}
+          />
+        )}
+
+        {savedFoldAsk && (
+          <BirthTimeFoldSheet
+            options={savedFoldAsk.options}
+            body={t("souls.birth_check_body")}
+            hint={t("souls.birth_check_hint")}
+            onChoose={(f) => { savedFoldAsk.resolve(f); setSavedFoldAsk(null); }}
+            onCancel={() => { savedFoldAsk.resolve(null); setSavedFoldAsk(null); }}
           />
         )}
 
@@ -1678,10 +1778,12 @@ interface PartnerPickerProps {
   onPick: (partner: BondPartner) => void;
   onAddNew: () => void;
   onRemoveSaved: (id: string) => void;
+  /** A saved person whose birth time the server flagged (clock change). */
+  onConfirmSaved: (person: SavedPerson) => void;
   onClose: () => void;
 }
 
-function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSaved, onClose }: PartnerPickerProps) {
+function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSaved, onConfirmSaved, onClose }: PartnerPickerProps) {
   const { t } = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -1730,6 +1832,15 @@ function PartnerPicker({ savedPeople, connections, onPick, onAddNew, onRemoveSav
                       </p>
                     </div>
                   </button>
+                  {savedBirthCheck(p).needsConfirmation && (
+                    <button
+                      type="button"
+                      onClick={() => onConfirmSaved(p)}
+                      className="shrink-0 px-3 py-1 rounded-full border border-forest-border font-body text-[13px] text-text-primary"
+                    >
+                      {t("souls.birth_check_button")}
+                    </button>
+                  )}
                   <button
                     type="button"
                     aria-label={t("souls.remove_name").replace("{name}", p.name)}

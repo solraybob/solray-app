@@ -36,6 +36,10 @@ export interface SubscriptionStatus {
   /** False when this email already had its one free trial (web or store):
    * the native paywall then orders a paid offer. */
   trial_eligible?: boolean;
+  /** Server switch (env STRICT_CROSS_CHANNEL_TRIAL, default off): when true
+   * a plan whose only store offer is the free intro of a used trial cannot
+   * be bought; when false it is sold on the store's own terms. */
+  strict_cross_channel_trial?: boolean;
 }
 
 /** A billing request ran past its deadline. The outcome is unknown, so the
@@ -141,6 +145,7 @@ export async function setPlan(token: string, plan: "monthly" | "yearly") {
 export async function announceStorePurchase(token: string): Promise<{
   ok: boolean;
   trial_eligible: boolean;
+  strict_cross_channel_trial?: boolean;
   intent_expires_at?: string | null;
 }> {
   return billingFetch("/subscribe/store-intent", { method: "POST" }, token);

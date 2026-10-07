@@ -250,25 +250,27 @@ export function hasIntroFreeTrial(productId: string, trialEligible?: boolean): b
   }
 }
 
-function planFor(product: ProductLike, trialEligible?: boolean) {
+function planFor(product: ProductLike, trialEligible?: boolean, strict?: boolean) {
   const offers = (product.offers || []) as Array<OfferLike & StoreOfferLike>;
   const def = (typeof product.getOffer === "function" && product.getOffer()) || undefined;
-  return planOffer(offers, def as (OfferLike & StoreOfferLike) | undefined, trialEligible);
+  return planOffer(offers, def as (OfferLike & StoreOfferLike) | undefined, trialEligible, Boolean(strict));
 }
 
-function offerFor(product: ProductLike, trialEligible?: boolean): (OfferLike & StoreOfferLike) | undefined {
-  return planFor(product, trialEligible).offer;
+function offerFor(product: ProductLike, trialEligible?: boolean, strict?: boolean): (OfferLike & StoreOfferLike) | undefined {
+  return planFor(product, trialEligible, strict).offer;
 }
 
-export type NativePlanState = "loading" | "checking" | "trial" | "paid" | "unavailable";
+export type NativePlanState = "loading" | "checking" | "trial" | "paid" | "store_intro" | "unavailable";
 
 /**
- * What the paywall can do for this plan and member: "trial" or "paid" can be
- * ordered; "unavailable" means the member's one trial was used and the store
- * only exposes a free introductory offer for this product, so it must not be
- * ordered (review 2, finding 7); "checking" until eligibility is confirmed.
+ * What the paywall can do for this plan and member: "trial", "paid" or
+ * "store_intro" can be ordered ("store_intro": the member's trial was used
+ * and the store only exposes its free introductory offer; the purchase goes
+ * ahead on the store's own terms, with no trial promised); "unavailable"
+ * cannot (no offer, or the server's strict mode refuses that intro offer,
+ * review 2, finding 7); "checking" until eligibility is confirmed.
  */
-export function nativePlanState(productId: string, trialEligible?: boolean): NativePlanState {
+export function nativePlanState(productId: string, trialEligible?: boolean, strict?: boolean): NativePlanState {
   try {
     if (typeof window === "undefined") return "loading";
     const store = getStore();
@@ -277,7 +279,7 @@ export function nativePlanState(productId: string, trialEligible?: boolean): Nat
     const product =
       (platform ? store.get(productId, platform) : undefined) || store.get(productId);
     if (!product) return "loading";
-    return planFor(product, trialEligible).state;
+    return planFor(product, trialEligible, strict).state;
   } catch {
     return "loading";
   }
@@ -474,6 +476,7 @@ export async function launchNativePurchase(
   productId: string = PRODUCT_ID,
   accountToken?: string | null,
   trialEligible?: boolean,
+  strict?: boolean,
 ): Promise<"started" | "cancelled"> {
   await initNativeIAP();
   const store = getStore();
@@ -485,12 +488,13 @@ export async function launchNativePurchase(
     throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
   }
 
-  // One free trial per person (D6): a free trial only with confirmed
-  // eligibility, a paid offer otherwise, and NEVER a fallback to the
-  // product's default (free) offer when no paid one exists (review 2,
-  // finding 7). trialEligible is the server's fresh answer from the store
-  // gate (POST /subscribe/store-intent), not a cached status.
-  const offer = offerFor(product, trialEligible);
+  // One free trial per person (D6): a free trial is promised only with
+  // confirmed eligibility, a paid offer is ordered where the store lists
+  // one, and when it lists only its free intro the purchase still goes
+  // ahead on the store's terms unless the server's strict mode refuses it
+  // (review 2, finding 7). trialEligible and strict are the server's fresh
+  // answer from the store gate (POST /subscribe/store-intent).
+  const offer = offerFor(product, trialEligible, strict);
   if (!offer) {
     throw trialEligible === undefined
       ? new NativeIAPError("check_failed", "Trial eligibility is not confirmed")

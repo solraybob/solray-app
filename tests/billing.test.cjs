@@ -52,9 +52,23 @@ test("only a confirmed eligible member is offered the store's free trial", () =>
   assert.equal(iap.chooseOffer([trial, paid], null, undefined), undefined);
 });
 
-test("with no paid alternative (Apple) a member whose trial was used is never sent the trial offer", () => {
-  assert.equal(iap.chooseOffer([trial], trial, false), undefined);
-  assert.equal(iap.chooseOffer([], trial, false), undefined);
+// Round 3 product decision: with no paid alternative (Apple lists only its
+// free intro) a member whose trial was used can still buy; the store's own
+// intro terms apply and the paywall promises no trial. Only the server's
+// strict mode (strict_cross_channel_trial) refuses that offer.
+test("with no paid alternative (Apple) a member whose trial was used still buys on the store's terms", () => {
+  assert.equal(iap.chooseOffer([trial], trial, false), trial);
+  assert.equal(iap.chooseOffer([trial], trial, false, false), trial);
+  assert.equal(iap.chooseOffer([], trial, false), trial);
+  assert.equal(iap.chooseOffer([], null, false), undefined);
+});
+
+test("strict mode never sends a member whose trial was used the free intro offer", () => {
+  assert.equal(iap.chooseOffer([trial], trial, false, true), undefined);
+  assert.equal(iap.chooseOffer([], trial, false, true), undefined);
+  // A paid offer is still sold, and an eligible member still gets the trial.
+  assert.equal(iap.chooseOffer([trial, paid], trial, false, true), paid);
+  assert.equal(iap.chooseOffer([trial, paid], trial, true, true), trial);
 });
 
 test("planOffer says what the paywall can do for each plan", () => {
@@ -62,8 +76,12 @@ test("planOffer says what the paywall can do for each plan", () => {
   assert.deepEqual(iap.planOffer([trial, paid], trial, true), { state: "trial", offer: trial });
   assert.deepEqual(iap.planOffer([paid], paid, true), { state: "paid", offer: paid });
   assert.deepEqual(iap.planOffer([trial, paid], trial, false), { state: "paid", offer: paid });
-  assert.deepEqual(iap.planOffer([trial], trial, false), { state: "unavailable" });
+  assert.deepEqual(iap.planOffer([trial], trial, false), { state: "store_intro", offer: trial });
+  assert.deepEqual(iap.planOffer([trial], trial, false, true), { state: "unavailable" });
+  assert.deepEqual(iap.planOffer([trial, paid], trial, false, true), { state: "paid", offer: paid });
+  assert.deepEqual(iap.planOffer([trial, paid], trial, undefined, true), { state: "checking" });
   assert.deepEqual(iap.planOffer([], null, true), { state: "unavailable" });
+  assert.deepEqual(iap.planOffer([], null, false), { state: "unavailable" });
 });
 
 test("the store gate maps the server's refusal to what the member sees", () => {
