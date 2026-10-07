@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch, ApiError, detailCode } from "@/lib/api";
+import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
+import { voiceResultAction } from "@/lib/voice-result";
 import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
@@ -1343,20 +1344,34 @@ function ChatPageInner() {
     form.append("file", blob, `voice.${ext}`);
 
     setTranscribing(true);
+    // Who and where this was spoken: checked again when the text lands.
+    const acct = captureAccount();
+    const spokenIn = activeSessionRef.current;
+    const landing = (crisis: boolean) => voiceResultAction({
+      sameAccount: acct.live,
+      mounted: isMountedRef.current,
+      sameConversation: activeSessionRef.current === spokenIn,
+      crisis,
+    });
     try {
       const authToken = tokenRef.current || token;
-      const res = await fetch(`${apiUrl}/chat/transcribe`, {
-        method: "POST",
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
-        body: form,
+      const { res, body } = await trackRequest(async () => {
+        const r = await fetch(`${apiUrl}/chat/transcribe`, {
+          method: "POST",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+          body: form,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const b: any = await r.json().catch(() => null);
+        return { res: r, body: b };
       });
+      if (landing(false) === "drop") return;
       if (!res.ok) {
         let detail = "";
         let code = "";
         try {
-          const j = await res.json();
-          detail = errorText(j?.detail, "");
-          code = detailCode(j?.detail) || "";
+          detail = errorText(body?.detail, "");
+          code = detailCode(body?.detail) || "";
         } catch {
           // ignore
         }
@@ -1377,7 +1392,7 @@ function ChatPageInner() {
         }
         throw new Error(detail || `${t("chat.voice_transcription_failed")} (${res.status})`);
       }
-      const data = await res.json();
+      const data = body;
       const transcript = (data?.transcript || "").trim();
       if (!transcript) {
         setVoiceError(t("chat.voice_nothing_heard"));
@@ -1386,7 +1401,9 @@ function ChatPageInner() {
       // The server heard someone in crisis. Send what they said straight
       // away, as a normal message: /chat answers it with the crisis lines
       // in their language. No editing step in between.
-      if (data?.crisis === true) {
+      // Only into the conversation it was spoken in; if the member has
+      // moved to another one, the words wait in the box below instead.
+      if (data?.crisis === true && landing(true) === "send") {
         const typed = (inputRef.current?.value || "").replace(/\s+$/, "");
         const text = typed ? typed + " " + transcript : transcript;
         setInput("");
@@ -1400,10 +1417,11 @@ function ChatPageInner() {
       // Focus so the user can edit before sending.
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch (err: unknown) {
+      if (landing(false) === "drop") return;
       const msg = err instanceof Error ? err.message : t("chat.voice_failed");
       setVoiceError(msg);
     } finally {
-      setTranscribing(false);
+      if (isMountedRef.current) setTranscribing(false);
     }
   }, [token, t]);
 
