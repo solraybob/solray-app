@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { chartStampCurrent, chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { useT, fill } from "@/lib/i18n";
 
 // Each transiting planet tints its own card, drawn from the orb. Photographs
@@ -316,6 +317,8 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
   const [upcoming, setUpcoming] = useState<UpcomingCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Changes when the birth chart changes: the cycles are fetched again.
+  const chartRev = useChartRevision();
 
   useEffect(() => {
     if (!token) return;
@@ -351,11 +354,21 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
         servedFromCache = true;
       }
     } catch (_) {}
+    if (!servedFromCache) {
+      // Nothing cached for the current chart (or it just changed): show
+      // loading rather than cycles of the previous chart.
+      setCycles(null);
+      setUpcoming([]);
+      setLoading(true);
+    }
 
-    // Fetch from API
+    // Fetch from API. A reply for a chart that changed meanwhile is never
+    // shown: the chart change reruns this effect and fetches again.
+    let off = false;
     const stamp = chartWorkStamp();
     apiFetch("/transits/long-range", {}, token)
       .then((data: CyclesResponse) => {
+        if (off || !chartStampCurrent(stamp)) return;
         const cycleList = data.cycles || [];
         const upcomingList = data.upcoming || [];
         setCycles(cycleList);
@@ -364,6 +377,7 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
         writeChartCache(stamp, cacheKey, data);
       })
       .catch(() => {
+        if (off) return;
         // If we already painted from cache, keep it; only clear when we have
         // nothing to show, so a failed background revalidation never blanks
         // the cards the user is looking at.
@@ -372,8 +386,9 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
           setUpcoming([]);
         }
       })
-      .finally(() => setLoading(false));
-  }, [token, lang]);
+      .finally(() => { if (!off && chartStampCurrent(stamp)) setLoading(false); });
+    return () => { off = true; };
+  }, [token, lang, chartRev]);
 
   const displayCycles = cycles ? cycles.slice(0, 6) : [];
   const total = displayCycles.length;

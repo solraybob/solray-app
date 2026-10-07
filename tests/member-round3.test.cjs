@@ -101,3 +101,47 @@ test("R3-5: birth_time_fold is part of the birth fingerprint", () => {
   assert.equal(cr.syncBirthRevision({ profile: { ...base, birth_time_fold: "second" } }), true);
   assert.equal(win.localStorage.getItem("solray_blueprint"), null);
 });
+
+// ── Finding 6: a stale chart result is never displayed ─────────────────────
+
+test("R3-6: dropping chart caches announces it, so mounted screens refetch", () => {
+  const cr = load("lib/chart-revision.js");
+  let n = 0;
+  const on = () => { n += 1; };
+  win.addEventListener(cr.CHART_CHANGED_EVENT, on);
+  cr.clearChartDerivedCaches();
+  assert.equal(n, 1);
+  cr.syncBirthRevision({ profile: { birth_date: "1990-01-01", birth_time: "09:00" } });
+  assert.ok(n >= 2);
+  win.removeEventListener(cr.CHART_CHANGED_EVENT, on);
+});
+
+test("R3-6: chart screens show a result only under the chart it was fetched for", () => {
+  const thenBody = (src, call) => {
+    const at = src.indexOf(call);
+    return src.slice(at, src.indexOf(".catch(", at));
+  };
+  // Cycles and the week summary: guarded before state, rerun on a chart change.
+  for (const [f, call, setter] of [
+    ["components/CurrentCycles.tsx", 'apiFetch("/transits/long-range"', "setCycles(cycleList)"],
+    ["components/WeekSummaryCard.tsx", 'apiFetch("/forecast/week"', "setSummary(d.week_summary)"],
+  ]) {
+    const src = read(f);
+    assert.match(src, /const chartRev = useChartRevision\(\);/, f);
+    assert.match(src, /\}, \[[^\]]*chartRev[^\]]*\]\);/, `${f} reruns on a chart change`);
+    const body = thenBody(src, call);
+    const guard = body.search(/if \(off \|\| !chartStampCurrent\(stamp\)\) return;/);
+    assert.ok(guard > -1 && guard < body.indexOf(setter), `${f} discards a stale result before showing it`);
+  }
+  // Geography: never shows a stale map after its retries; a retryable failure instead.
+  const geo = read("components/AstroGeography.tsx");
+  assert.match(geo, /const chartRev = useChartRevision\(\);/);
+  assert.ok(!/if \(!chartStampCurrent\(stamp\) && attempt < 2\) \{ load\(attempt \+ 1\); return; \}\n\s+setData\(d\)/.test(geo));
+  assert.match(geo, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(attempt < 2\) \{ load\(attempt \+ 1\); return; \}\n\s+setError\("load_failed"\);/);
+  assert.match(geo, /onClick=\{\(\) => setRetryNonce\(\(n\) => n \+ 1\)\}/);
+  // Today: a forecast still stale after its retry is not shown.
+  const today = read("app/today/page.tsx");
+  assert.match(today, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(!retried\) return fetchAndUpdate\(isBackground, true\);\n\s+setForecast\(null\);\n\s+setError\("today.error_no_sky"\);/);
+  const refresh = today.slice(today.indexOf("const onRefresh = (e: Event)"));
+  assert.ok(refresh.indexOf("if (!chartStampCurrent(stamp))") < refresh.indexOf("setForecast(parsed)"));
+});

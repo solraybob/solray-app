@@ -9,6 +9,20 @@
 // a mismatch.
 
 const REV_KEY = "solray_birth_rev";
+/** localStorage key of the stored fingerprint (another tab changing it fires `storage`). */
+export const BIRTH_REV_STORAGE_KEY = REV_KEY;
+
+/**
+ * Window event fired whenever the chart-derived caches are dropped (a birth
+ * change here, or one noticed from another device). Screens showing chart
+ * results refetch on it (lib/use-chart-revision), so nothing computed from
+ * the old chart stays on screen.
+ */
+export const CHART_CHANGED_EVENT = "solray:chart-changed";
+
+function announceChartChanged(): void {
+  try { window.dispatchEvent(new CustomEvent(CHART_CHANGED_EVENT)); } catch { /* no window */ }
+}
 
 const DERIVED_EXACT = ["solray_blueprint", "solray_astrocarto"];
 const DERIVED_PREFIX = ["solray_cycles_", "solray_forecast_", "solray_week_", "solray_compat_"];
@@ -59,6 +73,7 @@ export function clearChartDerivedCaches(): void {
       }
     } catch { /* storage unavailable: nothing cached */ }
   }
+  announceChartChanged();
 }
 
 /**
@@ -107,5 +122,8 @@ export function syncBirthRevision(meOrProfile: unknown): boolean {
   // so they are rebuilt once.
   clearChartDerivedCaches();
   try { localStorage.setItem(REV_KEY, rev); } catch { /* ignore */ }
+  // Again now the new fingerprint is stored, so a screen refetching on the
+  // event stamps its request with it.
+  announceChartChanged();
   return true;
 }

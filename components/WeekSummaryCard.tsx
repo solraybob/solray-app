@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { chartStampCurrent, chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
 
@@ -10,6 +11,8 @@ export default function WeekSummaryCard() {
   const { t } = useT();
   const [summary, setSummary] = useState<string | null>(null);
   const { token } = useAuth();
+  // Changes when the birth chart changes: the summary is fetched again.
+  const chartRev = useChartRevision();
 
   useEffect(() => {
     if (!token) return;
@@ -21,16 +24,22 @@ export default function WeekSummaryCard() {
         if (d?.week_summary) { setSummary(d.week_summary); return; }
       }
     } catch (_) {}
+    // Nothing cached for the current chart: no summary of the old one.
+    setSummary(null);
+    let off = false;
     const stamp = chartWorkStamp();
     apiFetch("/forecast/week", {}, token)
       .then(d => {
+        // For a chart that changed meanwhile: dropped; the change reruns this.
+        if (off || !chartStampCurrent(stamp)) return;
         if (d?.week_summary) {
           setSummary(d.week_summary);
           writeChartCache(stamp, key, d);
         }
       })
       .catch(() => {});
-  }, [token]);
+    return () => { off = true; };
+  }, [token, chartRev]);
 
   if (!summary) return null;
 

@@ -52,10 +52,10 @@ test("F5: an answer requested before a birth change is never cached as current",
 test("F5: chart-derived screens stamp before requesting and cache through the stamp", () => {
   const astro = read("components/AstroGeography.tsx");
   assert.match(astro, /const stamp = chartWorkStamp\(\);\n\s+apiFetch\("\/astrocartography"/);
-  assert.match(astro, /if \(!chartStampCurrent\(stamp\) && attempt < 2\) \{ load\(attempt \+ 1\); return; \}/);
+  assert.match(astro, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(attempt < 2\) \{ load\(attempt \+ 1\); return; \}/);
   assert.ok(!/localStorage\.setItem\(cacheKey/.test(astro));
   const today = read("app/today/page.tsx");
-  assert.match(today, /if \(!chartStampCurrent\(stamp\) && !retried\) \{\n\s+return fetchAndUpdate\(isBackground, true\);/);
+  assert.match(today, /if \(!chartStampCurrent\(stamp\)\) \{\n\s+if \(!retried\) return fetchAndUpdate\(isBackground, true\);/);
   assert.ok(!/localStorage\.setItem\(cacheKey/.test(today));
   for (const f of ["components/CurrentCycles.tsx", "components/WeekSummaryCard.tsx", "app/widget/page.tsx", "app/profile/[id]/page.tsx"]) {
     assert.match(read(f), /writeChartCache\(stamp, /, f);
