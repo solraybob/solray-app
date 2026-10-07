@@ -24,6 +24,7 @@
 
 import { fill } from "./i18n";
 import { tx } from "./astro-i18n";
+import { accountKey } from "./account-session";
 
 /** Translator from useT(), so the prompts follow the member's language. */
 type Translate = (key: string) => string;
@@ -186,7 +187,7 @@ export function readCachedForecast(): TodayForecast | null {
   try {
     const d = new Date();
     const key = `solray_forecast_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(accountKey(key));
     if (!raw) return null;
     return JSON.parse(raw) as TodayForecast;
   } catch {

@@ -41,6 +41,7 @@ import {
   sendBirthRequest, storedBirthTimeCheck,
   type BirthFold, type FoldChoice, type StoredBirthTimeCheck,
 } from "@/lib/birth-time-fold";
+import { accountKey } from "@/lib/account-session";
 
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -221,12 +222,12 @@ export default function SettingsPage() {
       setIdentityStatus("saved");
       // Bust the profile-page blueprint cache so the new name/handle shows up there too
       try {
-        const cached = localStorage.getItem("solray_blueprint");
+        const cached = localStorage.getItem(accountKey("solray_blueprint"));
         if (cached) {
           const bp = JSON.parse(cached);
           bp._name = name.trim();
           bp._username = username.trim().replace(/^@/, "");
-          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+          localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
         }
       } catch {}
       setTimeout(() => setIdentityStatus("idle"), 1800);
@@ -377,12 +378,12 @@ export default function SettingsPage() {
           }, token);
           // Sync to local cache so profile page picks it up immediately
           try {
-            localStorage.setItem("solray_avatar", dataUrl);
-            const cached = localStorage.getItem("solray_blueprint");
+            localStorage.setItem(accountKey("solray_avatar"), dataUrl);
+            const cached = localStorage.getItem(accountKey("solray_blueprint"));
             if (cached) {
               const bp = JSON.parse(cached);
               bp._profile_photo = dataUrl;
-              localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+              localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
             }
           } catch {}
           setPhotoStatus("saved");
@@ -454,7 +455,7 @@ export default function SettingsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let prev: any = null;
         try {
-          const raw = localStorage.getItem("solray_blueprint");
+          const raw = localStorage.getItem(accountKey("solray_blueprint"));
           prev = raw ? JSON.parse(raw) : null;
         } catch {}
         const bp = res.blueprint;
@@ -464,7 +465,7 @@ export default function SettingsPage() {
         bp._profile_photo= me?.profile?.profile_photo  ?? prev?._profile_photo  ?? null;
         bp._cachedAt = Date.now();
         acct.check();
-        localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+        localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
       }
     } catch (e) {
       if (isStaleAccountError(e)) throw e;

@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { chartStampCurrent, chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useChartRevision } from "@/lib/use-chart-revision";
 import { useAuth } from "@/lib/auth-context";
+import { accountKey } from "@/lib/account-session";
 import { useT } from "@/lib/i18n";
 
 export default function WeekSummaryCard() {
@@ -18,7 +19,7 @@ export default function WeekSummaryCard() {
     if (!token) return;
     // Per language: the summary is server text in the member's language, so
     // switching EN/ES must fetch it again rather than show the cached one.
-    const key = `solray_week_${lang}_${new Date().toISOString().split('T')[0]}`;
+    const key = accountKey(`solray_week_${lang}_${new Date().toISOString().split('T')[0]}`);
     try {
       const cached = localStorage.getItem(key);
       if (cached) {

@@ -4,6 +4,7 @@ import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
+import { accountKey } from "@/lib/account-session";
 
 interface ForecastData {
   day_title: string;
@@ -86,7 +87,7 @@ export default function WidgetPage() {
         // must agree or it goes stale around UTC midnight.
         const _d = new Date();
         const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
-        const cacheKey = `solray_forecast_${dateKey}`;
+        const cacheKey = accountKey(`solray_forecast_${dateKey}`);
 
         // Try cache first, but only a COMPLETE reading. A pending/partial
         // cached entry must not be shown: fall through to the network so a

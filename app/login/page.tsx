@@ -12,6 +12,7 @@ import EntrySky from "@/components/EntrySky";
 import InstallApp from "@/components/InstallApp";
 import { apiFetch } from "@/lib/api";
 import { syncBirthRevision } from "@/lib/chart-revision";
+import { accountKey } from "@/lib/account-session";
 
 /* Only same-origin relative paths: must start with "/" but not "//" (or
    "/\\"), which browsers treat as protocol-relative, off-site URLs. */
@@ -68,8 +69,7 @@ export default function LoginPage() {
             syncBirthRevision(data);
             if (data?.blueprint) {
               try {
-                localStorage.setItem(
-                  "solray_blueprint",
+                localStorage.setItem(accountKey("solray_blueprint"),
                   JSON.stringify({ ...data.blueprint, _cachedAt: Date.now() })
                 );
               } catch (_) {

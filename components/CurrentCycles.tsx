@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { chartStampCurrent, chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useChartRevision } from "@/lib/use-chart-revision";
 import { useT, fill } from "@/lib/i18n";
+import { accountKey } from "@/lib/account-session";
 
 // Each transiting planet tints its own card, drawn from the orb. Photographs
 // used to sit here; lettering over them had to be pinned to the night palette
@@ -332,7 +333,7 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
     // to a month. Bumping the version invalidates every stale client cache once,
     // and we now revalidate in the background instead of early-returning, so the
     // displayed cycles self-heal on the next load even within the same month.
-    const cacheKey = `solray_cycles_v2_${monthKey}_${lang}`;
+    const cacheKey = accountKey(`solray_cycles_v2_${monthKey}_${lang}`);
 
     let servedFromCache = false;
     // Drop any pre-v2 cached cycles so the old stale title cannot linger.

@@ -8,12 +8,13 @@
 
 import { useEffect, useState } from "react";
 import { BIRTH_REV_STORAGE_KEY, CHART_CHANGED_EVENT } from "./chart-revision";
+import { accountKey } from "./account-session";
 
 export function useChartRevision(): number {
   const [n, setN] = useState(0);
   useEffect(() => {
     const bump = () => setN((x) => x + 1);
-    const onStorage = (e: StorageEvent) => { if (e.key === BIRTH_REV_STORAGE_KEY) bump(); };
+    const onStorage = (e: StorageEvent) => { if (e.key === accountKey(BIRTH_REV_STORAGE_KEY)) bump(); };
     window.addEventListener(CHART_CHANGED_EVENT, bump);
     window.addEventListener("storage", onStorage);
     return () => {

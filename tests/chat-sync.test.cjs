@@ -79,7 +79,7 @@ test("a successful sync sends turns written while offline", async () => {
   srv.sessions.set("s3", { session_id: "s3", messages: [m("1", 1)], last_message_at: "2026-10-07T10:01:00Z" });
   sync.saveSession({ sessionId: "s3", date: "", messages: [m("1", 1), m("offline", 5)] });
   sync.markServerConfirmed(["s3"]);
-  win.localStorage.setItem("solray_chat_session_meta", JSON.stringify({ s3: { last_message_at: "2026-10-07T10:01:00Z" } }));
+  win.localStorage.setItem(session.accountKey("solray_chat_session_meta"), JSON.stringify({ s3: { last_message_at: "2026-10-07T10:01:00Z" } }));
   sync.markUnsent("s3");
   await sync.syncSessionsFromServer("tok", session.getAuthGeneration());
   assert.deepEqual(srv.sessions.get("s3").messages.map((x) => x.id), ["1", "offline"]);
@@ -90,7 +90,7 @@ test("pulling a newer server copy keeps this device's unsent turns", async () =>
   const srv = fakeServer();
   srv.sessions.set("s4", { session_id: "s4", messages: [m("1", 1), m("2", 2)], last_message_at: "2026-10-07T12:00:00Z" });
   sync.saveSession({ sessionId: "s4", date: "", messages: [m("1", 1), m("mine", 3)] });
-  win.localStorage.setItem("solray_chat_session_meta", JSON.stringify({ s4: { last_message_at: "2026-10-07T10:00:00Z" } }));
+  win.localStorage.setItem(session.accountKey("solray_chat_session_meta"), JSON.stringify({ s4: { last_message_at: "2026-10-07T10:00:00Z" } }));
   await sync.syncSessionsFromServer("tok", session.getAuthGeneration());
   assert.deepEqual(sync.loadSession("s4").messages.map((x) => x.id), ["1", "2", "mine"]);
   assert.deepEqual(srv.sessions.get("s4").messages.map((x) => x.id), ["1", "2", "mine"]);

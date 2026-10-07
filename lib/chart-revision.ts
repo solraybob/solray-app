@@ -8,6 +8,8 @@
 // fingerprint with the one the caches were built under and drops them all on
 // a mismatch.
 
+import { accountKey, baseOfKey } from "./account-session";
+
 const REV_KEY = "solray_birth_rev";
 /** localStorage key of the stored fingerprint (another tab changing it fires `storage`). */
 export const BIRTH_REV_STORAGE_KEY = REV_KEY;
@@ -48,7 +50,7 @@ export function birthRevision(p: BirthFields | null | undefined): string | null 
 }
 
 export function currentBirthRevision(): string | null {
-  try { return localStorage.getItem(REV_KEY); } catch { return null; }
+  try { return localStorage.getItem(accountKey(REV_KEY)); } catch { return null; }
 }
 
 // Bumped whenever the derived caches are dropped in this tab. Together with
@@ -57,7 +59,9 @@ export function currentBirthRevision(): string | null {
 // (A to B to A gives the same revision but a new epoch).
 let chartEpoch = 0;
 
-function isDerivedKey(k: string): boolean {
+function isDerivedKey(key: string): boolean {
+  // Per-account keys (`<base>@u:<id>`, lib/account-session) by their base.
+  const k = baseOfKey(key);
   return DERIVED_EXACT.includes(k) || DERIVED_PREFIX.some((p) => k.startsWith(p));
 }
 
@@ -121,7 +125,7 @@ export function syncBirthRevision(meOrProfile: unknown): boolean {
   // revision existed cannot prove which birth details they were built from,
   // so they are rebuilt once.
   clearChartDerivedCaches();
-  try { localStorage.setItem(REV_KEY, rev); } catch { /* ignore */ }
+  try { localStorage.setItem(accountKey(REV_KEY), rev); } catch { /* ignore */ }
   // Again now the new fingerprint is stored, so a screen refetching on the
   // event stamps its request with it.
   announceChartChanged();

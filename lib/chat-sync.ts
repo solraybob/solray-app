@@ -24,7 +24,7 @@
 
 import { mergeMessages, sameTranscript } from "./chat-merge";
 import { withSoulBackfill } from "./chat-soul";
-import { isCurrentGeneration, StaleAccountError } from "./account-session";
+import { accountKey, isCurrentGeneration, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
 
 export interface ChatMessage {
@@ -52,7 +52,7 @@ const apiUrl = () => (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export function getSessionIds(): string[] {
   try {
-    const v = JSON.parse(localStorage.getItem("solray_chat_sessions") || "[]");
+    const v = JSON.parse(localStorage.getItem(accountKey("solray_chat_sessions")) || "[]");
     return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
   } catch {
     return [];
@@ -60,12 +60,12 @@ export function getSessionIds(): string[] {
 }
 
 export function saveSessionIds(ids: string[]) {
-  try { localStorage.setItem("solray_chat_sessions", JSON.stringify(ids)); } catch { /* best-effort */ }
+  try { localStorage.setItem(accountKey("solray_chat_sessions"), JSON.stringify(ids)); } catch { /* best-effort */ }
 }
 
 export function loadSession(sessionId: string): StoredSession | null {
   try {
-    const raw = localStorage.getItem(`solray_chat_${sessionId}`);
+    const raw = localStorage.getItem(accountKey(`solray_chat_${sessionId}`));
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -76,7 +76,7 @@ export function saveSession(session: StoredSession) {
   // Best-effort: quota exhaustion or disabled storage must never break the
   // conversation itself; in-memory state and the server sync still work.
   try {
-    localStorage.setItem(`solray_chat_${session.sessionId}`, JSON.stringify(session));
+    localStorage.setItem(accountKey(`solray_chat_${session.sessionId}`), JSON.stringify(session));
     const ids = getSessionIds();
     if (!ids.includes(session.sessionId)) {
       ids.unshift(session.sessionId);
@@ -93,14 +93,14 @@ const SERVER_CONFIRMED_KEY = "solray_chat_server_confirmed";
 
 function readSet(key: string): Set<string> {
   try {
-    const arr = JSON.parse(localStorage.getItem(key) || "[]");
+    const arr = JSON.parse(localStorage.getItem(accountKey(key)) || "[]");
     return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
   } catch {
     return new Set();
   }
 }
 function writeSet(key: string, ids: Set<string>) {
-  try { localStorage.setItem(key, JSON.stringify(Array.from(ids))); } catch { /* best-effort */ }
+  try { localStorage.setItem(accountKey(key), JSON.stringify(Array.from(ids))); } catch { /* best-effort */ }
 }
 
 export function getServerConfirmed(): Set<string> { return readSet(SERVER_CONFIRMED_KEY); }
@@ -134,10 +134,10 @@ const SESSION_META_KEY = "solray_chat_session_meta";
 type LocalMeta = Record<string, { last_message_at: string; revision?: number }>;
 
 export function getLocalMeta(): LocalMeta {
-  try { return JSON.parse(localStorage.getItem(SESSION_META_KEY) || "{}") as LocalMeta; } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(accountKey(SESSION_META_KEY)) || "{}") as LocalMeta; } catch { return {}; }
 }
 function setLocalMeta(meta: LocalMeta) {
-  try { localStorage.setItem(SESSION_META_KEY, JSON.stringify(meta)); } catch { /* ignore quota */ }
+  try { localStorage.setItem(accountKey(SESSION_META_KEY), JSON.stringify(meta)); } catch { /* ignore quota */ }
 }
 export function setSessionLocalMeta(sessionId: string, last_message_at: string, revision?: number) {
   const meta = getLocalMeta();
@@ -411,6 +411,16 @@ async function readServerSession(
   }
 }
 
+/** The conversation name after taking the server's copy. A name the server
+ *  sends (or an explicit null: cleared on another device) wins, unless this
+ *  device has writes the server has not taken yet (a rename made here and
+ *  not uploaded is newer). Only when the server leaves the field out is the
+ *  local name kept. */
+function serverName(sessionId: string, full: Record<string, unknown>, localName: string | undefined): string | undefined {
+  if (!("custom_name" in full) || getUnsent().has(sessionId)) return localName || undefined;
+  return typeof full.custom_name === "string" && full.custom_name ? full.custom_name : undefined;
+}
+
 /** Take the server's copy of one conversation into the cache, keeping turns
  *  only this device has. Returns true when this device still has turns the
  *  server lacks. */
@@ -421,7 +431,7 @@ function storeServerCopy(sessionId: string, full: Record<string, unknown>): bool
   saveSession({
     sessionId: typeof full.session_id === "string" && full.session_id ? full.session_id : sessionId,
     date: (typeof full.date_label === "string" && full.date_label) || local?.date || "",
-    customName: (typeof full.custom_name === "string" && full.custom_name) || local?.customName || undefined,
+    customName: serverName(sessionId, full, local?.customName),
     messages: merged,
   });
   if (typeof full.last_message_at === "string" && full.last_message_at) {
@@ -511,7 +521,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
       const got = await readServerSession(base, headers, localId, live);
       if (deletedHere.has(localId)) continue;
       if (got.kind === "gone") {
-        try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
+        try { localStorage.removeItem(accountKey(`solray_chat_${localId}`)); } catch { /* ignore */ }
         dropSessionLocalMeta(localId);
         unmarkServerConfirmed(localId);
         clearUnsent(localId);

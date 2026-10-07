@@ -73,7 +73,7 @@ test("R3-1: the birth save is bound to its account through every await and cache
   // Checked before the first cache write and again after /users/me.
   assert.ok(store.indexOf("acct.check();") < store.indexOf("clearChartDerivedCaches()"));
   const afterMe = store.slice(store.indexOf('apiFetch("/users/me"'));
-  assert.ok(afterMe.indexOf("acct.check();") > -1 && afterMe.indexOf("acct.check();") < afterMe.indexOf('localStorage.setItem("solray_blueprint"'));
+  assert.ok(afterMe.indexOf("acct.check();") > -1 && afterMe.indexOf("acct.check();") < afterMe.indexOf('localStorage.setItem(accountKey("solray_blueprint")'));
   for (const fn of ["const saveBirth", "const confirmBirthFold"]) {
     const body = src.slice(src.indexOf(fn), src.indexOf("\n  const ", src.indexOf(fn) + 10));
     const cap = body.indexOf("const acct = captureAccount();");
@@ -195,7 +195,7 @@ test("R3-7: a conversation's local partner reference is written into its transcr
   // saved person is confirmed by the server.
   cs.writeSoulCtx("s2", { name: "Bo", blueprint: { x: 1 }, connectionId: null, savedPersonId: null, localPersonId: "loc-9" });
   assert.equal(cs.withSoulBackfill("s2", msgs), msgs);
-  win.localStorage.setItem("solray_saved_people", JSON.stringify([{ id: "loc-9", name: "Bo", _synced: true }]));
+  win.localStorage.setItem(session.accountKey("solray_saved_people"), JSON.stringify([{ id: "loc-9", name: "Bo", _synced: true }]));
   assert.equal(cs.withSoulBackfill("s2", msgs)[0].soul.saved_person_id, "loc-9");
   assert.equal(cs.resolveSoulCtx(cs.readSoulCtx("s2")).savedPersonId, "loc-9");
 });

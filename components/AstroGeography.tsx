@@ -8,6 +8,7 @@ import { chartStampCurrent, chartWorkStamp, currentBirthRevision, writeChartCach
 import { useChartRevision } from "@/lib/use-chart-revision";
 import { tx } from "@/lib/astro-i18n";
 import { GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
+import { accountKey } from "@/lib/account-session";
 
 interface LinePoint {
   lat: number;
@@ -236,7 +237,7 @@ export default function AstroGeography({ token }: { token: string | null }) {
 
   useEffect(() => {
     if (!token) return;
-    const cacheKey = "solray_astrocarto";
+    const cacheKey = accountKey("solray_astrocarto");
     try {
       const cached = localStorage.getItem(cacheKey);
       const parsed = cached ? JSON.parse(cached) : null;

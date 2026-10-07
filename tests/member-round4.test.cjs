@@ -193,7 +193,7 @@ test("F3: a pending saved-person update survives a reload and wins over the serv
   const updated = { id: "p1", name: "Ana", birth_time_fold: "second", blueprint: { meta: { birth_time_fold: "second" } }, _synced: true };
   const stamp = sp.recordPendingUpdate(updated);
   // Stored on the device, not in memory: a reload still has it.
-  assert.ok(win.localStorage.getItem("solray_saved_people_pending"));
+  assert.ok(win.localStorage.getItem(session.accountKey("solray_saved_people_pending")));
   assert.equal(sp.pendingUpdateFor("p1").person.birth_time_fold, "second");
   // The next sync's server list still has the old copy: the pending one is shown.
   const server = [{ id: "p1", name: "Ana", blueprint: { meta: {} }, _synced: true }, { id: "p2", name: "Bo", _synced: true }];
@@ -244,7 +244,7 @@ test("F4: Today subscribes to chart changes, clears the shown reading and fetche
   const src = read("app/today/page.tsx");
   assert.match(src, /import \{ useChartRevision \} from "@\/lib\/use-chart-revision";/);
   assert.match(src, /const chartRev = useChartRevision\(\);/);
-  const effStart = src.indexOf("const cacheKey = `solray_forecast_${dayKey}`;");
+  const effStart = src.indexOf("const cacheKey = accountKey(`solray_forecast_${dayKey}`);");
   const effEnd = src.indexOf("}, [token, dayKey, reloadNonce, chartRev]);");
   assert.ok(effStart > 0 && effEnd > effStart, "the forecast effect reruns on a chart change");
   const head = src.slice(src.lastIndexOf("useEffect(() => {", effStart), effStart);
@@ -261,7 +261,7 @@ test("F4: Today subscribes to chart changes, clears the shown reading and fetche
 test("F5: the weekly summary is cached per language and fetched again when it changes", () => {
   const src = read("components/WeekSummaryCard.tsx");
   assert.match(src, /const \{ t, lang \} = useT\(\);/);
-  assert.match(src, /const key = `solray_week_\$\{lang\}_\$\{new Date\(\)\.toISOString\(\)\.split\('T'\)\[0\]\}`;/);
+  assert.match(src, /const key = accountKey\(`solray_week_\$\{lang\}_\$\{new Date\(\)\.toISOString\(\)\.split\('T'\)\[0\]\}`\);/);
   assert.match(src, /\}, \[token, chartRev, lang\]\);/);
   // Still a chart-derived key, so a birth change drops it.
   const cr = load("lib/chart-revision.js");

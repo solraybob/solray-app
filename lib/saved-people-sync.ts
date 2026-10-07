@@ -7,6 +7,7 @@
 
 import { isCurrentGeneration, StaleAccountError } from "./account-session";
 import { storedBirthTimeCheck, type StoredBirthTimeCheck } from "./birth-time-fold";
+import { accountKey } from "./account-session";
 
 export interface SyncablePerson {
   id: string;
@@ -155,14 +156,14 @@ const PERMISSION_KEY = "solray_saved_people_permission";
 
 function readPermissions(): Record<string, number> {
   try {
-    const v = JSON.parse(localStorage.getItem(PERMISSION_KEY) || "{}");
+    const v = JSON.parse(localStorage.getItem(accountKey(PERMISSION_KEY)) || "{}");
     return v && typeof v === "object" && !Array.isArray(v) ? v : {};
   } catch {
     return {};
   }
 }
 function writePermissions(p: Record<string, number>): void {
-  try { localStorage.setItem(PERMISSION_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  try { localStorage.setItem(accountKey(PERMISSION_KEY), JSON.stringify(p)); } catch { /* ignore */ }
 }
 
 export function hasSharingPermission(id: string): boolean {
@@ -249,7 +250,7 @@ export interface PendingUpdate<T> { person: T; stamp: number }
 
 function readPending(): Record<string, PendingUpdate<FoldablePerson>> {
   try {
-    const v = JSON.parse(localStorage.getItem(PENDING_UPDATES_KEY) || "{}");
+    const v = JSON.parse(localStorage.getItem(accountKey(PENDING_UPDATES_KEY)) || "{}");
     return v && typeof v === "object" && !Array.isArray(v) ? v : {};
   } catch {
     return {};
@@ -257,8 +258,8 @@ function readPending(): Record<string, PendingUpdate<FoldablePerson>> {
 }
 function writePending(p: Record<string, PendingUpdate<FoldablePerson>>): void {
   try {
-    if (Object.keys(p).length) localStorage.setItem(PENDING_UPDATES_KEY, JSON.stringify(p));
-    else localStorage.removeItem(PENDING_UPDATES_KEY);
+    if (Object.keys(p).length) localStorage.setItem(accountKey(PENDING_UPDATES_KEY), JSON.stringify(p));
+    else localStorage.removeItem(accountKey(PENDING_UPDATES_KEY));
   } catch { /* ignore */ }
 }
 

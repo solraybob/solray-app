@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
-import { bumpAuthGeneration } from "./account-session";
+import { bindAccount, bumpAuthGeneration, identityStorageChange } from "./account-session";
 import { releaseNativePush } from "./native-push";
 
 interface User {
@@ -42,10 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = localStorage.getItem("solray_token");
       const storedUser = localStorage.getItem("solray_user");
       if (storedToken && storedUser) {
+        const parsed = JSON.parse(storedUser);
+        // This tab belongs to this member: its per-account caches are theirs.
+        bindAccount(parsed?.id ?? null);
         setTokenState(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(parsed);
+      } else {
+        bindAccount(null);
       }
     } catch {
+      bindAccount(null);
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");
@@ -54,6 +60,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     }
     setLoading(false);
+  }, []);
+
+  // Another tab changed the session (signed out, or signed in as someone
+  // else): this tab must stop acting for the member it was showing at once.
+  // identityStorageChange bumps the generation and unbinds the tab before
+  // anything else here runs, so in-flight work is dropped and no cache write
+  // can land in the next member's namespace. Then the in-memory session is
+  // cleared and the tab starts over: a sign-out goes to /login, a different
+  // member reloads into that member's own session. A fresh token for the
+  // same member is simply taken over.
+  const tokenRef = useRef<string | null>(null);
+  useEffect(() => { tokenRef.current = token; }, [token]);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      try { if (e.storageArea && e.storageArea !== window.localStorage) return; } catch { return; }
+      const change = identityStorageChange(e.key, tokenRef.current);
+      if (change === "none") return;
+      if (change === "token") {
+        try {
+          const fresh = localStorage.getItem("solray_token");
+          if (fresh) { tokenRef.current = fresh; setTokenState(fresh); }
+        } catch { /* keep the current token */ }
+        return;
+      }
+      tokenRef.current = null;
+      setTokenState(null);
+      setUser(null);
+      if (change === "signed-out") window.location.replace("/login");
+      else window.location.reload();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   // Clear EVERY per-user cached value when the authenticated identity changes,
@@ -84,10 +122,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Persistence is best-effort: if storage throws (private mode), the
     // session still works from React state for this tab. Blocking a
     // SUCCESSFUL login on a storage write was audit finding number two.
+    // The member record goes first: another tab reading the token change
+    // then never pairs the new token with the previous member.
     try {
-      localStorage.setItem("solray_token", tok);
       localStorage.setItem("solray_user", JSON.stringify(usr));
+      localStorage.setItem("solray_token", tok);
     } catch { /* memory-only session */ }
+    // Bound after the record is stored, so a same-member return moves its
+    // old unscoped caches into its namespace.
+    bindAccount(usr.id);
+    tokenRef.current = tok;
     setTokenState(tok);
     setUser(usr);
   };
@@ -150,6 +194,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // can never read the previous user's cached forecast or chart.
       clearReadingCaches();
     } finally {
+      bindAccount(null);
+      tokenRef.current = null;
       setTokenState(null);
       setUser(null);
     }

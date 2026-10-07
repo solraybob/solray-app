@@ -48,6 +48,7 @@ import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 import { cardShareAvailable } from "@/lib/share-available";
 import { Wordmark } from "@/components/Wordmark";
 import BirthWheels from "@/components/BirthWheels";
+import { accountKey } from "@/lib/account-session";
 
 // Types
 interface SearchResult {
@@ -133,7 +134,7 @@ const SAVED_PEOPLE_KEY = "solray_saved_people";
 function loadSavedPeople(): SavedPerson[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(SAVED_PEOPLE_KEY);
+    const raw = localStorage.getItem(accountKey(SAVED_PEOPLE_KEY));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -144,7 +145,7 @@ function loadSavedPeople(): SavedPerson[] {
 
 function writeSavedPeople(people: SavedPerson[]) {
   try {
-    localStorage.setItem(SAVED_PEOPLE_KEY, JSON.stringify(people));
+    localStorage.setItem(accountKey(SAVED_PEOPLE_KEY), JSON.stringify(people));
   } catch {
     // quota etc, fail quiet
   }
@@ -156,14 +157,14 @@ function writeSavedPeople(people: SavedPerson[]) {
 const SAVED_TOMBSTONES_KEY = "solray_saved_people_deleted";
 function loadTombstones(): Set<string> {
   try {
-    const arr = JSON.parse(localStorage.getItem(SAVED_TOMBSTONES_KEY) || "[]");
+    const arr = JSON.parse(localStorage.getItem(accountKey(SAVED_TOMBSTONES_KEY)) || "[]");
     return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
   } catch {
     return new Set();
   }
 }
 function writeTombstones(ids: Set<string>) {
-  try { localStorage.setItem(SAVED_TOMBSTONES_KEY, JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
+  try { localStorage.setItem(accountKey(SAVED_TOMBSTONES_KEY), JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
 }
 function addTombstone(id: string) { const t = loadTombstones(); t.add(id); writeTombstones(t); }
 function dropTombstone(id: string) { const t = loadTombstones(); if (t.delete(id)) writeTombstones(t); }
@@ -475,7 +476,7 @@ export default function SoulsPage() {
         const me = meR.value;
         setMyUsername(me?.profile?.username || null);
         const serverPhoto = me?.profile?.profile_photo || null;
-        const localPhoto = (() => { try { return localStorage.getItem("solray_avatar"); } catch { return null; } })();
+        const localPhoto = (() => { try { return localStorage.getItem(accountKey("solray_avatar")); } catch { return null; } })();
         setMyAvatar(serverPhoto || localPhoto);
       }
       if (pendingR.status === "fulfilled") setPendingInvites(pendingR.value?.pending || []);

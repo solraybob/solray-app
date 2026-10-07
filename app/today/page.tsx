@@ -24,6 +24,7 @@ import { tx } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { signalReadingShown } from "@/lib/native-push";
+import { accountKey } from "@/lib/account-session";
 
 // The ruling planet colours the day, drawn from the orb rather than from a
 // stock photograph. The photographs were storm clouds and star fields behind
@@ -1215,17 +1216,17 @@ export default function TodayPage() {
         // Go deeper clear the stash, so those never return).
         if (!ins) {
           try {
-            const raw = localStorage.getItem("solray_bt_active");
+            const raw = localStorage.getItem(accountKey("solray_bt_active"));
             if (raw) { const a = JSON.parse(raw); if (a && a.day === dayStr && a.insight) ins = a.insight as PendingInsight; }
           } catch (_) {}
         }
         if (ins) {
           setInsight(ins);
-          try { localStorage.setItem("solray_bt_active", JSON.stringify({ day: dayStr, insight: ins })); } catch (_) {}
+          try { localStorage.setItem(accountKey("solray_bt_active"), JSON.stringify({ day: dayStr, insight: ins })); } catch (_) {}
           // X (permanent) wins forever; Later (this session) holds it back until
           // the next open the same day.
           let dismissed = false, later = false;
-          try { dismissed = localStorage.getItem(`solray_bt_dismissed_${ins.id}`) === "1"; } catch (_) {}
+          try { dismissed = localStorage.getItem(accountKey(`solray_bt_dismissed_${ins.id}`)) === "1"; } catch (_) {}
           try { later = sessionStorage.getItem(`solray_bt_later_${ins.id}`) === "1"; } catch (_) {}
           if (!dismissed && !later) setShowBreakthrough(true);
         }
@@ -1254,8 +1255,8 @@ export default function TodayPage() {
           // (Go deeper, localStorage) or set aside this session (Later).
           const key = data.echo.created_at || "x";
           let consumed = false, dismissed = false, later = false;
-          try { consumed = localStorage.getItem(`solray_echo_seen_${key}`) === "1"; } catch (_) {}
-          try { dismissed = localStorage.getItem(`solray_echo_dismissed_${key}`) === "1"; } catch (_) {}
+          try { consumed = localStorage.getItem(accountKey(`solray_echo_seen_${key}`)) === "1"; } catch (_) {}
+          try { dismissed = localStorage.getItem(accountKey(`solray_echo_dismissed_${key}`)) === "1"; } catch (_) {}
           try { later = sessionStorage.getItem(`solray_echo_later_${key}`) === "1"; } catch (_) {}
           if (!consumed && !dismissed && !later) setShowSkyEcho(true);
         }
@@ -1275,8 +1276,8 @@ export default function TodayPage() {
   const dismissBreakthrough = () => {
     if (insight) {
       try {
-        localStorage.setItem(`solray_bt_dismissed_${insight.id}`, "1");
-        localStorage.removeItem("solray_bt_active");
+        localStorage.setItem(accountKey(`solray_bt_dismissed_${insight.id}`), "1");
+        localStorage.removeItem(accountKey("solray_bt_active"));
       } catch (_) {}
     }
     setShowBreakthrough(false);
@@ -1306,7 +1307,7 @@ export default function TodayPage() {
   const openInsightInChat = () => {
     if (!insight) return;
     markInsightSeen(insight.id);
-    try { localStorage.removeItem("solray_bt_active"); } catch (_) {}
+    try { localStorage.removeItem(accountKey("solray_bt_active")); } catch (_) {}
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: insight.title,
@@ -1320,7 +1321,7 @@ export default function TodayPage() {
   // this exact memory consumed (localStorage) so it never returns.
   const goDeeperSkyEcho = (sentence: string, excerpt: string) => {
     const key = skyEcho?.created_at || "x";
-    try { localStorage.setItem(`solray_echo_seen_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_echo_seen_${key}`), "1"); } catch (_) {}
     try {
       sessionStorage.setItem("solray_chat_prompt", JSON.stringify({
         topic: t("prompts.echo_topic"),
@@ -1340,7 +1341,7 @@ export default function TodayPage() {
   // Sky-echo X: dismiss this exact memory for good (never returns).
   const dismissSkyEcho = () => {
     const key = skyEcho?.created_at || "x";
-    try { localStorage.setItem(`solray_echo_dismissed_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_echo_dismissed_${key}`), "1"); } catch (_) {}
     setShowSkyEcho(false);
   };
 
@@ -1362,8 +1363,8 @@ export default function TodayPage() {
     // (seen); X dismisses it for good. Either way it does not return until the
     // next moon (~2 weeks), which is a different key.
     let consumed = false, dismissed = false, later = false;
-    try { consumed = localStorage.getItem(`solray_lunar_seen_${key}`) === "1"; } catch (_) {}
-    try { dismissed = localStorage.getItem(`solray_lunar_dismissed_${key}`) === "1"; } catch (_) {}
+    try { consumed = localStorage.getItem(accountKey(`solray_lunar_seen_${key}`)) === "1"; } catch (_) {}
+    try { dismissed = localStorage.getItem(accountKey(`solray_lunar_dismissed_${key}`)) === "1"; } catch (_) {}
     try { later = sessionStorage.getItem(`solray_lunar_later_${key}`) === "1"; } catch (_) {}
     if (!consumed && !dismissed && !later) setShowLunar(true);
   }, [forecast]);
@@ -1372,7 +1373,7 @@ export default function TodayPage() {
     const ev = forecast?.lunar_event;
     if (!ev) return;
     const key = `${ev.date}_${ev.type}`;
-    try { localStorage.setItem(`solray_lunar_seen_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_lunar_seen_${key}`), "1"); } catch (_) {}
     const isFull = ev.type === "Full Moon";
     const sign = lang === "en" ? ev.sign : tx(ev.sign, lang);
     const house = ordinal(ev.house, lang);
@@ -1397,7 +1398,7 @@ export default function TodayPage() {
   const dismissLunar = () => {
     const ev = forecast?.lunar_event;
     const key = ev ? `${ev.date}_${ev.type}` : "x";
-    try { localStorage.setItem(`solray_lunar_dismissed_${key}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_lunar_dismissed_${key}`), "1"); } catch (_) {}
     setShowLunar(false);
   };
 
@@ -1412,15 +1413,15 @@ export default function TodayPage() {
     birthdayChecked.current = true;
     const yr = new Date().getFullYear();
     let consumed = false, dismissed = false, later = false;
-    try { consumed = localStorage.getItem(`solray_birthday_seen_${yr}`) === "1"; } catch (_) {}
-    try { dismissed = localStorage.getItem(`solray_birthday_dismissed_${yr}`) === "1"; } catch (_) {}
+    try { consumed = localStorage.getItem(accountKey(`solray_birthday_seen_${yr}`)) === "1"; } catch (_) {}
+    try { dismissed = localStorage.getItem(accountKey(`solray_birthday_dismissed_${yr}`)) === "1"; } catch (_) {}
     try { later = sessionStorage.getItem(`solray_birthday_later_${yr}`) === "1"; } catch (_) {}
     if (!consumed && !dismissed && !later) setShowBirthday(true);
   }, [birthDate]);
 
   const goDeeperBirthday = async () => {
     const yr = new Date().getFullYear();
-    try { localStorage.setItem(`solray_birthday_seen_${yr}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_birthday_seen_${yr}`), "1"); } catch (_) {}
     // Pull the real solar-return chart so the Oracle reads the year ahead from
     // true placements, not invented ones. Fail-soft: if it is unavailable the
     // question still opens a personalised reading from her chart knowledge.
@@ -1462,7 +1463,7 @@ export default function TodayPage() {
 
   const dismissBirthday = () => {
     const yr = new Date().getFullYear();
-    try { localStorage.setItem(`solray_birthday_dismissed_${yr}`, "1"); } catch (_) {}
+    try { localStorage.setItem(accountKey(`solray_birthday_dismissed_${yr}`), "1"); } catch (_) {}
     setShowBirthday(false);
   };
 
@@ -1510,7 +1511,7 @@ export default function TodayPage() {
       setError("");
     }
 
-    const cacheKey = `solray_forecast_${dayKey}`;
+    const cacheKey = accountKey(`solray_forecast_${dayKey}`);
 
     async function fetchAndUpdate(isBackground: boolean, retried = false) {
       lastFetchAt.current = Date.now();
@@ -1534,7 +1535,7 @@ export default function TodayPage() {
             setBirthCheck(storedBirthTimeCheck(userData));
             if (userData.blueprint) {
               try {
-                const bpCacheKey = "solray_blueprint";
+                const bpCacheKey = accountKey("solray_blueprint");
                 const existing = localStorage.getItem(bpCacheKey);
                 const existingParsed = existing ? JSON.parse(existing) : null;
                 if (!existingParsed || !existingParsed._cachedAt) {
@@ -1738,7 +1739,7 @@ export default function TodayPage() {
     const onRefresh = (e: Event) => {
       const done = (e as CustomEvent).detail?.done as (() => void) | undefined;
       if (!token) { done?.(); return; }
-      const cacheKey = `solray_forecast_${localDayKey()}`;
+      const cacheKey = accountKey(`solray_forecast_${localDayKey()}`);
       (async () => {
         try {
           const stamp = chartWorkStamp();

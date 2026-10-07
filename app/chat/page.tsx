@@ -25,7 +25,7 @@ import {
   type ChatMessage,
   type StoredSession as ChatStoredSession,
 } from "@/lib/chat-sync";
-import { readSoulCtx, resolveSoulCtx, writeSoulCtx, type SoulCtx } from "@/lib/chat-soul";
+import { readSoulCtx, resolveSoulCtx, writeSoulCtx, syncedSoulRef, type SoulCtx } from "@/lib/chat-soul";
 import { registerDraftSource } from "@/lib/draft-guard";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
@@ -35,6 +35,7 @@ import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
 import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
+import { accountKey } from "@/lib/account-session";
 
 // isError marks a transport-level error rather than an Oracle reply. It
 // renders with distinct styling so the member is never misled into thinking
@@ -196,7 +197,7 @@ function ChatPageInner() {
 
         let summary: Record<string, string> = {};
         try {
-          const bp = JSON.parse(localStorage.getItem("solray_blueprint") || "null");
+          const bp = JSON.parse(localStorage.getItem(accountKey("solray_blueprint")) || "null");
           summary = (bp && (bp.summary || bp)) || {};
         } catch { /* no blueprint cache */ }
         const moon = summary.moon_sign ? tx(summary.moon_sign, lang) : null;
@@ -321,6 +322,20 @@ function ChatPageInner() {
   const activeSessionRef = useRef<string>("");
   useEffect(() => { activeSessionRef.current = sessionId; }, [sessionId]);
 
+  // The open conversation's partner, read by the sync handlers below. A
+  // Dynamics conversation cached here before its transcript named the
+  // partner learns it when the synced transcript arrives (another device
+  // backfilled it), so follow-ups name the partner without a reopen.
+  const soulRefRef = useRef<SoulRef | null>(null);
+  useEffect(() => { soulRefRef.current = soulRef; }, [soulRef]);
+  const adoptSyncedSoul = (merged: Message[]) => {
+    const next = syncedSoulRef(soulRefRef.current, merged);
+    if (!next) return;
+    soulRefRef.current = next.ref;
+    setSoulRef(next.ref);
+    if (next.name) setSoulName(next.name);
+  };
+
   // Cross-device chat sync. localStorage stays as the cache for instant
   // reads; the server is the source of truth. On mount (or whenever a
   // fresh token arrives), pull the member's sessions from the server and
@@ -362,6 +377,7 @@ function ChatPageInner() {
           const reconciled = loadSession(sid);
           const current = messagesRef.current;
           const merged = mergeMessages(reconciled?.messages || [], current);
+          adoptSyncedSoul(merged);
           if (!sameTranscript(merged, current)) {
             // The persist effect saves and uploads the merged transcript.
             setMessages(merged);
@@ -399,6 +415,7 @@ function ChatPageInner() {
       if (!d || !d.sessionId || d.sessionId !== activeSessionRef.current || !Array.isArray(d.messages)) return;
       const current = messagesRef.current;
       const merged = mergeMessages(d.messages, current);
+      adoptSyncedSoul(merged);
       if (!sameTranscript(merged, current)) setMessages(merged);
     };
     window.addEventListener(CHAT_MERGED_EVENT, onMerged);
@@ -1095,7 +1112,7 @@ function ChatPageInner() {
       const prevIds = getSessionIds();
       // Local removal first (instant UX), then propagate to server so the
       // session doesn't reappear on the next sync from another device.
-      try { localStorage.removeItem(`solray_chat_${sid}`); } catch { /* ignore */ }
+      try { localStorage.removeItem(accountKey(`solray_chat_${sid}`)); } catch { /* ignore */ }
       setSoulCtx(sid, null);
       const ids = prevIds.filter((id) => id !== sid);
       saveSessionIds(ids);
@@ -1108,7 +1125,7 @@ function ChatPageInner() {
         const restore = () => {
           if (!acct.live) return;
           if (snapshot) {
-            try { localStorage.setItem(`solray_chat_${sid}`, JSON.stringify(snapshot)); } catch { /* ignore */ }
+            try { localStorage.setItem(accountKey(`solray_chat_${sid}`), JSON.stringify(snapshot)); } catch { /* ignore */ }
             markUnsent(sid);
           }
           const current = getSessionIds();
@@ -1170,7 +1187,10 @@ function ChatPageInner() {
     const sentSessionId = sessionId;
     // Whether this turn is a Dynamics reading (decides how a closed
     // conversation is handled below).
-    const sentSoulRef = soulRef;
+    // The partner this conversation is with, also when only its synced
+    // transcript names them so far.
+    const sendSoulRef = syncedSoulRef(soulRef, messages)?.ref ?? soulRef;
+    const sentSoulRef = sendSoulRef;
 
     // Error bubbles go along marked isError, so the server drops them
     // instead of reading them back as the Oracle's own words.
@@ -1184,7 +1204,7 @@ function ChatPageInner() {
         message: userMsg.content,
         conversation_history: history,
         session_id: sentSessionId,
-        ...soulRequestFields(soulRef),
+        ...soulRequestFields(sendSoulRef),
       };
 
       const data = await apiFetch(

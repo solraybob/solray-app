@@ -80,3 +80,161 @@ export function captureAccount(): AccountGuard {
     check() { if (g !== generation) throw new StaleAccountError(); },
   };
 }
+
+// ── Which account this tab belongs to, and its own cache namespace ─────────
+//
+// Several tabs share one localStorage. The generation above only protects
+// the tab that signed out; another tab still holding the previous member's
+// session would keep writing that member's readings and transcripts into the
+// shared cache, where the next member reads them. Two guards close that:
+//
+// 1. Per-account cache keys. Every per-member cache key is written as
+//    `<base>@u:<account id>` through accountKey(), using the account THIS
+//    tab is bound to (not whatever account the shared storage holds now).
+//    A stale tab can then only ever write into its own member's namespace,
+//    never into the namespace another member's tab reads.
+// 2. Cross-tab identity events. The auth provider feeds every `storage`
+//    event for the session keys to identityStorageChange(): a sign-out or a
+//    different account in another tab bumps the generation and unbinds this
+//    tab at once (in-flight work is dropped, later writes land nowhere a
+//    member reads), and the provider then reloads or leaves for /login.
+
+const NS_MARK = "@u:";
+const SESSION_TOKEN_KEY = "solray_token";
+const SESSION_USER_KEY = "solray_user";
+
+// Per-member localStorage caches written through accountKey(). Existing
+// unscoped copies of these are moved into the signed-in member's namespace
+// once (migrateAccountCaches), so nobody loses their cache on update.
+const ACCOUNT_SCOPED_EXACT = [
+  "solray_avatar",
+  "solray_astrocarto",
+  "solray_push_enabled",
+];
+const ACCOUNT_SCOPED_PREFIX = [
+  "solray_blueprint",
+  "solray_forecast_",
+  "solray_week_",
+  "solray_cycles_",
+  "solray_chat_",
+  "solray_saved_people",
+  "solray_birth_",
+  "solray_bt_",
+  "solray_echo_",
+  "solray_lunar_",
+  "solray_birthday_",
+];
+// Device-wide keys that share a scoped prefix.
+const NOT_SCOPED = new Set<string>(["solray_chat_migrated_v1"]);
+
+/** The base key of a per-account key (the key itself when not scoped). */
+export function baseOfKey(key: string): string {
+  const i = key.indexOf(NS_MARK);
+  return i < 0 ? key : key.slice(0, i);
+}
+
+/** True for a localStorage key whose value belongs to one member. */
+export function isAccountScopedBase(key: string): boolean {
+  const base = baseOfKey(key);
+  if (NOT_SCOPED.has(base)) return false;
+  return ACCOUNT_SCOPED_EXACT.includes(base) || ACCOUNT_SCOPED_PREFIX.some((p) => base.startsWith(p));
+}
+
+/** The member id in the shared session record, or null. */
+export function storedAccountId(): string | null {
+  try {
+    const raw = localStorage.getItem(SESSION_USER_KEY);
+    const id = raw ? JSON.parse(raw)?.id : null;
+    return id === null || id === undefined || id === "" ? null : String(id);
+  } catch {
+    return null;
+  }
+}
+
+function storedToken(): string | null {
+  try { return localStorage.getItem(SESSION_TOKEN_KEY); } catch { return null; }
+}
+
+// undefined: not resolved yet in this tab (resolved lazily from storage).
+let boundAccount: string | null | undefined;
+
+/**
+ * Bind this tab to an account (null: signed out). Called by the auth layer
+ * when the tab loads a session, signs in, or signs out. Binding to the
+ * member the shared session names also moves that member's old unscoped
+ * caches into their namespace.
+ */
+export function bindAccount(id: string | null): void {
+  boundAccount = id === null || id === undefined || id === "" ? null : String(id);
+  if (boundAccount && boundAccount === storedAccountId()) migrateAccountCaches(boundAccount);
+}
+
+/** The account this tab belongs to (resolved from storage on first use). */
+export function boundAccountId(): string | null {
+  if (boundAccount === undefined) bindAccount(storedAccountId());
+  return boundAccount ?? null;
+}
+
+/**
+ * The key a per-member cache uses in this tab: `<base>@u:<account id>`.
+ * Signed out (or unbound after another tab changed the account) it is a
+ * throwaway namespace no signed-in member reads. Idempotent.
+ */
+export function accountKey(base: string): string {
+  if (base.includes(NS_MARK)) return base;
+  return `${base}${NS_MARK}${boundAccountId() ?? "-"}`;
+}
+
+/**
+ * Move unscoped per-member caches (written before keys were namespaced)
+ * into `id`'s namespace. Only for the member the shared session names:
+ * before namespacing, every account change wiped these keys, so what is
+ * there belongs to that member. A namespaced copy already there wins.
+ */
+export function migrateAccountCaches(id: string): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && !k.includes(NS_MARK) && isAccountScopedBase(k)) keys.push(k);
+    }
+    for (const k of keys) {
+      const v = localStorage.getItem(k);
+      const target = `${k}${NS_MARK}${id}`;
+      if (v !== null && localStorage.getItem(target) === null) {
+        try { localStorage.setItem(target, v); } catch { continue; /* keep the old copy */ }
+      }
+      localStorage.removeItem(k);
+    }
+  } catch {
+    /* storage unavailable: nothing to move */
+  }
+}
+
+/**
+ * What a `storage` event (another tab changed shared storage) means for
+ * this tab, given the session token this tab holds:
+ *  - "none": not about the session, or nothing changed for this tab.
+ *  - "token": same member, new token (a fresh sign-in of the same member).
+ *  - "signed-out": the session is gone.
+ *  - "switched": a different member (or a member, where this tab had none).
+ * For "signed-out" and "switched" the generation is bumped and the tab is
+ * unbound here, synchronously, before anything else in this tab runs.
+ */
+export type IdentityChange = "none" | "token" | "signed-out" | "switched";
+
+export function identityStorageChange(key: string | null, tabToken: string | null): IdentityChange {
+  if (key !== null && key !== SESSION_TOKEN_KEY && key !== SESSION_USER_KEY) return "none";
+  const mine = boundAccountId();
+  const token = storedToken();
+  const id = storedAccountId();
+  let change: IdentityChange;
+  if (!token || !id) change = mine || tabToken ? "signed-out" : "none";
+  else if (id !== mine) change = "switched";
+  else change = token !== tabToken ? "token" : "none";
+  if (change === "signed-out" || change === "switched") {
+    bumpAuthGeneration();
+    boundAccount = null;
+  }
+  return change;
+}

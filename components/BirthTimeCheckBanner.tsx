@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { safeGet, safeSet } from "@/lib/safe-storage";
+import { accountKey } from "@/lib/account-session";
 import type { StoredBirthTimeCheck } from "@/lib/birth-time-fold";
 
 // A gentle, one-time note for an existing member whose saved birth time fell
@@ -21,8 +22,8 @@ export default function BirthTimeCheckBanner({ check }: { check: StoredBirthTime
 
   useEffect(() => {
     if (!check?.needsConfirmation || check.status === "ok") return;
-    if (safeGet(SHOWN_KEY) === "1") return;
-    safeSet(SHOWN_KEY, "1");
+    if (safeGet(accountKey(SHOWN_KEY)) === "1") return;
+    safeSet(accountKey(SHOWN_KEY), "1");
     setVisible(true);
   }, [check]);
 

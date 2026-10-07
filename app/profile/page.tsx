@@ -14,6 +14,7 @@ import { cardShareAvailable } from "@/lib/share-available";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 import { syncBirthRevision } from "@/lib/chart-revision";
+import { accountKey } from "@/lib/account-session";
 
 // Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
 // inside a collapsed section that rarely opens, so code-split it into its own
@@ -796,7 +797,7 @@ export default function ProfilePage() {
     if (!token) return;
     setLoadError(false);
 
-    const BP_CACHE_KEY = "solray_blueprint";
+    const BP_CACHE_KEY = accountKey("solray_blueprint");
     // Bump when blueprint schema changes. v4 adds _profile_photo to cache.
     const BP_CACHE_VERSION = 4;
 
@@ -804,7 +805,7 @@ export default function ProfilePage() {
     function loadFromBlueprint(bp: any) {
       // Load avatar: prefer cache entry, fall back to solray_avatar key
       const photo = bp._profile_photo || (() => {
-        try { return localStorage.getItem("solray_avatar"); } catch { return null; }
+        try { return localStorage.getItem(accountKey("solray_avatar")); } catch { return null; }
       })();
       if (photo) setAvatarUrl(photo);
 
@@ -899,11 +900,11 @@ export default function ProfilePage() {
       setProfile((p) => p ? { ...p, name: data.name } : p);
       // Update localStorage cache so name persists
       try {
-        const cached = localStorage.getItem("solray_blueprint");
+        const cached = localStorage.getItem(accountKey("solray_blueprint"));
         if (cached) {
           const bp = JSON.parse(cached);
           bp._name = data.name;
-          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+          localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
         }
       } catch (_) {}
       setEditingName(false);
@@ -924,11 +925,11 @@ export default function ProfilePage() {
       setProfile((p) => p ? { ...p, handle: data.username } : p);
       // Update localStorage cache so username persists
       try {
-        const cached = localStorage.getItem("solray_blueprint");
+        const cached = localStorage.getItem(accountKey("solray_blueprint"));
         if (cached) {
           const bp = JSON.parse(cached);
           bp._username = data.username;
-          localStorage.setItem("solray_blueprint", JSON.stringify(bp));
+          localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
         }
       } catch (_) {}
       setEditingHandle(false);
@@ -962,14 +963,14 @@ export default function ProfilePage() {
 
         // Show immediately
         setAvatarUrl(resized);
-        try { localStorage.setItem("solray_avatar", resized); } catch (_) {}
+        try { localStorage.setItem(accountKey("solray_avatar"), resized); } catch (_) {}
 
         // Write photo into blueprint cache so other devices get it on next cache-bust
         try {
-          const bpRaw = localStorage.getItem("solray_blueprint");
+          const bpRaw = localStorage.getItem(accountKey("solray_blueprint"));
           if (bpRaw) {
             const bp = JSON.parse(bpRaw);
-            localStorage.setItem("solray_blueprint", JSON.stringify({ ...bp, _profile_photo: resized }));
+            localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify({ ...bp, _profile_photo: resized }));
           }
         } catch (_) {}
 
@@ -1572,7 +1573,7 @@ function BlueprintSections({ token, aspects, openSection, onToggleSection }: { t
     let cancelled = false;
     const tryLoad = () => {
       try {
-        const cached = localStorage.getItem("solray_blueprint");
+        const cached = localStorage.getItem(accountKey("solray_blueprint"));
         if (cached) {
           const bp = JSON.parse(cached);
           if (!cancelled) {

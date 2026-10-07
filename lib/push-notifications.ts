@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { accountKey } from "./account-session";
 
 const PUSH_ENABLED_KEY = "solray_push_enabled";
 
@@ -7,7 +8,7 @@ const PUSH_ENABLED_KEY = "solray_push_enabled";
  */
 export function isPushEnabled(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(PUSH_ENABLED_KEY) === "true";
+  return localStorage.getItem(accountKey(PUSH_ENABLED_KEY)) === "true";
 }
 
 /**
@@ -50,7 +51,7 @@ export async function subscribeToPushNotifications(token: string): Promise<boole
     );
 
     // Mark as enabled in localStorage
-    localStorage.setItem(PUSH_ENABLED_KEY, "true");
+    localStorage.setItem(accountKey(PUSH_ENABLED_KEY), "true");
 
     return true;
   } catch (error) {

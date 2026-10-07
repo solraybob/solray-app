@@ -3,7 +3,7 @@
 // had a literal \n inside it. trim() strips any whitespace.
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
-import { bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, runAccountSignOutHooks, StaleAccountError } from "./account-session";
+import { bindAccount, bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, runAccountSignOutHooks, StaleAccountError } from "./account-session";
 import { AI_CONSENT_REQUIRED_CODE, UNDER_MINIMUM_AGE_CODE, openAiConsentSheet } from "./ai-consent";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
@@ -204,6 +204,8 @@ async function finishApiFetch(
         clearUserScopedCaches();
       } catch (_) { /* ignore storage errors */ }
       ownGen = bumpAuthGeneration();
+      // Signed out: this tab no longer writes into any member's caches.
+      bindAccount(null);
       if (!window.location.pathname.startsWith("/login")) {
         window.location.replace("/login?expired=1");
       }

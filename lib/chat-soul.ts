@@ -10,7 +10,8 @@
 // get it written in before they are uploaded (withSoulBackfill), and the
 // server keeps it (it adds fields its copy lacks).
 
-import { soulFromTranscript } from "./oracle-request";
+import { soulFromTranscript, type SoulRef } from "./oracle-request";
+import { accountKey } from "./account-session";
 
 export const SOUL_CTX_KEY = "solray_chat_soul_ctx";
 const SAVED_PEOPLE_KEY = "solray_saved_people";
@@ -29,7 +30,7 @@ export type TranscriptSoul = { name: string | null; connection_id: string | null
 
 function readAll(): Record<string, SoulCtx> {
   try {
-    const v = JSON.parse(localStorage.getItem(SOUL_CTX_KEY) || "{}");
+    const v = JSON.parse(localStorage.getItem(accountKey(SOUL_CTX_KEY)) || "{}");
     return v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, SoulCtx> : {};
   } catch {
     return {};
@@ -44,7 +45,7 @@ export function writeSoulCtx(sessionId: string, ctx: SoulCtx | null): void {
   try {
     const all = readAll();
     if (ctx) all[sessionId] = ctx; else delete all[sessionId];
-    localStorage.setItem(SOUL_CTX_KEY, JSON.stringify(all));
+    localStorage.setItem(accountKey(SOUL_CTX_KEY), JSON.stringify(all));
   } catch { /* best-effort */ }
 }
 
@@ -52,7 +53,7 @@ export function writeSoulCtx(sessionId: string, ctx: SoulCtx | null): void {
 export function confirmedSavedPersonId(localId: string | null | undefined): string | null {
   if (!localId) return null;
   try {
-    const people = JSON.parse(localStorage.getItem(SAVED_PEOPLE_KEY) || "[]");
+    const people = JSON.parse(localStorage.getItem(accountKey(SAVED_PEOPLE_KEY)) || "[]");
     if (!Array.isArray(people)) return null;
     const p = people.find((x) => x && x.id === localId);
     return p && p._synced === true && typeof p.id === "string" ? p.id : null;
@@ -86,4 +87,25 @@ export function withSoulBackfill<M extends { soul?: unknown }>(sessionId: string
   const out = messages.slice();
   out[0] = { ...out[0], soul };
   return out;
+}
+
+/**
+ * The open conversation's partner reference after its transcript was
+ * synchronized from the server. When this device holds no partner id yet
+ * (a Dynamics conversation cached here before its transcript named the
+ * partner) and the synced transcript names one, returns the reference and
+ * name to use from now on, keeping any chart already held. Returns null
+ * when nothing should change: a reference this device holds is kept.
+ */
+export function syncedSoulRef(
+  current: SoulRef | null | undefined,
+  messages: Array<{ soul?: unknown }> | null | undefined,
+): { ref: SoulRef; name: string | null } | null {
+  if (current && (current.connectionId || current.savedPersonId)) return null;
+  const t = soulFromTranscript(messages as Array<{ soul?: never }>);
+  if (!t) return null;
+  return {
+    ref: { connectionId: t.connectionId, savedPersonId: t.savedPersonId, blueprint: current?.blueprint ?? null },
+    name: t.name,
+  };
 }
