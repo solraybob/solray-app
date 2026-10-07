@@ -8,9 +8,12 @@ const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").tr
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Machine-readable code when the backend sent detail: {code, message}. */
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
     this.name = "ApiError";
   }
 }
@@ -101,7 +104,11 @@ export async function apiFetch(
       }
     }
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status);
+    const detailCode =
+      err?.detail && typeof err.detail === "object" && typeof err.detail.code === "string"
+        ? err.detail.code
+        : undefined;
+    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, detailCode);
   }
 
   return res.json();

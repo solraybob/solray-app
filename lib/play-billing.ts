@@ -42,21 +42,47 @@ const GOOGLE_VERIFY_PATH = "/subscribe/google-play-verify";
 const APPLE_VERIFY_PATH = "/subscribe/apple-verify";
 const TOKEN_KEY = "solray_token";
 
+interface StoreErrorLike {
+  isError?: boolean;
+  code?: number;
+  message?: string;
+}
+
+interface OrderData {
+  // Apple: copied into the signed transaction's appAccountToken (must be a
+  // UUID). Google: md5'd into obfuscatedAccountId unless googlePlay.accountId
+  // is given, which we set to the same value so the server can compare.
+  applicationUsername?: string;
+  googlePlay?: { accountId?: string };
+}
+
 interface CdvPurchaseWindow {
   CdvPurchase?: {
     store: {
       register: (products: ProductRegistration[]) => void;
-      initialize: (platforms?: string[]) => Promise<unknown>;
+      initialize: (platforms?: string[]) => Promise<StoreErrorLike[] | unknown>;
+      update?: () => Promise<void>;
       ready: (cb: () => void) => void;
       get: (id: string, platform?: string) => ProductLike | undefined;
       when: () => WhenEventChain;
-      order: (offer: OfferLike) => Promise<{ isError?: boolean; message?: string } | void>;
-      restorePurchases?: () => Promise<{ isError?: boolean; message?: string } | void>;
+      order: (offer: OfferLike, data?: OrderData) => Promise<StoreErrorLike | void>;
+      restorePurchases?: () => Promise<StoreErrorLike | void>;
+      localTransactions?: TransactionLike[];
+      applicationUsername?: string | (() => string | undefined);
     };
     Platform: { GOOGLE_PLAY: string; APPLE_APPSTORE: string };
     ProductType: { PAID_SUBSCRIPTION: string };
+    ErrorCode?: { PAYMENT_CANCELLED?: number };
   };
 }
+
+// CdvPurchase.ErrorCode.PAYMENT_CANCELLED (ERROR_CODES_BASE 6777000 + 6), used
+// when the runtime enum is not reachable.
+const PAYMENT_CANCELLED_FALLBACK = 6777006;
+// Deadlines so no billing step can leave a spinner running forever.
+const INIT_TIMEOUT_MS = 20_000;
+const VERIFY_TIMEOUT_MS = 30_000;
+const RESTORE_TIMEOUT_MS = 45_000;
 
 interface ProductRegistration {
   id: string;
@@ -78,7 +104,9 @@ interface ProductLike {
 interface TransactionLike {
   products?: Array<{ id: string }>;
   transactionId?: string;
+  purchaseId?: string;
   purchaseToken?: string;
+  purchaseDate?: Date | string;
   nativePurchase?: { purchaseToken?: string; transactionId?: string };
   finish?: () => Promise<unknown>;
 }
@@ -99,7 +127,13 @@ let initializing: Promise<void> | null = null;
  * localized t("subscribe.iap_<code>") string. The English message stays for
  * logs only, so a Spanish member never sees plugin or English copy.
  */
-export type NativeIAPErrorCode = "unavailable" | "loading" | "failed" | "verify_failed";
+export type NativeIAPErrorCode =
+  | "unavailable"
+  | "loading"
+  | "failed"
+  | "verify_failed"
+  | "other_account"
+  | "timeout";
 export class NativeIAPError extends Error {
   code: NativeIAPErrorCode;
   constructor(code: NativeIAPErrorCode, message: string) {
@@ -207,130 +241,281 @@ export function hasIntroFreeTrial(productId: string): boolean {
   }
 }
 
+// Product-load listeners: the paywall re-reads prices whenever the store
+// reports a product update (products can arrive after initialisation).
+const productListeners = new Set<() => void>();
+export function onNativeProductsUpdated(cb: () => void): () => void {
+  productListeners.add(cb);
+  return () => productListeners.delete(cb);
+}
+function notifyProducts() {
+  productListeners.forEach((cb) => {
+    try { cb(); } catch { /* ignore */ }
+  });
+}
+
+/** True when at least one subscription product has a real recurring price.
+ * Each plan is only offered once its own price is loaded. */
+export function nativeProductsReady(): boolean {
+  return ALL_PRODUCT_IDS.some((id) => Boolean(getLocalizedPrice(id)));
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, onTimeout: () => Error): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(onTimeout()), ms);
+    p.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
+// The plugin keeps its own "initialised" latch: calling initialize() a second
+// time does not retry anything. After the first call, recovery goes through
+// store.update(), which reloads products and purchases.
+let pluginInitCalled = false;
+
 export function initNativeIAP(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (initialized) return Promise.resolve();
   if (initializing) return initializing;
 
-  const p = new Promise<void>((resolve, reject) => {
+  const run = async (): Promise<void> => {
     const w = window as unknown as CdvPurchaseWindow;
     const cdv = w.CdvPurchase;
     const platform = storePlatform();
     if (!cdv || !cdv.store || !platform) {
-      reject(new NativeIAPError("unavailable", "In-app purchases are not available on this device"));
-      return;
+      throw new NativeIAPError("unavailable", "In-app purchases are not available on this device");
     }
-    try {
-      cdv.store.register(
+    const store = cdv.store;
+
+    if (!pluginInitCalled) {
+      pluginInitCalled = true;
+      store.register(
         ALL_PRODUCT_IDS.map((id) => ({
           id,
           type: cdv.ProductType.PAID_SUBSCRIPTION,
           platform,
         })),
       );
-
-      cdv.store.when().approved((tx) => {
+      const chain = store.when().approved((tx) => {
         void onApproved(tx);
       });
+      chain.productUpdated?.(() => notifyProducts());
 
-      cdv.store.ready(() => {
-        initialized = true;
-        resolve();
-      });
-
-      cdv.store.initialize([platform]).catch((e: unknown) => {
-        reject(e instanceof Error ? e : new Error(String(e)));
-      });
-    } catch (e) {
-      reject(e instanceof Error ? e : new Error(String(e)));
+      const ready = new Promise<void>((resolve) => store.ready(() => resolve()));
+      // initialize() RESOLVES with an array of errors (it rarely rejects),
+      // and ready() fires even when products failed to load. Both are
+      // inspected; a connection failure is surfaced instead of being taken
+      // for success.
+      const errors = await withTimeout(
+        Promise.resolve(store.initialize([platform])),
+        INIT_TIMEOUT_MS,
+        () => new NativeIAPError("timeout", "Store initialisation timed out"),
+      );
+      await withTimeout(ready, INIT_TIMEOUT_MS,
+        () => new NativeIAPError("timeout", "Store never became ready"));
+      const errs = Array.isArray(errors) ? (errors as StoreErrorLike[]).filter((e) => e && e.isError) : [];
+      if (errs.length) {
+        // eslint-disable-next-line no-console
+        console.warn("[native-iap] initialize reported errors", errs.map((e) => `${e.code}: ${e.message}`));
+      }
+    } else if (store.update) {
+      await withTimeout(store.update(), INIT_TIMEOUT_MS,
+        () => new NativeIAPError("timeout", "Store refresh timed out"));
     }
-  });
+    notifyProducts();
+    if (!nativeProductsReady()) {
+      throw new NativeIAPError("loading", "Subscription products are not available yet");
+    }
+    initialized = true;
+  };
 
-  // Clear the in-flight latch on ANY rejection: the synchronous not-ready
-  // case, a synchronous throw, or an async StoreKit init failure. The native
-  // bridge can finish loading AFTER first paint, so without this a failed
-  // init at mount would cache a rejected promise and the Subscribe button
-  // would stay broken (reusing that rejection) until a full reload. This
-  // catch runs after the assignment below, so it correctly resets the latch
-  // for the synchronous paths too. The original promise still rejects for
-  // its real callers; this is a separate, side-effect-only handler.
+  const p = run();
+  // Clear the in-flight latch on ANY rejection so a later call can retry
+  // (through store.update(), see above). The original promise still rejects
+  // for its real callers; this handler only resets the latch.
   p.catch(() => { if (initializing === p) initializing = null; });
   initializing = p;
   return p;
 }
 
-async function onApproved(tx: TransactionLike): Promise<void> {
+// Verification promises started by store approvals, so a restore can report
+// success only after the server has confirmed (B5).
+type VerifyResult = { ok: true } | { ok: false; code: NativeIAPErrorCode };
+const inflightVerifications = new Set<Promise<VerifyResult>>();
+let restoreResults: VerifyResult[] | null = null;
+
+function purchaseTokenOf(tx: TransactionLike): string | undefined {
+  return tx.purchaseToken || tx.nativePurchase?.purchaseToken || tx.purchaseId || undefined;
+}
+
+async function verifyWithServer(tx: TransactionLike, restore: boolean): Promise<{ has_access?: boolean }> {
   const platform = getNativePlatform();
   const productId = tx.products?.[0]?.id || PRODUCT_ID;
   const token = authToken();
-  try {
-    if (platform === "android") {
-      const purchaseToken = tx.purchaseToken || tx.nativePurchase?.purchaseToken;
-      if (!purchaseToken) throw new Error("No purchase token from Google Play");
-      await apiFetch(
-        GOOGLE_VERIFY_PATH,
-        { method: "POST", body: JSON.stringify({ product_id: productId, purchase_token: purchaseToken }) },
-        token,
-      );
-    } else if (platform === "ios") {
-      const transactionId = tx.transactionId || tx.nativePurchase?.transactionId;
-      if (!transactionId) throw new Error("No transaction id from App Store");
-      await apiFetch(
-        APPLE_VERIFY_PATH,
-        { method: "POST", body: JSON.stringify({ transaction_id: transactionId, product_id: productId }) },
-        token,
-      );
-    } else {
-      throw new Error("Unsupported platform for IAP");
-    }
+  if (!token) throw new NativeIAPError("verify_failed", "Not signed in");
+  const call = (path: string, body: Record<string, unknown>) =>
+    withTimeout(
+      apiFetch(path, { method: "POST", body: JSON.stringify({ ...body, restore }) }, token),
+      VERIFY_TIMEOUT_MS,
+      () => new NativeIAPError("timeout", "Verification timed out"),
+    );
+  if (platform === "android") {
+    const purchaseToken = purchaseTokenOf(tx);
+    if (!purchaseToken) throw new Error("No purchase token from Google Play");
+    return call(GOOGLE_VERIFY_PATH, { product_id: productId, purchase_token: purchaseToken });
+  }
+  if (platform === "ios") {
+    const transactionId = tx.transactionId || tx.nativePurchase?.transactionId;
+    if (!transactionId) throw new Error("No transaction id from App Store");
+    return call(APPLE_VERIFY_PATH, { transaction_id: transactionId, product_id: productId });
+  }
+  throw new Error("Unsupported platform for IAP");
+}
 
-    // Backend confirmed entitlement: tell the store so it doesn't refund.
-    if (tx.finish) await tx.finish();
-    outcomeListener?.({ ok: true });
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    // eslint-disable-next-line no-console
-    console.error("[native-iap] verify failed", e);
-    outcomeListener?.({ ok: false, error, code: "verify_failed" });
+function codeForVerifyError(e: unknown): NativeIAPErrorCode {
+  if (e instanceof NativeIAPError) return e.code;
+  const status = (e as { status?: number })?.status;
+  const code = (e as { code?: string })?.code;
+  // 409: the purchase belongs to (or was bought from) another Solray account.
+  if (status === 409 || code === "purchase_other_account") return "other_account";
+  return "verify_failed";
+}
+
+function onApproved(tx: TransactionLike): Promise<VerifyResult> {
+  const job = (async (): Promise<VerifyResult> => {
+    if (!authToken()) {
+      // Signed out (or switching accounts): leave the transaction unfinished
+      // so it is verified for whoever signs in next, never for nobody.
+      return { ok: false, code: "verify_failed" };
+    }
+    try {
+      await verifyWithServer(tx, restoreResults !== null);
+      // Backend confirmed entitlement: tell the store so it doesn't refund.
+      if (tx.finish) await tx.finish();
+      outcomeListener?.({ ok: true });
+      return { ok: true };
+    } catch (e) {
+      const code = codeForVerifyError(e);
+      // eslint-disable-next-line no-console
+      console.error("[native-iap] verify failed", e);
+      outcomeListener?.({ ok: false, error: e instanceof Error ? e.message : String(e), code });
+      return { ok: false, code };
+    }
+  })();
+  inflightVerifications.add(job);
+  void job.then((r) => {
+    inflightVerifications.delete(job);
+    if (restoreResults) restoreResults.push(r);
+  });
+  return job;
+}
+
+function setAccountToken(accountToken?: string | null) {
+  const store = getStore();
+  if (store && accountToken) {
+    try { store.applicationUsername = accountToken; } catch { /* ignore */ }
   }
 }
 
-export async function launchNativePurchase(productId: string = PRODUCT_ID): Promise<void> {
+/**
+ * Open the store sheet. Resolves "cancelled" when the member closed the
+ * sheet (not an error), "started" otherwise; the approved -> verify ->
+ * finish flow then reports through the purchase listener.
+ *
+ * accountToken is the member's store_account_token from /subscribe/status.
+ * It travels with the purchase (Apple appAccountToken, Google
+ * obfuscatedAccountId) so the server can check the purchase belongs to the
+ * account that verifies it (D5).
+ */
+export async function launchNativePurchase(
+  productId: string = PRODUCT_ID,
+  accountToken?: string | null,
+): Promise<"started" | "cancelled"> {
   await initNativeIAP();
   const store = getStore();
   const platform = storePlatform();
   if (!store || !platform) throw new NativeIAPError("unavailable", "In-app purchases are not available");
   const product = store.get(productId, platform) || store.get(productId);
-  if (!product) throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
+  if (!product || !getLocalizedPrice(productId)) {
+    // Never open a sheet the paywall could not price (Guideline 3.1.2).
+    throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
+  }
 
   const offer =
     (typeof product.getOffer === "function" && product.getOffer()) ||
     product.offers?.[0] ||
     product;
 
-  const result = await store.order(offer as OfferLike);
-  if (result && (result as { isError?: boolean }).isError) {
-    throw new NativeIAPError("failed", (result as { message?: string }).message || "Purchase failed");
+  setAccountToken(accountToken);
+  const data: OrderData | undefined = accountToken
+    ? { applicationUsername: accountToken, googlePlay: { accountId: accountToken } }
+    : undefined;
+  const result = await store.order(offer as OfferLike, data);
+  if (result && (result as StoreErrorLike).isError) {
+    const w = window as unknown as CdvPurchaseWindow;
+    const cancelled = w.CdvPurchase?.ErrorCode?.PAYMENT_CANCELLED ?? PAYMENT_CANCELLED_FALLBACK;
+    if ((result as StoreErrorLike).code === cancelled) return "cancelled";
+    throw new NativeIAPError("failed", (result as StoreErrorLike).message || "Purchase failed");
   }
+  return "started";
 }
 
+export type RestoreOutcome = "restored" | "none";
+
 /**
- * Restore Purchases (App Store Guideline 3.1.1 expects a visible restore
- * mechanism for restorable purchases). Asks the store to replay the member's
- * existing transactions; every replayed subscription flows through the same
- * approved -> backend verify -> finish path as a new purchase, so the backend
- * stays the only authority on entitlement. Resolves when the store has
- * finished replaying; the caller refreshes entitlement afterwards.
+ * Restore Purchases (App Store Guideline 3.1.1). Asks the store to replay the
+ * member's purchases, waits for every resulting server verification, and
+ * when nothing was replayed as new, verifies the newest purchase the device
+ * knows about. Resolves "restored" only when the SERVER confirmed an active
+ * membership, "none" when there is nothing active to restore; throws a
+ * NativeIAPError otherwise (timeout, other account, verification failure).
  */
-export async function restoreNativePurchases(): Promise<void> {
+export async function restoreNativePurchases(accountToken?: string | null): Promise<RestoreOutcome> {
   await initNativeIAP();
   const store = getStore();
   if (!store || !store.restorePurchases) {
     throw new NativeIAPError("unavailable", "Restore is not available on this device");
   }
-  const result = await store.restorePurchases();
-  if (result && (result as { isError?: boolean }).isError) {
-    throw new NativeIAPError("failed", (result as { message?: string }).message || "Restore failed");
+  setAccountToken(accountToken);
+  restoreResults = [];
+  try {
+    const result = await withTimeout(store.restorePurchases(), RESTORE_TIMEOUT_MS,
+      () => new NativeIAPError("timeout", "Restore timed out"));
+    if (result && (result as StoreErrorLike).isError) {
+      throw new NativeIAPError("failed", (result as StoreErrorLike).message || "Restore failed");
+    }
+    // Approvals fired by the restore verify asynchronously: wait for them.
+    if (inflightVerifications.size) {
+      await withTimeout(Promise.allSettled(Array.from(inflightVerifications)), VERIFY_TIMEOUT_MS,
+        () => new NativeIAPError("timeout", "Verification timed out"));
+    }
+    const results = restoreResults.slice();
+    if (results.some((r) => r.ok)) return "restored";
+    const failed = results.find((r) => !r.ok);
+
+    // Nothing new was approved: verify the newest purchase on this device.
+    const ours = (store.localTransactions || []).filter((t) =>
+      (t.products || []).some((p) => ALL_PRODUCT_IDS.includes(p.id)),
+    );
+    if (!ours.length) {
+      if (failed) throw new NativeIAPError(failed.code, "Restore verification failed");
+      return "none";
+    }
+    const newest = ours.slice().sort((a, b) =>
+      new Date(b.purchaseDate || 0).getTime() - new Date(a.purchaseDate || 0).getTime(),
+    )[0];
+    try {
+      const res = await verifyWithServer(newest, true);
+      return res && res.has_access === false ? "none" : "restored";
+    } catch (e) {
+      const status = (e as { status?: number })?.status;
+      if (status === 402 || status === 400) return "none"; // expired or not ours to restore
+      throw new NativeIAPError(codeForVerifyError(e), "Restore verification failed");
+    }
+  } finally {
+    restoreResults = null;
   }
 }
 
