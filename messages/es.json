@@ -252,7 +252,10 @@
     "delete_confirm": "¿Eliminar esta conversación? Se borra de todos tus dispositivos.",
     "conversation_closed_partner": "Alguien en esta conversación ya no comparte su carta, así que esta conversación se ha cerrado. Empezamos una nueva.",
     "start_ordinary_conversation": "Empezar una conversación normal",
-    "dismiss_notice": "Cerrar"
+    "dismiss_notice": "Cerrar",
+    "crisis_label": "Alguien con quien hablar",
+    "crisis_show": "Mostrar",
+    "crisis_hide": "Ocultar"
   },
   "souls": {
     "title": "ALMAS",

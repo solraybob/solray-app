@@ -347,7 +347,10 @@
     "delete_confirm": "Delete this conversation? It is removed from all your devices.",
     "conversation_closed_partner": "Someone in this conversation is no longer sharing their chart, so this conversation is closed. Starting a fresh one.",
     "start_ordinary_conversation": "Start an ordinary conversation",
-    "dismiss_notice": "Dismiss"
+    "dismiss_notice": "Dismiss",
+    "crisis_label": "Someone to talk to",
+    "crisis_show": "Show",
+    "crisis_hide": "Hide"
   },
   "souls": {
     "title": "SOULS",

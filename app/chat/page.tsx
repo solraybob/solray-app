@@ -35,6 +35,8 @@ import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
 import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
+import CrisisCard from "@/components/CrisisCard";
+import { asCrisisCard } from "@/lib/crisis-card";
 import { accountKey } from "@/lib/account-session";
 
 // isError marks a transport-level error rather than an Oracle reply. It
@@ -1236,6 +1238,21 @@ function ChatPageInner() {
         setMessages((prev) => [...prev, errMsg]);
         return;
       }
+      // The fixed crisis card (or the support card): drawn whole as a card
+      // with call and text buttons, never typed out and never offered as
+      // something "that landed".
+      const card = asCrisisCard(data.crisis_card) || asCrisisCard(data.support_card);
+      if (card) {
+        const cardMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content,
+          timestamp: new Date().toISOString(),
+          crisis: card,
+        };
+        setMessages((prev) => [...prev, cardMsg]);
+        return;
+      }
       const reply: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -1305,8 +1322,26 @@ function ChatPageInner() {
       const known = oracleErrorKey(err);
       if (known) {
         if (activeSessionRef.current !== sentSessionId) return;
+        // A member without AI consent who may be struggling: the server
+        // sends a short support card with their line alongside the consent
+        // prompt. It goes in the thread first.
+        const support = err instanceof ApiError
+          ? asCrisisCard((err.detail as { support?: unknown } | undefined)?.support)
+          : null;
+        const noteAt = Date.now();
+        if (support) {
+          const supportText = (err as ApiError & { detail?: { support_text?: unknown } }).detail?.support_text;
+          const supportMsg: Message = {
+            id: (noteAt + 1).toString(),
+            role: "assistant",
+            content: typeof supportText === "string" ? supportText : support.intro,
+            timestamp: new Date().toISOString(),
+            crisis: support,
+          };
+          setMessages((prev) => [...prev, supportMsg]);
+        }
         const note: Message = {
-          id: (Date.now() + 1).toString(),
+          id: (noteAt + 2).toString(),
           role: "assistant",
           content: t(known),
           timestamp: new Date().toISOString(),
@@ -1955,6 +1990,12 @@ function ChatPageInner() {
                     </p>
                   </div>
                 );
+              }
+
+              // The fixed crisis or support card: its own card with call and
+              // text buttons, not an Oracle bubble.
+              if (msg.crisis) {
+                return <CrisisCard key={msg.id} card={msg.crisis} />;
               }
 
               // Error messages render with distinct styling so the user

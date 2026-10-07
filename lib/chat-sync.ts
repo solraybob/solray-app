@@ -26,6 +26,7 @@ import { mergeMessages, sameTranscript } from "./chat-merge";
 import { withSoulBackfill } from "./chat-soul";
 import { accountKey, isCurrentGeneration, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
+import type { CrisisCardData } from "./crisis-card";
 
 export interface ChatMessage {
   id: string;
@@ -37,6 +38,9 @@ export interface ChatMessage {
   // the conversation keeps its partner on every device. Ids only, never a
   // chart: the server loads and authorises the chart itself.
   soul?: { name?: string | null; connection_id?: string | null; saved_person_id?: string | null };
+  // The fixed crisis or support card (lib/crisis-card.ts), drawn as a card
+  // with call and text buttons. `content` keeps its plain text.
+  crisis?: CrisisCardData;
 }
 
 export interface StoredSession<M extends ChatMessage = ChatMessage> {
