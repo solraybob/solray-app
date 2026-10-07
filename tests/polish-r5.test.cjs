@@ -110,7 +110,7 @@ test("5: Memory copy exists in both languages, plain and without long dashes", (
     const s = messages(lang).settings;
     for (const k of keys) {
       assert.equal(typeof s[k], "string", `${lang}.settings.${k}`);
-      assert.ok(!/[—–]/.test(s[k]), `${lang}.settings.${k} has a long dash`);
+      assert.ok(!/[\u2014\u2013]/.test(s[k]), `${lang}.settings.${k} has a long dash`);
     }
   }
 });
