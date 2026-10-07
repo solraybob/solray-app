@@ -4,22 +4,23 @@
 // page saves locally first (instant render) and then uploads. Devices that
 // come online later read the server's copy.
 //
-// The server stores a conversation as one transcript that a PUT replaces.
-// Two rules keep a replacement from erasing anything:
-//  1. Every upload first reads the server's copy and sends the union of it
-//     and this device's copy (messages are only ever appended, and each has
-//     its own id). A turn another device added meanwhile is kept, and is
-//     written into this device's cache too.
-//  2. Nothing is uploaded until this device has reconciled with the server
+// The server merges every upload into its copy by message id, atomically
+// (a row lock and a revision number), so an upload never erases a turn
+// another device wrote, even one written in the same instant. Its reply
+// carries the merged transcript, which this device takes into its cache.
+// Rules on this side:
+//  1. An upload names the revision this device last saw (`base_revision`)
+//     and, for a conversation the server held before, `expect_existing`, so
+//     one deleted on another device is never recreated.
+//  2. Until the server has reported a revision for a conversation (a server
+//     from before the merge), an upload first reads the server's copy and
+//     sends the union, as before.
+//  3. Nothing is uploaded until this device has reconciled with the server
 //     at least once for the signed-in account (syncSessionsFromServer). If
 //     that fails (offline, server error), writes stay local and are marked
 //     unsent; they go up after the next successful reconciliation.
 // Writes for one conversation (uploads and its deletion) run one after
 // another in the order they were made.
-//
-// Not covered here: a turn another device writes in the instant between this
-// device's read and its write. Closing that needs a revision check on the
-// server's PUT (backend).
 
 import { mergeMessages, sameTranscript } from "./chat-merge";
 import { isCurrentGeneration, StaleAccountError } from "./account-session";
@@ -129,7 +130,7 @@ function clearUnsent(id: string) {
 // Per-session last_message_at as the server reported it, so a sync can
 // tell whether the server's copy is newer than this device's.
 const SESSION_META_KEY = "solray_chat_session_meta";
-type LocalMeta = Record<string, { last_message_at: string }>;
+type LocalMeta = Record<string, { last_message_at: string; revision?: number }>;
 
 export function getLocalMeta(): LocalMeta {
   try { return JSON.parse(localStorage.getItem(SESSION_META_KEY) || "{}") as LocalMeta; } catch { return {}; }
@@ -137,9 +138,11 @@ export function getLocalMeta(): LocalMeta {
 function setLocalMeta(meta: LocalMeta) {
   try { localStorage.setItem(SESSION_META_KEY, JSON.stringify(meta)); } catch { /* ignore quota */ }
 }
-export function setSessionLocalMeta(sessionId: string, last_message_at: string) {
+export function setSessionLocalMeta(sessionId: string, last_message_at: string, revision?: number) {
   const meta = getLocalMeta();
-  meta[sessionId] = { last_message_at };
+  const prev = meta[sessionId];
+  const rev = typeof revision === "number" ? revision : prev?.revision;
+  meta[sessionId] = typeof rev === "number" ? { last_message_at, revision: rev } : { last_message_at };
   setLocalMeta(meta);
 }
 function dropSessionLocalMeta(sessionId: string) {
@@ -200,34 +203,38 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
   if (!local) return false;
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   const url = `${apiUrl()}/chat/sessions/${encodeURIComponent(sessionId)}`;
+  const stillMine = () => isCurrentGeneration(gen) && !deletedHere.has(sessionId);
   try {
     return await trackRequest(async () => {
-      // 1. The server's copy, so this write keeps what other devices added.
-      const getRes = await fetch(url, { headers });
-      if (!isCurrentGeneration(gen) || deletedHere.has(sessionId)) return false;
-      let serverMessages: ChatMessage[] = [];
-      if (getRes.status === 404) {
-        // Confirmed on the server before and gone now: deleted on another
-        // device. Do not bring it back; the next sync drops it here.
-        if (getServerConfirmed().has(sessionId)) return false;
-      } else if (getRes.ok) {
-        const full = await getRes.json();
-        if (!isCurrentGeneration(gen) || deletedHere.has(sessionId)) return false;
-        serverMessages = Array.isArray(full?.messages) ? full.messages : [];
-      } else {
-        // Unknown server state: a blind replacement could erase turns.
-        return false;
+      const known = getLocalMeta()[sessionId];
+      const knownRevision = typeof known?.revision === "number" ? known.revision : null;
+      const expectExisting = getServerConfirmed().has(sessionId);
+      if (knownRevision === null) {
+        // A server that has not reported a revision may still replace on
+        // PUT: read its copy first so the write keeps what others added.
+        const getRes = await fetch(url, { headers });
+        if (!stillMine()) return false;
+        if (getRes.status === 404) {
+          // Confirmed on the server before and gone now: deleted on another
+          // device. Do not bring it back; the next sync drops it here.
+          if (expectExisting) return false;
+        } else if (getRes.ok) {
+          const full = await getRes.json();
+          if (!stillMine()) return false;
+          takeServerCopy(sessionId, Array.isArray(full?.messages) ? full.messages : []);
+          if (typeof full?.revision === "number" && typeof full?.last_message_at === "string") {
+            setSessionLocalMeta(sessionId, full.last_message_at, full.revision);
+          }
+        } else {
+          // Unknown server state: a blind replacement could erase turns.
+          return false;
+        }
       }
 
-      // Re-read: the member may have written more while the read ran.
+      // The newest local copy (the member may have written more meanwhile).
       const latest = loadSession(sessionId) || local;
-      const merged = mergeMessages(serverMessages, latest.messages || []);
-      if (!sameTranscript(merged, latest.messages || [])) {
-        saveSession({ ...latest, messages: merged });
-        announceMerged(sessionId, merged);
-      }
-
-      // 2. Write the union.
+      const sent = latest.messages || [];
+      const baseRevision = getLocalMeta()[sessionId]?.revision;
       const putRes = await fetch(url, {
         method: "PUT",
         headers,
@@ -235,24 +242,43 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
           session_id: sessionId,
           custom_name: latest.customName || null,
           date_label: latest.date || null,
-          messages: merged,
+          messages: sent,
+          ...(typeof baseRevision === "number" ? { base_revision: baseRevision } : {}),
+          expect_existing: expectExisting,
         }),
       });
-      if (!isCurrentGeneration(gen)) return false;
+      if (!stillMine()) return false;
       if (!putRes.ok) return false;
+      const out = await putRes.json().catch(() => ({} as Record<string, unknown>));
+      if (!stillMine()) return false;
       markServerConfirmed([sessionId]);
+      // The merged transcript the server now holds: take in what other
+      // devices added (a server from before the merge sends none).
+      const serverNow: ChatMessage[] = Array.isArray(out?.messages) ? out.messages as ChatMessage[] : sent;
+      takeServerCopy(sessionId, serverNow);
       // Only clear "unsent" if nothing newer was written while uploading.
       const after = loadSession(sessionId);
-      if (!after || sameTranscript(mergeMessages(merged, after.messages || []), merged)) clearUnsent(sessionId);
-      const out = await putRes.json().catch(() => ({} as Record<string, string>));
-      if (isCurrentGeneration(gen) && out && typeof out.last_message_at === "string") {
-        setSessionLocalMeta(sessionId, out.last_message_at);
+      if (!after || sameTranscript(mergeMessages(serverNow, after.messages || []), serverNow)) clearUnsent(sessionId);
+      if (out && typeof out.last_message_at === "string") {
+        setSessionLocalMeta(sessionId, out.last_message_at, typeof out.revision === "number" ? out.revision : undefined);
       }
       return true;
     });
   } catch {
     // Network: the local copy stays and is marked unsent.
     return false;
+  }
+}
+
+/** Fold the server's transcript into this device's cache (and the open
+ *  conversation) without dropping anything only this device has. */
+function takeServerCopy(sessionId: string, serverMessages: ChatMessage[]) {
+  const latest = loadSession(sessionId);
+  if (!latest) return;
+  const merged = mergeMessages(serverMessages, latest.messages || []);
+  if (!sameTranscript(merged, latest.messages || [])) {
+    saveSession({ ...latest, messages: merged });
+    announceMerged(sessionId, merged);
   }
 }
 
@@ -372,7 +398,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
         customName: full.custom_name || local?.customName || undefined,
         messages: merged,
       });
-      if (full.last_message_at) setSessionLocalMeta(s.session_id, full.last_message_at);
+      if (full.last_message_at) setSessionLocalMeta(s.session_id, full.last_message_at, typeof full.revision === "number" ? full.revision : undefined);
       // This device had turns the server lacks: send them up below.
       if (!sameTranscript(merged, serverMsgs)) unsent.add(s.session_id);
     } catch (e) {

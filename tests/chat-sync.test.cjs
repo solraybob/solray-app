@@ -140,3 +140,91 @@ test("F1: the chat page restores a deleted conversation only for the same accoun
   assert.match(del, /deleteSessionOnServer\(sid, token, acct\.generation\)/);
   assert.ok(!/fetch\(/.test(del), "no raw fetch left in the page's delete");
 });
+
+// ── Round 3, finding 2: the server merges by message id ─────────────────────
+
+/** A /chat/sessions server like the backend now: PUT merges by id under a
+ *  revision; `between` runs after a GET and before the next PUT lands. */
+function mergingServer() {
+  const sessions = new Map();
+  const log = [];
+  const hooks = { beforePut: null };
+  const merge = (stored, incoming) => {
+    const seen = new Map(stored.map((x) => [x.id, x]));
+    const out = stored.map((x) => ({ ...x }));
+    for (const x of incoming) {
+      if (seen.has(x.id)) { const cur = out.find((y) => y.id === x.id); for (const k of Object.keys(x)) if (!(k in cur)) cur[k] = x[k]; continue; }
+      out.push(x);
+    }
+    return out.sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
+  };
+  global.fetch = async (url, init = {}) => {
+    const method = (init.method || "GET").toUpperCase();
+    const u = new URL(url);
+    log.push({ line: `${method} ${u.pathname}`, body: init.body ? JSON.parse(init.body) : null });
+    const json = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+    if (u.pathname === "/chat/sessions") {
+      return json(200, { sessions: Array.from(sessions.values()).map((s) => ({ session_id: s.session_id, last_message_at: s.last_message_at })) });
+    }
+    const id = decodeURIComponent(u.pathname.split("/").pop());
+    if (method === "GET") return sessions.has(id) ? json(200, sessions.get(id)) : json(404, { detail: "Session not found" });
+    if (method === "PUT") {
+      if (hooks.beforePut) { const h = hooks.beforePut; hooks.beforePut = null; h(); }
+      const body = JSON.parse(init.body);
+      const cur = sessions.get(id);
+      if (!cur && body.expect_existing) return json(404, { detail: "Session not found" });
+      const rev = (cur?.revision || 0) + 1;
+      const at = `2026-10-07T11:${String(rev).padStart(2, "0")}:00Z`;
+      const messages = merge(cur?.messages || [], body.messages);
+      sessions.set(id, { session_id: id, messages, revision: rev, last_message_at: at, custom_name: body.custom_name });
+      return json(200, { session_id: id, last_message_at: at, revision: rev, conflict: body.base_revision != null && body.base_revision !== (cur?.revision || 0), messages });
+    }
+    if (method === "DELETE") return sessions.delete(id) ? json(200, { deleted: true }) : json(404, {});
+    return json(405, {});
+  };
+  return { sessions, log, hooks };
+}
+
+test("R3-2: a turn another device writes between this device's read and write reaches this device", async () => {
+  const srv = mergingServer();
+  srv.sessions.set("m1", { session_id: "m1", messages: [m("1", 1)], revision: 1, last_message_at: "x" });
+  sync.saveSession({ sessionId: "m1", date: "", messages: [m("1", 1), m("mine", 3)] });
+  // Device B lands its turn after our GET, before our PUT.
+  srv.hooks.beforePut = () => {
+    const cur = srv.sessions.get("m1");
+    srv.sessions.set("m1", { ...cur, messages: [...cur.messages, m("theirs", 2)], revision: cur.revision + 1 });
+  };
+  let announced = null;
+  const onMerged = (e) => { announced = e.detail; };
+  win.addEventListener(sync.CHAT_MERGED_EVENT, onMerged);
+  assert.equal(await sync.pushSessionToServer(sync.loadSession("m1"), "tok", session.getAuthGeneration()), true);
+  win.removeEventListener(sync.CHAT_MERGED_EVENT, onMerged);
+  assert.deepEqual(srv.sessions.get("m1").messages.map((x) => x.id), ["1", "theirs", "mine"]);
+  assert.deepEqual(sync.loadSession("m1").messages.map((x) => x.id), ["1", "theirs", "mine"]);
+  assert.deepEqual(announced.messages.map((x) => x.id), ["1", "theirs", "mine"]);
+  assert.equal(sync.getLocalMeta().m1.revision, 3);
+});
+
+test("R3-2: once the server reported a revision, an upload is one merging PUT with base_revision", async () => {
+  const srv = mergingServer();
+  srv.sessions.set("m2", { session_id: "m2", messages: [m("1", 1)], revision: 4, last_message_at: "x" });
+  sync.saveSession({ sessionId: "m2", date: "", messages: [m("1", 1), m("a", 2)] });
+  sync.markServerConfirmed(["m2"]);
+  sync.setSessionLocalMeta("m2", "x", 4);
+  assert.equal(await sync.pushSessionToServer(sync.loadSession("m2"), "tok", session.getAuthGeneration()), true);
+  const lines = srv.log.map((l) => l.line);
+  assert.deepEqual(lines, ["PUT /chat/sessions/m2"]);
+  const body = srv.log[0].body;
+  assert.equal(body.base_revision, 4);
+  assert.equal(body.expect_existing, true);
+  assert.equal(sync.getLocalMeta().m2.revision, 5);
+});
+
+test("R3-2: a merging PUT never recreates a conversation deleted on another device", async () => {
+  const srv = mergingServer();
+  sync.saveSession({ sessionId: "m3", date: "", messages: [m("1", 1)] });
+  sync.markServerConfirmed(["m3"]);
+  sync.setSessionLocalMeta("m3", "x", 2);
+  assert.equal(await sync.pushSessionToServer(sync.loadSession("m3"), "tok", session.getAuthGeneration()), false);
+  assert.equal(srv.sessions.has("m3"), false);
+});
