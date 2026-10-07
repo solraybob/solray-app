@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, isAiConsentError } from "@/lib/api";
 import { isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
-import { syncBirthRevision } from "@/lib/chart-revision";
+import { chartStampCurrent, chartWorkStamp, syncBirthRevision, writeChartCache } from "@/lib/chart-revision";
 import { activeCardIndex } from "@/lib/deck";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import { ShareCardOffscreen } from "@/components/ShareCard";
@@ -1637,8 +1637,12 @@ export default function TodayPage() {
 
     const cacheKey = `solray_forecast_${dayKey}`;
 
-    async function fetchAndUpdate(isBackground: boolean) {
+    async function fetchAndUpdate(isBackground: boolean, retried = false) {
       lastFetchAt.current = Date.now();
+      // The chart this forecast is fetched for. /users/me runs alongside
+      // and may reveal that the birth details changed (on another device);
+      // then this forecast may be for the old chart and is fetched again.
+      const stamp = chartWorkStamp();
       try {
         // Run /forecast/today and /users/me in parallel
         const [forecastData] = await Promise.all([
@@ -1674,15 +1678,20 @@ export default function TodayPage() {
 
         if (cancelled) return;
 
+        if (!chartStampCurrent(stamp) && !retried) {
+          return fetchAndUpdate(isBackground, true);
+        }
+
         const parsed = parseForecastData(forecastData);
 
         // Cache for next load, but ONLY a complete forecast. Caching a
         // `_pending` / partial reading (e.g. during a backend outage) pins a
         // broken Today that survives reloads and silent background-refresh
         // failures. A pending state must always re-fetch fresh next time.
+        // And only under the chart it was fetched for.
         try {
           if (parsed && parsed._pending !== true) {
-            localStorage.setItem(cacheKey, JSON.stringify(parsed));
+            writeChartCache(stamp, cacheKey, parsed);
           } else {
             localStorage.removeItem(cacheKey);
           }
@@ -1839,11 +1848,10 @@ export default function TodayPage() {
       const cacheKey = `solray_forecast_${localDayKey()}`;
       (async () => {
         try {
+          const stamp = chartWorkStamp();
           const data = await apiFetch("/forecast/today", {}, token);
           const parsed = parseForecastData(data);
-          try {
-            if (parsed && parsed._pending !== true) localStorage.setItem(cacheKey, JSON.stringify(parsed));
-          } catch (_) { /* ignore storage */ }
+          if (parsed && parsed._pending !== true) writeChartCache(stamp, cacheKey, parsed);
           setForecast(parsed);
           setError("");
           setLoading(false);

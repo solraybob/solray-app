@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useT, fill } from "@/lib/i18n";
 
 // Each transiting planet tints its own card, drawn from the orb. Photographs
@@ -352,16 +353,15 @@ export default function CurrentCycles({ token, hideHeading = false }: CurrentCyc
     } catch (_) {}
 
     // Fetch from API
+    const stamp = chartWorkStamp();
     apiFetch("/transits/long-range", {}, token)
       .then((data: CyclesResponse) => {
         const cycleList = data.cycles || [];
         const upcomingList = data.upcoming || [];
         setCycles(cycleList);
         setUpcoming(upcomingList);
-        // Cache monthly
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-        } catch (_) {}
+        // Cache monthly, only under the chart it was computed from.
+        writeChartCache(stamp, cacheKey, data);
       })
       .catch(() => {
         // If we already painted from cache, keep it; only clear when we have

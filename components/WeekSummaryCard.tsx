@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
 
@@ -20,11 +21,12 @@ export default function WeekSummaryCard() {
         if (d?.week_summary) { setSummary(d.week_summary); return; }
       }
     } catch (_) {}
+    const stamp = chartWorkStamp();
     apiFetch("/forecast/week", {}, token)
       .then(d => {
         if (d?.week_summary) {
           setSummary(d.week_summary);
-          try { localStorage.setItem(key, JSON.stringify(d)); } catch (_) {}
+          writeChartCache(stamp, key, d);
         }
       })
       .catch(() => {});

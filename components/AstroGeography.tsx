@@ -4,7 +4,7 @@ import { WORLD_PATHS } from "@/lib/world-paths";
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { currentBirthRevision } from "@/lib/chart-revision";
+import { chartStampCurrent, chartWorkStamp, currentBirthRevision, writeChartCache } from "@/lib/chart-revision";
 import { tx } from "@/lib/astro-i18n";
 import { GLYPH_FONT_FAMILY } from "@/components/AstroGlyphs";
 
@@ -246,14 +246,30 @@ export default function AstroGeography({ token }: { token: string | null }) {
       }
     } catch (_) {}
 
-    apiFetch("/astrocartography", {}, token)
-      .then((d: AstroData) => {
-        setData(d);
-        setPowerSpots(calculatePowerSpots(d.lines));
-        try { localStorage.setItem(cacheKey, JSON.stringify({ ...d, _birth_rev: currentBirthRevision() })); } catch (_) {}
-      })
-      .catch(() => setError("load_failed"))
-      .finally(() => setLoading(false));
+    // The birth details may change while the map is on its way (an edit,
+    // or Profile noticing one made on another device). A map requested
+    // before that change is not shown as current or cached: it is asked
+    // for again under the new chart.
+    let cancelled = false;
+    const load = (attempt: number) => {
+      const stamp = chartWorkStamp();
+      apiFetch("/astrocartography", {}, token)
+        .then((d: AstroData) => {
+          if (cancelled) return;
+          if (!chartStampCurrent(stamp) && attempt < 2) { load(attempt + 1); return; }
+          setData(d);
+          setPowerSpots(calculatePowerSpots(d.lines));
+          writeChartCache(stamp, cacheKey, { ...d, _birth_rev: stamp.rev });
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setError("load_failed");
+          setLoading(false);
+        });
+    };
+    load(0);
+    return () => { cancelled = true; };
   }, [token]);
 
   const togglePlanet = (planet: string) => {

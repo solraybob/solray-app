@@ -1,5 +1,6 @@
 "use client";
 
+import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
@@ -106,17 +107,15 @@ export default function WidgetPage() {
         }
 
         // Fetch from API
+        const stamp = chartWorkStamp();
         const data = await apiFetch("/forecast/today", {}, token);
         setForecast(data);
         setLoading(false);
 
-        // Cache for next load, complete readings only.
-        try {
-          if (data && (data as { _pending?: boolean })._pending !== true) {
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-          }
-        } catch (_) {
-          // ignore storage errors
+        // Cache for next load, complete readings only, and only under the
+        // chart it was fetched for.
+        if (data && (data as { _pending?: boolean })._pending !== true) {
+          writeChartCache(stamp, cacheKey, data);
         }
       } catch {
         setLoading(false);
