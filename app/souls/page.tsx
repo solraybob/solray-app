@@ -34,6 +34,12 @@ import {
   savedPersonForServer,
   savedPersonBirthCheck,
   hasQueuedWrites,
+  recordPendingUpdate,
+  settlePendingUpdate,
+  pendingUpdateFor,
+  pendingUpdateIds,
+  prunePendingUpdates,
+  overlayPendingUpdates,
 } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -531,6 +537,34 @@ export default function SoulsPage() {
         const gone = () => new Set([...Array.from(loadTombstones()), ...Array.from(deletedHereIds())]);
         const server = listed.filter((p) => !gone().has(p.id));
         const serverIds = new Set(server.map((p) => p.id));
+        // 1b. Changes to people the server holds that it has not confirmed
+        //     yet (a birth-time confirmation whose save failed): sent again
+        //     now, before the server's copy is taken. One still unconfirmed
+        //     is shown in place of the server's older copy and retried on
+        //     the next sync; one for a person the server no longer holds is
+        //     dropped.
+        prunePendingUpdates(serverIds);
+        const refreshed = new Map<string, SavedPerson>();
+        for (const id of pendingUpdateIds()) {
+          const pend = pendingUpdateFor<SavedPerson>(id);
+          if (!pend) continue;
+          try {
+            const r = await forPerson(id, gen, async () => {
+              if (wasDeletedHere(id) || loadTombstones().has(id)) return null;
+              return apiFetch("/saved-people", { method: "POST", body: JSON.stringify(forServer({ ...pend.person, id })) }, token, { generation: gen });
+            });
+            acct.check();
+            const raw = r?.person as SavedPerson | undefined;
+            if (raw && raw.id === id) {
+              settlePendingUpdate(id, pend.stamp);
+              refreshed.set(id, { ...raw, _synced: true });
+            }
+          } catch (e) {
+            if (isStaleAccountError(e)) throw e;
+            /* offline / error: still pending, retried next load */
+          }
+        }
+        const serverNow = overlayPendingUpdates(server.map((p) => refreshed.get(p.id) || p));
         // 2. Upload only people this device created, the server has never
         //    confirmed, and the member has confirmed permission for. A
         //    confirmed person missing from the server was deleted on another
@@ -565,7 +599,7 @@ export default function SoulsPage() {
         }
         if (cancelled || !acct.live) return;
         const replacedIds = new Set(Object.keys(idRemap));
-        const confirmed = [...migrated, ...server].filter((p) => !gone().has(p.id));
+        const confirmed = [...migrated, ...serverNow].filter((p) => !gone().has(p.id));
         const confirmedIds = new Set(confirmed.map((p) => p.id));
         // 3. Merge against the CURRENT list, not the snapshot read above, so a
         //    person added or removed while this sync ran is respected.
@@ -875,6 +909,10 @@ export default function SoulsPage() {
           bp.kind === "saved" && bp.person.id === person.id ? { kind: "saved", person: next } : bp));
       };
       apply(updated);
+      // Kept on this device until the server confirms it: if the save below
+      // fails, the next sync sends it again instead of taking the server's
+      // older copy over it.
+      const stamp = recordPendingUpdate(updated);
       if (!token) return;
       const r = await forPerson(person.id, gen, async () => {
         if (wasDeletedHere(person.id)) return null;
@@ -883,14 +921,17 @@ export default function SoulsPage() {
       if (!acct.live || wasDeletedHere(person.id)) return;
       const raw = r?.person as SavedPerson | undefined;
       if (raw && raw.id === person.id) {
+        settlePendingUpdate(person.id, stamp);
         const saved = { ...raw, _synced: true };
         confirmedPeopleRef.current.set(person.id, saved);
         apply(saved);
+      } else {
+        setErrorMessage(t("souls.birth_check_failed"));
       }
     } catch (e) {
       if (isStaleAccountError(e) || !acct.live) return;
-      // Offline: the choice is kept here and in the chart, and is sent with
-      // this person's next save.
+      // Offline or refused: the choice stays here, in the chart and in the
+      // pending updates, and is sent again on the next sync.
       setErrorMessage(t("souls.birth_check_failed"));
     }
   };

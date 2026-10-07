@@ -13,6 +13,7 @@ import { storedBirthTimeCheck, type StoredBirthTimeCheck } from "@/lib/birth-tim
 import { captureAccount, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, openAiConsentSheet } from "@/lib/ai-consent";
 import { chartStampCurrent, chartWorkStamp, syncBirthRevision, writeChartCache } from "@/lib/chart-revision";
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { activeCardIndex } from "@/lib/deck";
 import LunarPhaseCard from "@/components/LunarPhaseCard";
 import { ShareCardOffscreen } from "@/components/ShareCard";
@@ -1328,6 +1329,10 @@ export default function TodayPage() {
   const lastFetchAt = useRef(0);
   // Bumped after consent is given, to fetch the reading that was refused.
   const [reloadNonce, setReloadNonce] = useState(0);
+  // Changes when the birth chart changes (here or in another tab): the
+  // reading on screen is for the old chart and is replaced.
+  const chartRev = useChartRevision();
+  const seenChartRev = useRef(chartRev);
 
   // Refs and state for the Energy Bars share card. The card itself
   // renders into a hidden off-screen container via
@@ -1644,6 +1649,17 @@ export default function TodayPage() {
     // call inside fetchAndUpdate.
     let cancelled = false;
 
+    // The birth chart changed since the reading on screen was fetched (an
+    // edit in another tab, or noticed from another device): it is not shown
+    // any longer, and the new chart's reading is fetched, in the foreground
+    // unless the cache already holds one for the new chart.
+    if (seenChartRev.current !== chartRev) {
+      seenChartRev.current = chartRev;
+      backgroundFetchDone.current = false;
+      setForecast(null);
+      setError("");
+    }
+
     const cacheKey = `solray_forecast_${dayKey}`;
 
     async function fetchAndUpdate(isBackground: boolean, retried = false) {
@@ -1808,7 +1824,7 @@ export default function TodayPage() {
     setLoading(true);
     fetchAndUpdate(false);
     return () => { cancelled = true; };
-  }, [token, dayKey, reloadNonce]);
+  }, [token, dayKey, reloadNonce, chartRev]);
 
   // A new day, or back after a long while: refresh Now. Runs on native
   // resume, when the tab becomes visible again, on focus, and on a timer

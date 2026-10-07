@@ -348,6 +348,88 @@ export class ChatSyncUnavailable extends Error {
 // another device and remove it here.
 const MIGRATION_FLAG = "solray_chat_migrated_v1";
 
+type RemoteEntry = { session_id: string; last_message_at: string | null; revision?: number };
+
+// The list is read in pages until the server stops handing out a cursor. A
+// server from before paging answers one page (its newest 100) and no cursor;
+// the per-conversation check below covers what that page leaves out.
+const LIST_PAGE_SIZE = 200;
+const MAX_LIST_PAGES = 50;
+
+async function readServerInventory(base: string, headers: Record<string, string>, live: () => void): Promise<RemoteEntry[]> {
+  const out: RemoteEntry[] = [];
+  const seen = new Set<string>();
+  const cursors = new Set<string>();
+  let cursor: string | null = null;
+  for (let page = 0; page < MAX_LIST_PAGES; page++) {
+    const q: string = `limit=${LIST_PAGE_SIZE}` + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : "");
+    const listJson: { sessions?: unknown; next_cursor?: unknown } | null = await trackRequest(async () => {
+      const listRes: Response = await fetch(`${base}/chat/sessions?${q}`, { headers });
+      live();
+      if (!listRes.ok) throw new ChatSyncUnavailable();
+      return listRes.json();
+    });
+    live();
+    const rows: unknown[] = Array.isArray(listJson?.sessions) ? listJson.sessions : [];
+    for (const r of rows) {
+      const e = r as RemoteEntry;
+      if (!e || typeof e.session_id !== "string" || seen.has(e.session_id)) continue;
+      seen.add(e.session_id);
+      out.push(e);
+    }
+    const next: string | null = typeof listJson?.next_cursor === "string" && listJson.next_cursor ? listJson.next_cursor : null;
+    if (!next || cursors.has(next)) return out;
+    cursors.add(next);
+    cursor = next;
+  }
+  // Absurdly long history: what was read stands; anything not seen is
+  // checked one by one before it could be dropped.
+  return out;
+}
+
+/** The server's answer for one conversation: its copy, "gone" only on the
+ *  server's own not-found answer, or "unknown" (offline, error, a 404 from
+ *  something in between). */
+async function readServerSession(
+  base: string, headers: Record<string, string>, sessionId: string, live: () => void,
+): Promise<{ kind: "found"; full: Record<string, unknown> } | { kind: "gone" } | { kind: "unknown" }> {
+  try {
+    return await trackRequest(async () => {
+      const res = await fetch(`${base}/chat/sessions/${encodeURIComponent(sessionId)}`, { headers });
+      live();
+      const body = await res.json().catch(() => null);
+      live();
+      if (res.ok && body && typeof body === "object") return { kind: "found" as const, full: body as Record<string, unknown> };
+      if (res.status === 404 && body && typeof body === "object" && (body as { detail?: unknown }).detail === "Session not found") {
+        return { kind: "gone" as const };
+      }
+      return { kind: "unknown" as const };
+    });
+  } catch (e) {
+    if (e instanceof StaleAccountError) throw e;
+    return { kind: "unknown" };
+  }
+}
+
+/** Take the server's copy of one conversation into the cache, keeping turns
+ *  only this device has. Returns true when this device still has turns the
+ *  server lacks. */
+function storeServerCopy(sessionId: string, full: Record<string, unknown>): boolean {
+  const local = loadSession(sessionId);
+  const serverMsgs: ChatMessage[] = Array.isArray(full.messages) ? full.messages as ChatMessage[] : [];
+  const merged = mergeMessages(serverMsgs, local?.messages || []);
+  saveSession({
+    sessionId: typeof full.session_id === "string" && full.session_id ? full.session_id : sessionId,
+    date: (typeof full.date_label === "string" && full.date_label) || local?.date || "",
+    customName: (typeof full.custom_name === "string" && full.custom_name) || local?.customName || undefined,
+    messages: merged,
+  });
+  if (typeof full.last_message_at === "string" && full.last_message_at) {
+    setSessionLocalMeta(sessionId, full.last_message_at, typeof full.revision === "number" ? full.revision : undefined);
+  }
+  return !sameTranscript(merged, serverMsgs);
+}
+
 /**
  * Pull the server's list, reconcile the device cache with it, and upload
  * what only this device has. Resolves the unified id list. Rejects with
@@ -359,17 +441,10 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   const live = () => { if (!isCurrentGeneration(gen)) throw new StaleAccountError(); };
   const headers = { Authorization: `Bearer ${token}` };
 
-  // 1. The lightweight list (includes last_message_at).
-  let remoteSessions: Array<{ session_id: string; last_message_at: string | null }>;
+  // 1. The whole list, every page (id, last_message_at, revision).
+  let remoteSessions: RemoteEntry[];
   try {
-    const listJson = await trackRequest(async () => {
-      const listRes = await fetch(`${base}/chat/sessions`, { headers });
-      live();
-      if (!listRes.ok) throw new ChatSyncUnavailable();
-      return listRes.json();
-    });
-    live();
-    remoteSessions = Array.isArray(listJson?.sessions) ? listJson.sessions : [];
+    remoteSessions = await readServerInventory(base, headers, live);
   } catch (e) {
     if (e instanceof StaleAccountError) throw e;
     throw new ChatSyncUnavailable();
@@ -392,50 +467,37 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   const unsent = getUnsent();
   const fetched: string[] = [];
 
-  // 2. Pull each remote session that is new here or newer on the server,
-  //    keeping any turns only this device has.
+  // 2. Pull each remote session that is new here, newer on the server, or
+  //    changed there without a new turn (a rename, a partner reference):
+  //    its revision differs from the one this device last saw. Turns only
+  //    this device has are kept.
   for (const s of remoteSessions) {
-    if (!s || typeof s.session_id !== "string") continue;
     // Being deleted on this device: never pulled back in.
     if (deletedHere.has(s.session_id)) continue;
     fetched.push(s.session_id);
     const remoteAt = s.last_message_at || "";
-    const localAt = localMeta[s.session_id]?.last_message_at || "";
-    const needPull = !localIds.has(s.session_id) || (remoteAt && remoteAt > localAt);
+    const known = localMeta[s.session_id];
+    const localAt = known?.last_message_at || "";
+    const revisionChanged = typeof s.revision === "number" && s.revision !== known?.revision;
+    const needPull = !localIds.has(s.session_id) || (remoteAt && remoteAt > localAt) || revisionChanged;
     if (!needPull) continue;
-    try {
-      const full = await trackRequest(async () => {
-        const fullRes = await fetch(`${base}/chat/sessions/${encodeURIComponent(s.session_id)}`, { headers });
-        live();
-        return fullRes.ok ? fullRes.json() : null;
-      });
-      live();
-      if (!full) continue;
-      // Deleted here while its transcript was on the way: drop the answer.
-      if (deletedHere.has(s.session_id)) continue;
-      const local = loadSession(s.session_id);
-      const serverMsgs: ChatMessage[] = Array.isArray(full.messages) ? full.messages : [];
-      const merged = mergeMessages(serverMsgs, local?.messages || []);
-      saveSession({
-        sessionId: full.session_id || s.session_id,
-        date: full.date_label || local?.date || "",
-        customName: full.custom_name || local?.customName || undefined,
-        messages: merged,
-      });
-      if (full.last_message_at) setSessionLocalMeta(s.session_id, full.last_message_at, typeof full.revision === "number" ? full.revision : undefined);
-      // This device had turns the server lacks: send them up below.
-      if (!sameTranscript(merged, serverMsgs)) unsent.add(s.session_id);
-    } catch (e) {
-      if (e instanceof StaleAccountError) throw e;
-      /* skip; retried on the next sync */
-    }
+    const got = await readServerSession(base, headers, s.session_id, live);
+    if (got.kind !== "found") continue;   // retried on the next sync
+    // Deleted here while its transcript was on the way: drop the answer.
+    if (deletedHere.has(s.session_id)) continue;
+    // This device had turns the server lacks: send them up below.
+    if (storeServerCopy(s.session_id, got.full)) unsent.add(s.session_id);
   }
 
   // 3. Local-only sessions. On the first sync on this device they are
   //    history that never reached the server: upload them. After that, a
-  //    confirmed session missing from the server was deleted on another
-  //    device: drop it here. A never-confirmed one (its upload failed) is
-  //    uploaded again, never deleted.
+  //    confirmed session missing from the list is asked for directly: only
+  //    the server's own "not found" means it was deleted on another device
+  //    and is dropped here. If it is still there (the list moved while it
+  //    was read, or a server from before paging), it is kept and synced; if
+  //    the answer is unclear, it is kept, unsent turns and all, for the next
+  //    sync. A never-confirmed one (its upload failed) is uploaded again,
+  //    never deleted.
   const remoteIds = new Set(fetched.filter((id) => !deletedHere.has(id)));
   markServerConfirmed(Array.from(remoteIds));
   const confirmed = getServerConfirmed();
@@ -446,10 +508,20 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   for (const localId of Array.from(localIds)) {
     if (remoteIds.has(localId) || deletedHere.has(localId)) continue;
     if (migrated && confirmed.has(localId)) {
-      try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
-      dropSessionLocalMeta(localId);
-      unmarkServerConfirmed(localId);
-      clearUnsent(localId);
+      const got = await readServerSession(base, headers, localId, live);
+      if (deletedHere.has(localId)) continue;
+      if (got.kind === "gone") {
+        try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
+        dropSessionLocalMeta(localId);
+        unmarkServerConfirmed(localId);
+        clearUnsent(localId);
+        continue;
+      }
+      fetched.push(localId);
+      if (got.kind === "found") {
+        remoteIds.add(localId);
+        if (storeServerCopy(localId, got.full)) unsent.add(localId);
+      }
       continue;
     }
     if (loadSession(localId)) { toUpload.push(localId); fetched.push(localId); }
