@@ -83,3 +83,21 @@ test("R3-1: the birth save is bound to its account through every await and cache
     assert.match(body, /if \(isStaleAccountError\(e\)\) return;/);
   }
 });
+
+// ── Finding 5: choosing the other occurrence invalidates other devices ─────
+
+test("R3-5: birth_time_fold is part of the birth fingerprint", () => {
+  const cr = load("lib/chart-revision.js");
+  const base = { birth_date: "2000-10-29", birth_time: "01:30", birth_city: "London", birth_lat: 51.5, birth_lon: -0.12 };
+  const first = cr.birthRevision({ ...base, birth_time_fold: "first" });
+  const second = cr.birthRevision({ ...base, birth_time_fold: "second" });
+  assert.notEqual(first, second);
+  assert.notEqual(cr.birthRevision(base), first);
+  // Members with no fold keep their fingerprint (no needless rebuild).
+  assert.equal(cr.birthRevision(base), "2000-10-29|01:30|London|51.5000|-0.1200");
+  win.localStorage.setItem("solray_blueprint", "{}");
+  cr.syncBirthRevision({ profile: { ...base, birth_time_fold: "first" } });
+  win.localStorage.setItem("solray_blueprint", "{}");
+  assert.equal(cr.syncBirthRevision({ profile: { ...base, birth_time_fold: "second" } }), true);
+  assert.equal(win.localStorage.getItem("solray_blueprint"), null);
+});

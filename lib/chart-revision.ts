@@ -4,7 +4,7 @@
 // compatibility readings are all computed from the member's birth moment and
 // cached in localStorage. When the birth details change (an edit here, or on
 // another device) every one of them is stale. The revision is a fingerprint
-// of the birth fields; whenever the app reads the profile it compares the
+// of the birth fields (including the chosen clock-change occurrence); whenever the app reads the profile it compares the
 // fingerprint with the one the caches were built under and drops them all on
 // a mismatch.
 
@@ -19,12 +19,18 @@ type BirthFields = {
   birth_city?: unknown;
   birth_lat?: unknown;
   birth_lon?: unknown;
+  birth_time_fold?: unknown;
 };
 
 export function birthRevision(p: BirthFields | null | undefined): string | null {
   if (!p || !p.birth_date) return null;
   const n = (v: unknown) => (typeof v === "number" && isFinite(v) ? v.toFixed(4) : "");
-  return [String(p.birth_date), String(p.birth_time ?? ""), String(p.birth_city ?? ""), n(p.birth_lat), n(p.birth_lon)].join("|");
+  const parts = [String(p.birth_date), String(p.birth_time ?? ""), String(p.birth_city ?? ""), n(p.birth_lat), n(p.birth_lon)];
+  // Which occurrence of a repeated clock-change birth time the member chose:
+  // the same displayed time gives a different chart. Only added when set, so
+  // members without one keep their fingerprint.
+  if (p.birth_time_fold === "first" || p.birth_time_fold === "second") parts.push(`fold:${p.birth_time_fold}`);
+  return parts.join("|");
 }
 
 export function currentBirthRevision(): string | null {
