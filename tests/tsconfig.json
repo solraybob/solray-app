@@ -29,6 +29,7 @@
     "../lib/legal-links.ts",
     "../lib/share-available.ts",
     "../lib/today-prompts.ts",
+    "../lib/now-card.ts",
     "../lib/i18n.tsx",
     "../lib/oracle-errors.ts",
     "../lib/oracle-request.ts",

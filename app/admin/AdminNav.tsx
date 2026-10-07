@@ -20,6 +20,7 @@ const SECTIONS: { href: string; label: string; external?: boolean }[] = [
   { href: "/admin/consciousness", label: "Consciousness" },
   { href: "/admin/training", label: "Training" },
   { href: "/admin/roadmap", label: "Roadmap" },
+  { href: "/admin/now-card", label: "Now card" },
   { href: API_URL + "/connector", label: "Connector", external: true },
 ];
 
