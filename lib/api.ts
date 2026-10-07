@@ -10,7 +10,8 @@ const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").tr
 
 export class ApiError extends Error {
   status: number;
-  /** Machine-readable code from an object detail, e.g. "ai_consent_required". */
+  /** Machine-readable code when the backend sent detail: {code, message},
+   *  e.g. "ai_consent_required", "ai_daily_limit". */
   code?: string;
   constructor(message: string, status: number, code?: string) {
     super(message);

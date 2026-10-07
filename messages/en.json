@@ -95,7 +95,9 @@
     "failed_title": "Verification Failed",
     "failed_message": "Verification failed. The link may have expired.",
     "go_to_app": "Go to App",
-    "eyebrow": "Email"
+    "eyebrow": "Email",
+    "trial_started": "Your free trial has started.",
+    "trial_used": "This email has already had its free trial."
   },
   "onboard": {
     "welcome": "Welcome to Solray",
@@ -701,11 +703,26 @@
     "account_settings": "Account settings",
     "plan_change_failed": "Your plan could not be changed. Try again.",
     "restore_purchases": "Restore purchases",
-    "restore_done": "Restore finished. If this Apple ID or Google account has an active Solray membership, your access is back.",
+    "restore_done": "Your membership is restored.",
     "restore_failed": "Could not restore purchases. Check your connection and try again.",
     "native_blurb_paid": "Renews at the price shown until you cancel. Not a horoscope. A companion calibrated to your exact birth moment, awake to today’s sky, remembering every conversation. Cancel anytime in your device’s subscription settings.",
     "renews_automatically": "renews automatically",
-    "auto_renew_terms_paid": "Solray Membership is an auto-renewable subscription. Payment is charged to your store account when you confirm. It renews automatically each period at the price above and continues until you cancel. Cancel anytime in your App Store settings, at least 24 hours before the period ends."
+    "auto_renew_terms_paid": "Solray Membership is an auto-renewable subscription. Payment is charged to your store account when you confirm. It renews automatically each period at the price above and continues until you cancel. Cancel anytime in your App Store settings, at least 24 hours before the period ends.",
+    "iap_other_account": "This purchase belongs to a different Solray account. Sign in with that account to use it.",
+    "iap_timeout": "The store is taking too long to answer. Check your connection and try again.",
+    "prices_loading": "Loading prices from the store...",
+    "prices_failed": "We could not load the membership prices from the store.",
+    "restore_none": "No active Solray membership was found for this Apple ID or Google account.",
+    "restoring": "Restoring...",
+    "subtitle_pending_verification": "Confirm your email address and your free trial starts. We sent you a link.",
+    "resend_verification": "Send the link again",
+    "verification_sent": "Sent. Check your inbox and your spam folder.",
+    "verification_send_failed": "Could not send the email. Try again in a minute.",
+    "trial_used": "This email has already had its free trial. You can join with a membership below.",
+    "charge_pending": "Your last payment is still being confirmed. Nothing more will be charged until it is.",
+    "store_managed_card": "Your membership is billed by the App Store or Google Play and is still running there. No card was charged.",
+    "payment_timeout": "This is taking longer than expected. Your payment may still go through, so refresh this page in a minute before trying again.",
+    "action_timeout": "The connection is slow. Refresh the page to see your membership as it is now."
   },
   "depth": {
     "the_sky": "The Sky",

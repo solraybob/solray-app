@@ -12,7 +12,10 @@ import {
   activateSubscription,
   cancelSubscription,
   setPlan,
+  resendVerification,
+  DeadlineError,
 } from "@/lib/subscription";
+import { ApiError } from "@/lib/api";
 import {
   launchNativePurchase,
   restoreNativePurchases,
@@ -21,6 +24,7 @@ import {
   getLocalizedMonthlyPrice,
   getLocalizedYearlyPrice,
   hasIntroFreeTrial,
+  onNativeProductsUpdated,
   MONTHLY_PRODUCT_ID,
   YEARLY_PRODUCT_ID,
   NativeIAPError,
@@ -50,7 +54,7 @@ function SubscribeContent() {
   // Notices carried in by redirects: ?payment=failed (card declined or the
   // hosted page was cancelled) and ?activation=unknown (payment went
   // through but activation has not been confirmed yet).
-  const [notice, setNotice] = useState<"" | "payment_failed" | "activation_pending">("");
+  const [notice, setNotice] = useState<"" | "payment_failed" | "activation_pending" | "trial_used">("");
   const [retrying, setRetrying] = useState(false);
 
   const handleSignOut = () => {
@@ -59,6 +63,17 @@ function SubscribeContent() {
   };
   // Account settings (deletion, privacy) stay reachable without access.
   const handleAccountSettings = () => router.push("/profile/settings");
+  // Billing errors in the member's language. A deadline means the outcome is
+  // unknown: say so and pull fresh status instead of inviting a blind retry.
+  const billingError = (e: unknown, paymentStep = false): string => {
+    if (e instanceof DeadlineError) {
+      void refresh();
+      return paymentStep ? t("subscribe.payment_timeout") : t("subscribe.action_timeout");
+    }
+    if (e instanceof ApiError && e.code === "charge_pending") return t("subscribe.charge_pending");
+    if (e instanceof ApiError && e.code === "store_managed") return t("subscribe.store_managed_card");
+    return e instanceof Error && e.message ? e.message : t("subscribe.purchase_failed");
+  };
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
@@ -157,11 +172,12 @@ function SubscribeContent() {
     setActionLoading(true);
     setError("");
     try {
-      await startTrial(token);
+      const res = await startTrial(token);
+      if (res?.trial_used) setNotice("trial_used");
       // Provider refresh below pulls fresh authoritative state
       await refresh();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(billingError(e));
     } finally {
       setActionLoading(false);
     }
@@ -197,8 +213,8 @@ function SubscribeContent() {
       } else {
         setError(t("subscribe.error_open_payment"));
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(billingError(e));
     } finally {
       setActionLoading(false);
     }
@@ -212,8 +228,8 @@ function SubscribeContent() {
       await activateSubscription(token);
       // Provider refresh below pulls fresh authoritative state
       await refresh();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(billingError(e, true));
     } finally {
       setActionLoading(false);
     }
@@ -227,8 +243,8 @@ function SubscribeContent() {
       await cancelSubscription(token);
       // Provider refresh below pulls fresh authoritative state
       await refresh();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(billingError(e));
     } finally {
       setActionLoading(false);
     }
@@ -274,7 +290,9 @@ function SubscribeContent() {
 
   const noticeText =
     notice === "payment_failed" ? t("subscribe.payment_failed") :
-    notice === "activation_pending" ? t("subscribe.activation_pending") : "";
+    notice === "activation_pending" ? t("subscribe.activation_pending") :
+    notice === "trial_used" ? t("subscribe.trial_used") :
+    sub?.charge_pending ? t("subscribe.charge_pending") : "";
 
   // Native (iOS/Android): ANY account without active access goes straight to
   // the in-app purchase screen. This covers never-subscribed, expired,
@@ -344,6 +362,8 @@ function SubscribeContent() {
           sub={
             lapsed
               ? t("subscribe.subtitle_lapsed")
+              : sub.trial_pending_verification
+              ? t("subscribe.subtitle_pending_verification")
               : sub.status === "trial" && !sub.has_access
               ? t("subscribe.subtitle_expired")
               : sub.status === "cancelled" && !sub.has_access
@@ -353,6 +373,8 @@ function SubscribeContent() {
         />
 
         {noticeText && <Notice text={noticeText} tone={notice === "payment_failed" ? "ember" : "muted"} />}
+
+        {!isNative && sub.trial_pending_verification && <ResendVerification token={token} />}
 
         <Section label={t("subscribe.status")} right={<StatusBadge status={lapsed ? "expired" : sub.status || ""} />}>
           <div>
@@ -465,6 +487,7 @@ function SubscribeContent() {
           {!isNative && showCardForm && token && (
             <CardForm
               token={token}
+              onUncertain={() => { void refresh(); }}
               onSuccess={async (r: CardSaveResult) => {
                 setShowCardForm(false);
                 setCardSavedNote(
@@ -487,19 +510,9 @@ function SubscribeContent() {
             </p>
           )}
 
-          {/* Native-only: a soft, non-CTA status line for the states where
-              the web user would have seen a payment button. No link, no
-              button, no call to action; just status info. Apple permits
-              status info; it does not permit calls to action that route
-              to non-IAP purchasing. */}
-          {isNative && (sub.status === "expired" || sub.status === "past_due" || sub.status === "trial" || lapsed) && (
-            <p
-              className="text-[15px] leading-relaxed"
-              style={{ color: "rgb(var(--rgb-text-secondary))" }}
-            >
-              {t("subscribe.managed_on_web")}
-            </p>
-          )}
+          {/* Native shows no line pointing at the web for payment: "managed
+              on the web" read as a route to non-IAP purchasing (Guideline
+              3.1.3). The status badge above already says where things stand. */}
 
           {/* Active or trial: cancel. Available on every platform; cancel
               is a backend-only call and never touches a payment processor. */}
@@ -560,6 +573,40 @@ function SubscribeContent() {
   );
 }
 
+
+/** A web member whose free trial waits on email verification. */
+function ResendVerification({ token }: { token: string | null }) {
+  const { t } = useT();
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const send = async () => {
+    if (!token || state === "sending") return;
+    setState("sending");
+    try {
+      await resendVerification(token);
+      setState("sent");
+    } catch {
+      setState("failed");
+    }
+  };
+  return (
+    <div className="mb-6 space-y-3">
+      {state !== "sent" && (
+        <HairlineButton onClick={send} loading={state === "sending"}>
+          {t("subscribe.resend_verification")}
+        </HairlineButton>
+      )}
+      {(state === "sent" || state === "failed") && (
+        <p
+          className="font-body"
+          role="status"
+          style={{ fontSize: 15, color: state === "failed" ? "rgb(var(--rgb-ember))" : "rgb(var(--rgb-text-secondary))" }}
+        >
+          {state === "sent" ? t("subscribe.verification_sent") : t("subscribe.verification_send_failed")}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function PlanPicker({
   current,
@@ -649,7 +696,8 @@ const NATIVE_PURCHASE_TIMEOUT_MS = 60_000;
 
 function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { onSignOut: () => void; onAccountSettings: () => void; onContinue?: () => void }) {
   const { t } = useT();
-  const { refresh } = useSubscription();
+  const { refresh, sub } = useSubscription();
+  const accountToken = sub?.store_account_token || null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingNote, setPendingNote] = useState("");
@@ -669,21 +717,49 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const [trials, setTrials] = useState<{ monthly: boolean; yearly: boolean }>({ monthly: false, yearly: false });
   const planHasTrial = plan === "yearly" ? trials.yearly : trials.monthly;
 
-  // Warm the StoreKit/Play store on mount so (a) tapping Subscribe opens the
-  // sheet instantly and (b) we can show the localized recurring price on the
-  // paywall itself, which App Store Guideline 3.1.2 expects. Best-effort.
-  useEffect(() => {
+  // Load the store on mount so (a) tapping Subscribe opens the sheet
+  // instantly and (b) the paywall shows the localized recurring price, which
+  // App Store Guideline 3.1.2 requires before anyone is asked to subscribe.
+  // Subscribe stays disabled until the chosen plan has a real price; a load
+  // failure is shown with Try again instead of being swallowed (B5).
+  const [storeState, setStoreState] = useState<"loading" | "ready" | "failed">("loading");
+  const readPrices = () => {
+    setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
+    setTrials({ monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID), yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID) });
+  };
+  const loadStore = () => {
     let cancelled = false;
-    void initNativeIAP()
+    setStoreState("loading");
+    initNativeIAP()
       .then(() => {
-        if (!cancelled) {
-          setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
-          setTrials({ monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID), yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID) });
-        }
+        if (cancelled) return;
+        readPrices();
+        setStoreState("ready");
       })
-      .catch(() => { /* sheet still shows the price on tap; disclosure covers terms */ });
+      .catch(() => {
+        if (cancelled) return;
+        readPrices();
+        setStoreState("failed");
+      });
     return () => { cancelled = true; };
+  };
+  useEffect(() => {
+    const stop = loadStore();
+    // Products can arrive after initialisation: re-read on every update.
+    const off = onNativeProductsUpdated(() => {
+      readPrices();
+      if (getLocalizedMonthlyPrice() || getLocalizedYearlyPrice()) setStoreState("ready");
+    });
+    return () => { stop(); off(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const selectedPrice = plan === "yearly" ? prices.yearly : prices.monthly;
+  // Default to a plan the store actually priced (e.g. yearly still in review).
+  useEffect(() => {
+    if (!prices.monthly && prices.yearly && plan === "monthly") setPlanChoice("yearly");
+    if (!prices.yearly && prices.monthly && plan === "yearly") setPlanChoice("monthly");
+  }, [prices, plan]);
+  const canPurchase = storeState === "ready" && Boolean(selectedPrice);
 
   // Wire the store callback once: when the backend confirms a verified
   // purchase, refresh entitlement so the page re-renders into the
@@ -707,6 +783,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
 
   // Restore Purchases: replays this Apple ID's (or Google account's)
   // existing subscription through the same verify path as a new purchase.
+  // Success is only reported once the server has confirmed access (B5).
   const [restoring, setRestoring] = useState(false);
   const handleRestore = async () => {
     if (restoring || loading) return;
@@ -714,17 +791,19 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     setPendingNote("");
     setRestoring(true);
     try {
-      await restoreNativePurchases();
+      const outcome = await restoreNativePurchases(accountToken);
       await refresh();
-      setPendingNote(t("subscribe.restore_done"));
+      setPendingNote(outcome === "restored" ? t("subscribe.restore_done") : t("subscribe.restore_none"));
     } catch (e) {
       setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.restore_failed"));
+      void refresh();
     } finally {
       setRestoring(false);
     }
   };
 
   const handleSubscribe = async () => {
+    if (!canPurchase) return;
     setError("");
     setPendingNote("");
     setLoading(true);
@@ -740,7 +819,15 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       // Opens the native store sheet for the chosen plan. The approved ->
       // verify -> finish flow runs in play-billing.ts; the listener above
       // flips state on success.
-      await launchNativePurchase(plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID);
+      const started = await launchNativePurchase(
+        plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID,
+        accountToken,
+      );
+      if (started === "cancelled") {
+        // Closing the store sheet is a choice, not an error.
+        clearPurchaseTimer();
+        setLoading(false);
+      }
     } catch (e) {
       clearPurchaseTimer();
       setLoading(false);
@@ -758,15 +845,15 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
             the store reports for each plan; the chosen product id is what gets ordered. */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {([
-            { key: "monthly" as const, price: prices.monthly || "…", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly") },
-            { key: "yearly" as const, price: prices.yearly || "…", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly") },
+            { key: "monthly" as const, price: prices.monthly || "…", per: t("subscribe.per_month"), label: t("subscribe.plan_monthly"), priced: Boolean(prices.monthly) },
+            { key: "yearly" as const, price: prices.yearly || "…", per: t("subscribe.per_year"), label: t("subscribe.plan_yearly"), priced: Boolean(prices.yearly) },
           ]).map((o) => {
             const selected = plan === o.key;
             return (
               <button
                 key={o.key}
                 onClick={() => setPlanChoice(o.key)}
-                disabled={loading}
+                disabled={loading || !o.priced}
                 className="py-4 px-4 rounded-sm text-left transition-colors disabled:opacity-50"
                 style={{
                   border: selected ? "1px solid rgb(var(--rgb-text-primary))" : "1px solid rgb(var(--rgb-border))",
@@ -782,9 +869,17 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
         </div>
 
         <div className="space-y-3">
+          {storeState !== "ready" && (
+            <p className="font-body" role="status" style={{ fontSize: 15, color: storeState === "failed" ? "rgb(var(--rgb-ember))" : "rgb(var(--rgb-text-secondary))" }}>
+              {storeState === "failed" ? t("subscribe.prices_failed") : t("subscribe.prices_loading")}
+            </p>
+          )}
+          {storeState === "failed" && (
+            <HairlineButton onClick={() => { loadStore(); }}>{t("common.retry")}</HairlineButton>
+          )}
           <button
             onClick={handleSubscribe}
-            disabled={loading}
+            disabled={loading || !canPurchase}
             className="w-full py-4 rounded-full text-[14px] tracking-[0.3em] uppercase transition-colors disabled:opacity-50 font-bold"
             style={{
               color: "rgb(var(--rgb-bg-deep))",
@@ -798,7 +893,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
           {onContinue && (
             <HairlineButton onClick={onContinue} disabled={loading}>{t("subscribe.continue_to_app")}</HairlineButton>
           )}
-          <HairlineButton onClick={handleRestore} loading={restoring} disabled={loading}>
+          <HairlineButton onClick={handleRestore} loading={restoring} disabled={loading || storeState === "loading"}>
             {t("subscribe.restore_purchases")}
           </HairlineButton>
           <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>

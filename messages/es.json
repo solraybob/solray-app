@@ -577,7 +577,9 @@
     "failed_title": "Verificación fallida",
     "failed_message": "La verificación falló. El enlace puede haber expirado.",
     "go_to_app": "Ir a la app",
-    "eyebrow": "Correo"
+    "eyebrow": "Correo",
+    "trial_started": "Tu prueba gratuita ha comenzado.",
+    "trial_used": "Este correo ya tuvo su prueba gratuita."
   },
   "first_mirror": {
     "title": "El Primer Espejo",
@@ -701,11 +703,26 @@
     "account_settings": "Ajustes de la cuenta",
     "plan_change_failed": "No se pudo cambiar tu plan. Inténtalo de nuevo.",
     "restore_purchases": "Restaurar compras",
-    "restore_done": "Restauración completada. Si este Apple ID o cuenta de Google tiene una membresía activa de Solray, tu acceso ha vuelto.",
+    "restore_done": "Tu membresía está restaurada.",
     "restore_failed": "No se pudieron restaurar las compras. Revisa tu conexión e inténtalo de nuevo.",
     "native_blurb_paid": "Se renueva al precio indicado hasta que canceles. No es un horóscopo. Un compañero calibrado a tu momento exacto de nacimiento, despierto al cielo de hoy, que recuerda cada conversación. Cancela cuando quieras en los ajustes de suscripción de tu dispositivo.",
     "renews_automatically": "se renueva automáticamente",
-    "auto_renew_terms_paid": "Solray Membership es una suscripción de renovación automática. El pago se carga a tu cuenta de la tienda al confirmar. Se renueva automáticamente cada periodo al precio indicado arriba y continúa hasta que la canceles. Cancela cuando quieras en los ajustes de tu App Store, al menos 24 horas antes de que termine el periodo."
+    "auto_renew_terms_paid": "Solray Membership es una suscripción de renovación automática. El pago se carga a tu cuenta de la tienda al confirmar. Se renueva automáticamente cada periodo al precio indicado arriba y continúa hasta que la canceles. Cancela cuando quieras en los ajustes de tu App Store, al menos 24 horas antes de que termine el periodo.",
+    "iap_other_account": "Esta compra pertenece a otra cuenta de Solray. Inicia sesión con esa cuenta para usarla.",
+    "iap_timeout": "La tienda está tardando demasiado en responder. Revisa tu conexión e inténtalo de nuevo.",
+    "prices_loading": "Cargando los precios de la tienda...",
+    "prices_failed": "No pudimos cargar los precios de la membresía desde la tienda.",
+    "restore_none": "No encontramos una membresía activa de Solray para este Apple ID o cuenta de Google.",
+    "restoring": "Restaurando...",
+    "subtitle_pending_verification": "Confirma tu correo electrónico y tu prueba gratuita comienza. Te enviamos un enlace.",
+    "resend_verification": "Enviar el enlace otra vez",
+    "verification_sent": "Enviado. Revisa tu bandeja de entrada y la carpeta de spam.",
+    "verification_send_failed": "No se pudo enviar el correo. Inténtalo de nuevo en un minuto.",
+    "trial_used": "Este correo ya tuvo su prueba gratuita. Puedes unirte con una membresía abajo.",
+    "charge_pending": "Tu último pago aún se está confirmando. No se cobrará nada más hasta entonces.",
+    "store_managed_card": "Tu membresía se cobra a través de App Store o Google Play y sigue activa allí. No se cobró ninguna tarjeta.",
+    "payment_timeout": "Esto está tardando más de lo esperado. Tu pago aún puede completarse, así que actualiza esta página en un minuto antes de volver a intentarlo.",
+    "action_timeout": "La conexión es lenta. Actualiza la página para ver tu membresía tal como está ahora."
   },
   "depth": {
     "the_sky": "El Cielo",

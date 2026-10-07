@@ -15,6 +15,7 @@
 const RPG_URL =
   (process.env.NEXT_PUBLIC_TEYA_RPG_URL || "https://ecommerce.borgun.is/rpg").replace(/\/$/, "");
 const PUBLIC_KEY = (process.env.NEXT_PUBLIC_TEYA_PUBLIC_KEY || "").trim();
+const TOKENIZE_DEADLINE_MS = 20_000;
 
 /** code lets the UI pick a localized message; message is for logs only. */
 export class CardTokenError extends Error {
@@ -55,6 +56,10 @@ export async function createSingleUseToken(
     TokenLifetime: "300",
   });
   let res: Response;
+  // Bounded: a hung card service must not leave the form on "Saving..."
+  // forever. Tokenising charges nothing, so a timeout is safe to retry.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TOKENIZE_DEADLINE_MS);
   try {
     res = await fetch(`${RPG_URL}/api/token/single`, {
       method: "POST",
@@ -63,9 +68,12 @@ export async function createSingleUseToken(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: body.toString(),
+      signal: ctrl.signal,
     });
   } catch {
     throw new CardTokenError("network", "Could not reach the card service.");
+  } finally {
+    clearTimeout(timer);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.Token) {

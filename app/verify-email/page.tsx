@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useSubscription } from "@/lib/subscription-context";
 import { PageHead, PageTitle, InkButton } from "@/components/PageHead";
 
 /**
@@ -18,6 +19,7 @@ function VerifyEmailInner() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
+  const { refresh: refreshSubscription } = useSubscription();
 
   useEffect(() => {
     const token = params.get("token");
@@ -30,7 +32,16 @@ function VerifyEmailInner() {
     apiFetch(`/users/verify-email?token=${encodeURIComponent(token)}`)
       .then((res) => {
         setStatus("success");
-        setMessage(res.message || t("verify.success_message"));
+        // A web signup's free trial starts on verification (one per email).
+        setMessage(
+          res.trial_started === true
+            ? `${t("verify.success_message")} ${t("verify.trial_started")}`
+            : res.trial_started === false
+            ? `${t("verify.success_message")} ${t("verify.trial_used")}`
+            : t("verify.success_message")
+        );
+        // The cached membership still says "waiting for verification".
+        void refreshSubscription().catch(() => { /* ignore */ });
         // Redirect to the app after a short pause
         setTimeout(() => router.replace("/today"), 2000);
       })
