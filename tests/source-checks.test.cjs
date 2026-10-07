@@ -66,3 +66,14 @@ test("A18: account deletion sends the password", () => {
   const src = fs.readFileSync(path.join(root, "app/profile/settings/page.tsx"), "utf8");
   assert.match(src, /JSON\.stringify\(\{ confirm: "DELETE", password: deletePassword \}\)/);
 });
+
+test("review 2 finding 2: the native paywall asks the server before it opens the store sheet", () => {
+  const src = fs.readFileSync(path.join(root, "app/subscribe/page.tsx"), "utf8");
+  const start = src.indexOf("const handleSubscribe = async");
+  assert.ok(start > 0);
+  const body = src.slice(start, src.indexOf("\n  };\n", start));
+  const gate = body.indexOf("announceStorePurchase(");
+  const order = body.indexOf("launchNativePurchase(");
+  assert.ok(gate > 0 && order > gate, "store-intent gate comes before the order");
+  assert.ok(body.includes("releaseStorePurchase("), "a closed sheet releases the intent");
+});

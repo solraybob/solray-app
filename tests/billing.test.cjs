@@ -43,15 +43,48 @@ test("a member whose email had its trial is sold the paid offer", () => {
   assert.equal(iap.offerStartsFree(iap.chooseOffer([trial, paid], trial, false)), false);
 });
 
-test("an eligible or unknown member keeps the store's default offer", () => {
+// Review 2, finding 7: these two tests asserted the old behaviour (unknown
+// eligibility ordered the free trial; no paid alternative fell back to it).
+test("only a confirmed eligible member is offered the store's free trial", () => {
   assert.equal(iap.chooseOffer([trial, paid], trial, true), trial);
-  assert.equal(iap.chooseOffer([trial, paid], trial, undefined), trial);
-  assert.equal(iap.chooseOffer([trial, paid], null, undefined), trial);
+  // Unknown eligibility orders nothing until the server has answered.
+  assert.equal(iap.chooseOffer([trial, paid], trial, undefined), undefined);
+  assert.equal(iap.chooseOffer([trial, paid], null, undefined), undefined);
 });
 
-test("with no paid alternative (Apple) the default offer stays, and says so", () => {
-  assert.equal(iap.chooseOffer([trial], trial, false), trial);
-  assert.equal(iap.offerStartsFree(iap.chooseOffer([trial], trial, false)), true);
+test("with no paid alternative (Apple) a member whose trial was used is never sent the trial offer", () => {
+  assert.equal(iap.chooseOffer([trial], trial, false), undefined);
+  assert.equal(iap.chooseOffer([], trial, false), undefined);
+});
+
+test("planOffer says what the paywall can do for each plan", () => {
+  assert.deepEqual(iap.planOffer([trial, paid], trial, undefined), { state: "checking" });
+  assert.deepEqual(iap.planOffer([trial, paid], trial, true), { state: "trial", offer: trial });
+  assert.deepEqual(iap.planOffer([paid], paid, true), { state: "paid", offer: paid });
+  assert.deepEqual(iap.planOffer([trial, paid], trial, false), { state: "paid", offer: paid });
+  assert.deepEqual(iap.planOffer([trial], trial, false), { state: "unavailable" });
+  assert.deepEqual(iap.planOffer([], null, true), { state: "unavailable" });
+});
+
+test("the store gate maps the server's refusal to what the member sees", () => {
+  assert.equal(iap.storeGateErrorCode(409, "card_charge_pending"), "card_pending");
+  assert.equal(iap.storeGateErrorCode(409, "web_billing_active"), "web_billing_active");
+  assert.equal(iap.storeGateErrorCode(500, undefined), "check_failed");
+  assert.equal(iap.storeGateErrorCode(undefined, "network"), "check_failed");
+});
+
+test("the store purchase is announced to the server and released when the sheet closes", async () => {
+  const seen = [];
+  global.fetch = async (url, init) => {
+    seen.push({ url, method: (init && init.method) || "GET" });
+    return { ok: true, status: 200, headers: { get: () => "application/json" },
+             json: async () => ({ ok: true, trial_eligible: false }), text: async () => "" };
+  };
+  const out = await sub.announceStorePurchase("tok");
+  assert.equal(out.trial_eligible, false);
+  await sub.releaseStorePurchase("tok");
+  assert.ok(seen[0].url.endsWith("/subscribe/store-intent") && seen[0].method === "POST");
+  assert.ok(seen[1].url.endsWith("/subscribe/store-intent") && seen[1].method === "DELETE");
 });
 
 test("verification errors map to what actually happened", () => {

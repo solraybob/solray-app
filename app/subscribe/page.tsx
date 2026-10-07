@@ -13,8 +13,11 @@ import {
   cancelSubscription,
   setPlan,
   resendVerification,
+  announceStorePurchase,
+  releaseStorePurchase,
   DeadlineError,
 } from "@/lib/subscription";
+import { storeGateErrorCode } from "@/lib/native-iap-helpers";
 import { ApiError } from "@/lib/api";
 import {
   launchNativePurchase,
@@ -23,11 +26,12 @@ import {
   initNativeIAP,
   getLocalizedMonthlyPrice,
   getLocalizedYearlyPrice,
-  hasIntroFreeTrial,
+  nativePlanState,
   onNativeProductsUpdated,
   MONTHLY_PRODUCT_ID,
   YEARLY_PRODUCT_ID,
   NativeIAPError,
+  type NativePlanState,
 } from "@/lib/play-billing";
 import { useT } from "@/lib/i18n";
 import { termsOfUseUrl } from "@/lib/legal-links";
@@ -79,6 +83,7 @@ function SubscribeContent() {
       return paymentStep ? t("subscribe.payment_timeout") : t("subscribe.action_timeout");
     }
     if (e instanceof ApiError && e.code === "charge_pending") return t("subscribe.charge_pending");
+    if (e instanceof ApiError && e.code === "store_purchase_pending") return t("subscribe.store_purchase_pending");
     if (e instanceof ApiError && e.code === "store_managed") return t("subscribe.store_managed_card");
     return e instanceof Error && e.message ? e.message : t("subscribe.purchase_failed");
   };
@@ -428,9 +433,12 @@ function SubscribeContent() {
               try {
                 await setPlan(token, p);
                 await refreshAfterAction();
-              } catch {
-                // Keep the current selection and say the change did not go through.
-                setPlanError(t("subscribe.plan_change_failed"));
+              } catch (e) {
+                // Keep the current selection and say the change did not go
+                // through: a card payment still being confirmed is buying the
+                // current plan, so it changes only once that settles.
+                setPlanError(e instanceof ApiError && e.code === "charge_pending"
+                  ? t("subscribe.charge_pending") : t("subscribe.plan_change_failed"));
               } finally {
                 setPlanBusy(false);
               }
@@ -704,10 +712,13 @@ const NATIVE_PURCHASE_TIMEOUT_MS = 60_000;
 
 function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { onSignOut: () => void; onAccountSettings: () => void; onContinue?: () => void }) {
   const { t } = useT();
+  const { token } = useAuth();
   const { refresh, sub } = useSubscription();
   const accountToken = sub?.store_account_token || null;
-  // One free trial per person: false when this email already had it, so a
-  // paid offer is ordered and no free trial is promised.
+  // One free trial per person: true only when the server confirmed this
+  // email has not had it. Unknown or false: no free trial is promised or
+  // ordered (review 2, finding 7). The store gate answers it fresh again
+  // right before the sheet opens.
   const trialEligible = sub?.trial_eligible;
   const trialEligibleRef = useRef<boolean | undefined>(trialEligible);
   trialEligibleRef.current = trialEligible;
@@ -725,10 +736,13 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   // Store-localized recurring prices per plan (null until the store is ready).
   const [prices, setPrices] = useState<{ monthly: string | null; yearly: string | null }>({ monthly: null, yearly: null });
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
-  // Which plans the store will actually start with a free trial for this
-  // customer. Only those get the free-trial wording and button.
-  const [trials, setTrials] = useState<{ monthly: boolean; yearly: boolean }>({ monthly: false, yearly: false });
-  const planHasTrial = plan === "yearly" ? trials.yearly : trials.monthly;
+  // What each plan can do for this member (trial, paid, unavailable,
+  // checking). Only "trial" gets the free-trial wording and button; an
+  // "unavailable" plan (trial used, the store offers this product only with
+  // a free trial) cannot be bought here and says so.
+  const [planStates, setPlanStates] = useState<{ monthly: NativePlanState; yearly: NativePlanState }>({ monthly: "loading", yearly: "loading" });
+  const selectedState = plan === "yearly" ? planStates.yearly : planStates.monthly;
+  const planHasTrial = selectedState === "trial";
 
   // Load the store on mount so (a) tapping Subscribe opens the sheet
   // instantly and (b) the paywall shows the localized recurring price, which
@@ -738,9 +752,9 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   const [storeState, setStoreState] = useState<"loading" | "ready" | "failed">("loading");
   const readPrices = () => {
     setPrices({ monthly: getLocalizedMonthlyPrice(), yearly: getLocalizedYearlyPrice() });
-    setTrials({
-      monthly: hasIntroFreeTrial(MONTHLY_PRODUCT_ID, trialEligibleRef.current),
-      yearly: hasIntroFreeTrial(YEARLY_PRODUCT_ID, trialEligibleRef.current),
+    setPlanStates({
+      monthly: nativePlanState(MONTHLY_PRODUCT_ID, trialEligibleRef.current),
+      yearly: nativePlanState(YEARLY_PRODUCT_ID, trialEligibleRef.current),
     });
   };
   // Eligibility can arrive after the store loaded: re-read the offers.
@@ -780,7 +794,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     if (!prices.monthly && prices.yearly && plan === "monthly") setPlanChoice("yearly");
     if (!prices.yearly && prices.monthly && plan === "yearly") setPlanChoice("monthly");
   }, [prices, plan]);
-  const canPurchase = storeState === "ready" && Boolean(selectedPrice);
+  const canPurchase = storeState === "ready" && Boolean(selectedPrice) && selectedState !== "unavailable";
 
   // Wire the store callback once: when the backend confirms a verified
   // purchase, refresh entitlement so the page re-renders into the
@@ -828,10 +842,42 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   };
 
   const handleSubscribe = async () => {
-    if (!canPurchase) return;
+    if (!canPurchase || !token) return;
     setError("");
     setPendingNote("");
     setLoading(true);
+    const productId = plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID;
+    const release = () => { void releaseStorePurchase(token).catch(() => { /* lapses on its own */ }); };
+
+    // Review 2, finding 2: ask the server BEFORE the store sheet opens. It
+    // refuses while a card payment on this account is in flight or still
+    // being confirmed, holds card billing back while this purchase happens,
+    // and answers trial eligibility fresh. No answer, no sheet: this check
+    // is what keeps the store and the card from both charging.
+    let eligible: boolean;
+    try {
+      const gate = await announceStorePurchase(token);
+      eligible = gate.trial_eligible === true;
+    } catch (e) {
+      setLoading(false);
+      const code = e instanceof ApiError ? storeGateErrorCode(e.status, e.code) : "check_failed";
+      setError(t(`subscribe.iap_${code}`));
+      void refresh();
+      return;
+    }
+    // Finding 7: order a free trial only with confirmed eligibility; when
+    // the trial was used and this product only has a free introductory
+    // offer, order nothing and say so.
+    const state = nativePlanState(productId, eligible);
+    if (state !== "trial" && state !== "paid") {
+      release();
+      setLoading(false);
+      setError(state === "unavailable" ? t("subscribe.iap_trial_used") : t("subscribe.iap_loading"));
+      trialEligibleRef.current = eligible;
+      readPrices();
+      return;
+    }
+
     clearPurchaseTimer();
     purchaseTimer.current = setTimeout(() => {
       purchaseTimer.current = null;
@@ -844,19 +890,17 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       // Opens the native store sheet for the chosen plan. The approved ->
       // verify -> finish flow runs in play-billing.ts; the listener above
       // flips state on success.
-      const started = await launchNativePurchase(
-        plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID,
-        accountToken,
-        trialEligible,
-      );
+      const started = await launchNativePurchase(productId, accountToken, eligible);
       if (started === "cancelled") {
         // Closing the store sheet is a choice, not an error.
         clearPurchaseTimer();
         setLoading(false);
+        release();
       }
     } catch (e) {
       clearPurchaseTimer();
       setLoading(false);
+      release();
       setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.purchase_not_started"));
     }
   };
@@ -924,6 +968,12 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
           </HairlineButton>
           <HairlineButton onClick={onSignOut}>{t("common.sign_out")}</HairlineButton>
           <HairlineButton onClick={onAccountSettings}>{t("subscribe.account_settings")}</HairlineButton>
+
+          {storeState === "ready" && selectedState === "unavailable" && !error && (
+            <p className="font-body pt-2" role="status" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>
+              {t("subscribe.iap_trial_used")}
+            </p>
+          )}
 
           {pendingNote && (
             <p className="font-body pt-2" style={{ fontSize: 15, lineHeight: 1.5, color: "rgb(var(--rgb-text-secondary))" }}>

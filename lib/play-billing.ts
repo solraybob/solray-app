@@ -30,7 +30,7 @@
 
 import { apiFetch } from "./api";
 import { getNativePlatform } from "./native-push";
-import { chooseOffer, offerStartsFree, verifyErrorCode, type StoreOfferLike } from "./native-iap-helpers";
+import { planOffer, offerStartsFree, verifyErrorCode, type StoreOfferLike } from "./native-iap-helpers";
 
 // Two subscription products, matching the backend IAP_PRODUCT_IDS allowlist
 // and the Play Console / App Store Connect product ids.
@@ -136,7 +136,14 @@ export type NativeIAPErrorCode =
   | "other_account"
   | "charge_pending"
   | "state_changed"
-  | "timeout";
+  | "timeout"
+  // Review 2: the plan can only start with a free trial in the store and
+  // this member's trial was used; the server's store gate refused or could
+  // not be reached.
+  | "trial_used"
+  | "card_pending"
+  | "web_billing_active"
+  | "check_failed";
 export class NativeIAPError extends Error {
   code: NativeIAPErrorCode;
   constructor(code: NativeIAPErrorCode, message: string) {
@@ -243,10 +250,37 @@ export function hasIntroFreeTrial(productId: string, trialEligible?: boolean): b
   }
 }
 
-function offerFor(product: ProductLike, trialEligible?: boolean): (OfferLike & StoreOfferLike) | undefined {
+function planFor(product: ProductLike, trialEligible?: boolean) {
   const offers = (product.offers || []) as Array<OfferLike & StoreOfferLike>;
   const def = (typeof product.getOffer === "function" && product.getOffer()) || undefined;
-  return chooseOffer(offers, def as (OfferLike & StoreOfferLike) | undefined, trialEligible);
+  return planOffer(offers, def as (OfferLike & StoreOfferLike) | undefined, trialEligible);
+}
+
+function offerFor(product: ProductLike, trialEligible?: boolean): (OfferLike & StoreOfferLike) | undefined {
+  return planFor(product, trialEligible).offer;
+}
+
+export type NativePlanState = "loading" | "checking" | "trial" | "paid" | "unavailable";
+
+/**
+ * What the paywall can do for this plan and member: "trial" or "paid" can be
+ * ordered; "unavailable" means the member's one trial was used and the store
+ * only exposes a free introductory offer for this product, so it must not be
+ * ordered (review 2, finding 7); "checking" until eligibility is confirmed.
+ */
+export function nativePlanState(productId: string, trialEligible?: boolean): NativePlanState {
+  try {
+    if (typeof window === "undefined") return "loading";
+    const store = getStore();
+    if (!store) return "loading";
+    const platform = storePlatform();
+    const product =
+      (platform ? store.get(productId, platform) : undefined) || store.get(productId);
+    if (!product) return "loading";
+    return planFor(product, trialEligible).state;
+  } catch {
+    return "loading";
+  }
 }
 
 // Product-load listeners: the paywall re-reads prices whenever the store
@@ -451,9 +485,17 @@ export async function launchNativePurchase(
     throw new NativeIAPError("loading", "Subscription is still loading. Try again in a moment.");
   }
 
-  // One free trial per person (D6): a member whose email already had its
-  // trial is sold the paid offer where the store lists one.
-  const offer = offerFor(product, trialEligible) || product;
+  // One free trial per person (D6): a free trial only with confirmed
+  // eligibility, a paid offer otherwise, and NEVER a fallback to the
+  // product's default (free) offer when no paid one exists (review 2,
+  // finding 7). trialEligible is the server's fresh answer from the store
+  // gate (POST /subscribe/store-intent), not a cached status.
+  const offer = offerFor(product, trialEligible);
+  if (!offer) {
+    throw trialEligible === undefined
+      ? new NativeIAPError("check_failed", "Trial eligibility is not confirmed")
+      : new NativeIAPError("trial_used", "Only a free introductory offer is available and the trial was used");
+  }
 
   setAccountToken(accountToken);
   const data: OrderData | undefined = accountToken

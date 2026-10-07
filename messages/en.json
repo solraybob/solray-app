@@ -738,7 +738,12 @@
     "action_timeout": "The connection is slow. Refresh the page to see your membership as it is now.",
     "status_unconfirmed": "We could not confirm your membership just now. Nothing was lost. Pull down to refresh in a moment.",
     "iap_charge_pending": "A card payment on your account is still being confirmed. Your store purchase is safe. Reopen Solray in a few minutes and it will be applied.",
-    "iap_state_changed": "Your membership changed while we were checking it. Try again in a moment."
+    "iap_state_changed": "Your membership changed while we were checking it. Try again in a moment.",
+    "iap_trial_used": "Your free trial has already been used, and the store only offers this plan with a free trial right now, so it cannot be started here yet. Nothing was charged.",
+    "iap_card_pending": "A card payment on your account is still being confirmed. Nothing was charged in the store. Try again in a few minutes.",
+    "iap_web_billing_active": "Your membership is already paid by card and active. Nothing was charged in the store.",
+    "iap_check_failed": "We could not check your membership just now, so the store was not opened. Check your connection and try again.",
+    "store_purchase_pending": "A purchase through the App Store or Google Play was just started on this account. Nothing was charged here. If it did not go through, try again in a little while."
   },
   "depth": {
     "the_sky": "The Sky",
