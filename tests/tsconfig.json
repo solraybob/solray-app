@@ -35,6 +35,8 @@
     "../lib/draft-guard.ts",
     "../lib/chat-sync.ts",
     "../lib/voice-result.ts",
-    "../lib/birth-time-fold.ts"
+    "../lib/birth-time-fold.ts",
+    "../lib/subscription.ts",
+    "../lib/native-iap-helpers.ts"
   ]
 }

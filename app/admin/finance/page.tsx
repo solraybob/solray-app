@@ -18,10 +18,15 @@ type Finance = {
   revenue: {
     mrr_usd: number; arr_usd: number; paying: number; price_usd: number;
     collected_30d_usd: number; collected_all_time_usd: number; charges_30d: number;
+    // Per source (release review 9). Store amounts are gross sales.
+    collected_web_30d_usd?: number; collected_store_usd_30d?: number;
+    store_gross_by_currency_30d?: Record<string, number>;
+    store_list_price_estimate_30d_usd?: number; store_proceeds_30d_usd_estimate?: number;
   };
   cost: {
     ai_30d_usd: number; ai_7d_usd: number; railway_usd_mo: number; vercel_usd_mo: number;
     domain_usd_mo: number; other_usd_mo: number; teya_fee_pct: number; teya_fees_30d_usd: number;
+    store_fee_pct?: number; store_fees_30d_usd_estimate?: number;
     infra_total_usd_mo: number; total_usd_mo: number;
   };
   net: {
@@ -102,6 +107,7 @@ function CostComposition({ c }: { c: Finance["cost"] }) {
     { label: "AI", v: c.ai_30d_usd, color: EMBER },
     { label: "Railway", v: c.railway_usd_mo, color: INDIGO },
     { label: "Teya fees", v: c.teya_fees_30d_usd, color: AMBER },
+    { label: "Store fees (est.)", v: c.store_fees_30d_usd_estimate ?? 0, color: "rgb(var(--rgb-amber) / 0.6)" },
     { label: "Domain", v: c.domain_usd_mo, color: MOSS },
     { label: "Vercel", v: c.vercel_usd_mo, color: "rgb(var(--rgb-mist))" },
     { label: "Other", v: c.other_usd_mo, color: "rgb(var(--rgb-wisteria))" },
@@ -191,7 +197,14 @@ function FinancePage() {
                 <table className="w-full text-[15px] font-body">
                   <tbody>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">MRR (paying x ${f.revenue.price_usd})</td><td className="py-2 text-right">{usd(f.revenue.mrr_usd)}</td></tr>
-                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Collected, last 30d</td><td className="py-2 text-right">{usd(f.revenue.collected_30d_usd)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Collected, last 30d (card + store in USD)</td><td className="py-2 text-right">{usd(f.revenue.collected_30d_usd)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary pl-4">Card charges</td><td className="py-2 text-right">{usd(f.revenue.collected_web_30d_usd ?? 0)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary pl-4">Store sales reported in USD (gross)</td><td className="py-2 text-right">{usd(f.revenue.collected_store_usd_30d ?? 0)}</td></tr>
+                    {Object.entries(f.revenue.store_gross_by_currency_30d ?? {}).filter(([cur]) => cur !== "USD").map(([cur, amt]) => (
+                      <tr key={cur} className="border-b border-forest-border/40"><td className="py-2 text-text-secondary pl-4">Store sales in {cur} (gross)</td><td className="py-2 text-right">{amt.toLocaleString(undefined, { maximumFractionDigits: 2 })} {cur}</td></tr>
+                    ))}
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Store sales at list price, estimate (not collected)</td><td className="py-2 text-right">{usd(f.revenue.store_list_price_estimate_30d_usd ?? 0)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Store proceeds after commission, estimate</td><td className="py-2 text-right">{usd(f.revenue.store_proceeds_30d_usd_estimate ?? 0)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Collected, all time</td><td className="py-2 text-right">{usd(f.revenue.collected_all_time_usd)}</td></tr>
                     <tr><td className="py-2 text-text-secondary">Paying subscribers</td><td className="py-2 text-right">{f.revenue.paying}</td></tr>
                   </tbody>
@@ -203,7 +216,8 @@ function FinancePage() {
                   <tbody>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">AI (live, 30d)</td><td className="py-2 text-right">{usd(f.cost.ai_30d_usd)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Railway</td><td className="py-2 text-right">{usd(f.cost.railway_usd_mo)}</td></tr>
-                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Teya fees ({f.cost.teya_fee_pct}% of collected)</td><td className="py-2 text-right">{usd(f.cost.teya_fees_30d_usd)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Teya fees ({f.cost.teya_fee_pct}% of card charges)</td><td className="py-2 text-right">{usd(f.cost.teya_fees_30d_usd)}</td></tr>
+                    <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Store commission, estimate ({f.cost.store_fee_pct ?? 0}% of store sales)</td><td className="py-2 text-right">{usd(f.cost.store_fees_30d_usd_estimate ?? 0)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Domain</td><td className="py-2 text-right">{usd(f.cost.domain_usd_mo)}</td></tr>
                     <tr className="border-b border-forest-border/40"><td className="py-2 text-text-secondary">Vercel</td><td className="py-2 text-right">{usd(f.cost.vercel_usd_mo)}</td></tr>
                     <tr><td className="py-2 text-text-secondary">Other</td><td className="py-2 text-right">{usd(f.cost.other_usd_mo)}</td></tr>

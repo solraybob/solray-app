@@ -33,6 +33,9 @@ export interface SubscriptionStatus {
   charge_pending?: boolean;
   /** Inside the App Store / Google Play free trial. */
   store_trial?: boolean;
+  /** False when this email already had its one free trial (web or store):
+   * the native paywall then orders a paid offer. */
+  trial_eligible?: boolean;
 }
 
 /** A billing request ran past its deadline. The outcome is unknown, so the
@@ -45,9 +48,14 @@ export class DeadlineError extends Error {
 }
 
 const BILLING_DEADLINE_MS = 30_000;
+/** /subscribe/status is a quick read; every billing action awaits it, so a
+ * stalled status call must never hold a button busy (B5). */
+export const STATUS_DEADLINE_MS = 15_000;
 
-/** apiFetch with an abort deadline, for billing calls only (the Oracle and
- * other long requests keep their own behaviour). */
+/** apiFetch with a hard deadline, for billing calls only (the Oracle and
+ * other long requests keep their own behaviour). The request is aborted at
+ * the deadline AND the promise settles then, even if the transport ignores
+ * the abort (a stalled body, a native bridge), so no caller can hang. */
 export async function billingFetch(
   path: string,
   options: RequestInit,
@@ -55,14 +63,23 @@ export async function billingFetch(
   ms: number = BILLING_DEADLINE_MS,
 ) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      ctrl.abort();
+      reject(new DeadlineError());
+    }, ms);
+  });
+  const request = apiFetch(path, { ...options, signal: ctrl.signal }, token);
+  // The request may still settle after the deadline won the race.
+  request.catch(() => { /* reported through the race below */ });
   try {
-    return await apiFetch(path, { ...options, signal: ctrl.signal }, token);
+    return await Promise.race([request, deadline]);
   } catch (e) {
     if (ctrl.signal.aborted) throw new DeadlineError();
     throw e;
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -71,9 +88,10 @@ export async function billingFetch(
 // ---------------------------------------------------------------------------
 
 export async function getSubscriptionStatus(
-  token: string
+  token: string,
+  ms: number = STATUS_DEADLINE_MS,
 ): Promise<SubscriptionStatus> {
-  return apiFetch("/subscribe/status", {}, token);
+  return billingFetch("/subscribe/status", {}, token, ms);
 }
 
 export async function startTrial(token: string): Promise<{
