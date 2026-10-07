@@ -37,13 +37,19 @@ export default function BirthTimeFoldSheet({
               key={o.fold}
               type="button"
               onClick={() => onChoose(o.fold)}
-              className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border border-forest-border text-left"
+              className="w-full flex flex-col items-start px-4 py-3 rounded-xl border border-forest-border text-left"
               style={{ minHeight: 52 }}
             >
+              {/* The time in words (the first occurrence is always the
+                  summer-time one: the clocks go back when summer time ends),
+                  which one it was, and the offset in small text. */}
               <span className="font-body text-text-primary text-[16px] font-semibold">
-                {t(o.fold === "first" ? "birth_fold.earlier" : "birth_fold.later")}
+                {t(o.fold === "first" ? "birth_fold.summer" : "birth_fold.winter")}
               </span>
-              {o.offset && <span className="font-body text-text-secondary text-[15px]">{o.offset}</span>}
+              <span className="font-body text-text-secondary text-[13px] mt-0.5">
+                {t(o.fold === "first" ? "birth_fold.earlier_note" : "birth_fold.later_note")}
+                {o.offset ? ` (${o.offset})` : ""}
+              </span>
             </button>
           ))}
         </div>

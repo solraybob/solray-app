@@ -48,6 +48,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function SettingsPage() {
   const { t, lang } = useT();
+  const switchState = useSwitchState();
   const router = useRouter();
   const { token, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -778,11 +779,15 @@ export default function SettingsPage() {
                 ? t("settings.visibility_public_hint")
                 : t("settings.visibility_private_hint")}
             >
+              {/* One fixed label, and the switch is on when the profile is
+                  private: on = Private, so what the switch shows and what
+                  the label says always agree. */}
               <Toggle
-                label={isPublic ? t("common.public") : t("common.private")}
-                checked={isPublic}
-                onChange={toggleVisibility}
+                label={t("settings.private_switch")}
+                checked={!isPublic}
+                onChange={(priv) => toggleVisibility(!priv)}
                 disabled={visibilityStatus === "saving"}
+                srLabel={isPublic ? t("settings.private_state_off") : t("settings.private_state_on")}
               />
             </Section>
 
@@ -816,6 +821,7 @@ export default function SettingsPage() {
             >
               <Toggle
                 label={analyticsOff ? t("common.off") : t("common.on")}
+                srLabel={switchState(t("settings.analytics"), !analyticsOff)}
                 checked={!analyticsOff}
                 onChange={async (next) => {
                   // next=true means analytics is ON, opt-out is FALSE
@@ -850,6 +856,7 @@ export default function SettingsPage() {
             >
               <Toggle
                 label={hiveConsent ? t("common.on") : t("common.off")}
+                srLabel={switchState(t("settings.collective"), hiveConsent)}
                 checked={hiveConsent}
                 onChange={toggleHiveConsent}
                 disabled={hiveStatus === "saving"}
@@ -914,18 +921,27 @@ export default function SettingsPage() {
               label={t("settings.memory_section")}
               status={memoryStatus}
               error={memoryError}
-              hint={memoryOn === null
-                ? (memoryLoadFailed ? t("settings.memory_load_failed") : undefined)
-                : memoryOn ? t("settings.memory_on_hint") : t("settings.memory_off_hint")}
             >
               <div className="space-y-4">
-                <Toggle
-                  label={memoryOn ? t("common.on") : t("common.off")}
-                  checked={memoryOn === true}
-                  onChange={toggleMemory}
-                  disabled={memoryOn === null || memoryStatus === "saving"}
-                />
-                <div className="space-y-3">
+                <div>
+                  <Toggle
+                    label={memoryOn ? t("common.on") : t("common.off")}
+                    srLabel={memoryOn === null ? undefined : switchState(t("settings.memory_section"), memoryOn)}
+                    checked={memoryOn === true}
+                    onChange={toggleMemory}
+                    disabled={memoryOn === null || memoryStatus === "saving"}
+                  />
+                  {/* What the switch does sits right under it; clearing
+                      memory is a separate action that follows. */}
+                  {!memoryError && (memoryOn !== null || memoryLoadFailed) && (
+                    <p className="mt-3 font-body text-[15px] leading-relaxed text-text-muted">
+                      {memoryOn === null
+                        ? t("settings.memory_load_failed")
+                        : memoryOn ? t("settings.memory_on_hint") : t("settings.memory_off_hint")}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-3" style={{ paddingTop: 12, borderTop: "1px solid rgb(var(--rgb-border) / 0.6)" }}>
                   <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
                     {memoryClearStatus === "saved" ? t("settings.memory_cleared") : t("settings.memory_clear_hint")}
                   </p>
@@ -1240,12 +1256,20 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
   );
 }
 
-function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean }) {
+// "Memory, on": a switch's name and its state in words, for screen readers.
+function useSwitchState() {
+  const { t } = useT();
+  return (label: string, on: boolean) =>
+    t("settings.switch_state").replace("{label}", label).replace("{state}", on ? t("common.on") : t("common.off"));
+}
+
+function Toggle({ label, checked, onChange, disabled, srLabel }: { label: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean; srLabel?: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={srLabel}
       aria-busy={disabled || undefined}
       disabled={disabled}
       onClick={() => onChange(!checked)}

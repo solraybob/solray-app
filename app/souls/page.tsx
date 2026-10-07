@@ -84,6 +84,9 @@ interface ConnectedSoul {
     hd_type: string | null;
     hd_profile: string | null;
     profile_photo?: string | null;
+    // Whether their chart is shared with connections (false: name and
+    // photo only), so nothing here promises a chart that is private.
+    is_public?: boolean;
   };
   connected_since: string;
 }
@@ -283,7 +286,7 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: 
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.view_profile")}</p>
-                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t("souls.view_profile_sub").replace("{name}", soul.soul.name)}</p>
+                <p className="font-body text-text-secondary text-[14px] mt-0.5">{t(soul.soul.is_public ? "souls.view_profile_sub" : "souls.view_profile_sub_private").replace("{name}", soul.soul.name)}</p>
               </div>
               <span className="font-body text-indigo text-[14px]">{t("souls.open")}</span>
             </div>
