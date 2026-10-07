@@ -734,7 +734,11 @@
     "enabled": "Alertas activadas",
     "get_alerts": "Recibe alertas de tránsitos diarias",
     "enable": "Activar",
-    "enabling": "Activando..."
+    "enabling": "Activando...",
+    "native_ask_title": "¿Quieres una nota cuando tu lectura esté lista?",
+    "native_ask_body": "Una vez al día, cuando tu lectura del día esté lista, Solray puede enviarte una nota breve. Nada más. Puedes desactivarla cuando quieras en los ajustes del teléfono.",
+    "native_ask_yes": "Sí, envíala",
+    "native_ask_later": "Ahora no"
   },
   "solar": {
     "today": "¡Hoy es tu Retorno Solar!",

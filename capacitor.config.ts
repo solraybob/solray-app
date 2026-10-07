@@ -17,8 +17,13 @@ import type { CapacitorConfig } from '@capacitor/cli';
  *      keep our existing rapid iteration loop.
  *
  *   3. The native pieces that genuinely need native code (push tokens,
- *      home-screen widget, Live Activities) live OUTSIDE the WebView
- *      and can talk to the web app via Capacitor's bridge.
+ *      in-app purchases, voice recording) live in Capacitor plugins and
+ *      talk to the web app over the bridge. There is no widget or Live
+ *      Activity target in this project.
+ *
+ * Capacitor is pinned to 6.2.2 (core, cli, ios, android): 6.2.1 had the
+ * flaw that let remote content load at the app origin. Capacitor 8 (needed
+ * for Android API 36) is a separate, later upgrade.
  *
  * LIMITATIONS to revisit later:
  *   - First launch requires network. The WebView shows a brief Capacitor

@@ -1,139 +1,59 @@
 #!/bin/bash
-set -e
+# Prepare the existing iOS project for an App Store build (see
+# CAPACITOR_RUNBOOK.md). Works on the committed ios/ project: it never runs
+# `cap add`, never commits and never pushes.
+set -euo pipefail
 
-echo "=========================================="
-echo "Solray iOS Build Automation (Steps 2-3)"
-echo "=========================================="
-echo ""
+cd "$(dirname "$0")"
 
-# Step 2: Add iOS platform
-echo "Step 2: Adding iOS platform..."
-echo "Running: npx cap add ios"
-npx cap add ios
+echo "Solray iOS build prep"
+echo
 
-echo ""
-echo "✅ iOS platform added"
-echo ""
-echo "Committing ios/ directory..."
-git add ios
-git commit -m "chore(ios): scaffold Capacitor iOS project"
-git push
+if [ ! -d ios/App/App.xcodeproj ]; then
+  echo "ios/App/App.xcodeproj is missing. The iOS project is committed in git;"
+  echo "restore it with git rather than running 'npx cap add ios'."
+  exit 1
+fi
 
-echo ""
-echo "=========================================="
-echo "Step 3: Syncing web build into iOS..."
-echo "Running: npx cap sync ios"
+echo "1. Installing JS dependencies"
+npm install
+
+CAP_VERSION="$(node -p "require('@capacitor/ios/package.json').version")"
+echo "   @capacitor/ios ${CAP_VERSION}"
+case "$CAP_VERSION" in
+  6.2.2|6.2.[3-9]*) ;;
+  *) echo "   Expected Capacitor 6.2.2 or a later 6.2 patch. Stop and check package.json."; exit 1 ;;
+esac
+
+echo "2. Syncing native project (config, plugins, pod install)"
 npx cap sync ios
 
-echo ""
-echo "✅ Web build synced"
-echo ""
+PBX=ios/App/App.xcodeproj/project.pbxproj
+BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBX" | sed 's/[^0-9]//g')"
+VERSION="$(grep -m1 'MARKETING_VERSION' "$PBX" | sed 's/.*= //; s/;//')"
+echo "3. Project version ${VERSION} (${BUILD})"
+if [ "$(grep -c 'CURRENT_PROJECT_VERSION = '"$BUILD"';' "$PBX")" != "2" ]; then
+  echo "   Debug and Release build numbers differ. Fix in Xcode before archiving."
+  exit 1
+fi
 
-echo "=========================================="
-echo "AUTOMATED STEPS COMPLETE"
-echo "=========================================="
-echo ""
-echo "🎯 NEXT: Manual Steps 4-7 (requires Xcode + iPhone)"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 4: Add Microphone Permission to Info.plist"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Open the plist file:"
-echo "  open ios/App/App/Info.plist"
-echo ""
-echo "In the XML editor, find the <dict> near the top, and add this"
-echo "BEFORE the closing </dict>:"
-echo ""
-echo "  <key>NSMicrophoneUsageDescription</key>"
-echo "  <string>Solray uses the microphone so you can speak with the Higher Self instead of typing.</string>"
-echo ""
-echo "Save (Cmd+S), then commit:"
-echo "  git add ios/App/App/Info.plist"
-echo "  git commit -m 'ios: declare microphone usage description'"
-echo "  git push"
-echo ""
+echo "4. Checking Xcode and SDK"
+if command -v xcodebuild >/dev/null 2>&1; then
+  xcodebuild -version | head -1
+  SDK="$(xcodebuild -showsdks 2>/dev/null | grep -o 'iphoneos[0-9.]*' | sort -V | tail -1)"
+  echo "   newest iOS SDK: ${SDK:-none}"
+  case "$SDK" in
+    iphoneos2[6-9]*|iphoneos[3-9][0-9]*) ;;
+    *) echo "   App Store uploads need Xcode 26 / iOS 26 SDK or newer." ;;
+  esac
+else
+  echo "   xcodebuild not found (not on a Mac?)"
+fi
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 5: Open in Xcode"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Run this to open Xcode with the iOS project:"
-echo "  npx cap open ios"
-echo ""
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 6: Configure Code Signing"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "In Xcode:"
-echo "  1. Click 'App' project (left sidebar)"
-echo "  2. Click 'App' target (middle pane)"
-echo "  3. Click 'Signing & Capabilities' tab (top)"
-echo "  4. Check ☑ 'Automatically manage signing'"
-echo "  5. Team dropdown → select your Apple Developer team"
-echo "  6. Bundle ID should be 'ai.solray.app' ✓"
-echo ""
-echo "Xcode will provision a development cert. If you get"
-echo "'Failed to register bundle identifier', visit:"
-echo "  https://developer.apple.com/account/resources/identifiers/list"
-echo ""
-echo "Click +, App IDs, App, register ai.solray.app, then retry."
-echo ""
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 7: First Test Build on Real Device"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "On your Mac:"
-echo "  1. Plug iPhone into USB"
-echo "  2. Trust the computer if prompted on phone"
-echo "  3. iPhone: Settings → Privacy & Security → Developer Mode → ON"
-echo ""
-echo "In Xcode:"
-echo "  1. Top toolbar: device picker → select your iPhone"
-echo "  2. Press Cmd+R to build and run"
-echo ""
-echo "App will install and open. Test the mic:"
-echo "  1. Log in with your Solray account"
-echo "  2. Open Chat"
-echo "  3. Tap the mic 🎤 icon"
-echo "  4. Approve 'Allow Microphone' when prompted"
-echo "  5. Speak something (should show 'Listening...')"
-echo "  6. Tap mic again to stop"
-echo "  7. Transcription should appear in the input box"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "TROUBLESHOOTING (Step 7)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Problem: Permission sheet never appeared"
-echo "  → NSMicrophoneUsageDescription missing from Info.plist"
-echo "  → Fix Step 4, re-run Cmd+R"
-echo ""
-echo "Problem: Permission sheet appeared but I tapped 'Don't Allow'"
-echo "  → Settings → Solray → Microphone → Allow"
-echo "  → Relaunch app"
-echo ""
-echo "Problem: Mic records but transcription never returns"
-echo "  → Check Railway logs: [chat] /chat/transcribe"
-echo "  → Backend may not handle m4a audio format yet"
-echo ""
-echo "Problem: Plugin missing / build fails"
-echo "  → Run: npx cap sync ios"
-echo "  → Then Cmd+R again"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "📋 WHEN YOU'RE DONE:"
-echo ""
-echo "Once Step 7 mic test is complete, report back:"
-echo "  ✅ 'Mic is working' → Ready for TestFlight"
-echo "  ❌ 'Mic failed with [error]' → I'll diagnose"
-echo ""
-echo "Also: File Apple Reader App entitlement TODAY at:"
-echo "  https://developer.apple.com/contact/request/reader-app-entitlement/"
-echo ""
-echo "Takes 2-4 weeks to process. Do this in parallel while testing."
-echo ""
-echo "=========================================="
+echo
+echo "Next: CAPACITOR_RUNBOOK.md sections 3 to 9 (signing, push profile,"
+echo "device test, archive, privacy report, TestFlight, submission)."
+echo "Commit ios/App/Podfile.lock if pod install changed it."
+if command -v xcodebuild >/dev/null 2>&1; then
+  npx cap open ios
+fi

@@ -734,7 +734,11 @@
     "enabled": "Alerts enabled",
     "get_alerts": "Get daily transit alerts",
     "enable": "Enable",
-    "enabling": "Enabling..."
+    "enabling": "Enabling...",
+    "native_ask_title": "Want a note when your reading is ready?",
+    "native_ask_body": "Once a day, when your reading for the day is ready, Solray can send one short note. Nothing else. You can turn it off any time in your phone's settings.",
+    "native_ask_yes": "Yes, send it",
+    "native_ask_later": "Not now"
   },
   "solar": {
     "today": "Today is your Solar Return!",

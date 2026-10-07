@@ -13,6 +13,7 @@ import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
+import { signalOracleReply } from "@/lib/native-push";
 import { Orb, Wordmark } from "@/components/Wordmark";
 
 interface Message {
@@ -1392,6 +1393,8 @@ function ChatPageInner() {
       // Kick off streaming effect
       setStreamedLength(0);
       setStreamingId(reply.id);
+      // A real Oracle reply is the "seen value" moment for the push ask.
+      signalOracleReply();
     } catch (err) {
       // If the user has already navigated away from /chat by the time the
       // response lands, do nothing. Whichever page they're on now will
