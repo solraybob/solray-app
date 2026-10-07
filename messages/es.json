@@ -155,7 +155,9 @@
     "energy_steady": "Estable",
     "energy_low": "Baja",
     "kick_today": "hoy",
-    "consent_needed": "Tu lectura escrita se hace con IA, así que espera tu permiso. Tu carta está lista cuando tú lo estés."
+    "consent_needed": "Tu lectura escrita se hace con IA, así que espera tu permiso. Tu carta está lista cuando tú lo estés.",
+    "consent_card_title": "Tu lectura del día",
+    "consent_card_body": "Acepta el procesamiento con IA para recibir tu lectura del día. El cielo y tus ciclos están aquí de todos modos."
   },
   "chat": {
     "placeholder": "Habla desde donde estás.",
@@ -255,7 +257,9 @@
     "dismiss_notice": "Cerrar",
     "crisis_label": "Alguien con quien hablar",
     "crisis_show": "Mostrar",
-    "crisis_hide": "Ocultar"
+    "crisis_hide": "Ocultar",
+    "consent_notice": "El Oráculo responde con IA, así que primero espera tu permiso. Acepta cuando quieras.",
+    "consent_agree": "Aceptar"
   },
   "souls": {
     "title": "ALMAS",
@@ -377,7 +381,8 @@
     "compat_moon_in": "Luna en {sign}",
     "compat_hd": "Diseño Humano: {type}",
     "compat_intro": "Quiero entender la dinámica entre {name} y yo. ¿Cómo interactúan nuestras energías?",
-    "compat_intro_chart": "Quiero entender la dinámica entre {name} y yo. Su carta: {chart}. ¿Cómo interactúan nuestras energías?"
+    "compat_intro_chart": "Quiero entender la dinámica entre {name} y yo. Su carta: {chart}. ¿Cómo interactúan nuestras energías?",
+    "view_profile_sub_private": "{name} mantiene su carta en privado. Ver su nombre y foto."
   },
   "profile": {
     "title": "Perfil",
@@ -512,7 +517,11 @@
     "delete_password_placeholder": "Contraseña",
     "delete_wrong_password": "Esa contraseña no coincide. Inténtalo de nuevo.",
     "birth_under_age": "Solray está hecho para personas de 16 años o más, así que esta fecha de nacimiento no se puede guardar. Si el año tiene un error, revísalo.",
-    "ai_consent_age_restricted": "El Oráculo y las lecturas escritas son para miembros de 16 años o más, así que quedan cerrados por ahora. Todo lo demás en Solray funciona como siempre."
+    "ai_consent_age_restricted": "El Oráculo y las lecturas escritas son para miembros de 16 años o más, así que quedan cerrados por ahora. Todo lo demás en Solray funciona como siempre.",
+    "private_switch": "Perfil privado",
+    "private_state_on": "Perfil privado, activado. Tu carta es privada.",
+    "private_state_off": "Perfil privado, desactivado. Tus conexiones de almas pueden ver tu carta.",
+    "switch_state": "{label}, {state}"
   },
   "nav": {
     "today": "Ahora",
@@ -775,7 +784,14 @@
     "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato.",
     "badge_awaiting_email": "Esperando tu correo",
     "store_ended_card_time_left": "Tu membresía de App Store o Google Play ha terminado. Todavía tienes tiempo pagado hasta el {date}. No se cobró nada. Puedes añadir una tarjeta aquí cuando termine ese tiempo.",
-    "store_ended_card_time_left_nodate": "Tu membresía de App Store o Google Play ha terminado. Todavía te queda tiempo pagado. No se cobró nada. Puedes añadir una tarjeta aquí cuando termine ese tiempo."
+    "store_ended_card_time_left_nodate": "Tu membresía de App Store o Google Play ha terminado. Todavía te queda tiempo pagado. No se cobró nada. Puedes añadir una tarjeta aquí cuando termine ese tiempo.",
+    "pending_title": "Confirma tu correo para empezar tu prueba gratuita",
+    "pending_body": "Te enviamos un enlace a {email}. Ábrelo y tu prueba gratuita empieza. No se cobra nada antes.",
+    "pending_body_no_email": "Te enviamos un enlace. Ábrelo y tu prueba gratuita empieza. No se cobra nada antes.",
+    "pending_confirmed": "Ya lo confirmé",
+    "pending_not_yet": "Todavía no está confirmado. Abre el enlace del correo y vuelve a intentarlo.",
+    "pending_help": "¿Dirección equivocada o no llegó el correo? Pide ayuda",
+    "pending_free_parts": "Los ajustes de tu cuenta siguen abiertos mientras esperas."
   },
   "depth": {
     "the_sky": "El Cielo",
@@ -1026,7 +1042,11 @@
     "later": "La segunda",
     "hint": "Si no lo sabes, puede que lo diga tu partida de nacimiento o lo recuerde tu familia. Puedes cambiarlo después en Ajustes.",
     "back": "Volver",
-    "nonexistent": "Esa hora no existió donde naciste: esa noche se adelantaron los relojes una hora. Revisa tu hora de nacimiento. Puede que fuera una hora más tarde."
+    "nonexistent": "Esa hora no existió donde naciste: esa noche se adelantaron los relojes una hora. Revisa tu hora de nacimiento. Puede que fuera una hora más tarde.",
+    "summer": "Horario de verano",
+    "winter": "Horario de invierno",
+    "earlier_note": "La primera vez",
+    "later_note": "La segunda vez"
   },
   "birth_check": {
     "prompt_title": "Una revisión rápida de tu hora de nacimiento",

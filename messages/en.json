@@ -203,7 +203,9 @@
     "energy_steady": "Steady",
     "energy_low": "Low",
     "kick_today": "today",
-    "consent_needed": "Your written reading is made with AI, so it waits for your permission. Your chart is ready whenever you are."
+    "consent_needed": "Your written reading is made with AI, so it waits for your permission. Your chart is ready whenever you are.",
+    "consent_card_title": "Your daily reading",
+    "consent_card_body": "Agree to AI processing to get your daily reading. The sky and your cycles are here either way."
   },
   "moon": {
     "moon_in": "Moon in",
@@ -350,7 +352,9 @@
     "dismiss_notice": "Dismiss",
     "crisis_label": "Someone to talk to",
     "crisis_show": "Show",
-    "crisis_hide": "Hide"
+    "crisis_hide": "Hide",
+    "consent_notice": "The Oracle answers with AI, so she waits for your permission first. Agree whenever you are ready.",
+    "consent_agree": "Agree"
   },
   "souls": {
     "title": "SOULS",
@@ -472,7 +476,8 @@
     "compat_moon_in": "Moon in {sign}",
     "compat_hd": "Human Design: {type}",
     "compat_intro": "I want to understand the dynamic between me and {name}. How do our energies interact?",
-    "compat_intro_chart": "I want to understand the dynamic between me and {name}. Their chart: {chart}. How do our energies interact?"
+    "compat_intro_chart": "I want to understand the dynamic between me and {name}. Their chart: {chart}. How do our energies interact?",
+    "view_profile_sub_private": "{name} keeps their chart private. See their name and photo."
   },
   "profile": {
     "title": "Profile",
@@ -607,7 +612,11 @@
     "delete_password_placeholder": "Password",
     "delete_wrong_password": "That password does not match. Try again.",
     "birth_under_age": "Solray is made for people aged 16 and over, so this birth date cannot be saved. If the year is a typo, please check it.",
-    "ai_consent_age_restricted": "The Oracle and written readings are for members aged 16 and over, so they stay closed for now. Everything else in Solray works as usual."
+    "ai_consent_age_restricted": "The Oracle and written readings are for members aged 16 and over, so they stay closed for now. Everything else in Solray works as usual.",
+    "private_switch": "Private profile",
+    "private_state_on": "Private profile, on. Your chart is private.",
+    "private_state_off": "Private profile, off. Your soul connections can view your chart.",
+    "switch_state": "{label}, {state}"
   },
   "nav": {
     "today": "Now",
@@ -775,7 +784,14 @@
     "store_purchase_pending": "A purchase through the App Store or Google Play was just started on this account. Nothing was charged here. If it did not go through, try again in a little while.",
     "badge_awaiting_email": "Waiting for your email",
     "store_ended_card_time_left": "Your App Store or Google Play membership has ended. You still have paid time until {date}. Nothing was charged. You can add a card here once that time ends.",
-    "store_ended_card_time_left_nodate": "Your App Store or Google Play membership has ended. You still have paid time left. Nothing was charged. You can add a card here once that time ends."
+    "store_ended_card_time_left_nodate": "Your App Store or Google Play membership has ended. You still have paid time left. Nothing was charged. You can add a card here once that time ends.",
+    "pending_title": "Confirm your email to start your free trial",
+    "pending_body": "We sent a link to {email}. Open it and your free trial starts. Nothing is charged before then.",
+    "pending_body_no_email": "We sent you a link. Open it and your free trial starts. Nothing is charged before then.",
+    "pending_confirmed": "I have confirmed it",
+    "pending_not_yet": "Not confirmed yet. Open the link in the email, then try again.",
+    "pending_help": "Wrong address, or no email arrived? Get help",
+    "pending_free_parts": "Your account settings stay open while you wait."
   },
   "depth": {
     "the_sky": "The Sky",
@@ -1026,7 +1042,11 @@
     "later": "The later one",
     "hint": "If you are not sure, a birth certificate or a parent may know. You can change it later in Settings.",
     "back": "Go back",
-    "nonexistent": "That time did not happen where you were born: the clocks jumped forward an hour that night. Please check your birth time. It may have been an hour later."
+    "nonexistent": "That time did not happen where you were born: the clocks jumped forward an hour that night. Please check your birth time. It may have been an hour later.",
+    "summer": "Summer time",
+    "winter": "Winter time",
+    "earlier_note": "The earlier one",
+    "later_note": "The later one"
   },
   "birth_check": {
     "prompt_title": "One quick check on your birth time",
