@@ -738,7 +738,12 @@
     "action_timeout": "La conexión es lenta. Actualiza la página para ver tu membresía tal como está ahora.",
     "status_unconfirmed": "No pudimos confirmar tu membresía en este momento. No se ha perdido nada. Desliza hacia abajo para actualizar en un momento.",
     "iap_charge_pending": "Aún se está confirmando un pago con tarjeta en tu cuenta. Tu compra en la tienda está a salvo. Vuelve a abrir Solray en unos minutos y se aplicará.",
-    "iap_state_changed": "Tu membresía cambió mientras la comprobábamos. Inténtalo de nuevo en un momento."
+    "iap_state_changed": "Tu membresía cambió mientras la comprobábamos. Inténtalo de nuevo en un momento.",
+    "iap_trial_used": "Tu prueba gratuita ya se usó, y la tienda solo ofrece este plan con una prueba gratuita por ahora, así que todavía no se puede iniciar aquí. No se cobró nada.",
+    "iap_card_pending": "Aún se está confirmando un pago con tarjeta en tu cuenta. No se cobró nada en la tienda. Inténtalo de nuevo en unos minutos.",
+    "iap_web_billing_active": "Tu membresía ya está pagada con tarjeta y activa. No se cobró nada en la tienda.",
+    "iap_check_failed": "No pudimos comprobar tu membresía en este momento, así que no se abrió la tienda. Revisa tu conexión e inténtalo de nuevo.",
+    "store_purchase_pending": "Se acaba de iniciar una compra en App Store o Google Play en esta cuenta. No se cobró nada aquí. Si no se completó, inténtalo de nuevo en un rato."
   },
   "depth": {
     "the_sky": "El Cielo",

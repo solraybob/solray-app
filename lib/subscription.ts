@@ -133,6 +133,24 @@ export async function setPlan(token: string, plan: "monthly" | "yearly") {
   );
 }
 
+// Review 2, finding 2: the native paywall announces a store purchase BEFORE
+// it opens the App Store / Google Play sheet. The server refuses (409) while
+// a card charge on the account is in flight or unresolved, and otherwise
+// holds card billing back while the purchase happens. It also answers
+// trial_eligible fresh, so a free trial is ordered only when confirmed.
+export async function announceStorePurchase(token: string): Promise<{
+  ok: boolean;
+  trial_eligible: boolean;
+  intent_expires_at?: string | null;
+}> {
+  return billingFetch("/subscribe/store-intent", { method: "POST" }, token);
+}
+
+// The sheet closed without a purchase: card billing may continue at once.
+export async function releaseStorePurchase(token: string) {
+  return billingFetch("/subscribe/store-intent", { method: "DELETE" }, token);
+}
+
 export async function cancelSubscription(token: string) {
   return billingFetch("/subscribe/cancel", { method: "POST" }, token);
 }

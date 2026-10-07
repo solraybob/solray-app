@@ -92,6 +92,8 @@ export default function CardForm({
         setError(t("subscribe.store_managed_card"));
       } else if (e instanceof ApiError && e.code === "charge_pending") {
         setError(t("subscribe.charge_pending"));
+      } else if (e instanceof ApiError && e.code === "store_purchase_pending") {
+        setError(t("subscribe.store_purchase_pending"));
       } else {
         setError(
           e instanceof CardTokenError
