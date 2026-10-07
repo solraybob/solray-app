@@ -34,7 +34,9 @@ import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
-import { soulRequestFields, historyForServer, soulFromTranscript, type SoulRef } from "@/lib/oracle-request";
+import {
+  soulRequestFields, historyForServer, soulFromTranscript, voiceMessage, voiceTranscriptFor, type SoulRef,
+} from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
 import { asCrisisCard } from "@/lib/crisis-card";
@@ -252,6 +254,17 @@ function ChatPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
   const [sending, setSending] = useState(false);
+  // Read synchronously by the voice path: set the moment a send is
+  // accepted, cleared when it settles.
+  const sendingRef = useRef(false);
+  useEffect(() => { sendingRef.current = sending; }, [sending]);
+  // A crisis voice message that arrived while another message was still
+  // sending: it waits here (and in the box) and goes out as soon as that
+  // send settles. Never dropped.
+  const pendingVoiceRef = useRef<{ text: string; transcript: string; session: string } | null>(null);
+  // The last transcript placed in the box: sent with the message as
+  // voice_transcript so the server reads the spoken words on their own.
+  const lastTranscriptRef = useRef<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -1162,12 +1175,15 @@ function ChatPageInner() {
   );
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const sendMessage = async (overrideText?: string) => {
+  const sendMessage = async (overrideText?: string, opts?: { voiceTranscript?: string }) => {
     // overrideText lets a tappable prompt or auto-send path bypass the
     // input state without waiting for setInput to flush. Falls back to
-    // the live input value.
+    // the live input value. Resolves false when nothing was sent.
     const text = (overrideText ?? input).trim();
-    if (!text || sending) return;
+    if (!text || sending || sendingRef.current) return false;
+    sendingRef.current = true;
+    const voiceTranscript = opts?.voiceTranscript ?? voiceTranscriptFor(text, lastTranscriptRef.current);
+    lastTranscriptRef.current = null;
 
     // If voice is active, stop it so the final transcript commits before send.
     try {
@@ -1210,6 +1226,7 @@ function ChatPageInner() {
         conversation_history: history,
         session_id: sentSessionId,
         ...soulRequestFields(sendSoulRef),
+        ...(voiceTranscript ? { voice_transcript: voiceTranscript } : {}),
       };
 
       const data = await apiFetch(
@@ -1223,6 +1240,13 @@ function ChatPageInner() {
       // The active conversation changed while waiting: do not append this
       // reply into a different session.
       if (activeSessionRef.current !== sentSessionId) return;
+      // A conversation that had no id yet gets the one the server issued,
+      // and keeps it for every later turn (care mode and provenance live
+      // on it server-side).
+      if (!sentSessionId && typeof data.session_id === "string" && data.session_id) {
+        activeSessionRef.current = data.session_id;
+        setSessionId(data.session_id);
+      }
 
       // Honest empty-response handling. If the backend returned 200 but
       // both response and message fields are empty, surface that as an
@@ -1246,14 +1270,21 @@ function ChatPageInner() {
       // something "that landed".
       const card = asCrisisCard(data.crisis_card) || asCrisisCard(data.support_card);
       if (card) {
+        // A crisis turn: both messages are tagged, so they stay in the
+        // member's own transcript but never go back to the AI.
+        const crisisTurn = data.crisis_turn === true || card.variant === "standard" || card.variant === "urgent";
         const cardMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content,
           timestamp: new Date().toISOString(),
           crisis: card,
+          ...(crisisTurn ? { safety: "crisis" as const } : {}),
         };
-        setMessages((prev) => [...prev, cardMsg]);
+        setMessages((prev) => [
+          ...prev.map((m) => (crisisTurn && m.id === userMsg.id ? { ...m, safety: "crisis" as const } : m)),
+          cardMsg,
+        ]);
         return;
       }
       const reply: Message = {
@@ -1379,13 +1410,27 @@ function ChatPageInner() {
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
+      sendingRef.current = false;
       if (isMountedRef.current) setSending(false);
     }
+    return true;
   };
 
   // Latest sendMessage for callbacks created once (the voice transcriber).
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
+
+  // A crisis voice message that waited for another send goes out as soon
+  // as that send settles, in the conversation it was spoken in. Elsewhere
+  // its words stay in the box for the member to send.
+  useEffect(() => {
+    if (sending) return;
+    const p = pendingVoiceRef.current;
+    if (!p) return;
+    pendingVoiceRef.current = null;
+    if (activeSessionRef.current !== p.session) return;
+    void sendMessageRef.current(p.text, { voiceTranscript: p.transcript });
+  }, [sending]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1525,13 +1570,27 @@ function ChatPageInner() {
       // in their language. No editing step in between.
       // Only into the conversation it was spoken in; if the member has
       // moved to another one, the words wait in the box below instead.
+      // The words are kept in the box until a send is accepted: if another
+      // message is still sending, this one waits (pendingVoiceRef) and
+      // goes out right after it. The transcript travels as
+      // voice_transcript, so typed words around it cannot lower its
+      // safety class on the server.
       if (data?.crisis === true && landing(true) === "send") {
-        const typed = (inputRef.current?.value || "").replace(/\s+$/, "");
-        const text = typed ? typed + " " + transcript : transcript;
-        setInput("");
-        void sendMessageRef.current(text);
+        const vm = voiceMessage(inputRef.current?.value || "", transcript);
+        setInput(vm.text);
+        lastTranscriptRef.current = vm.voiceTranscript;
+        const pending = { text: vm.text, transcript: vm.voiceTranscript, session: spokenIn };
+        if (sendingRef.current) {
+          pendingVoiceRef.current = pending;
+        } else {
+          void sendMessageRef.current(vm.text, { voiceTranscript: vm.voiceTranscript }).then((sent) => {
+            // Refused (another send got there first): wait for it instead.
+            if (sent === false) pendingVoiceRef.current = pending;
+          });
+        }
         return;
       }
+      lastTranscriptRef.current = transcript;
       setInput((prev) => {
         const base = prev.replace(/\s+$/, "");
         return base ? base + " " + transcript : transcript;

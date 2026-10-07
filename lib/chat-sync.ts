@@ -41,6 +41,11 @@ export interface ChatMessage {
   // The fixed crisis or support card (lib/crisis-card.ts), drawn as a card
   // with call and text buttons. `content` keeps its plain text.
   crisis?: CrisisCardData;
+  // "crisis" on both messages of a crisis turn (the member's message and
+  // the fixed card). The transcript stays the member's own record, but a
+  // tagged turn is never sent back to the AI (the server drops it and tags
+  // synced transcripts itself too).
+  safety?: "crisis";
 }
 
 export interface StoredSession<M extends ChatMessage = ChatMessage> {

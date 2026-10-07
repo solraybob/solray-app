@@ -26,17 +26,54 @@ export type HistoryMessage = {
   role: "user" | "assistant";
   content: string;
   isError?: boolean;
+  safety?: string;
+  crisis?: { variant?: string } | null;
 };
+
+/** True for both messages of a crisis turn: tagged, or the fixed card itself. */
+export function isCrisisTurn(m: HistoryMessage): boolean {
+  if (m.safety === "crisis") return true;
+  return m.role === "assistant" && !!m.crisis && (m.crisis.variant === "standard" || m.crisis.variant === "urgent");
+}
 
 /**
  * Conversation history as the server wants it: the opening greeting left
- * out, and app-side error bubbles marked isError so the Oracle never reads
- * them back as something she said.
+ * out, app-side error bubbles marked isError so the Oracle never reads
+ * them back as something she said, and crisis turns marked
+ * safety: "crisis" so the server keeps them away from the AI (and knows
+ * the conversation is in care mode).
  */
-export function historyForServer(messages: HistoryMessage[]): Array<{ role: string; content: string; isError?: boolean }> {
+export function historyForServer(
+  messages: HistoryMessage[],
+): Array<{ role: string; content: string; isError?: boolean; safety?: "crisis" }> {
   return messages
     .filter((m) => m.id !== "greeting")
-    .map((m) => (m.isError ? { role: m.role, content: m.content, isError: true } : { role: m.role, content: m.content }));
+    .map((m) => {
+      const out: { role: string; content: string; isError?: boolean; safety?: "crisis" } = {
+        role: m.role, content: m.content,
+      };
+      if (m.isError) out.isError = true;
+      if (isCrisisTurn(m)) out.safety = "crisis";
+      return out;
+    });
+}
+
+/**
+ * A voice message: the text that goes to /chat and the transcript inside
+ * it, sent along as voice_transcript so the server classifies the spoken
+ * words on their own (typed words around them can never lower their
+ * safety class).
+ */
+export function voiceMessage(typed: string, transcript: string): { text: string; voiceTranscript: string } {
+  const base = (typed || "").replace(/\s+$/, "");
+  const spoken = (transcript || "").trim();
+  return { text: base ? base + " " + spoken : spoken, voiceTranscript: spoken };
+}
+
+/** The transcript to send with a message, when the message still contains it. */
+export function voiceTranscriptFor(text: string, transcript: string | null | undefined): string | undefined {
+  const spoken = (transcript || "").trim();
+  return spoken && (text || "").includes(spoken) ? spoken : undefined;
 }
 
 /** Who a Dynamics conversation is with, as stored on its opening message. */
