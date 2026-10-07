@@ -1032,6 +1032,7 @@
     "partner_ai_consent_required": "Esta lectura necesita la carta de la otra persona, y aún no ha aceptado el procesamiento con IA. Cuando lo haga, podrán leerla juntos.",
     "ai_daily_limit": "Has llegado al límite de hoy para esto. Se renueva mañana.",
     "message_too_long": "Ese mensaje es demasiado largo. Intenta decirlo con menos palabras.",
+    "message_too_long_kept": "Ese mensaje es demasiado largo para enviarlo de una vez. Sigue en la caja de abajo para que puedas acortarlo.",
     "soul_connection_gone": "Esta conexión terminó, así que la lectura entre ustedes está cerrada. Aún puedes hablar con el Oráculo sobre ti.",
     "under_minimum_age": "El Oráculo es para miembros de 16 años o más, así que esta parte de Solray queda cerrada por ahora. Tu carta y el resto de la app siguen aquí para ti."
   },

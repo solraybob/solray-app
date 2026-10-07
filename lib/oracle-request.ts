@@ -70,6 +70,15 @@ export function voiceMessage(typed: string, transcript: string): { text: string;
   return { text: base ? base + " " + spoken : spoken, voiceTranscript: spoken };
 }
 
+/**
+ * The composer after a message came back unsent (too long, or a closed
+ * conversation): the unsent words first, then anything typed meanwhile.
+ * Nothing is cut: the member shortens it themselves.
+ */
+export function composerWithUnsent(unsent: string, current: string): string {
+  return current.trim() ? `${unsent}\n\n${current}` : unsent;
+}
+
 /** The transcript to send with a message, when the message still contains it. */
 export function voiceTranscriptFor(text: string, transcript: string | null | undefined): string | undefined {
   const spoken = (transcript || "").trim();
