@@ -137,7 +137,7 @@ export async function apiFetch(
 
   inflight += 1;
   try {
-    return await finishApiFetch(path, options, headers, startedGen, accountBound, extra);
+    return await finishApiFetch(path, options, headers, startedGen, accountBound, extra, token ?? null);
   } finally {
     inflight -= 1;
   }
@@ -150,6 +150,7 @@ async function finishApiFetch(
   startedGen: number,
   accountBound: boolean,
   extra: ApiFetchExtra,
+  token: string | null,
 ) {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -170,7 +171,7 @@ async function finishApiFetch(
     // screen, not just /today.
     if (res.status === 401 && accountBound && !extra.keepSessionOn401 && typeof window !== "undefined") {
       // Session-end work (native push release) runs before storage is wiped.
-      runAccountSignOutHooks(token ?? null);
+      runAccountSignOutHooks(token);
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");
