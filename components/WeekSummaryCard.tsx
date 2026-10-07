@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
 
 export default function WeekSummaryCard() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [summary, setSummary] = useState<string | null>(null);
   const { token } = useAuth();
   // Changes when the birth chart changes: the summary is fetched again.
@@ -16,7 +16,9 @@ export default function WeekSummaryCard() {
 
   useEffect(() => {
     if (!token) return;
-    const key = `solray_week_${new Date().toISOString().split('T')[0]}`;
+    // Per language: the summary is server text in the member's language, so
+    // switching EN/ES must fetch it again rather than show the cached one.
+    const key = `solray_week_${lang}_${new Date().toISOString().split('T')[0]}`;
     try {
       const cached = localStorage.getItem(key);
       if (cached) {
@@ -39,7 +41,7 @@ export default function WeekSummaryCard() {
       })
       .catch(() => {});
     return () => { off = true; };
-  }, [token, chartRev]);
+  }, [token, chartRev, lang]);
 
   if (!summary) return null;
 

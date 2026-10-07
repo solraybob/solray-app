@@ -237,3 +237,35 @@ test("F3: Souls records the update before sending, clears it only on confirmatio
   assert.match(syncSrc, /overlayPendingUpdates\(/);
   assert.match(syncSrc, /prunePendingUpdates\(/);
 });
+
+// ─── Finding 4: a displayed Today reading follows a chart change ───────────
+
+test("F4: Today subscribes to chart changes, clears the shown reading and fetches under the new chart", () => {
+  const src = read("app/today/page.tsx");
+  assert.match(src, /import \{ useChartRevision \} from "@\/lib\/use-chart-revision";/);
+  assert.match(src, /const chartRev = useChartRevision\(\);/);
+  const effStart = src.indexOf("const cacheKey = `solray_forecast_${dayKey}`;");
+  const effEnd = src.indexOf("}, [token, dayKey, reloadNonce, chartRev]);");
+  assert.ok(effStart > 0 && effEnd > effStart, "the forecast effect reruns on a chart change");
+  const head = src.slice(src.lastIndexOf("useEffect(() => {", effStart), effStart);
+  const change = head.indexOf("if (seenChartRev.current !== chartRev) {");
+  assert.ok(change > 0, "a chart change is noticed before the cache is read");
+  const block = head.slice(change);
+  assert.match(block, /seenChartRev\.current = chartRev;/);
+  assert.match(block, /backgroundFetchDone\.current = false;/);
+  assert.match(block, /setForecast\(null\);/);
+});
+
+// ─── Finding 5: the weekly summary follows the language ────────────────────
+
+test("F5: the weekly summary is cached per language and fetched again when it changes", () => {
+  const src = read("components/WeekSummaryCard.tsx");
+  assert.match(src, /const \{ t, lang \} = useT\(\);/);
+  assert.match(src, /const key = `solray_week_\$\{lang\}_\$\{new Date\(\)\.toISOString\(\)\.split\('T'\)\[0\]\}`;/);
+  assert.match(src, /\}, \[token, chartRev, lang\]\);/);
+  // Still a chart-derived key, so a birth change drops it.
+  const cr = load("lib/chart-revision.js");
+  win.localStorage.setItem("solray_week_es_2026-10-07", "{}");
+  cr.clearChartDerivedCaches();
+  assert.equal(win.localStorage.getItem("solray_week_es_2026-10-07"), null);
+});
