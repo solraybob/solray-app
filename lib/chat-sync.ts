@@ -209,6 +209,16 @@ export function settled(sessionId: string): Promise<void> {
   return (chains.get(sessionId) || Promise.resolve()).then(() => undefined, () => undefined);
 }
 
+// Conversations started on this device in this app session and not yet
+// stored on the server (in memory: after a reload the first upload simply
+// reads first, as for any conversation without a known revision).
+const startedHere = new Set<string>();
+
+/** A new conversation was just started here (the chat page's new id). */
+export function noteNewSession(sessionId: string): void {
+  startedHere.add(sessionId);
+}
+
 /**
  * Upload one conversation. Resolves true when the server holds it.
  * `gen` is the account generation the write was made under.
@@ -234,7 +244,10 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
       const known = getLocalMeta()[sessionId];
       const knownRevision = typeof known?.revision === "number" ? known.revision : null;
       const expectExisting = getServerConfirmed().has(sessionId);
-      if (knownRevision === null) {
+      // A conversation started on this device that the server has never
+      // seen is not read first: there is nothing to read yet, and asking
+      // for it was a 404 on every new chat.
+      if (knownRevision === null && !(startedHere.has(sessionId) && !expectExisting)) {
         // A server that has not reported a revision may still replace on
         // PUT: read its copy first so the write keeps what others added.
         const getRes = await fetch(url, { headers });

@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
 import { voiceResultAction } from "@/lib/voice-result";
 import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError } from "@/lib/account-session";
-import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
+import { AI_CONSENT_CHANGED_EVENT, AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import {
   CHAT_MERGED_EVENT,
@@ -18,6 +18,7 @@ import {
   loadSession,
   markRenamePending,
   markUnsent,
+  noteNewSession,
   pushSessionToServer,
   bindChatSyncToAccount,
   saveSession,
@@ -51,7 +52,10 @@ type StoredSession = ChatStoredSession;
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function generateSessionId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  // Not on the server yet: its first upload is a plain write, no read first.
+  noteNewSession(id);
+  return id;
 }
 
 function todayLabel() {
@@ -311,9 +315,19 @@ function ChatPageInner() {
   // partner_ai_consent_required): "closed" in the fresh conversation that
   // replaced an ordinary one; "dynamics" in a Dynamics conversation whose
   // partner is no longer sharing, with the offer of an ordinary one.
+  // "consent": the member has not agreed to AI processing yet; a calm
+  // notice with an Agree button instead of an error bubble in the thread.
   const [chatNotice, setChatNotice] = useState<
-    { kind: "closed" } | { kind: "dynamics"; sessionId: string } | null
+    { kind: "closed" } | { kind: "dynamics"; sessionId: string } | { kind: "consent"; sessionId: string } | null
   >(null);
+  // Agreed in the sheet: the consent notice has done its job.
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      if ((e as CustomEvent).detail?.granted) setChatNotice((n) => (n?.kind === "consent" ? null : n));
+    };
+    window.addEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+  }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -1374,6 +1388,12 @@ function ChatPageInner() {
           };
           setMessages((prev) => [...prev, supportMsg]);
         }
+        // Missing AI consent is not an error: the sheet is open, and if it
+        // is put aside a quiet notice over the composer offers it again.
+        if (err instanceof ApiError && err.code === AI_CONSENT_REQUIRED_CODE) {
+          setChatNotice({ kind: "consent", sessionId: sentSessionId });
+          return;
+        }
         const note: Message = {
           id: (noteAt + 2).toString(),
           role: "assistant",
@@ -1940,7 +1960,11 @@ function ChatPageInner() {
                 justify-content:space-between;gap:10px}
             The mark, then the actions as 17px line icons; the words PAST and
             NEW were two more pieces of lettering competing with the answer. */}
-        <div className="w-full max-w-lg lg:max-w-[620px] mx-auto px-5 pt-3">
+        {/* The gutter sits outside the column, as it does for the messages
+            and the composer below, so the date line and the rule start where
+            the messages start on a wide screen. */}
+        <div className="w-full px-5 pt-3">
+        <div className="max-w-lg lg:max-w-[620px] mx-auto">
           <div className="flex items-center justify-between lg:justify-end" style={{ minHeight: 34 }}>
             {/* The fixed DesktopHeader carries the mark from lg up, so this
                 one steps aside there rather than printing solray twice. */}
@@ -1987,6 +2011,7 @@ function ChatPageInner() {
               {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
             </span>
           </div>
+        </div>
         </div>
 
         {/* Scroll to bottom button, shows when user has scrolled up */}
@@ -2187,17 +2212,34 @@ function ChatPageInner() {
               <div
                 role="status"
                 className="mb-3 rounded-2xl px-4 py-3"
-                style={{
+                style={chatNotice.kind === "consent" ? {
+                  background: "rgb(var(--rgb-card))",
+                  border: "1px solid rgb(var(--rgb-border))",
+                } : {
                   background: "rgb(var(--rgb-ember) / 0.08)",
                   border: "1px solid rgb(var(--rgb-ember) / 0.30)",
                 }}
               >
+                {chatNotice.kind === "consent" && (
+                  <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                    {t("chat.consent_notice")}
+                  </p>
+                )}
                 {chatNotice.kind === "closed" && (
                   <p className="font-body text-text-primary text-[15px] leading-relaxed">
                     {t("chat.conversation_closed_partner")}
                   </p>
                 )}
                 <div className="flex items-center gap-5 mt-2">
+                  {chatNotice.kind === "consent" && (
+                    <button
+                      onClick={() => openAiConsentSheet()}
+                      className="font-body font-bold text-[14px] rounded-full px-5"
+                      style={{ minHeight: 40, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}
+                    >
+                      {t("chat.consent_agree")}
+                    </button>
+                  )}
                   {chatNotice.kind === "dynamics" && (
                     <button
                       onClick={() => { setChatNotice(null); startNewChat(); }}
