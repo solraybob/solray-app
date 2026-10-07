@@ -22,6 +22,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, R
 import en from "../messages/en.json";
 import es from "../messages/es.json";
 import { captureAccount } from "./account-session";
+import { trackRequest } from "./api";
 
 export const SUPPORTED_LANGUAGES = ["en", "es", "es-419"] as const;
 export type LanguageCode = typeof SUPPORTED_LANGUAGES[number];
@@ -132,14 +133,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       if (token) {
         const acct = captureAccount();
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-        const res = await fetch(`${apiUrl}/users/language`, {
+        const res = await trackRequest(() => fetch(`${apiUrl}/users/language`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ language: code }),
-        });
+        }));
         if (!res.ok) return false;
         // Signed out (or into another account) while saving: the cached
         // user blob now belongs to someone else.

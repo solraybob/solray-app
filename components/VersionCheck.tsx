@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { apiBusy } from "@/lib/api";
+import { hasTypedDraft, installDraftTracking } from "@/lib/draft-guard";
 
 /**
  * VersionCheck
@@ -51,17 +52,13 @@ export default function VersionCheck() {
       );
     };
 
-    // Any text field holding something the member typed.
+    // Any field holding text the member typed and has not sent or saved.
+    // Tracked from input events (lib/draft-guard): a controlled React
+    // field's defaultValue follows its value, so comparing the two misses
+    // exactly the drafts that matter (the chat box, a half-filled form).
+    const stopDraftTracking = installDraftTracking(document);
     const hasDraft = () => {
-      try {
-        const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-          "textarea, input:not([type]), input[type=text], input[type=email], input[type=search], input[type=password], input[type=tel], input[type=url]",
-        );
-        for (const f of Array.from(fields)) {
-          if (f.value && f.value !== f.defaultValue) return true;
-        }
-      } catch { /* treat as no draft */ }
-      return false;
+      try { return hasTypedDraft(); } catch { return true; }
     };
 
     const safeToReload = () => !isUserTyping() && !hasDraft() && !apiBusy();
@@ -120,6 +117,7 @@ export default function VersionCheck() {
 
     return () => {
       cancelled = true;
+      stopDraftTracking();
       if (timer) clearInterval(timer);
       clearInterval(pendingTimer);
       document.removeEventListener("visibilitychange", onVisibility);

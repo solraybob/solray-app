@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { ShareOffscreenWrapper, SoulsInviteCard } from "@/components/ShareCard";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, trackRequest } from "@/lib/api";
 import { captureAccount, isStaleAccountError } from "@/lib/account-session";
 import { mergeSavedPeople, peopleToUpload } from "@/lib/saved-people-sync";
 import { useT, fill } from "@/lib/i18n";
@@ -835,21 +835,22 @@ export default function SoulsPage() {
         // legacy person, we re-store the blueprint after.
         try {
           const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-          const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: saved.name,
-              sex: saved.sex,
-              birth_date: saved.birth_date,
-              birth_time: saved.birth_time,
-              birth_city: saved.birth_city,
-            }),
+          const { ok, data } = await trackRequest(async () => {
+            const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: saved.name,
+                sex: saved.sex,
+                birth_date: saved.birth_date,
+                birth_time: saved.birth_time,
+                birth_city: saved.birth_city,
+              }),
+            });
+            return { ok: res.ok, data: res.ok ? await res.json() : null };
           });
           if (!stillHere()) return abandon();
-          if (res.ok) {
-            const data = await res.json();
-            if (!stillHere()) return abandon();
+          if (ok) {
             soulBlueprint = data?.blueprint || null;
             // Persist for next time so this user doesn't pay the cost again.
             // Against the CURRENT list: the snapshot this function started
@@ -1693,24 +1694,25 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
     const acct = captureAccount();
     const stillHere = () => acct.live && sheetMountedRef.current;
     try {
-      const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          sex: sex || null,
-          birth_date: birthDate,
-          birth_time: timeUnknown ? "12:00" : birthTime,
-          birth_city: birthCity,
-        }),
+      const { ok, data } = await trackRequest(async () => {
+        const res = await fetch(`${apiUrl}/souls/calculate-blueprint`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            sex: sex || null,
+            birth_date: birthDate,
+            birth_time: timeUnknown ? "12:00" : birthTime,
+            birth_city: birthCity,
+          }),
+        });
+        if (!stillHere()) return { ok: false, data: null };
+        return { ok: res.ok, data: res.ok ? await res.json() : await res.json().catch(() => ({})) };
       });
       if (!stillHere()) return;
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(errorText(err?.detail, t("souls.error_read_chart")));
+      if (!ok) {
+        throw new Error(errorText(data?.detail, t("souls.error_read_chart")));
       }
-      const data = await res.json();
-      if (!stillHere()) return;
       const person: SavedPerson = {
         id: typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()

@@ -29,6 +29,7 @@
     "../lib/today-prompts.ts",
     "../lib/i18n.tsx",
     "../lib/oracle-errors.ts",
-    "../lib/oracle-request.ts"
+    "../lib/oracle-request.ts",
+    "../lib/draft-guard.ts"
   ]
 }

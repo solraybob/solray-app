@@ -47,10 +47,23 @@ function localDateString(): string {
 }
 
 // Requests in flight, so an update reload can wait until nothing (an
-// Oracle reply, a save) would be cut off.
+// Oracle reply, a save) would be cut off. A request counts from the moment
+// it is sent until its answer has been read in full, not just until the
+// headers arrive. Raw fetches outside apiFetch (chat sync, voice, a chart
+// calculation, sign-up) are counted through trackRequest.
 let inflight = 0;
 export function apiBusy(): boolean {
   return inflight > 0;
+}
+
+/** Counts `work` (a raw request and the reading of its answer) as busy. */
+export async function trackRequest<T>(work: () => Promise<T>): Promise<T> {
+  inflight += 1;
+  try {
+    return await work();
+  } finally {
+    inflight -= 1;
+  }
 }
 
 export interface ApiFetchExtra {
@@ -118,16 +131,26 @@ export async function apiFetch(
   const startedGen = getAuthGeneration();
   const accountBound = !!token;
 
-  let res: Response;
   inflight += 1;
   try {
-    res = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers,
-    });
+    return await finishApiFetch(path, options, headers, startedGen, accountBound, extra);
   } finally {
     inflight -= 1;
   }
+}
+
+async function finishApiFetch(
+  path: string,
+  options: RequestInit,
+  headers: HeadersInit,
+  startedGen: number,
+  accountBound: boolean,
+  extra: ApiFetchExtra,
+) {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
 
   if (accountBound && !isCurrentGeneration(startedGen)) {
     throw new StaleAccountError();
