@@ -376,6 +376,8 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   //    keeping any turns only this device has.
   for (const s of remoteSessions) {
     if (!s || typeof s.session_id !== "string") continue;
+    // Being deleted on this device: never pulled back in.
+    if (deletedHere.has(s.session_id)) continue;
     fetched.push(s.session_id);
     const remoteAt = s.last_message_at || "";
     const localAt = localMeta[s.session_id]?.last_message_at || "";
@@ -389,6 +391,8 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
       });
       live();
       if (!full) continue;
+      // Deleted here while its transcript was on the way: drop the answer.
+      if (deletedHere.has(s.session_id)) continue;
       const local = loadSession(s.session_id);
       const serverMsgs: ChatMessage[] = Array.isArray(full.messages) ? full.messages : [];
       const merged = mergeMessages(serverMsgs, local?.messages || []);
@@ -412,7 +416,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   //    confirmed session missing from the server was deleted on another
   //    device: drop it here. A never-confirmed one (its upload failed) is
   //    uploaded again, never deleted.
-  const remoteIds = new Set(fetched);
+  const remoteIds = new Set(fetched.filter((id) => !deletedHere.has(id)));
   markServerConfirmed(Array.from(remoteIds));
   const confirmed = getServerConfirmed();
   let migrated = false;
@@ -420,7 +424,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
   let allUploadsOk = true;
   const toUpload: string[] = [];
   for (const localId of Array.from(localIds)) {
-    if (remoteIds.has(localId)) continue;
+    if (remoteIds.has(localId) || deletedHere.has(localId)) continue;
     if (migrated && confirmed.has(localId)) {
       try { localStorage.removeItem(`solray_chat_${localId}`); } catch { /* ignore */ }
       dropSessionLocalMeta(localId);
@@ -445,9 +449,10 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
     try { localStorage.setItem(MIGRATION_FLAG, "1"); } catch { /* retry next sync */ }
   }
 
-  // 4. Save the unified id list, server order first.
-  const allIds = Array.from(new Set(fetched));
+  // 4. Save the unified id list, server order first, without anything
+  //    deleted here meanwhile (deletion marks are read now, at the end).
   live();
+  const allIds = Array.from(new Set(fetched)).filter((id) => !deletedHere.has(id));
   saveSessionIds(allIds);
   return allIds;
 }

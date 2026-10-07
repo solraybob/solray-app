@@ -228,3 +228,38 @@ test("R3-2: a merging PUT never recreates a conversation deleted on another devi
   assert.equal(await sync.pushSessionToServer(sync.loadSession("m3"), "tok", session.getAuthGeneration()), false);
   assert.equal(srv.sessions.has("m3"), false);
 });
+
+test("R3-4: a conversation deleted while the sync reads it is not restored", async () => {
+  win.localStorage.clear();
+  win.localStorage.setItem("solray_chat_migrated_v1", "1");
+  const gen = session.getAuthGeneration();
+  sync.bindChatSyncToAccount(gen);
+  let releaseGet;
+  const serverSessions = new Map([["d1", { session_id: "d1", messages: [m("1", 1)], last_message_at: "2026-10-07T12:00:00Z", revision: 1 }]]);
+  global.fetch = async (url, init = {}) => {
+    const method = (init.method || "GET").toUpperCase();
+    const u = new URL(url);
+    const json = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+    if (u.pathname === "/chat/sessions") {
+      return json(200, { sessions: Array.from(serverSessions.values()).map((s) => ({ session_id: s.session_id, last_message_at: s.last_message_at })) });
+    }
+    const id = decodeURIComponent(u.pathname.split("/").pop());
+    if (method === "GET") {
+      const body = serverSessions.get(id);
+      return { ok: true, status: 200, json: () => new Promise((r) => { releaseGet = () => r(body); }) };
+    }
+    if (method === "DELETE") { serverSessions.delete(id); return json(200, { deleted: true }); }
+    return json(405, {});
+  };
+  const syncing = sync.syncSessionsFromServer("tok", gen);
+  while (!releaseGet) await tick();
+  // The member deletes it (as the chat page does: local first, then server).
+  win.localStorage.removeItem("solray_chat_d1");
+  sync.saveSessionIds(sync.getSessionIds().filter((x) => x !== "d1"));
+  assert.equal(await sync.deleteSessionOnServer("d1", "tok", gen), true);
+  releaseGet();
+  const ids = await syncing;
+  assert.equal(sync.loadSession("d1"), null);
+  assert.ok(!ids.includes("d1"));
+  assert.ok(!sync.getSessionIds().includes("d1"));
+});
