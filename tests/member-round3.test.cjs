@@ -61,3 +61,25 @@ test("R3-3: every Souls person write is bound to the generation it was queued un
     if (block.includes("apiFetch(")) assert.match(block, /\{ generation: [a-zA-Z.]*[gG]en(eration)? \}/);
   }
 });
+
+// ── Finding 1: a birth save finishing after a sign-out writes nothing ───────
+
+test("R3-1: the birth save is bound to its account through every await and cache write", () => {
+  const src = read("app/profile/settings/page.tsx");
+  const store = src.slice(src.indexOf("const storeBirthResult"), src.indexOf("const saveBirth"));
+  assert.match(store, /const storeBirthResult = async \(res: any, acct: AccountGuard\)/);
+  assert.ok(!/\.catch\(\(\) => null\)/.test(store), "a stale account is not taken for an offline lookup");
+  assert.match(store, /if \(isStaleAccountError\(e\)\) throw e;/);
+  // Checked before the first cache write and again after /users/me.
+  assert.ok(store.indexOf("acct.check();") < store.indexOf("clearChartDerivedCaches()"));
+  const afterMe = store.slice(store.indexOf('apiFetch("/users/me"'));
+  assert.ok(afterMe.indexOf("acct.check();") > -1 && afterMe.indexOf("acct.check();") < afterMe.indexOf('localStorage.setItem("solray_blueprint"'));
+  for (const fn of ["const saveBirth", "const confirmBirthFold"]) {
+    const body = src.slice(src.indexOf(fn), src.indexOf("\n  const ", src.indexOf(fn) + 10));
+    const cap = body.indexOf("const acct = captureAccount();");
+    assert.ok(cap > -1 && cap < body.indexOf('"/users/birth"'), `${fn} captures the account before the PATCH`);
+    assert.match(body, /\{ generation: acct\.generation \}/);
+    assert.match(body, /await storeBirthResult\(res, acct\);/);
+    assert.match(body, /if \(isStaleAccountError\(e\)\) return;/);
+  }
+});
