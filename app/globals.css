@@ -203,6 +203,19 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Today's one-screen box (app/today/page.tsx): the viewport below the box,
+   whose top the page measures into --today-above, less the bottom bar and a
+   breath of space for the dots. Before the first measure the estimate is
+   the page head plus the status bar. On desktop there is no bottom bar. */
+.sol-today-box {
+  min-height: calc(100dvh - var(--today-above, calc(132px + var(--sat, 0px))) - 96px - var(--sab, 0px) - 10px);
+}
+@media (min-width: 1024px) {
+  .sol-today-box {
+    min-height: calc(100dvh - var(--today-above, 196px) - 28px);
+  }
+}
+
 /* Desktop layout: clear the fixed top nav (4rem tall). Mobile is unaffected
    since BottomNav is at the bottom and pages are not pushed by a fixed top.
    Also: convert vertical mouse-wheel into horizontal scroll on horizontal

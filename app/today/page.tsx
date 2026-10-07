@@ -106,6 +106,10 @@ interface PreparingForecast {
   _pending: true;
   planets: Planet[];
   lunar_event?: LunarEvent;
+  // The member has not agreed to AI processing: the server sent the sky
+  // without the reading (ai_consent_required). Today shows the sky, the
+  // cycles and a quiet card that asks for the agreement. Never cached.
+  _consent?: true;
 }
 
 type ForecastView = ForecastData | PreparingForecast;
@@ -134,7 +138,7 @@ interface DeckCycle {
 
 // One line naming the day: the aspect the reading is built on, and where the
 // Moon is. This replaces a separate moon card and a separate tag chip.
-function skyLine(f: { tags: { astrology: string }; planets: Planet[] }, t: (key: string) => string): string {
+function skyLine(f: { tags?: { astrology?: string }; planets: Planet[] }, t: (key: string) => string): string {
   const moon = f.planets.find((pl) => pl.name === "Moon");
   const parts = [f.tags?.astrology];
   // In the member's language, like the Sky Now cards ("Luna en Virgo").
@@ -647,6 +651,9 @@ function parseForecastData(data: any): ForecastView {
       lunar_event: data.lunar_event ?? undefined,
       _pending: false,
     };
+  }
+  if (data.ai_consent_required === true) {
+    return { _pending: true, _consent: true, planets, lunar_event: data.lunar_event ?? undefined };
   }
   return { _pending: true, planets };
 }
@@ -1161,6 +1168,11 @@ export default function TodayPage() {
   const [showLunar, setShowLunar] = useState(false);
   const lunarChecked = useRef(false);
   const [cycles, setCycles] = useState<DeckCycle[]>([]);
+  // One screen, exactly: the deck box is as tall as what is left of the
+  // viewport below it (measured, so a trial banner or the desktop header
+  // above it is counted), less the bottom bar on a phone. The dots used to
+  // touch the bottom edge whenever something sat above the page head.
+  const deckBoxRef = useRef<HTMLDivElement | null>(null);
   const [birthDate, setBirthDate] = useState<string | null>(null);
   // From /users/me. undefined until known, so the banner never flashes.
   const [emailVerified, setEmailVerified] = useState<boolean | undefined>(undefined);
@@ -1724,6 +1736,26 @@ export default function TodayPage() {
     };
   }, [token, dayKey]);
 
+  useEffect(() => {
+    const el = deckBoxRef.current;
+    if (!el) return;
+    const place = () => {
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      el.style.setProperty("--today-above", `${Math.max(0, Math.round(top))}px`);
+    };
+    place();
+    window.addEventListener("resize", place);
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(place);
+      ro.observe(document.body);
+    } catch { /* no ResizeObserver: the resize listener still places it */ }
+    return () => {
+      window.removeEventListener("resize", place);
+      ro?.disconnect();
+    };
+  }, [forecast, loading]);
+
   // Consent given in the sheet: fetch the reading that was refused.
   useEffect(() => {
     const onChanged = (e: Event) => {
@@ -1865,7 +1897,7 @@ export default function TodayPage() {
 
         {loading ? (
           <SkeletonToday />
-        ) : forecast && forecast._pending === true ? (
+        ) : forecast && forecast._pending === true && !forecast._consent ? (
           <PendingTodayState planets={forecast.planets} />
         ) : forecast ? (
           <>
@@ -1894,13 +1926,7 @@ export default function TodayPage() {
                   rather than growing to whatever its text wants and carrying
                   the dots under the bar. Sky Now sits after this box, which is
                   what puts it below the fold. */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: "calc(100dvh - 132px - var(--sat, 0px) - 96px - var(--sab, 0px))",
-                }}
-              >
+              <div ref={deckBoxRef} className="sol-today-box" style={{ display: "flex", flexDirection: "column" }}>
               <p
                 className="font-body"
                 style={{
@@ -1923,6 +1949,17 @@ export default function TodayPage() {
                 style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", opacity: visibleSections >= 1 ? 1 : 0 }}
               >
                 <Deck count={1 + cycles.length}>
+                  {forecast._pending === true ? (
+                  // No AI agreement yet: the day's card asks for it, quietly,
+                  // and opens the consent sheet. The cycles follow as usual.
+                  <DeckCard
+                    kick={t("today.kick_today")}
+                    title={t("today.consent_card_title")}
+                    body={t("today.consent_card_body")}
+                    action={t("settings.ai_consent_give")}
+                    onAction={() => openAiConsentSheet()}
+                  />
+                  ) : (
                   <DeckCard
                     kick={t("today.kick_today")}
                     title={nowCardContent(forecast, plainCard).title}
@@ -1935,6 +1972,7 @@ export default function TodayPage() {
                       )
                     }
                   />
+                  )}
                   {cycles.map((c) => (
                     <DeckCard
                       key={`${c.transit_planet}-${c.natal_point}-${c.aspect}`}
