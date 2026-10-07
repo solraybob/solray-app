@@ -12,6 +12,9 @@ import { accountKey } from "./account-session";
 export interface SyncablePerson {
   id: string;
   _synced?: boolean;
+  // The server holds the member's confirmed permission for this person
+  // (GET/POST /saved-people). Read from the server, never assumed here.
+  sharing_permission?: boolean;
 }
 
 /** Local people to upload: created here and never confirmed by the server. */
@@ -195,7 +198,16 @@ export function forgetSharingPermission(id: string): void {
 
 /** The people in `people` the member has not confirmed permission for. */
 export function needingPermission<T extends SyncablePerson>(people: T[]): T[] {
-  return people.filter((p) => p && p.id && !hasSharingPermission(p.id));
+  return people.filter((p) => p && p.id && !hasSharingPermission(p.id) && p.sharing_permission !== true);
+}
+
+/** Saved people the server holds without the member's permission recorded
+ *  there yet, though the member has confirmed it (on this device): the
+ *  server refuses a reading with them until it is recorded
+ *  (POST /saved-people/{id}/sharing-permission). */
+export function permissionToRecordOnServer<T extends SyncablePerson>(people: T[]): T[] {
+  return people.filter((p) => p && p.id && p._synced === true && p.sharing_permission !== true
+    && hasSharingPermission(p.id));
 }
 
 // ── Clock-change occurrence of a saved person's birth time ───────────────
@@ -223,7 +235,12 @@ export function savedPersonForServer<T extends FoldablePerson>(p: T): Omit<T, "_
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _synced, birth_time_check, ...rest } = p;
   const fold = savedPersonFold(p);
-  return (fold ? { ...rest, birth_time_fold: fold } : rest) as Omit<T, "_synced" | "birth_time_check">;
+  const out: Record<string, unknown> = fold ? { ...rest, birth_time_fold: fold } : { ...rest };
+  // The member's confirmed permission travels with the person, so the
+  // server records it (it is never withdrawn by an upload without it).
+  if (p.sharing_permission === true || (p.id && hasSharingPermission(p.id))) out.sharing_permission = true;
+  else delete out.sharing_permission;
+  return out as Omit<T, "_synced" | "birth_time_check">;
 }
 
 /** The server's clock-change check for a saved person (GET and POST

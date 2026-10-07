@@ -37,6 +37,7 @@ import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
 import {
   soulRequestFields, historyForServer, soulFromTranscript, voiceMessage, voiceTranscriptFor, type SoulRef,
+  familyForTranscript, type FamilyRef,
 } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
@@ -79,7 +80,10 @@ function todayLabel() {
 // conversation clears it.
 function soulRefOf(sc: SoulCtx | null): SoulRef | null {
   if (!sc) return null;
-  return { connectionId: sc.connectionId ?? null, savedPersonId: sc.savedPersonId ?? null, blueprint: sc.blueprint ?? null };
+  return {
+    connectionId: sc.connectionId ?? null, savedPersonId: sc.savedPersonId ?? null, blueprint: sc.blueprint ?? null,
+    family: sc.family ?? null,
+  };
 }
 function getSoulCtx(sessionId: string, messages?: Message[]): SoulCtx | null {
   // A saved person who was not confirmed yet when the reading began is
@@ -785,7 +789,12 @@ function ChatPageInner() {
               savedPersonId?: string | null;
               // A saved person the server had not confirmed yet.
               localPersonId?: string | null;
+              // A family reading: everyone else selected, by reference.
+              familyPartners?: FamilyRef[] | null;
             };
+            const family: FamilyRef[] = Array.isArray(ctx.familyPartners)
+              ? ctx.familyPartners.filter((f) => f && (f.connectionId || f.savedPersonId))
+              : [];
 
             // Hoist the soul context into component state so every
             // follow-up message in this session re-passes the blueprint
@@ -797,6 +806,7 @@ function ChatPageInner() {
               connectionId: ctx.soulConnectionId ?? null,
               savedPersonId: ctx.savedPersonId ?? null,
               blueprint: ctx.soulBlueprint ?? null,
+              family,
             };
             setSoulRef(compatRef);
 
@@ -815,6 +825,7 @@ function ChatPageInner() {
                   name: ctx.soulName ?? null,
                   connection_id: ctx.soulConnectionId ?? null,
                   saved_person_id: ctx.savedPersonId ?? null,
+                  ...(family.length > 0 ? { family: familyForTranscript(family) } : {}),
                 },
               } : {}),
             };
@@ -841,6 +852,7 @@ function ChatPageInner() {
               connectionId: ctx.soulConnectionId ?? null,
               savedPersonId: ctx.savedPersonId ?? null,
               localPersonId: ctx.localPersonId ?? null,
+              family,
             });
             persistSession(newSession);
             setMessages([greeting, userMsg]);

@@ -10,7 +10,7 @@
 // get it written in before they are uploaded (withSoulBackfill), and the
 // server keeps it (it adds fields its copy lacks).
 
-import { soulFromTranscript, type SoulRef } from "./oracle-request";
+import { familyForTranscript, soulFromTranscript, type FamilyRef, type SoulRef, type TranscriptFamilyMember } from "./oracle-request";
 import { accountKey } from "./account-session";
 
 export const SOUL_CTX_KEY = "solray_chat_soul_ctx";
@@ -24,9 +24,14 @@ export type SoulCtx = {
   savedPersonId?: string | null;
   // A saved person not yet confirmed by the server when the reading began.
   localPersonId?: string | null;
+  // A family reading: everyone else in it, by reference.
+  family?: FamilyRef[] | null;
 };
 
-export type TranscriptSoul = { name: string | null; connection_id: string | null; saved_person_id: string | null };
+export type TranscriptSoul = {
+  name: string | null; connection_id: string | null; saved_person_id: string | null;
+  family?: TranscriptFamilyMember[];
+};
 
 function readAll(): Record<string, SoulCtx> {
   try {
@@ -71,7 +76,11 @@ export function resolveSoulCtx(sc: SoulCtx | null): SoulCtx | null {
 
 export function transcriptSoulOf(sc: SoulCtx | null): TranscriptSoul | null {
   if (!sc || (!sc.connectionId && !sc.savedPersonId)) return null;
-  return { name: sc.name ?? null, connection_id: sc.connectionId ?? null, saved_person_id: sc.savedPersonId ?? null };
+  const family = familyForTranscript(sc.family);
+  return {
+    name: sc.name ?? null, connection_id: sc.connectionId ?? null, saved_person_id: sc.savedPersonId ?? null,
+    ...(family.length > 0 ? { family } : {}),
+  };
 }
 
 /**
@@ -105,7 +114,10 @@ export function syncedSoulRef(
   const t = soulFromTranscript(messages as Array<{ soul?: never }>);
   if (!t) return null;
   return {
-    ref: { connectionId: t.connectionId, savedPersonId: t.savedPersonId, blueprint: current?.blueprint ?? null },
+    ref: {
+      connectionId: t.connectionId, savedPersonId: t.savedPersonId, blueprint: current?.blueprint ?? null,
+      ...(t.family ? { family: t.family } : {}),
+    },
     name: t.name,
   };
 }

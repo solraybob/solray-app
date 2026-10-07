@@ -11,6 +11,8 @@
 //   429 ai_daily_limit               today's generous cap for this feature is reached
 //   413 message_too_long             the message is over the length limit
 //   403 soul_connection_gone         the Dynamics connection no longer exists
+//   403 saved_person_permission_required  a saved person in the reading has no
+//                                    recorded permission from the member yet
 //   403 under_minimum_age            the account is under 16: the Oracle stays closed
 //                                    (400 with the same code at signup and on a
 //                                    birth-date update, where the change is refused)
@@ -34,6 +36,7 @@ export const ORACLE_ERROR_KEYS: Record<string, string> = {
   ai_daily_limit: "oracle_errors.ai_daily_limit",
   message_too_long: "oracle_errors.message_too_long",
   soul_connection_gone: "oracle_errors.soul_connection_gone",
+  saved_person_permission_required: "oracle_errors.saved_person_permission_required",
   under_minimum_age: "oracle_errors.under_minimum_age",
 };
 
@@ -46,6 +49,7 @@ const FINAL_REFUSAL_CODES = new Set([
   "chart_private",
   "partner_ai_consent_required",
   "soul_connection_gone",
+  "saved_person_permission_required",
   "under_minimum_age",
   "ai_daily_limit",
 ]);

@@ -6,19 +6,39 @@
 // saved person the server has never confirmed (created offline, not synced
 // yet), where the server recomputes the chart from its birth details.
 
+/** One more person in a family reading, by reference only. */
+export type FamilyRef = { name?: string | null; connectionId?: string | null; savedPersonId?: string | null };
+
 export type SoulRef = {
   connectionId?: string | null;
   savedPersonId?: string | null;
   // Legacy fallback only (see above). Never sent when an id is known.
   blueprint?: Record<string, unknown> | null;
+  // A family reading: everyone selected besides the focal person above.
+  // The server resolves each chart and checks each person's sharing,
+  // consent or recorded permission; no chart or summary goes from here.
+  family?: FamilyRef[] | null;
 };
+
+/** The family members as the chat request names them. */
+export function familyRequestRefs(family: FamilyRef[] | null | undefined): Array<Record<string, string>> {
+  if (!Array.isArray(family)) return [];
+  const out: Array<Record<string, string>> = [];
+  for (const f of family) {
+    if (f?.connectionId) out.push({ soul_connection_id: f.connectionId });
+    else if (f?.savedPersonId) out.push({ saved_person_id: f.savedPersonId });
+  }
+  return out;
+}
 
 export function soulRequestFields(ref: SoulRef | null | undefined): Record<string, unknown> {
   if (!ref) return {};
-  if (ref.connectionId) return { soul_connection_id: ref.connectionId };
-  if (ref.savedPersonId) return { saved_person_id: ref.savedPersonId };
-  if (ref.blueprint) return { soul_blueprint: ref.blueprint };
-  return {};
+  const family = familyRequestRefs(ref.family);
+  const extra = family.length > 0 ? { family_partners: family } : {};
+  if (ref.connectionId) return { soul_connection_id: ref.connectionId, ...extra };
+  if (ref.savedPersonId) return { saved_person_id: ref.savedPersonId, ...extra };
+  if (ref.blueprint) return { soul_blueprint: ref.blueprint, ...extra };
+  return extra;
 }
 
 export type HistoryMessage = {
@@ -76,8 +96,36 @@ export function voiceTranscriptFor(text: string, transcript: string | null | und
   return spoken && (text || "").includes(spoken) ? spoken : undefined;
 }
 
-/** Who a Dynamics conversation is with, as stored on its opening message. */
-export type TranscriptSoul = { name?: string | null; connection_id?: string | null; saved_person_id?: string | null };
+/** Who a Dynamics conversation is with, as stored on its opening message
+ *  (family: everyone else in a family reading). Ids only, never a chart. */
+export type TranscriptFamilyMember = { name?: string | null; connection_id?: string | null; saved_person_id?: string | null };
+export type TranscriptSoul = {
+  name?: string | null; connection_id?: string | null; saved_person_id?: string | null;
+  family?: TranscriptFamilyMember[] | null;
+};
+
+/** The family members a transcript names, as references. */
+export function familyFromTranscriptSoul(s: { family?: unknown } | null | undefined): FamilyRef[] {
+  const raw = s && Array.isArray(s.family) ? s.family : [];
+  const out: FamilyRef[] = [];
+  for (const f of raw) {
+    if (!f || typeof f !== "object") continue;
+    const r = f as TranscriptFamilyMember;
+    const connectionId = typeof r.connection_id === "string" && r.connection_id ? r.connection_id : null;
+    const savedPersonId = typeof r.saved_person_id === "string" && r.saved_person_id ? r.saved_person_id : null;
+    if (!connectionId && !savedPersonId) continue;
+    out.push({ name: typeof r.name === "string" ? r.name : null, connectionId, savedPersonId });
+  }
+  return out;
+}
+
+/** Family references as the transcript stores them. */
+export function familyForTranscript(family: FamilyRef[] | null | undefined): TranscriptFamilyMember[] {
+  if (!Array.isArray(family)) return [];
+  return family
+    .filter((f) => f && (f.connectionId || f.savedPersonId))
+    .map((f) => ({ name: f.name ?? null, connection_id: f.connectionId ?? null, saved_person_id: f.savedPersonId ?? null }));
+}
 
 /**
  * The Dynamics partner recorded in a transcript (the newest message that
@@ -88,7 +136,7 @@ export type TranscriptSoul = { name?: string | null; connection_id?: string | nu
  */
 export function soulFromTranscript(
   messages: Array<{ soul?: TranscriptSoul | null }> | null | undefined,
-): { name: string | null; connectionId: string | null; savedPersonId: string | null } | null {
+): { name: string | null; connectionId: string | null; savedPersonId: string | null; family?: FamilyRef[] } | null {
   if (!Array.isArray(messages)) return null;
   for (let i = messages.length - 1; i >= 0; i--) {
     const s = messages[i]?.soul;
@@ -96,7 +144,11 @@ export function soulFromTranscript(
     const connectionId = typeof s.connection_id === "string" && s.connection_id ? s.connection_id : null;
     const savedPersonId = typeof s.saved_person_id === "string" && s.saved_person_id ? s.saved_person_id : null;
     if (!connectionId && !savedPersonId) continue;
-    return { name: typeof s.name === "string" ? s.name : null, connectionId, savedPersonId };
+    const family = familyFromTranscriptSoul(s);
+    return {
+      name: typeof s.name === "string" ? s.name : null, connectionId, savedPersonId,
+      ...(family.length > 0 ? { family } : {}),
+    };
   }
   return null;
 }

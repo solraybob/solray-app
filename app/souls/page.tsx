@@ -24,6 +24,7 @@ import {
   nextSeq,
   noteDeleteAttempt,
   peopleToUpload,
+  permissionToRecordOnServer,
   recordSharingPermission,
   rememberServerId,
   bindPersonWritesToAccount,
@@ -121,6 +122,9 @@ interface SavedPerson {
   // /saved-people): needs_confirmation asks the member which occurrence it
   // was (or to correct a time that never happened). Read-only, never sent.
   birth_time_check?: unknown;
+  // The server holds the member's confirmed permission for this person
+  // (needed before a reading with them reaches an AI provider).
+  sharing_permission?: boolean;
   // Local bookkeeping, never sent: true once the server has confirmed it
   // holds this person. A confirmed person later missing from the server was
   // deleted on another device and must not be uploaded again.
@@ -998,7 +1002,7 @@ export default function SoulsPage() {
     if (bondPartners.length === 0) return;
     // Every saved person in the reading needs the member's confirmed
     // permission before their birth details go to Solray and its AI
-    // providers (their chart, and their summary in a family reading).
+    // providers (their chart is computed and read on the server).
     const unconfirmed = needingPermission(
       bondPartners.flatMap((p) => (p.kind === "saved" ? [p.person] : [])),
     );
@@ -1031,6 +1035,41 @@ export default function SoulsPage() {
     // A saved person still unconfirmed: their local id travels along.
     const localIdOf = (p: BondPartner) => (p.kind === "saved" && !p.person._synced ? p.person.id : null);
 
+    // A family reading names everyone by reference (the server resolves
+    // and checks each chart), so everyone in it must be on the server.
+    const isFamily = bondLens === "family" && partners.length > 1;
+    if (isFamily && partners.some((p) => !partnerSoulRef(p).soulConnectionId && !partnerSoulRef(p).savedPersonId)) {
+      setErrorMessage(t("souls.family_not_saved_yet"));
+      return abandon();
+    }
+
+    // The server refuses a reading with a saved person until the member's
+    // permission for them is recorded there: record what was confirmed
+    // here (people saved before the question existed, or on this device
+    // only) before the reading starts.
+    const toRecord = permissionToRecordOnServer(
+      partners.flatMap((p) => (p.kind === "saved" ? [p.person] : [])),
+    );
+    if (toRecord.length > 0) {
+      try {
+        await Promise.all(toRecord.map((person) => apiFetch(
+          `/saved-people/${encodeURIComponent(person.id)}/sharing-permission`,
+          { method: "POST" }, token, { generation: acct.generation })));
+      } catch {
+        if (!stillHere()) return abandon();
+        setErrorMessage(t("souls.permission_save_failed"));
+        return abandon();
+      }
+      if (!stillHere()) return abandon();
+      const recorded = new Set(toRecord.map((p) => p.id));
+      setSavedPeople((prev) => {
+        if (!prev.some((p) => recorded.has(p.id))) return prev;
+        const next = prev.map((p) => (recorded.has(p.id) ? { ...p, sharing_permission: true } : p));
+        writeSavedPeople(next);
+        return next;
+      });
+    }
+
     // The opening question is shown in the chat as the member's own words,
     // so it is written in their language.
     const lensLabel = t(
@@ -1038,48 +1077,29 @@ export default function SoulsPage() {
       : bondLens === "friendship" ? "souls.bond_lens_friendship"
       : bondLens === "family"     ? "souls.bond_lens_family"
       : "souls.bond_lens_work");
-    const term = (v: string) => (lang === "en" ? v : tx(v, lang));
-    const summarize = (chart: { sun_sign: string | null; hd_type: string | null; hd_profile: string | null }) => [
-      chart.sun_sign && fill(t("souls.bond_sun_in"), { sign: term(chart.sun_sign) }),
-      chart.hd_type  && fill(t("souls.bond_hd"), { type: term(chart.hd_type) + (chart.hd_profile ? ` ${chart.hd_profile}` : "") }),
-    ].filter(Boolean).join(", ");
-
-    // Family with multiple people: build a group context
-    if (bondLens === "family" && partners.length > 1) {
-      const lines: string[] = [];
-      let primaryBlueprint: unknown = null;
-      // The family reading's focal person is the first partner.
-      const primaryRef = partnerSoulRef(partners[0]);
-
-      for (const p of partners) {
-        const chart = partnerChart(p);
-        const name  = partnerName(p);
-        const summary = summarize(chart);
-        lines.push(`${name}: ${summary || t("souls.bond_no_chart")}`);
-
-        // Same priority order as single-partner: connection > cached
-        // saved blueprint > fall through. We only need ONE primary
-        // blueprint for the chat (it's the focal lens for the whole
-        // family reading); the rest of the family's charts stay in
-        // the summary-line text.
-        if (!primaryBlueprint && p === partners[0] && p.kind === "saved" && p.person.blueprint) {
-          primaryBlueprint = p.person.blueprint;
-        }
-      }
-
+    // Family with multiple people. The opening message names them only:
+    // no chart or summary of anyone goes from here. Every person travels
+    // as a reference (the first is the focal one); the server resolves
+    // each chart and checks each person's sharing and consent.
+    if (isFamily) {
       const names = partners.map(partnerName);
       const nameList = names.length === 2
         ? names.join(t("souls.bond_and"))
         : `${names.slice(0, -1).join(", ")}${t("souls.bond_and_last")}${names[names.length - 1]}`;
 
-      const introMessage = fill(t("souls.bond_family_intro"), { names: nameList, charts: lines.join("; ") });
+      const introMessage = fill(t("souls.bond_family_intro"), { names: nameList });
 
       sessionStorage.setItem("solray_compat_context", JSON.stringify({
         soulName: nameList,
         introMessage,
-        soulBlueprint: primaryBlueprint,
-        ...primaryRef,
-        localPersonId: localIdOf(partners[0]),
+        soulBlueprint: null,
+        ...partnerSoulRef(partners[0]),
+        localPersonId: null,
+        familyPartners: partners.slice(1).map((p) => ({
+          name: partnerName(p),
+          connectionId: partnerSoulRef(p).soulConnectionId ?? null,
+          savedPersonId: partnerSoulRef(p).savedPersonId ?? null,
+        })),
         lens: bondLens,
       }));
 
@@ -1091,10 +1111,7 @@ export default function SoulsPage() {
 
     // Single partner reading (all non-family lenses, or family with one person)
     const bondPartner = partners[0];
-    const chart  = partnerChart(bondPartner);
     const pName  = partnerName(bondPartner);
-
-    const chartSummary = summarize(chart);
 
     // Pull the full blueprint to hand to the Oracle. Three sources, in
     // priority order:
@@ -1156,9 +1173,9 @@ export default function SoulsPage() {
       }
     }
 
-    const introMessage = chartSummary
-      ? fill(t("souls.bond_intro_chart"), { lens: lensLabel, name: pName, chart: chartSummary })
-      : fill(t("souls.bond_intro"), { lens: lensLabel, name: pName });
+    // Names only: the server resolves the chart and checks the person's
+    // sharing and consent (or the member's recorded permission).
+    const introMessage = fill(t("souls.bond_intro"), { lens: lensLabel, name: pName });
 
     if (!stillHere()) return abandon();
     sessionStorage.setItem("solray_compat_context", JSON.stringify({
