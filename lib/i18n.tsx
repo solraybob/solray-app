@@ -190,6 +190,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** One string in a named language, outside the member's own setting (the
+ *  admin previews show a card in either language). Same fallbacks as t(). */
+export function translateIn(code: string, key: string): string {
+  const hit = lookup(MESSAGES[code] || MESSAGES.en, key);
+  if (hit !== undefined) return hit;
+  const enHit = lookup(MESSAGES.en, key);
+  return enHit !== undefined ? enHit : key;
+}
+
 export function useT() {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error("useT must be used within LanguageProvider");
