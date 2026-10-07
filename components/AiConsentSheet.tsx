@@ -53,15 +53,16 @@ export default function AiConsentSheet() {
     if (!token) { checkedFor.current = null; setOpen(false); return; }
     if (checkedFor.current === token) return;
     if (NO_AUTO_CHECK.some((p) => pathname.startsWith(p))) return;
-    checkedFor.current = token;
+    const tok = token;
+    checkedFor.current = tok;
     if (safeGet(SNOOZE_KEY, true) === "1") return;
-    let off = false;
-    apiFetch("/users/me", {}, token)
+    // Not cancelled by navigation (this check runs once per session); only
+    // an account change makes the answer irrelevant.
+    apiFetch("/users/me", {}, tok)
       .then((me) => {
-        if (!off && consentFromMe(me).required) setOpen(true);
+        if (checkedFor.current === tok && consentFromMe(me).required) setOpen(true);
       })
       .catch(() => { /* the 403 path will ask when an AI feature is used */ });
-    return () => { off = true; };
   }, [token, pathname]);
 
   // Any screen (or lib/api on a 403) can ask for the sheet.
