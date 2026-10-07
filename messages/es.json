@@ -100,7 +100,8 @@
     "have_account": "¿Ya tienes una cuenta?",
     "step_of": "Paso {n} de {total}",
     "ai_consent": "Acepto que Solray envíe mis datos de nacimiento y lo que escribo o digo en la app a sus proveedores de IA (Anthropic, OpenAI y Groq) para que generen mis lecturas y las respuestas del Oráculo. Solo los procesan en nombre de Solray.",
-    "ai_consent_link": "Política de privacidad"
+    "ai_consent_link": "Política de privacidad",
+    "under_age": "Solray está hecho para personas de 16 años o más, así que todavía no podemos abrirte una cuenta. Nos encantará recibirte cuando cumplas 16."
   },
   "today": {
     "title": "Hoy",
@@ -436,7 +437,22 @@
     "legal_section": "Legal y soporte",
     "terms_privacy": "Términos y política de privacidad",
     "support": "Soporte",
-    "deletion_info": "Cómo funciona la eliminación de la cuenta"
+    "deletion_info": "Cómo funciona la eliminación de la cuenta",
+    "switch_failed": "Ese cambio no se guardó. El interruptor muestra lo que está guardado ahora.",
+    "ai_consent_section": "Procesamiento con IA",
+    "ai_consent_given": "Has dado tu permiso.",
+    "ai_consent_given_on": "Diste tu permiso el {date}.",
+    "ai_consent_not_given": "Sin permiso.",
+    "ai_consent_on_hint": "Solray envía tus datos de nacimiento y lo que escribes o dices a sus proveedores de IA (Anthropic, OpenAI y Groq) para escribir tus lecturas y las respuestas del Oráculo.",
+    "ai_consent_off_hint": "Nada tuyo va a un proveedor de IA. El Oráculo y las lecturas escritas quedan en pausa hasta que aceptes.",
+    "ai_consent_withdraw": "Retirar el permiso",
+    "ai_consent_withdraw_body": "A partir de ahora no se envía nada tuyo a un proveedor de IA. El Oráculo y las lecturas escritas se detienen hasta que vuelvas a aceptar. Tu carta se queda.",
+    "ai_consent_withdraw_confirm": "Retirar",
+    "ai_consent_withdraw_failed": "No se pudo retirar ahora. Inténtalo de nuevo.",
+    "ai_consent_give": "Revisar y aceptar",
+    "delete_password_prompt": "Escribe tu contraseña para confirmar que eres tú.",
+    "delete_password_placeholder": "Contraseña",
+    "delete_wrong_password": "Esa contraseña no coincide. Inténtalo de nuevo."
   },
   "nav": {
     "today": "Ahora",
@@ -826,5 +842,13 @@
     "cta_create": "Crea tu perfil gratis",
     "error_forming": "Tu mapa aún se está formando. Inténtalo otra vez.",
     "error_generic": "Algo no encajó en el cosmos. Inténtalo otra vez."
+  },
+  "ai_consent": {
+    "title": "Antes de que hable el Oráculo",
+    "not_now_hint": "Sin esto, tu carta, las cartas de Almas y los ajustes siguen funcionando. El Oráculo y las lecturas escritas esperan hasta que aceptes. Puedes cambiarlo cuando quieras en Ajustes.",
+    "accept": "Acepto",
+    "saving": "Guardando...",
+    "not_now": "Ahora no",
+    "save_failed": "Tu respuesta no nos llegó. Revisa tu conexión e inténtalo de nuevo."
   }
 }

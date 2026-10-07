@@ -106,6 +106,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Keep <html lang> in step with the language on screen, so screen readers
+  // pronounce Spanish as Spanish and the browser offers the right
+  // hyphenation and translation behaviour. The server render says "en".
+  useEffect(() => {
+    try {
+      document.documentElement.lang = lang === "es-419" ? "es-419" : lang;
+    } catch { /* SSR */ }
+  }, [lang]);
+
   const setLang = useCallback(async (code: LanguageCode): Promise<boolean> => {
     if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(code)) return false;
     setLangState(code);

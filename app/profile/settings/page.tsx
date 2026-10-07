@@ -23,19 +23,21 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { AI_CONSENT_CHANGED_EVENT, consentFromMe, openAiConsentSheet } from "@/lib/ai-consent";
+import { clearChartDerivedCaches, syncBirthRevision } from "@/lib/chart-revision";
 import LanguagePicker from "@/components/LanguagePicker";
 import { isAnalyticsOptedOut, setAnalyticsOptedOut } from "@/lib/analytics";
 import { useT } from "@/lib/i18n";
 import BirthWheels from "@/components/BirthWheels";
+import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 import { PageHead, PageTitle, InkButton, HairlineButton } from "@/components/PageHead";
 
-interface CitySuggestion { display: string; lat: number; lon: number; }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function SettingsPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const router = useRouter();
   const { token, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -49,7 +51,14 @@ export default function SettingsPage() {
   const [name, setName]         = useState("");
   const [username, setUsername] = useState("");
   const [isPublic, setIsPublic] = useState(false);
-  const [hiveConsent, setHiveConsent] = useState(true);
+  // Off until the server says otherwise: a switch must never show a
+  // permission the member has not given.
+  const [hiveConsent, setHiveConsent] = useState(false);
+  // Third-party AI consent as the server holds it.
+  const [aiConsent, setAiConsent] = useState<{ required: boolean; version: string | null; at: string | null }>({ required: false, version: null, at: null });
+  const [aiWithdrawOpen, setAiWithdrawOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<SaveStatus>("idle");
+  const [aiError, setAiError] = useState<string | null>(null);
   const [photo, setPhoto]       = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
@@ -64,7 +73,7 @@ export default function SettingsPage() {
 
   // ── Delete account ─────────────────────────────────────────────────────────
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteStoreNote, setDeleteStoreNote] = useState(false);
@@ -73,19 +82,24 @@ export default function SettingsPage() {
   const [identityStatus, setIdentityStatus] = useState<SaveStatus>("idle");
   const [identityError,  setIdentityError]  = useState<string | null>(null);
   const [visibilityStatus, setVisibilityStatus] = useState<SaveStatus>("idle");
+  const [visibilityError, setVisibilityError] = useState<string | null>(null);
   const [hiveStatus, setHiveStatus] = useState<SaveStatus>("idle");
+  const [hiveError, setHiveError] = useState<string | null>(null);
   const [photoStatus,    setPhotoStatus]    = useState<SaveStatus>("idle");
   const [photoError,     setPhotoError]     = useState<string | null>(null);
   const [birthStatus,    setBirthStatus]    = useState<SaveStatus>("idle");
   const [birthError,     setBirthError]     = useState<string | null>(null);
 
   // ── City autocomplete ───────────────────────────────────────────────────────
-  const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>([]);
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
-  const [cityLoading, setCityLoading] = useState(false);
+  const city = useCityAutocomplete(birthCity);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const cityListRef  = useRef<HTMLDivElement>(null);
-  const cityDirtyRef = useRef(false); // user has typed since the last commit
+  const pickCity = (c: CitySuggestion) => {
+    setBirthCity(c.display);
+    setBirthLat(c.lat);
+    setBirthLon(c.lon);
+    city.settle(c.display);
+  };
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,14 +114,18 @@ export default function SettingsPage() {
         setName(p.name || "");
         setUsername(p.username || "");
         setIsPublic(Boolean(p.is_public));
-        // Hive consent defaults to true server-side; coerce undefined to true
-        // so the toggle shows the participating state for users who pre-date
-        // the field.
-        setHiveConsent(p.hive_consent === undefined ? true : Boolean(p.hive_consent));
+        // The switch shows exactly what the server stored; a missing field
+        // reads as not participating.
+        setHiveConsent(p.hive_consent === true);
+        setAiConsent(consentFromMe(data));
+        // Birth details changed elsewhere: drop charts built from the old ones.
+        syncBirthRevision(data);
         setPhoto(p.profile_photo || null);
         setBirthDate(p.birth_date || "");
         setBirthTime(p.birth_time || "");
         setBirthCity(p.birth_city || "");
+        // The stored city is already resolved: no search until the member types.
+        city.settle(p.birth_city || "");
         setBirthLat(p.birth_lat ?? null);
         setBirthLon(p.birth_lon ?? null);
       })
@@ -115,46 +133,18 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [token, loadAttempt]);
 
-  // ── City suggestions (debounced) ────────────────────────────────────────────
+  // The consent sheet (or a withdrawal here) changed the server state:
+  // read it back so this screen shows what is actually stored.
   useEffect(() => {
-    if (!cityDirtyRef.current) return; // only fetch when user actively typed
-    if (birthCity.trim().length < 2) {
-      setCitySuggestions([]);
-      setShowCitySuggestions(false);
-      return;
-    }
-    setCityLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(birthCity)}&type=city&limit=6&format=json&addressdetails=1`,
-          { headers: { "Accept-Language": "en" } }
-        );
-        const data = await res.json();
-        type NomItem = {
-          lat: string; lon: string;
-          address: { city?: string; town?: string; village?: string; municipality?: string; country?: string }
-        };
-        const seen = new Set<string>();
-        const suggestions: CitySuggestion[] = [];
-        for (const item of (data as NomItem[])) {
-          const c = item.address.city || item.address.town || item.address.village || item.address.municipality;
-          if (!c) continue;
-          const display = item.address.country ? `${c}, ${item.address.country}` : c;
-          if (seen.has(display)) continue;
-          seen.add(display);
-          suggestions.push({ display, lat: parseFloat(item.lat), lon: parseFloat(item.lon) });
-        }
-        setCitySuggestions(suggestions);
-        setShowCitySuggestions(suggestions.length > 0);
-      } catch {
-        // silently, let the user submit anyway, backend will geocode
-      } finally {
-        setCityLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [birthCity]);
+    if (!token) return;
+    const onChanged = () => {
+      apiFetch("/users/me", {}, token)
+        .then((data) => setAiConsent(consentFromMe(data)))
+        .catch(() => { /* keep the last known state */ });
+    };
+    window.addEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+  }, [token]);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -162,7 +152,7 @@ export default function SettingsPage() {
         cityListRef.current && !cityListRef.current.contains(e.target as Node) &&
         cityInputRef.current && !cityInputRef.current.contains(e.target as Node)
       ) {
-        setShowCitySuggestions(false);
+        city.close();
       }
     };
     document.addEventListener("mousedown", onClickOutside);
@@ -201,39 +191,66 @@ export default function SettingsPage() {
     }
   };
 
+  // Privacy switches. One save at a time per switch (the switch is disabled
+  // while saving), so two quick taps can never finish out of order and leave
+  // the screen showing the opposite of what the server stored. On failure the
+  // switch returns to the last value the server confirmed and says so.
   const toggleHiveConsent = async (next: boolean) => {
-    if (!token) return;
-    setHiveConsent(next); // optimistic
+    if (!token || hiveStatus === "saving") return;
+    const confirmed = hiveConsent;
+    setHiveConsent(next);
     setHiveStatus("saving");
+    setHiveError(null);
     try {
       await apiFetch("/users/profile", {
         method: "PATCH",
         body: JSON.stringify({ hive_consent: next }),
       }, token);
       setHiveStatus("saved");
-      setTimeout(() => setHiveStatus("idle"), 1500);
+      setTimeout(() => setHiveStatus((s) => (s === "saved" ? "idle" : s)), 1500);
     } catch {
-      setHiveConsent(!next); // revert
+      setHiveConsent(confirmed);
       setHiveStatus("error");
-      setTimeout(() => setHiveStatus("idle"), 2200);
+      setHiveError(t("settings.switch_failed"));
     }
   };
 
   const toggleVisibility = async (next: boolean) => {
-    if (!token) return;
-    setIsPublic(next); // optimistic
+    if (!token || visibilityStatus === "saving") return;
+    const confirmed = isPublic;
+    setIsPublic(next);
     setVisibilityStatus("saving");
+    setVisibilityError(null);
     try {
       await apiFetch("/users/profile", {
         method: "PATCH",
         body: JSON.stringify({ is_public: next }),
       }, token);
       setVisibilityStatus("saved");
-      setTimeout(() => setVisibilityStatus("idle"), 1500);
+      setTimeout(() => setVisibilityStatus((s) => (s === "saved" ? "idle" : s)), 1500);
     } catch {
-      setIsPublic(!next); // revert
+      setIsPublic(confirmed);
       setVisibilityStatus("error");
-      setTimeout(() => setVisibilityStatus("idle"), 2200);
+      setVisibilityError(t("settings.switch_failed"));
+    }
+  };
+
+  // Withdrawing third-party AI consent. The Oracle and written readings stop
+  // until the member agrees again; the chart and settings keep working.
+  const withdrawAiConsent = async () => {
+    if (!token || aiStatus === "saving") return;
+    setAiStatus("saving");
+    setAiError(null);
+    try {
+      await apiFetch("/users/me/ai-consent", { method: "DELETE" }, token);
+      setAiConsent({ required: true, version: null, at: null });
+      setAiWithdrawOpen(false);
+      setAiStatus("saved");
+      setTimeout(() => setAiStatus((s) => (s === "saved" ? "idle" : s)), 1500);
+      try { window.dispatchEvent(new CustomEvent(AI_CONSENT_CHANGED_EVENT, { detail: { granted: false } })); } catch { /* ignore */ }
+    } catch {
+      setAiStatus("error");
+      setAiError(t("settings.ai_consent_withdraw_failed"));
     }
   };
 
@@ -331,6 +348,9 @@ export default function SettingsPage() {
       if (birthLat != null) body.birth_lat = birthLat;
       if (birthLon != null) body.birth_lon = birthLon;
       const res = await apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(body) }, token);
+      // Every chart computed from the old birth details is now wrong:
+      // astrocartography, cycles, forecasts, the week, compatibility.
+      clearChartDerivedCaches();
       // Refresh the local blueprint cache from authoritative server data.
       // We DO NOT inject local React state (name/username/photo) here , 
       // an earlier draft did, and it could overwrite the cached identity
@@ -348,6 +368,7 @@ export default function SettingsPage() {
       try {
         if (res?.blueprint) {
           const me = await apiFetch("/users/me", {}, token).catch(() => null);
+          if (me) syncBirthRevision(me);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let prev: any = null;
           try {
@@ -364,7 +385,6 @@ export default function SettingsPage() {
         }
       } catch {}
       setBirthStatus("saved");
-      cityDirtyRef.current = false;
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t("settings.could_not_save");
@@ -378,17 +398,20 @@ export default function SettingsPage() {
     router.replace("/login");
   };
 
-  // Account deletion. Inline confirm (typing DELETE), never window.confirm:
-  // native dialogs block the webview automation and look foreign in the app.
+  // Account deletion. Inline confirm, never window.confirm (native dialogs
+  // block the webview automation and look foreign in the app). The member
+  // re-enters their password, which the server checks before deleting, so a
+  // phone left unlocked cannot erase the account.
   const handleDeleteAccount = async () => {
-    if (!token || deleteText.trim() !== "DELETE" || deleteBusy) return;
+    if (!token || !deletePassword || deleteBusy) return;
     setDeleteBusy(true);
     setDeleteError(null);
     try {
       const res = await apiFetch("/users/me", {
         method: "DELETE",
-        body: JSON.stringify({ confirm: "DELETE" }),
-      }, token);
+        body: JSON.stringify({ confirm: "DELETE", password: deletePassword }),
+      }, token, { keepSessionOn401: true });
+      setDeletePassword("");
       if (res?.store_managed) {
         // Apple / Google keep billing until the member cancels there. Say
         // so before signing out; the member leaves with the Done button.
@@ -399,7 +422,11 @@ export default function SettingsPage() {
       logout();
       router.replace("/login");
     } catch (e: unknown) {
-      setDeleteError(e instanceof Error ? e.message : t("settings.delete_failed"));
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        setDeleteError(t("settings.delete_wrong_password"));
+      } else {
+        setDeleteError(e instanceof Error ? e.message : t("settings.delete_failed"));
+      }
       setDeleteBusy(false);
     }
   };
@@ -547,6 +574,7 @@ export default function SettingsPage() {
             <Section
               label={t("settings.profile_visibility")}
               status={visibilityStatus}
+              error={visibilityError}
               hint={isPublic
                 ? t("settings.visibility_public_hint")
                 : t("settings.visibility_private_hint")}
@@ -555,6 +583,7 @@ export default function SettingsPage() {
                 label={isPublic ? t("common.public") : t("common.private")}
                 checked={isPublic}
                 onChange={toggleVisibility}
+                disabled={visibilityStatus === "saving"}
               />
             </Section>
 
@@ -615,6 +644,7 @@ export default function SettingsPage() {
             <Section
               label={t("settings.collective")}
               status={hiveStatus}
+              error={hiveError}
               hint={hiveConsent
                 ? t("settings.collective_on_hint")
                 : t("settings.collective_off_hint")}
@@ -623,7 +653,55 @@ export default function SettingsPage() {
                 label={hiveConsent ? t("common.on") : t("common.off")}
                 checked={hiveConsent}
                 onChange={toggleHiveConsent}
+                disabled={hiveStatus === "saving"}
               />
+            </Section>
+
+            {/* ── 4d. Third-party AI ───────────────────────────────────── */}
+            <Section
+              label={t("settings.ai_consent_section")}
+              status={aiStatus}
+              error={aiError}
+              hint={aiConsent.version && !aiConsent.required
+                ? t("settings.ai_consent_on_hint")
+                : t("settings.ai_consent_off_hint")}
+            >
+              <div className="space-y-3">
+                <p className="font-body text-[17px] text-text-primary">
+                  {aiConsent.version && !aiConsent.required
+                    ? (aiConsent.at
+                        ? t("settings.ai_consent_given_on").replace("{date}", formatConsentDate(aiConsent.at, lang))
+                        : t("settings.ai_consent_given"))
+                    : t("settings.ai_consent_not_given")}
+                </p>
+                {aiConsent.version && !aiConsent.required ? (
+                  !aiWithdrawOpen ? (
+                    <HairlineButton onClick={() => { setAiWithdrawOpen(true); setAiError(null); }}>
+                      {t("settings.ai_consent_withdraw")}
+                    </HairlineButton>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                        {t("settings.ai_consent_withdraw_body")}
+                      </p>
+                      <HairlineButton
+                        onClick={withdrawAiConsent}
+                        loading={aiStatus === "saving"}
+                        style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
+                      >
+                        {t("settings.ai_consent_withdraw_confirm")}
+                      </HairlineButton>
+                      <HairlineButton onClick={() => setAiWithdrawOpen(false)} disabled={aiStatus === "saving"}>
+                        {t("common.cancel")}
+                      </HairlineButton>
+                    </div>
+                  )
+                ) : (
+                  <HairlineButton onClick={() => openAiConsentSheet()}>
+                    {t("settings.ai_consent_give")}
+                  </HairlineButton>
+                )}
+              </div>
             </Section>
 
             {/* ── 5. Birth details ─────────────────────────────────────── */}
@@ -648,36 +726,42 @@ export default function SettingsPage() {
                       ref={cityInputRef}
                       value={birthCity}
                       onChange={(e) => {
-                        cityDirtyRef.current = true;
                         setBirthCity(e.target.value);
                         setBirthLat(null);
                         setBirthLon(null);
                       }}
-                      onFocus={() => birthCity.length >= 2 && setShowCitySuggestions(citySuggestions.length > 0)}
+                      onKeyDown={(e) => { city.onKeyDown(e, pickCity); }}
+                      onFocus={() => birthCity.length >= 2 && city.setOpen(city.suggestions.length > 0)}
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={city.open && city.suggestions.length > 0}
+                      aria-controls="settings-city-list"
+                      aria-activedescendant={city.active >= 0 ? `settings-city-${city.active}` : undefined}
                       className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
                       placeholder={t("settings.city_placeholder")}
                       autoCapitalize="words"
                     />
-                    {cityLoading && (
+                    {city.loading && (
                       <span className="absolute right-1 top-1 text-[14px] text-text-muted">{t("settings.searching")}</span>
                     )}
-                    {showCitySuggestions && citySuggestions.length > 0 && (
+                    {city.open && city.suggestions.length > 0 && (
                       <div
                         ref={cityListRef}
+                        role="listbox"
+                        id="settings-city-list"
                         className="absolute left-0 right-0 mt-1 bg-forest-card border border-forest-border rounded-xl overflow-hidden z-10 shadow-xl"
                       >
-                        {citySuggestions.map((s) => (
+                        {city.suggestions.map((s, i) => (
                           <button
                             key={s.display}
+                            id={`settings-city-${i}`}
                             type="button"
-                            onClick={() => {
-                              setBirthCity(s.display);
-                              setBirthLat(s.lat);
-                              setBirthLon(s.lon);
-                              setShowCitySuggestions(false);
-                              cityDirtyRef.current = false;
-                            }}
-                            className="block w-full text-left px-3 py-2 font-body text-[17px] text-text-primary hover:bg-forest-border/40 transition-colors"
+                            role="option"
+                            aria-selected={i === city.active}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => pickCity(s)}
+                            className={`block w-full text-left px-3 py-2 font-body text-[17px] text-text-primary hover:bg-forest-border/40 transition-colors${i === city.active ? " bg-forest-border/40" : ""}`}
+                            style={{ minHeight: 44 }}
                           >
                             {s.display}
                           </button>
@@ -769,7 +853,7 @@ export default function SettingsPage() {
                 </div>
               ) : !deleteOpen ? (
                 <HairlineButton
-                  onClick={() => { setDeleteOpen(true); setDeleteText(""); setDeleteError(null); }}
+                  onClick={() => { setDeleteOpen(true); setDeletePassword(""); setDeleteError(null); }}
                   style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
                 >
                   {t("settings.delete_button")}
@@ -779,31 +863,31 @@ export default function SettingsPage() {
                   <p className="font-body" style={{ fontSize: 17, lineHeight: 1.62, fontWeight: 500, color: "rgb(var(--rgb-text-primary))" }}>
                     {t("settings.delete_confirm_body")}
                   </p>
-                  <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-text-secondary))" }}>
-                    {t("settings.delete_type_prompt")}
+                  <p className="font-body" style={{ fontSize: 15, lineHeight: 1.6, color: "rgb(var(--rgb-text-secondary))" }}>
+                    {t("settings.delete_password_prompt")}
                   </p>
                   <input
-                    value={deleteText}
-                    onChange={(e) => setDeleteText(e.target.value)}
-                    placeholder="DELETE"
-                    autoCapitalize="characters"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    aria-label={t("settings.delete_type_prompt")}
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleDeleteAccount(); }}
+                    placeholder={t("settings.delete_password_placeholder")}
+                    autoComplete="current-password"
+                    aria-label={t("settings.delete_password_prompt")}
                     className="w-full font-body text-[17px] text-text-primary bg-transparent border-b border-forest-border/60 focus:border-text-primary pb-1.5 transition-colors"
                   />
                   {deleteError && (
-                    <p className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{deleteError}</p>
+                    <p role="alert" className="font-body" style={{ fontSize: 15, color: "rgb(var(--rgb-ember))" }}>{deleteError}</p>
                   )}
                   <HairlineButton
                     onClick={handleDeleteAccount}
                     loading={deleteBusy}
-                    disabled={deleteText.trim() !== "DELETE"}
+                    disabled={!deletePassword}
                     style={{ color: "rgb(var(--rgb-ember))", borderColor: "rgb(var(--rgb-ember) / .5)" }}
                   >
                     {t("settings.delete_confirm_button")}
                   </HairlineButton>
-                  <HairlineButton onClick={() => { setDeleteOpen(false); setDeleteText(""); setDeleteError(null); }} disabled={deleteBusy}>
+                  <HairlineButton onClick={() => { setDeleteOpen(false); setDeletePassword(""); setDeleteError(null); }} disabled={deleteBusy}>
                     {t("common.cancel")}
                   </HairlineButton>
                 </div>
@@ -850,6 +934,16 @@ function Section({
   );
 }
 
+function formatConsentDate(iso: string, lang: string): string {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso.slice(0, 10);
+    return d.toLocaleDateString(lang === "en" ? "en-GB" : lang, { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -875,14 +969,17 @@ function SaveButton({ onClick, status }: { onClick: () => void; status: SaveStat
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
+function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-busy={disabled || undefined}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full"
+      className="flex items-center justify-between w-full disabled:opacity-60"
+      style={{ minHeight: 44 }}
     >
       <span className="font-body text-[17px] text-text-primary">{label}</span>
       <span

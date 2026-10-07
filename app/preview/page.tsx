@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BirthWheels from "@/components/BirthWheels";
+import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 import { useT } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
@@ -15,9 +16,11 @@ export default function PreviewPage() {
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [birthCity, setBirthCity] = useState("");
-  const [citySuggestions, setCitySuggestions] = useState<{ display: string }[]>([]);
-  const [cityLoading, setCityLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const city = useCityAutocomplete(birthCity);
+  const pickCity = (c: CitySuggestion) => {
+    setBirthCity(c.display);
+    city.settle(c.display);
+  };
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
@@ -29,46 +32,6 @@ export default function PreviewPage() {
     hd_type: string;
   } | null>(null);
 
-  // City autocomplete debounce
-  useEffect(() => {
-    if (birthCity.trim().length < 2) {
-      setCitySuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    setCityLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(birthCity)}&type=city&limit=6&format=json&addressdetails=1`,
-          { headers: { "Accept-Language": "en" } }
-        );
-        const data = await res.json();
-        const suggestions = data
-          .map((item: { address: { city?: string; town?: string; village?: string; municipality?: string; country?: string } }) => {
-            const city = item.address.city || item.address.town || item.address.village || item.address.municipality;
-            const country = item.address.country;
-            if (!city) return null;
-            return { display: country ? `${city}, ${country}` : city };
-          })
-          .filter(Boolean) as { display: string }[];
-        const seen = new Set<string>();
-        const unique = suggestions.filter((s) => {
-          if (seen.has(s.display)) return false;
-          seen.add(s.display);
-          return true;
-        });
-        setCitySuggestions(unique);
-        setShowSuggestions(unique.length > 0);
-      } catch {
-        // silently fail
-      } finally {
-        setCityLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [birthCity]);
-
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -78,7 +41,7 @@ export default function PreviewPage() {
         cityInputRef.current &&
         !cityInputRef.current.contains(e.target as Node)
       ) {
-        setShowSuggestions(false);
+        city.close();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -244,17 +207,22 @@ export default function PreviewPage() {
                       ref={cityInputRef}
                       type="text"
                       value={birthCity}
-                      onChange={(e) => {
-                        setBirthCity(e.target.value);
-                        setShowSuggestions(true);
+                      onChange={(e) => setBirthCity(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (city.onKeyDown(e, pickCity)) return;
+                        handleKeyDown(e);
                       }}
-                      onKeyDown={handleKeyDown}
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={city.open && city.suggestions.length > 0}
+                      aria-controls="preview-city-list"
+                      aria-activedescendant={city.active >= 0 ? `preview-city-${city.active}` : undefined}
                       placeholder={t("preview.city_placeholder")}
                       className="preview-input"
-                      style={{ paddingRight: cityLoading ? "2rem" : undefined }}
+                      style={{ paddingRight: city.loading ? "2rem" : undefined }}
                       autoComplete="off"
                     />
-                    {cityLoading && (
+                    {city.loading && (
                       <span className="absolute right-0 top-1/2 -translate-y-1/2" style={{ color: "rgb(var(--rgb-text-secondary))" }}>
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -262,19 +230,19 @@ export default function PreviewPage() {
                         </svg>
                       </span>
                     )}
-                    {showSuggestions && citySuggestions.length > 0 && (
-                      <div ref={suggestionsRef} className="preview-dropdown">
-                        {citySuggestions.map((s, i) => (
+                    {city.open && city.suggestions.length > 0 && (
+                      <div ref={suggestionsRef} role="listbox" id="preview-city-list" className="preview-dropdown">
+                        {city.suggestions.map((s, i) => (
                           <button
-                            key={i}
+                            key={s.display}
+                            id={`preview-city-${i}`}
                             type="button"
-                            className="preview-dropdown-item"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setBirthCity(s.display);
-                              setCitySuggestions([]);
-                              setShowSuggestions(false);
-                            }}
+                            role="option"
+                            aria-selected={i === city.active}
+                            className={`preview-dropdown-item${i === city.active ? " is-active" : ""}`}
+                            style={{ minHeight: 44, ...(i === city.active ? { background: "rgb(var(--rgb-text-primary) / 0.06)" } : {}) }}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => pickCity(s)}
                           >
                             {s.display}
                           </button>

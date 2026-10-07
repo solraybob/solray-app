@@ -130,7 +130,8 @@
     "have_account": "Already have an account?",
     "step_of": "Step {n} of {total}",
     "ai_consent": "I agree that Solray sends my birth details and what I write or say in the app to its AI providers (Anthropic, OpenAI and Groq) so they can generate my readings and the Oracle's replies. They process it only on Solray's behalf.",
-    "ai_consent_link": "Privacy policy"
+    "ai_consent_link": "Privacy policy",
+    "under_age": "Solray is made for people aged 16 and over, so we cannot open an account for you yet. We would love to welcome you when you turn 16."
   },
   "first_mirror": {
     "title": "The First Mirror",
@@ -528,7 +529,22 @@
     "legal_section": "Legal and support",
     "terms_privacy": "Terms and privacy policy",
     "support": "Support",
-    "deletion_info": "How account deletion works"
+    "deletion_info": "How account deletion works",
+    "switch_failed": "That change did not save. The switch shows what is stored now.",
+    "ai_consent_section": "AI processing",
+    "ai_consent_given": "You have agreed.",
+    "ai_consent_given_on": "You agreed on {date}.",
+    "ai_consent_not_given": "Not agreed.",
+    "ai_consent_on_hint": "Solray sends your birth details and what you write or say to its AI providers (Anthropic, OpenAI and Groq) to write your readings and the Oracle's replies.",
+    "ai_consent_off_hint": "Nothing of yours goes to an AI provider. The Oracle and written readings are paused until you agree.",
+    "ai_consent_withdraw": "Withdraw permission",
+    "ai_consent_withdraw_body": "From now on nothing of yours is sent to an AI provider. The Oracle and written readings stop until you agree again. Your chart stays.",
+    "ai_consent_withdraw_confirm": "Withdraw",
+    "ai_consent_withdraw_failed": "Could not withdraw just now. Try again.",
+    "ai_consent_give": "Review and agree",
+    "delete_password_prompt": "Enter your password to confirm it is you.",
+    "delete_password_placeholder": "Password",
+    "delete_wrong_password": "That password does not match. Try again."
   },
   "nav": {
     "today": "Now",
@@ -826,5 +842,13 @@
     "cta_create": "Create your free profile",
     "error_forming": "Blueprint still forming. Try once more.",
     "error_generic": "Something felt off in the cosmos. Try once more."
+  },
+  "ai_consent": {
+    "title": "Before the Oracle speaks",
+    "not_now_hint": "Without this, your chart, Souls charts and settings still work. The Oracle and written readings wait until you agree. You can change this anytime in Settings.",
+    "accept": "I agree",
+    "saving": "Saving...",
+    "not_now": "Not now",
+    "save_failed": "Your answer did not reach us. Check your connection and try again."
   }
 }

@@ -3,16 +3,35 @@
 // had a literal \n inside it. trim() strips any whitespace.
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
+import { bumpAuthGeneration, getAuthGeneration, isCurrentGeneration, StaleAccountError } from "./account-session";
+import { AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "./ai-consent";
 
 const API_URL = ((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim()).trim();
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Machine-readable code from an object detail, e.g. "ai_consent_required". */
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
     this.name = "ApiError";
   }
+}
+
+/** True when the API refused because the member has not agreed to AI processing. */
+export function isAiConsentError(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 403 && e.code === AI_CONSENT_REQUIRED_CODE;
+}
+
+/** Pulls `code` out of a FastAPI detail object, if there is one. */
+export function detailCode(detail: unknown): string | undefined {
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const c = (detail as Record<string, unknown>).code;
+    if (typeof c === "string") return c;
+  }
+  return undefined;
 }
 
 // The user's wall-clock calendar date (YYYY-MM-DD). The backend keys daily
@@ -26,10 +45,19 @@ function localDateString(): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+export interface ApiFetchExtra {
+  /**
+   * A 401 on this call means "wrong password", not "dead session" (the
+   * account-deletion re-check). The session is kept; the caller shows it.
+   */
+  keepSessionOn401?: boolean;
+}
+
 export async function apiFetch(
   path: string,
   options: RequestInit = {},
-  token?: string | null
+  token?: string | null,
+  extra: ApiFetchExtra = {},
 ) {
   // IANA timezone of the device (e.g. "Europe/Madrid"). The backend stores
   // it lazily and uses it to pre-generate forecasts for the user's LOCAL
@@ -74,10 +102,22 @@ export async function apiFetch(
     ...(options.headers || {}),
   };
 
+  // Requests made with a token belong to the account that was signed in
+  // when they started. If the account changes before the answer arrives,
+  // the answer is dropped (StaleAccountError) so it can never be written
+  // into the next account's screens or caches, and its 401 can never sign
+  // the next account out.
+  const startedGen = getAuthGeneration();
+  const accountBound = !!token;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
   });
+
+  if (accountBound && !isCurrentGeneration(startedGen)) {
+    throw new StaleAccountError();
+  }
 
   if (!res.ok) {
     // 401 = dead session (expired or invalid token). Previously the app kept
@@ -87,7 +127,7 @@ export async function apiFetch(
     // clean logout: wipe the dead session and send them to login, where there
     // is now nothing to bounce back with. Centralized here so it covers every
     // screen, not just /today.
-    if (res.status === 401 && typeof window !== "undefined") {
+    if (res.status === 401 && accountBound && !extra.keepSessionOn401 && typeof window !== "undefined") {
       try {
         localStorage.removeItem("solray_token");
         localStorage.removeItem("solray_user");
@@ -96,13 +136,24 @@ export async function apiFetch(
         // astrocartography, chat, etc. readable. Shared with the login path.
         clearUserScopedCaches();
       } catch (_) { /* ignore storage errors */ }
+      bumpAuthGeneration();
       if (!window.location.pathname.startsWith("/login")) {
         window.location.replace("/login?expired=1");
       }
     }
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status);
+    const code = detailCode(err?.detail);
+    // Third-party AI consent missing: open the consent sheet wherever the
+    // member is. The caller still gets the error and keeps its own state.
+    if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
+      openAiConsentSheet();
+    }
+    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code);
   }
 
-  return res.json();
+  const data = await res.json();
+  if (accountBound && !isCurrentGeneration(startedGen)) {
+    throw new StaleAccountError();
+  }
+  return data;
 }

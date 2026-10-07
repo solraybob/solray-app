@@ -31,6 +31,7 @@ import SwipeNavigator from "@/components/SwipeNavigator";
 import BottomNav from "@/components/BottomNav";
 import DesktopHeader from "@/components/DesktopHeader";
 import NativePushBootstrap from "@/components/NativePushBootstrap";
+import AiConsentSheet from "@/components/AiConsentSheet";
 
 // Runs synchronously before React hydrates to set the correct theme on
 // <html>, eliminating a flash of the wrong palette for users who chose
@@ -141,6 +142,7 @@ export default function RootLayout({
                 </PullToRefresh>
                 <BottomNav />
                 <Footer />
+                <AiConsentSheet />
               </SubscriptionProvider>
             </AuthProvider>
           </LanguageProvider>

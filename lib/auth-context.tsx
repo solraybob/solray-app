@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
+import { bumpAuthGeneration } from "./account-session";
 
 interface User {
   id: string;
@@ -76,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sameUser = !!prevId && prevId === usr.id;
     } catch { /* ignore */ }
     if (!sameUser) clearReadingCaches();
+    // A new session starts a new account generation: anything still in
+    // flight from the previous session is dropped when it lands.
+    bumpAuthGeneration();
     // Persistence is best-effort: if storage throws (private mode), the
     // session still works from React state for this tab. Blocking a
     // SUCCESSFUL login on a storage write was audit finding number two.
@@ -124,23 +128,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("solray_token");
-    localStorage.removeItem("solray_user");
-    // Clear per-user cached reading data so the next account on this device
-    // can never read the previous user's cached forecast or chart.
-    clearReadingCaches();
-    // Clear the native-push "registered" flags so the next user signing
-    // in on the same device actually re-registers their device against
-    // APNs and the backend records THEIR token. Codex audit P1.4.
+    // Everything still in flight belongs to the account that is leaving.
+    bumpAuthGeneration();
+    // Storage cleanup is best-effort and isolated: a storage exception must
+    // never leave the member signed in on screen (finally clears React state).
     try {
-      // Lazy import to keep this file SSR-safe; the helper itself is
-      // a no-op on web.
-      import("./native-push").then(({ clearNativePushRegistration }) => {
-        clearNativePushRegistration();
-      });
-    } catch { /* ignore */ }
-    setTokenState(null);
-    setUser(null);
+      try {
+        localStorage.removeItem("solray_token");
+        localStorage.removeItem("solray_user");
+      } catch { /* storage unavailable: memory-only session */ }
+      // Clear per-user cached reading data so the next account on this device
+      // can never read the previous user's cached forecast or chart.
+      clearReadingCaches();
+      // Clear the native-push "registered" flags so the next user signing
+      // in on the same device actually re-registers their device against
+      // APNs and the backend records THEIR token. Codex audit P1.4.
+      try {
+        // Lazy import to keep this file SSR-safe; the helper itself is
+        // a no-op on web.
+        import("./native-push").then(({ clearNativePushRegistration }) => {
+          clearNativePushRegistration();
+        }).catch(() => { /* ignore */ });
+      } catch { /* ignore */ }
+    } finally {
+      setTokenState(null);
+      setUser(null);
+    }
   };
 
   return (
