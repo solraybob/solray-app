@@ -192,3 +192,36 @@ test("F1: the birthday question is not handed to the next account's chat", () =>
   assert.match(fn, /const acct = captureAccount\(\);/);
   assert.ok(fn.indexOf("if (!acct.live) return;") < fn.indexOf('sessionStorage.setItem("solray_chat_prompt"'));
 });
+
+test("R3-9: an error body decoded after the account changed is dropped, and opens no consent sheet", async () => {
+  let release;
+  global.fetch = async () => ({
+    ok: false, status: 403,
+    json: () => new Promise((r) => { release = () => r({ detail: { code: "ai_consent_required" } }); }),
+  });
+  let opened = 0;
+  const onOpen = () => { opened += 1; };
+  win.addEventListener("solray:ai-consent-required", onOpen);
+  const p = api.apiFetch("/chat", { method: "POST" }, "token-A");
+  while (!release) await tick();
+  session.bumpAuthGeneration(); // A signs out, B signs in while the body decodes
+  release();
+  await assert.rejects(p, (e) => session.isStaleAccountError(e));
+  win.removeEventListener("solray:ai-consent-required", onOpen);
+  assert.equal(opened, 0);
+});
+
+test("R3-9: the handled 401 sign-out still reaches its caller as an ApiError", async () => {
+  let release;
+  win.localStorage.setItem("solray_token", "token-D");
+  win.location.replaced = null;
+  global.fetch = async () => ({
+    ok: false, status: 401,
+    json: () => new Promise((r) => { release = () => r({ detail: "expired" }); }),
+  });
+  const p = api.apiFetch("/forecast/today", {}, "token-D");
+  while (!release) await tick();
+  release();
+  await assert.rejects(p, (e) => e instanceof api.ApiError && e.status === 401);
+  assert.equal(win.location.replaced, "/login?expired=1");
+});
