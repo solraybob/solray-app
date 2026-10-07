@@ -45,7 +45,7 @@ test("A5: no copy says another person's birth data stays on the device", () => {
 test("house rules: no em dash in translations", () => {
   for (const lang of ["en", "es"]) {
     const all = fs.readFileSync(path.join(root, `messages/${lang}.json`), "utf8");
-    assert.ok(!all.includes("—"), `${lang} has an em dash`);
+    assert.ok(!all.includes("\u2014"), `${lang} has an em dash`);
   }
 });
 
