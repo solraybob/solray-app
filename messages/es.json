@@ -975,5 +975,14 @@
     "ai_daily_limit": "Has llegado al límite de hoy para esto. Se renueva mañana.",
     "message_too_long": "Ese mensaje es demasiado largo. Intenta decirlo con menos palabras.",
     "soul_connection_gone": "Esta conexión terminó, así que la lectura entre ustedes está cerrada. Aún puedes hablar con el Oráculo sobre ti."
+  },
+  "birth_fold": {
+    "title": "¿Cuál de las dos fue?",
+    "body": "Tu hora de nacimiento ocurrió dos veces esa noche porque se atrasaron los relojes. ¿Cuál fue?",
+    "earlier": "La primera",
+    "later": "La segunda",
+    "hint": "Si no lo sabes, puede que lo diga tu partida de nacimiento o lo recuerde tu familia. Puedes cambiarlo después en Ajustes.",
+    "back": "Volver",
+    "nonexistent": "Esa hora no existió donde naciste: esa noche se adelantaron los relojes una hora. Revisa tu hora de nacimiento. Puede que fuera una hora más tarde."
   }
 }

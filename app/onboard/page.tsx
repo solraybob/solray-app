@@ -15,6 +15,9 @@ import { AI_CONSENT_VERSION } from "@/lib/ai-consent";
 import { useCityAutocomplete, type CitySuggestion } from "@/lib/city-search";
 
 import { ageFromBirthDate, MIN_AGE } from "@/lib/age";
+import { ApiError, detailCode, trackRequest } from "@/lib/api";
+import { sendBirthRequest, type BirthFold, type FoldChoice } from "@/lib/birth-time-fold";
+import BirthTimeFoldSheet from "@/components/BirthTimeFoldSheet";
 
 const TOTAL_STEPS = 5;
 
@@ -190,6 +193,12 @@ export default function OnboardPage() {
     if (e.key === "Enter" && canProceed() && step < TOTAL_STEPS) next();
   };
 
+  // The "which one was it" question for a birth time that happened twice
+  // (clocks went back). Resolves with the member's answer, or null.
+  const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  const askFold = (options: FoldChoice[]) =>
+    new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
+
   const handleSubmit = async () => {
     setError("");
     if (underAge || !aiConsent) return;
@@ -220,7 +229,10 @@ export default function OnboardPage() {
       const p = cap?.getPlatform?.();
       if (p === "ios" || p === "android") nativePlatform = p;
     } catch { /* not native: header omitted, web trial applies */ }
-    try {
+    // One registration request. Sent again with birth_time_fold when the
+    // birth time fell in the hour the clocks went back (it happened twice)
+    // and the member has said which one it was.
+    const register = (fold: BirthFold | null) => trackRequest(async () => {
       const res = await fetch(`${apiUrl}/users/register`, {
         method: "POST",
         headers: {
@@ -241,13 +253,25 @@ export default function OnboardPage() {
           ai_consent_version: AI_CONSENT_VERSION,
           invite_code: inviteCode || undefined,
           language: language || undefined,
+          ...(fold ? { birth_time_fold: fold } : {}),
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(errorText(err?.detail, t("onboard.registration_failed")));
+        throw new ApiError(errorText(err?.detail, t("onboard.registration_failed")), res.status, detailCode(err?.detail), err?.detail);
       }
-      const data = await res.json();
+      return res.json();
+    });
+    try {
+      const outcome = await sendBirthRequest(register, askFold);
+      if (outcome.status === "cancelled") return;
+      if (outcome.status === "nonexistent") {
+        // Back to the birth moment, with a kind word about what happened.
+        setStep(3);
+        setError(t("birth_fold.nonexistent"));
+        return;
+      }
+      const data = outcome.value;
       const newToken = data.token || data.access_token;
       setToken(newToken, data.profile || data.user || { id: data.user_id, email: cleanEmail, name });
       // Funnel event: marks the moment a real signup completed. Powers
@@ -296,6 +320,14 @@ export default function OnboardPage() {
           pointerEvents: "none",
         }}
       />
+
+      {foldAsk && (
+        <BirthTimeFoldSheet
+          options={foldAsk.options}
+          onChoose={(f) => { foldAsk.resolve(f); setFoldAsk(null); }}
+          onCancel={() => { foldAsk.resolve(null); setFoldAsk(null); }}
+        />
+      )}
 
       {/* Magical blueprint calculation screen */}
       {calculatingBlueprint && <BlueprintLoader />}

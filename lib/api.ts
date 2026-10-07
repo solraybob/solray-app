@@ -13,10 +13,14 @@ export class ApiError extends Error {
   /** Machine-readable code when the backend sent detail: {code, message},
    *  e.g. "ai_consent_required", "ai_daily_limit". */
   code?: string;
-  constructor(message: string, status: number, code?: string) {
+  /** The server's full `detail`, for errors that carry more than a code
+   *  (e.g. the two offsets of an ambiguous birth time). */
+  detail?: unknown;
+  constructor(message: string, status: number, code?: string, detail?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.detail = detail;
     this.name = "ApiError";
   }
 }
@@ -185,7 +189,7 @@ async function finishApiFetch(
     if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
       openAiConsentSheet();
     }
-    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code);
+    throw new ApiError(errorText(err?.detail, `HTTP ${res.status}`), res.status, code, err?.detail);
   }
 
   const data = await res.json();

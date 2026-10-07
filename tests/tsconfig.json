@@ -32,6 +32,7 @@
     "../lib/oracle-request.ts",
     "../lib/draft-guard.ts",
     "../lib/chat-sync.ts",
-    "../lib/voice-result.ts"
+    "../lib/voice-result.ts",
+    "../lib/birth-time-fold.ts"
   ]
 }

@@ -166,3 +166,98 @@ test("F10 (B4): the install manifest follows the language", () => {
   assert.ok(!/Higher Self|Human Design/.test(es.description));
   assert.match(read("lib/i18n.tsx"), /link\[rel="manifest"\]/);
 });
+
+// ── C5: birth times on a clock-change night ────────────────────────────────
+
+function birthServer(answers) {
+  const calls = [];
+  global.fetch = async (url, init = {}) => {
+    calls.push({ url, body: init.body ? JSON.parse(init.body) : null });
+    const [status, body] = answers[Math.min(calls.length - 1, answers.length - 1)];
+    return { ok: status >= 200 && status < 300, status, json: async () => body };
+  };
+  return calls;
+}
+const AMBIGUOUS = [400, { detail: { code: "birth_time_ambiguous", message: "That time happened twice.", options: [
+  { fold: "first", utc_offset: "+02:00" }, { fold: "second", utc_offset: "+01:00" },
+] } }];
+
+test("C5: an ambiguous birth time asks once and re-sends with the chosen fold", async () => {
+  const api = load("lib/api.js");
+  const { sendBirthRequest } = load("lib/birth-time-fold.js");
+  const calls = birthServer([AMBIGUOUS, [200, { blueprint: { ok: 1 } }]]);
+  const body = { birth_date: "1990-10-28", birth_time: "02:30" };
+  let asked = null;
+  const out = await sendBirthRequest(
+    (fold) => api.apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify(fold ? { ...body, birth_time_fold: fold } : body) }, "tok"),
+    async (options) => { asked = options; return "second"; },
+  );
+  assert.deepEqual(asked, [{ fold: "first", offset: "UTC+2" }, { fold: "second", offset: "UTC+1" }]);
+  assert.equal(out.status, "ok");
+  assert.equal(out.fold, "second");
+  assert.deepEqual(out.value, { blueprint: { ok: 1 } });
+  assert.equal(calls.length, 2);
+  assert.equal("birth_time_fold" in calls[0].body, false);
+  assert.equal(calls[1].body.birth_time_fold, "second");
+  assert.equal(calls[1].body.birth_time, "02:30");
+});
+
+test("C5: backing out sends nothing more; a nonexistent time comes back to fix", async () => {
+  const api = load("lib/api.js");
+  const { sendBirthRequest } = load("lib/birth-time-fold.js");
+  let calls = birthServer([AMBIGUOUS]);
+  const send = (fold) => api.apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify({ birth_time_fold: fold || undefined }) }, "tok");
+  assert.deepEqual(await sendBirthRequest(send, async () => null), { status: "cancelled" });
+  assert.equal(calls.length, 1);
+  calls = birthServer([[400, { detail: { code: "birth_time_nonexistent", message: "That time did not exist." } }]]);
+  let asked = false;
+  assert.deepEqual(await sendBirthRequest(send, async () => { asked = true; return "first"; }), { status: "nonexistent" });
+  assert.equal(asked, false);
+  assert.equal(calls.length, 1);
+});
+
+test("C5: other errors pass through, and a second ambiguous answer is not asked again", async () => {
+  const api = load("lib/api.js");
+  const { sendBirthRequest } = load("lib/birth-time-fold.js");
+  const send = (fold) => api.apiFetch("/users/birth", { method: "PATCH", body: JSON.stringify({ birth_time_fold: fold || undefined }) }, "tok");
+  birthServer([[400, { detail: "Could not find that city" }]]);
+  await assert.rejects(sendBirthRequest(send, async () => "first"), (e) => e instanceof api.ApiError && /city/.test(e.message));
+  let n = 0;
+  birthServer([AMBIGUOUS, AMBIGUOUS]);
+  await assert.rejects(sendBirthRequest(send, async () => { n += 1; return "first"; }), (e) => e instanceof api.ApiError && e.code === "birth_time_ambiguous");
+  assert.equal(n, 1);
+});
+
+test("C5: offsets read the way a person reads them", () => {
+  const { formatUtcOffset, birthTimeIssue } = load("lib/birth-time-fold.js");
+  assert.equal(formatUtcOffset("+01:00"), "UTC+1");
+  assert.equal(formatUtcOffset("-0330"), "UTC-3:30");
+  assert.equal(formatUtcOffset("UTC+5:30"), "UTC+5:30");
+  assert.equal(formatUtcOffset(2), "UTC+2");          // hours
+  assert.equal(formatUtcOffset(-180), "UTC-3");       // minutes
+  assert.equal(formatUtcOffset(3600), "UTC+1");       // seconds
+  assert.equal(formatUtcOffset(0), "UTC+0");
+  assert.equal(formatUtcOffset(undefined), "");
+  assert.equal(birthTimeIssue({ status: 400, detail: { code: "something_else" } }), null);
+  assert.equal(birthTimeIssue({ status: 403, detail: { code: "birth_time_ambiguous" } }), null);
+  // Options missing their offsets still give two labelled choices.
+  assert.deepEqual(birthTimeIssue({ status: 400, detail: { code: "birth_time_ambiguous" } }).options.map((o) => o.fold), ["first", "second"]);
+});
+
+test("C5: onboarding and settings send the fold through the shared flow, copy in EN and ES", () => {
+  const onboard = read("app/onboard/page.tsx");
+  assert.match(onboard, /sendBirthRequest\(register, askFold\)/);
+  assert.match(onboard, /\.\.\.\(fold \? \{ birth_time_fold: fold \} : \{\}\)/);
+  assert.match(onboard, /setError\(t\("birth_fold\.nonexistent"\)\)/);
+  assert.match(onboard, /<BirthTimeFoldSheet/);
+  const settings = read("app/profile/settings/page.tsx");
+  assert.match(settings, /sendBirthRequest\(/);
+  assert.match(settings, /birth_time_fold: fold/);
+  assert.match(settings, /setBirthError\(t\("birth_fold\.nonexistent"\)\)/);
+  assert.match(settings, /<BirthTimeFoldSheet/);
+  for (const lang of ["en", "es"]) {
+    const m = JSON.parse(read(`messages/${lang}.json`)).birth_fold;
+    for (const k of ["title", "body", "earlier", "later", "hint", "back", "nonexistent"]) assert.ok(m[k], `${lang} birth_fold.${k}`);
+  }
+  assert.equal(JSON.parse(read("messages/en.json")).birth_fold.body, "Your birth time happened twice that night because the clocks went back. Which one?");
+});
