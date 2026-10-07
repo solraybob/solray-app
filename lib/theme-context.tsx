@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 /**
  * ThemeProvider
  *
- * Two themes, "dark" (default forest) and "light" (pearl ground). The
+ * Two themes, "light" (pearl ground, the default) and "dark" (forest). The
  * active theme is written to <html data-theme="..."> so app/globals.css
  * can flip every CSS variable in one place.
  *
@@ -14,6 +14,11 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
  * light-mode user never gets a flash of dark forest, and vice versa.
  */
 export type Theme = "dark" | "light";
+
+/** The theme on screen for a given <html data-theme> value: only "dark" is dark. */
+export function themeFromAttribute(attr: string | null | undefined): Theme {
+  return attr === "dark" ? "dark" : "light";
+}
 
 interface ThemeContextValue {
   theme: Theme;
@@ -24,12 +29,16 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  // The paper is the ground when nothing is chosen (globals.css: no
+  // data-theme is the light palette; only data-theme="dark" is dark), so the
+  // state starts there too. Starting at "dark" made Settings mark Dark as
+  // chosen on a paper screen and drew the chart wheel, body graph and moon
+  // card in their dark-ground colours on paper.
+  const [theme, setThemeState] = useState<Theme>("light");
 
   // Sync from <html data-theme> on mount (set by the inline FOUC-killer in layout)
   useEffect(() => {
-    const initial = (document.documentElement.getAttribute("data-theme") as Theme | null) || "dark";
-    setThemeState(initial === "light" ? "light" : "dark");
+    setThemeState(themeFromAttribute(document.documentElement.getAttribute("data-theme")));
   }, []);
 
   // Native status bar follows the ground actually on screen: dark text on
