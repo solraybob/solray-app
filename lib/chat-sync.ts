@@ -287,9 +287,15 @@ export function deleteSessionOnServer(sessionId: string, token: string, gen: num
   });
 }
 
-/** The account changed: forget this device's in-memory deletion marks. */
-export function resetChatSyncMemory() {
-  deletedHere.clear();
+/**
+ * Call with the current account generation when the chat opens. Deletion
+ * marks survive leaving and reopening the chat (a delete may still be
+ * running) and are forgotten only when the account changed.
+ */
+let boundGeneration: number | null = null;
+export function bindChatSyncToAccount(generation: number) {
+  if (boundGeneration !== null && boundGeneration !== generation) deletedHere.clear();
+  boundGeneration = generation;
 }
 
 // ─── Reconciliation ────────────────────────────────────────────────────────

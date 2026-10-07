@@ -18,7 +18,7 @@ import {
   loadSession,
   markUnsent,
   pushSessionToServer,
-  resetChatSyncMemory,
+  bindChatSyncToAccount,
   saveSession,
   saveSessionIds,
   syncSessionsFromServer,
@@ -337,7 +337,7 @@ function ChatPageInner() {
   const [syncAttempt, setSyncAttempt] = useState(0);
   const syncFailuresRef = useRef(0);
   useEffect(() => {
-    resetChatSyncMemory();
+    bindChatSyncToAccount(accountGen);
     syncFailuresRef.current = 0;
   }, [accountGen]);
   useEffect(() => {
