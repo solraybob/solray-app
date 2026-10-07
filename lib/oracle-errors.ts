@@ -29,6 +29,10 @@ export function isPartnerConsentRefusal(e: unknown): boolean {
   return e instanceof ApiError && e.status === 403 && e.code === PARTNER_AI_CONSENT_REQUIRED_CODE;
 }
 
+/** The message is over the chat limit (413): nothing was sent, and the
+ *  chat puts the words back in the composer for editing. */
+export const MESSAGE_TOO_LONG_CODE = "message_too_long";
+
 export const ORACLE_ERROR_KEYS: Record<string, string> = {
   ai_consent_required: "chat.consent_needed",
   chart_private: "oracle_errors.chart_private",

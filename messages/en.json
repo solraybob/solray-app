@@ -1031,6 +1031,7 @@
     "ai_daily_limit": "You have reached today's limit for this. It resets tomorrow.",
     "message_too_long": "That message is too long. Try saying it in fewer words.",
     "saved_person_permission_required": "This reading needs your confirmation that you have this person's permission to share their birth details. Open Dynamics and start the reading again to confirm it.",
+    "message_too_long_kept": "That message is too long to send in one go. It is still in the box below, so you can shorten it.",
     "soul_connection_gone": "This connection has ended, so the reading between you is closed. You can still talk with the Oracle about yourself.",
     "under_minimum_age": "The Oracle is for members aged 16 and over, so this part of Solray stays closed for now. Your chart and the rest of the app are here for you."
   },

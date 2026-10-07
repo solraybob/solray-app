@@ -34,10 +34,10 @@ import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
 import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
-import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal } from "@/lib/oracle-errors";
+import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal, MESSAGE_TOO_LONG_CODE } from "@/lib/oracle-errors";
 import {
-  soulRequestFields, historyForServer, soulFromTranscript, voiceMessage, voiceTranscriptFor, type SoulRef,
-  familyForTranscript, type FamilyRef,
+  soulRequestFields, historyForServer, soulFromTranscript, voiceMessage, voiceTranscriptFor, composerWithUnsent,
+  familyForTranscript, type FamilyRef, type SoulRef,
 } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
@@ -1382,6 +1382,26 @@ function ChatPageInner() {
       const known = oracleErrorKey(err);
       if (known) {
         if (activeSessionRef.current !== sentSessionId) return;
+        // Too long to send (a long voice note, say): the server read it for
+        // safety first and nothing else happened. The words leave the
+        // thread and go back into the box, whole, to be shortened; the
+        // spoken part keeps travelling as voice_transcript.
+        if (err instanceof ApiError && err.code === MESSAGE_TOO_LONG_CODE) {
+          setMessages((prev) => [
+            ...prev.filter((m) => m.id !== userMsg.id),
+            {
+              id: (Date.now() + 2).toString(),
+              role: "assistant",
+              content: t("oracle_errors.message_too_long_kept"),
+              timestamp: new Date().toISOString(),
+              isError: true,
+            },
+          ]);
+          setInput((prev) => composerWithUnsent(text, prev));
+          lastTranscriptRef.current = voiceTranscript ?? null;
+          requestAnimationFrame(() => inputRef.current?.focus());
+          return;
+        }
         // A member without AI consent who may be struggling: the server
         // sends a short support card with their line alongside the consent
         // prompt. It goes in the thread first.
