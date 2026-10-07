@@ -10,7 +10,8 @@
  */
 
 import { useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { billingFetch, DeadlineError } from "@/lib/subscription";
 import { createSingleUseToken, luhnValid, CardTokenError } from "@/lib/teya-card";
 import { useT } from "@/lib/i18n";
 
@@ -29,9 +30,12 @@ export type CardSaveResult = {
 export default function CardForm({
   token,
   onSuccess,
+  onUncertain,
 }: {
   token: string;
   onSuccess: (r: CardSaveResult) => void;
+  /** The save may or may not have gone through (timeout): refresh status. */
+  onUncertain?: () => void;
 }) {
   const { t } = useT();
   const [pan, setPan] = useState("");
@@ -68,22 +72,35 @@ export default function CardForm({
     setBusy(true);
     try {
       const single = await createSingleUseToken(digits, String(month), String(year));
-      const result = (await apiFetch(
+      // Saving can settle a payment that is due, so it gets a longer
+      // deadline; past it the outcome is unknown and the member is told to
+      // refresh, never to simply try again.
+      const result = (await billingFetch(
         "/subscribe/attach-card-token",
         { method: "POST", body: JSON.stringify({ token_single: single }) },
-        token
+        token,
+        60_000,
       )) as CardSaveResult;
       onSuccess(result);
     } catch (e) {
       // One generic, localized message for any card failure; processor
       // detail never reaches the UI.
-      setError(
-        e instanceof CardTokenError
-          ? (e.code === "network" ? t("subscribe.card_network_error") : t("subscribe.card_error"))
-          : e instanceof Error && e.message
-            ? e.message
-            : t("subscribe.card_error")
-      );
+      if (e instanceof DeadlineError) {
+        setError(t("subscribe.payment_timeout"));
+        onUncertain?.();
+      } else if (e instanceof ApiError && e.code === "store_managed") {
+        setError(t("subscribe.store_managed_card"));
+      } else if (e instanceof ApiError && e.code === "charge_pending") {
+        setError(t("subscribe.charge_pending"));
+      } else {
+        setError(
+          e instanceof CardTokenError
+            ? (e.code === "network" ? t("subscribe.card_network_error") : t("subscribe.card_error"))
+            : e instanceof Error && e.message
+              ? e.message
+              : t("subscribe.card_error")
+        );
+      }
     } finally {
       setBusy(false);
     }
