@@ -232,3 +232,85 @@ export function savedPersonForServer<T extends FoldablePerson>(p: T): Omit<T, "_
 export function savedPersonBirthCheck(p: FoldablePerson): StoredBirthTimeCheck {
   return storedBirthTimeCheck({ birth_time_check: p.birth_time_check });
 }
+
+// ── Updates to a saved person the server has not confirmed yet ───────────
+//
+// Changing a person the server already holds (confirming which occurrence
+// of a repeated birth time it was) is recorded here, on the device, before
+// it is sent, and cleared only when the server confirms that very update.
+// Until then the next Souls sync sends it again before taking the server's
+// list, and shows it in place of the server's older copy, so a failed save
+// is retried instead of silently overwritten. Per account like the other
+// solray_ keys (cleared on sign-out).
+
+const PENDING_UPDATES_KEY = "solray_saved_people_pending";
+
+export interface PendingUpdate<T> { person: T; stamp: number }
+
+function readPending(): Record<string, PendingUpdate<FoldablePerson>> {
+  try {
+    const v = JSON.parse(localStorage.getItem(PENDING_UPDATES_KEY) || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  } catch {
+    return {};
+  }
+}
+function writePending(p: Record<string, PendingUpdate<FoldablePerson>>): void {
+  try {
+    if (Object.keys(p).length) localStorage.setItem(PENDING_UPDATES_KEY, JSON.stringify(p));
+    else localStorage.removeItem(PENDING_UPDATES_KEY);
+  } catch { /* ignore */ }
+}
+
+/** Records an update before it is sent. Returns its stamp (newer updates of
+ *  the same person get larger stamps); pass it to settlePendingUpdate. */
+export function recordPendingUpdate<T extends FoldablePerson>(person: T): number {
+  const all = readPending();
+  const prev = all[person.id];
+  const stamp = Math.max(Date.now(), (prev?.stamp ?? 0) + 1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _synced, ...rest } = person;
+  all[person.id] = { person: rest as FoldablePerson, stamp };
+  writePending(all);
+  return stamp;
+}
+
+export function pendingUpdateFor<T extends FoldablePerson = FoldablePerson>(id: string): PendingUpdate<T> | null {
+  const e = readPending()[id];
+  return e && e.person && typeof e.stamp === "number" ? (e as PendingUpdate<T>) : null;
+}
+
+export function pendingUpdateIds(): string[] {
+  return Object.keys(readPending());
+}
+
+/** The server confirmed the update with this stamp. A newer update recorded
+ *  meanwhile stays pending. */
+export function settlePendingUpdate(id: string, stamp: number): void {
+  const all = readPending();
+  if (all[id] && all[id].stamp === stamp) {
+    delete all[id];
+    writePending(all);
+  }
+}
+
+/** Drops pending updates for people the server no longer holds (deleted on
+ *  another device, or removed here). */
+export function prunePendingUpdates(serverIds: Set<string>): void {
+  const all = readPending();
+  let changed = false;
+  for (const id of Object.keys(all)) {
+    if (!serverIds.has(id)) { delete all[id]; changed = true; }
+  }
+  if (changed) writePending(all);
+}
+
+/** The server's list with each still-pending update shown in place of the
+ *  server's older copy. */
+export function overlayPendingUpdates<T extends FoldablePerson>(server: T[]): T[] {
+  const all = readPending();
+  return server.map((p) => {
+    const e = p && all[p.id];
+    return e && e.person ? ({ ...(e.person as T), id: p.id, _synced: true } as T) : p;
+  });
+}

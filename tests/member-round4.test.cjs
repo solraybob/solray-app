@@ -180,3 +180,60 @@ test("F2: a different revision in the list pulls a metadata-only change (partner
   assert.equal(here.customName, "With Ana");
   assert.equal(sync.getLocalMeta().dyn.revision, 3);
 });
+
+// ─── Finding 3: a failed saved-person birth-time update is retried ─────────
+
+const sp = load("lib/saved-people-sync.js");
+const fs = require("fs");
+const path = require("path");
+const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+
+test("F3: a pending saved-person update survives a reload and wins over the server's older copy", () => {
+  win.localStorage.clear();
+  const updated = { id: "p1", name: "Ana", birth_time_fold: "second", blueprint: { meta: { birth_time_fold: "second" } }, _synced: true };
+  const stamp = sp.recordPendingUpdate(updated);
+  // Stored on the device, not in memory: a reload still has it.
+  assert.ok(win.localStorage.getItem("solray_saved_people_pending"));
+  assert.equal(sp.pendingUpdateFor("p1").person.birth_time_fold, "second");
+  // The next sync's server list still has the old copy: the pending one is shown.
+  const server = [{ id: "p1", name: "Ana", blueprint: { meta: {} }, _synced: true }, { id: "p2", name: "Bo", _synced: true }];
+  const shown = sp.overlayPendingUpdates(server);
+  assert.equal(shown[0].birth_time_fold, "second");
+  assert.equal(shown[0]._synced, true);
+  assert.equal(shown[1], server[1]);
+  // Only the confirmation of this very update clears it.
+  sp.settlePendingUpdate("p1", stamp - 1);
+  assert.ok(sp.pendingUpdateFor("p1"));
+  sp.settlePendingUpdate("p1", stamp);
+  assert.equal(sp.pendingUpdateFor("p1"), null);
+});
+
+test("F3: a newer update replaces an older pending one; people gone from the server drop theirs", () => {
+  win.localStorage.clear();
+  const a = sp.recordPendingUpdate({ id: "p1", birth_time_fold: "first" });
+  const b = sp.recordPendingUpdate({ id: "p1", birth_time_fold: "second" });
+  assert.ok(b > a);
+  sp.settlePendingUpdate("p1", a);   // the older save's late confirmation
+  assert.equal(sp.pendingUpdateFor("p1").person.birth_time_fold, "second");
+  sp.recordPendingUpdate({ id: "p9", birth_time_fold: "first" });
+  sp.prunePendingUpdates(new Set(["p1"]));
+  assert.ok(sp.pendingUpdateFor("p1"));
+  assert.equal(sp.pendingUpdateFor("p9"), null);
+  assert.deepEqual(sp.pendingUpdateIds(), ["p1"]);
+});
+
+test("F3: Souls records the update before sending, clears it only on confirmation, and retries it before merging", () => {
+  const src = read("app/souls/page.tsx");
+  const confirm = src.slice(src.indexOf("const confirmSavedBirthTime = async"), src.indexOf("const handlePersonRemove"));
+  const rec = confirm.indexOf("recordPendingUpdate(updated)");
+  const post = confirm.indexOf('apiFetch("/saved-people", { method: "POST"');
+  assert.ok(rec > 0 && rec < post, "recorded before the POST");
+  assert.match(confirm, /settlePendingUpdate\(person\.id, stamp\)/);
+  assert.ok(confirm.indexOf("settlePendingUpdate(person.id, stamp)") > post);
+  const syncSrc = src.slice(src.indexOf("// 1. Finish deletions made offline"), src.indexOf("// Debounced search"));
+  const retry = syncSrc.indexOf("pendingUpdateIds()");
+  const merge = syncSrc.indexOf("mergeSavedPeople(prev, confirmed");
+  assert.ok(retry > 0 && retry < merge, "pending updates retried before the merge");
+  assert.match(syncSrc, /overlayPendingUpdates\(/);
+  assert.match(syncSrc, /prunePendingUpdates\(/);
+});
