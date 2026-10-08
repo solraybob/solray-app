@@ -316,8 +316,11 @@ function ChatPageInner() {
     setHistoryOpening({ id: sid, failed: false });
     void fetchSessionFromServer(sid, tok, gen).then((got) => {
       if (got.kind === "gone" && isMountedRef.current && isCurrentGeneration(gen)) {
-        // Gone on the server: the row goes whichever row is current.
+        // Gone on the server: the row goes whichever row is current, and
+        // voice words waiting for it become the offer to keep or discard,
+        // even when this read-back was superseded (Codex out17-5).
         setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
+        parkedToOrphan(sid);
       }
       if (!current()) return;
       if (got.kind === "found") {
@@ -2701,10 +2704,15 @@ function ChatPageInner() {
                     <button
                       onClick={() => {
                         const to = chatNotice.target;
-                        setChatNotice(null);
                         // Gone meanwhile (deleted on another device): its
                         // words become the offer to keep or discard.
                         if (!conversationExists(to)) { parkedToOrphan(to); return; }
+                        // Cached here: it opens now (its words go into its
+                        // box). Evicted: it is read back first, and the notice
+                        // stays until it opens (cleared then) or turns out to
+                        // be gone (the offer), so a failed read can be tried
+                        // again from here.
+                        if (loadSession(to)) setChatNotice(null);
                         loadPastSession(to);
                       }}
                       disabled={sending}
