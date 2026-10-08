@@ -2,9 +2,8 @@
 // #1 a voice message belongs to the conversation, account and token it was
 //    started in: captured when the microphone is asked for, carried through
 //    recording, stopping and transcription, sent as session_id; if the
-//    member moved on, its words wait for that conversation's box and a
-//    crisis card goes into that conversation (drawn here only if that one
-//    is gone from this device), with a notice offering to open it;
+//    member moved on, its words wait for that conversation's box, with a
+//    notice offering to open it;
 // #2 a store purchase holds the update reload until it is cancelled,
 //    failed or verified; the 60 s timeout only shows the pending note.
 const test = require("node:test");
@@ -35,22 +34,18 @@ test("voice: transcription uses the origin for session_id, account and token", (
   assert.ok(tb.includes("const spokenIn = origin ? origin.session : activeSessionRef.current;"));
   assert.ok(tb.includes('if (spokenIn) form.append("session_id", spokenIn);'));
   assert.ok(tb.includes("const authToken = origin ? origin.token : (tokenRef.current || token);"));
-  assert.ok(tb.includes("sameConversation: activeSessionRef.current === spokenIn,"));
 });
 
-test("voice: landing elsewhere keeps words and card with the original conversation", () => {
+test("voice: landing elsewhere keeps the words with the original conversation", () => {
   const src = read("app/chat/page.tsx");
   const tb = src.slice(src.indexOf("const transcribeBlob = useCallback("), src.indexOf("const nativeRecordingRef = useRef"));
   const el = tb.indexOf("if (spokenIn && activeSessionRef.current !== spokenIn) {");
   assert.ok(el > 0);
-  // Before the same-conversation crisis send and the composer fill.
-  assert.ok(el < tb.indexOf('data?.crisis === true && landing(true) === "send"'));
+  // Before the composer fill.
   assert.ok(el < tb.indexOf("lastTranscriptRef.current = transcript;"));
-  const block = tb.slice(el, tb.indexOf('data?.crisis === true && landing(true) === "send"'));
-  assert.ok(block.includes("updateStoredSession(spokenIn, acct.generation, (saved) =>"));
-  assert.ok(block.includes("if (!kept) {"), "never drops a crisis card");
+  const block = tb.slice(el, tb.indexOf("lastTranscriptRef.current = transcript;"));
   assert.ok(block.includes("voiceDraftsRef.current.set(spokenIn,"));
-  assert.ok(block.includes('setChatNotice({ kind: "voice_elsewhere", sessionId: activeSessionRef.current, target: spokenIn, crisis: !!turn });'));
+  assert.ok(block.includes('setChatNotice({ kind: "voice_elsewhere", sessionId: activeSessionRef.current, target: spokenIn });'));
   assert.ok(!block.includes("setInput("), "never into this conversation's box");
   // Restored into that conversation's box when it is opened.
   const r = src.slice(src.indexOf("// Back in the conversation the words were spoken in"), src.indexOf("}, [sessionId]);", src.indexOf("// Back in the conversation the words were spoken in")));
@@ -62,7 +57,7 @@ test("voice: landing elsewhere keeps words and card with the original conversati
   assert.ok(src.includes("loadPastSession(to);"));
   const en = JSON.parse(read("messages/en.json")).chat;
   const es = JSON.parse(read("messages/es.json")).chat;
-  for (const k of ["voice_elsewhere", "voice_elsewhere_crisis", "voice_open_conversation"]) {
+  for (const k of ["voice_elsewhere", "voice_open_conversation"]) {
     assert.ok(en[k] && es[k] && en[k] !== es[k], k);
     assert.ok(!/—/.test(en[k] + es[k]), k);
   }

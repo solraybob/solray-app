@@ -1,8 +1,6 @@
-// Crisis tiers, round nine: a long voice message is read for safety by the
-// server before any length refusal; when it is too long to send, the words
-// come back to the composer whole (never lost, never cut) and the spoken
-// part still travels as voice_transcript. A care turn whose Oracle reply
-// failed arrives as the support card, which the chat already draws.
+// Round nine: when a message (a long voice message, say) is too long to
+// send, the words come back to the composer whole (never lost, never cut)
+// and the spoken part still travels as voice_transcript.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -40,10 +38,8 @@ test("chat page: a too-long message returns to the composer with its transcript"
   assert.ok(block.includes("setInput((prev) => composerWithUnsent(text, prev))"));
   assert.ok(block.includes("lastTranscriptRef.current = voiceTranscript ?? null"));
   assert.ok(block.includes('t("oracle_errors.message_too_long_kept")'));
-  // No client-side length cap in front of the server's safety gate.
+  // No client-side length cap: the server decides.
   assert.ok(!/maxLength=\{?\d/.test(src));
-  // The support card (also the care fallback) is drawn as a card.
-  assert.ok(src.includes("asCrisisCard(data.crisis_card) || asCrisisCard(data.support_card)"));
 });
 
 test("copy: the kept-message note exists in English and Spanish, without long dashes", () => {

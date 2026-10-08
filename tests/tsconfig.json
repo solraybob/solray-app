@@ -41,7 +41,6 @@
     "../lib/member-error.ts",
     "../lib/forecast-kind.ts",
     "../lib/voice-result.ts",
-    "../lib/crisis-card.ts",
     "../lib/birth-time-fold.ts",
     "../lib/subscription.ts",
     "../lib/native-iap-helpers.ts"

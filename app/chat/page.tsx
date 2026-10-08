@@ -8,7 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
-import { voiceCrisisTurn, voiceResultAction } from "@/lib/voice-result";
+import { voiceResultAction } from "@/lib/voice-result";
 import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError, type AccountGuard } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
@@ -54,12 +54,10 @@ import { errorText } from "@/lib/errors";
 import { signalOracleReply } from "@/lib/native-push";
 import { oracleErrorKey, ORACLE_ERROR_KEYS, isPartnerConsentRefusal, MESSAGE_TOO_LONG_CODE } from "@/lib/oracle-errors";
 import {
-  soulRequestFields, historyForServer, soulFromTranscript, voiceMessage, voiceTranscriptFor, composerWithUnsent,
+  soulRequestFields, historyForServer, soulFromTranscript, voiceTranscriptFor, composerWithUnsent,
   familyForTranscript, type FamilyRef, type SoulRef,
 } from "@/lib/oracle-request";
 import { Orb, Wordmark } from "@/components/Wordmark";
-import CrisisCard from "@/components/CrisisCard";
-import { asCrisisCard } from "@/lib/crisis-card";
 import { answerFromChat, readChatRefusal, withAnswer } from "@/lib/chat-outcome";
 import { accountKey, takeHandoff } from "@/lib/account-session";
 
@@ -284,14 +282,10 @@ function ChatPageInner() {
   // another tab), so no chip names the old Moon or Human Design type.
   }, [lang, chartRev]);
   const [sending, setSending] = useState(false);
-  // Read synchronously by the voice path: set the moment a send is
-  // accepted, cleared when it settles.
+  // Read synchronously so a second send is refused at once: set the moment
+  // a send is accepted, cleared when it settles.
   const sendingRef = useRef(false);
   useEffect(() => { sendingRef.current = sending; }, [sending]);
-  // A crisis voice message that arrived while another message was still
-  // sending: it waits here (and in the box) and goes out as soon as that
-  // send settles. Never dropped.
-  const pendingVoiceRef = useRef<{ text: string; transcript: string; session: string } | null>(null);
   // The last transcript placed in the box: sent with the message as
   // voice_transcript so the server reads the spoken words on their own.
   const lastTranscriptRef = useRef<string | null>(null);
@@ -393,9 +387,9 @@ function ChatPageInner() {
   // notice with an Agree button instead of an error bubble in the thread.
   const [chatNotice, setChatNotice] = useState<
     | { kind: "closed" } | { kind: "dynamics"; sessionId: string } | { kind: "consent"; sessionId: string }
-    // A voice message landed after the member moved on: its words (or the
-    // crisis card for them) are in the conversation it was spoken in.
-    | { kind: "voice_elsewhere"; sessionId: string; target: string; crisis: boolean }
+    // A voice message landed after the member moved on: its words are in
+    // the conversation it was spoken in.
+    | { kind: "voice_elsewhere"; sessionId: string; target: string }
     | null
   >(null);
   // Agreed in the sheet: the consent notice has done its job.
@@ -416,8 +410,8 @@ function ChatPageInner() {
   // Where and for whom the voice message was started, captured when the
   // microphone is asked for and carried through recording, stopping and
   // transcription (Codex out15-5 #1): the conversation (sent as session_id,
-  // so care mode lands on it), the account and its token. Switching
-  // conversation while recording never moves the words or a crisis card.
+  // so it lands there), the account and its token. Switching
+  // conversation while recording never moves the words.
   const voiceOriginRef = useRef<{ session: string; acct: AccountGuard; token: string | null } | null>(null);
   const holdVoice = () => {
     if (!voiceHoldRef.current) voiceHoldRef.current = beginUnfinishedWork();
@@ -822,8 +816,7 @@ function ChatPageInner() {
   // A failed automatic opening (the "Go deeper" question, a Dynamics
   // opening), handled as an ordinary send's failure: a length refusal is
   // refused (never uploaded) and, in the open conversation, goes back to the
-  // box; a care turn's support card is drawn first; any other failure gets
-  // its note after the message. Out of sight, everything is kept in the
+  // box; any other failure gets its note after the message. Out of sight, everything is kept in the
   // conversation's saved copy (the refused message with Edit).
   const openingFailed = (err: unknown, o: {
     sid: string; life: SendLifecycle; userMsg: Message; before: Message[];
@@ -834,8 +827,6 @@ function ChatPageInner() {
     // The account changed while waiting: nothing to show or store.
     if (isStaleAccountError(err)) return;
     const failedAt = Date.now();
-    const { support } = readChatRefusal(err, failedAt);
-    const cards = support ? [support] : [];
     const visible = isMountedRef.current && activeSessionRef.current === o.sid;
     const note = (content: string): Message => ({
       id: (failedAt + 2).toString(),
@@ -845,16 +836,16 @@ function ChatPageInner() {
       isError: true,
     });
     if (tooLong && visible) {
-      o.land([...o.before, ...cards, note(t("oracle_errors.message_too_long_kept"))]);
+      o.land([...o.before, note(t("oracle_errors.message_too_long_kept"))]);
       setInput((prev) => composerWithUnsent(o.userMsg.content, prev));
       requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
     if (tooLong) {
-      o.land([...o.before, o.userMsg, ...cards]);
+      o.land([...o.before, o.userMsg]);
       return;
     }
-    o.land([...o.before, o.userMsg, ...cards, note(o.note)]);
+    o.land([...o.before, o.userMsg, note(o.note)]);
   };
 
   useEffect(() => {
@@ -923,12 +914,10 @@ function ChatPageInner() {
             // hear you." which is invented Oracle copy. Caught by
             // Codex audit P2.4.
             // The same reading of the answer as an ordinary send
-            // (lib/chat-outcome): a crisis or support card is kept whole,
-            // with its call and text buttons, and a crisis turn tags the
-            // question too. Only the Oracle's own words stream.
+            // (lib/chat-outcome). Only the Oracle's own words stream.
             const answer = answerFromChat(data, t("chat.error_no_response"));
-            const next = withAnswer(seed, userMsg.id, answer);
-            land(next, answer.reply.crisis || answer.reply.isError ? undefined : answer.reply);
+            const next = withAnswer(seed, answer);
+            land(next, answer.reply.isError ? undefined : answer.reply);
           } catch (err) {
             // Surface the failure as a visible error message rather
             // than silently swallowing it. Previous version left the
@@ -1061,14 +1050,12 @@ function ChatPageInner() {
                 token
               );
               life.answered();
-              // Read as an ordinary send reads it (lib/chat-outcome): a
-              // crisis or support card is kept whole and drawn without
-              // streaming; a crisis turn tags the opening message too.
+              // Read as an ordinary send reads it (lib/chat-outcome).
               const answer = answerFromChat(data, t("chat.error_no_response"));
               // An empty reply is a failure, not a license to invent one.
               if (answer.reply.isError) throw new Error("empty souls reply");
-              const next = withAnswer(newSession.messages, userMsg.id, answer);
-              land(next, answer.reply.crisis ? undefined : answer.reply);
+              const next = withAnswer(newSession.messages, answer);
+              land(next, answer.reply);
             } catch (err) {
               // The previous version of this branch shipped an
               // Oracle-flavored fallback string for the souls compat
@@ -1498,11 +1485,11 @@ function ChatPageInner() {
       // into the saved copy of its own conversation instead of being lost.
       if (!isMountedRef.current || activeSessionRef.current !== sentSessionId) {
         const answer = answerFromChat(data, t("chat.error_no_response"));
-        updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, userMsg.id, answer));
+        updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, answer));
         return;
       }
       // A conversation that had no id yet gets the one the server issued,
-      // and keeps it for every later turn (care mode and provenance live
+      // and keeps it for every later turn (provenance lives
       // on it server-side).
       if (!sentSessionId && typeof data.session_id === "string" && data.session_id) {
         activeSessionRef.current = data.session_id;
@@ -1524,28 +1511,6 @@ function ChatPageInner() {
           isError: true,
         };
         setMessages((prev) => [...prev, errMsg]);
-        return;
-      }
-      // The fixed crisis card (or the support card): drawn whole as a card
-      // with call and text buttons, never typed out and never offered as
-      // something "that landed".
-      const card = asCrisisCard(data.crisis_card) || asCrisisCard(data.support_card);
-      if (card) {
-        // A crisis turn: both messages are tagged, so they stay in the
-        // member's own transcript but never go back to the AI.
-        const crisisTurn = data.crisis_turn === true || card.variant === "standard" || card.variant === "urgent";
-        const cardMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content,
-          timestamp: new Date().toISOString(),
-          crisis: card,
-          ...(crisisTurn ? { safety: "crisis" as const } : {}),
-        };
-        setMessages((prev) => [
-          ...prev.map((m) => (crisisTurn && m.id === userMsg.id ? { ...m, safety: "crisis" as const } : m)),
-          cardMsg,
-        ]);
         return;
       }
       const reply: Message = {
@@ -1571,21 +1536,12 @@ function ChatPageInner() {
         life.refused();
       }
       // How this failure reads (lib/chat-outcome readChatRefusal): the
-      // support card any refusal after the safety gate may carry (also one
-      // whose detail used to be a plain sentence and is now an object), the
-      // note after it, and whether it is the subscription refusal.
+      // note it leaves and whether it is the subscription refusal.
       const refusal = readChatRefusal(err);
-      const refusalSupport = refusal.support;
       const offscreen = !isMountedRef.current || activeSessionRef.current !== sentSessionId;
-      if (offscreen && (tooLong || refusalSupport)) {
-        // Out of sight: the message stays in its conversation's saved copy
-        // (a length refusal marked refused, with a way back to the box;
-        // another failure as interrupted, with Send again), and the support
-        // card, if any, goes in after it.
-        if (refusalSupport) {
-          updateStoredSession(sentSessionId, accountGen, (saved) =>
-            saved.some((m) => m.id === refusalSupport.id) ? saved : [...saved, refusalSupport]);
-        }
+      if (offscreen && tooLong) {
+        // Out of sight: the message stays in its conversation's saved copy,
+        // marked refused, with a way back to the box.
         return;
       }
       // If the user has already navigated away from /chat by the time the
@@ -1600,10 +1556,6 @@ function ChatPageInner() {
       // server closed the conversation.
       if (isPartnerConsentRefusal(err)) {
         if (activeSessionRef.current !== sentSessionId) return;
-        // A care turn: the server sends the soft support card with the
-        // refusal. It goes in the thread first, whatever happens next.
-        const partnerSupportMsg: Message | null = refusalSupport;
-        if (partnerSupportMsg && sentSoulRef) setMessages((prev) => [...prev, partnerSupportMsg]);
         if (sentSoulRef) {
           // Dynamics with that partner: the existing partner-consent copy in
           // the thread, and the offer of an ordinary conversation.
@@ -1633,10 +1585,8 @@ function ChatPageInner() {
         setSoulRef(null);
         const freshId = generateSessionId();
         setSessionId(freshId);
-        // The support card, if the server sent one, opens the fresh one.
-        const freshMessages = partnerSupportMsg ? [partnerSupportMsg] : [];
-        persistSession({ sessionId: freshId, date: todayLabel(), messages: freshMessages });
-        setMessages(freshMessages);
+        persistSession({ sessionId: freshId, date: todayLabel(), messages: [] });
+        setMessages([]);
         setShowHistory(false);
         setInput((prev) => (prev.trim() ? `${text}\n\n${prev}` : text));
         setChatNotice({ kind: "closed" });
@@ -1650,17 +1600,14 @@ function ChatPageInner() {
       const known = oracleErrorKey(err);
       if (known) {
         if (activeSessionRef.current !== sentSessionId) return;
-        // Too long to send (a long voice note, say): the server read it for
-        // safety first and nothing else happened. The words leave the
-        // thread and go back into the box, whole, to be shortened; the
-        // spoken part keeps travelling as voice_transcript.
+        // Too long to send (a long voice note, say): nothing else happened.
+        // The words leave the thread and go back into the box, whole, to be
+        // shortened; the spoken part keeps travelling as voice_transcript.
         if (tooLong) {
           // Refused (recorded above): never uploaded, whatever this device
-          // saves meanwhile. A care turn's support card goes in the thread
-          // first, before the note.
+          // saves meanwhile.
           setMessages((prev) => [
             ...prev.filter((m) => m.id !== userMsg.id),
-            ...(refusalSupport ? [refusalSupport] : []),
             {
               id: (Date.now() + 2).toString(),
               role: "assistant",
@@ -1674,11 +1621,7 @@ function ChatPageInner() {
           requestAnimationFrame(() => inputRef.current?.focus());
           return;
         }
-        // A member without AI consent who may be struggling: the server
-        // sends a short support card with their line alongside the consent
-        // prompt. It goes in the thread first.
         const noteAt = Date.now();
-        if (refusalSupport) setMessages((prev) => [...prev, refusalSupport]);
         // Missing AI consent is not an error: the sheet is open, and if it
         // is put aside a quiet notice over the composer offers it again.
         if (err instanceof ApiError && err.code === AI_CONSENT_REQUIRED_CODE) {
@@ -1695,9 +1638,9 @@ function ChatPageInner() {
         setMessages((prev) => [...prev, note]);
         return;
       }
-      // Only the bare subscription refusal goes to the paywall; a 403 that
-      // carries a support card (a connection not accepted, say) is a
-      // refusal of this reading, said in the thread below.
+      // Only the bare subscription refusal goes to the paywall; a coded 403
+      // (a connection not accepted, say) is a refusal of this reading, said
+      // in the thread below.
       if (refusal.paywall) {
         router.replace("/subscribe");
         return;
@@ -1717,7 +1660,7 @@ function ChatPageInner() {
       // renders distinctly from genuine Oracle replies.
       // A refusal from the server (any shape of detail) says the Oracle
       // could not answer this; offline or a server error says it could not
-      // be reached. Never the server's raw text. A support card goes first.
+      // be reached. Never the server's raw text.
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -1725,7 +1668,7 @@ function ChatPageInner() {
         timestamp: new Date().toISOString(),
         isError: true,
       };
-      setMessages((prev) => [...prev, ...(refusalSupport ? [refusalSupport] : []), errMsg]);
+      setMessages((prev) => [...prev, errMsg]);
     } finally {
       // Not settled above: a failure. Shown in this conversation, the
       // message is part of the transcript from now on (the error note
@@ -1767,22 +1710,6 @@ function ChatPageInner() {
     setInput((prev) => composerWithUnsent(msg.content, prev));
     requestAnimationFrame(() => inputRef.current?.focus());
   };
-
-  // Latest sendMessage for callbacks created once (the voice transcriber).
-  const sendMessageRef = useRef(sendMessage);
-  sendMessageRef.current = sendMessage;
-
-  // A crisis voice message that waited for another send goes out as soon
-  // as that send settles, in the conversation it was spoken in. Elsewhere
-  // its words stay in the box for the member to send.
-  useEffect(() => {
-    if (sending) return;
-    const p = pendingVoiceRef.current;
-    if (!p) return;
-    pendingVoiceRef.current = null;
-    if (activeSessionRef.current !== p.session) return;
-    void sendMessageRef.current(p.text, { voiceTranscript: p.transcript });
-  }, [sending]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1872,14 +1799,11 @@ function ChatPageInner() {
     const origin = voiceOriginRef.current;
     const acct = origin?.acct ?? captureAccount();
     const spokenIn = origin ? origin.session : activeSessionRef.current;
-    // The conversation it was spoken in: a crisis transcript puts it in
-    // care mode on the server straight away.
+    // The conversation it was spoken in.
     if (spokenIn) form.append("session_id", spokenIn);
-    const landing = (crisis: boolean) => voiceResultAction({
+    const landing = () => voiceResultAction({
       sameAccount: acct.live,
       mounted: isMountedRef.current,
-      sameConversation: activeSessionRef.current === spokenIn,
-      crisis,
     });
     try {
       const authToken = origin ? origin.token : (tokenRef.current || token);
@@ -1893,7 +1817,7 @@ function ChatPageInner() {
         const b: any = await r.json().catch(() => null);
         return { res: r, body: b };
       });
-      if (landing(false) === "drop") return;
+      if (landing() === "drop") return;
       if (!res.ok) {
         let detail = "";
         let code = "";
@@ -1924,70 +1848,21 @@ function ChatPageInner() {
         setVoiceError(t("chat.voice_nothing_heard"));
         return;
       }
-      // The member is in another conversation now: the words, and a crisis
-      // card the server established for them, belong to the one they were
-      // spoken in. The card goes into that conversation's saved copy; the
-      // words wait for its box. A notice here offers to open it.
+      // The member is in another conversation now: the words belong to the
+      // one they were spoken in and wait for its box. A notice here offers
+      // to open it.
       if (spokenIn && activeSessionRef.current !== spokenIn) {
-        const turn = data?.crisis === true ? voiceCrisisTurn(data, transcript, asCrisisCard) : null;
-        if (turn) {
-          const kept = updateStoredSession(spokenIn, acct.generation, (saved) =>
-            saved.some((m) => m.id === turn.user.id) ? saved : [...saved, turn.user as Message, turn.card as Message]);
-          if (!kept) {
-            // That conversation is not on this device (deleted, or evicted
-            // to make room): the crisis card is never dropped, it is drawn
-            // here instead.
-            setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);
-            return;
-          }
-        } else if (!conversationExists(spokenIn)) {
+        if (!conversationExists(spokenIn)) {
           // Deleted before the words arrived: nowhere to park them. Offered
           // here instead, to put in this box or discard.
           offerOrphanVoice({ text: transcript, transcript });
           return;
-        } else {
-          const prev = voiceDraftsRef.current.get(spokenIn);
-          voiceDraftsRef.current.set(spokenIn, prev
-            ? { text: `${prev.text} ${transcript}`, transcript: `${prev.transcript} ${transcript}` }
-            : { text: transcript, transcript });
         }
-        setChatNotice({ kind: "voice_elsewhere", sessionId: activeSessionRef.current, target: spokenIn, crisis: !!turn });
-        return;
-      }
-      // The server heard someone in crisis. Send what they said straight
-      // away, as a normal message: /chat answers it with the crisis lines
-      // in their language. No editing step in between.
-      // Only into the conversation it was spoken in; if the member has
-      // moved to another one, the words wait in the box below instead.
-      // The words are kept in the box until a send is accepted: if another
-      // message is still sending, this one waits (pendingVoiceRef) and
-      // goes out right after it. The transcript travels as
-      // voice_transcript, so typed words around it cannot lower its
-      // safety class on the server.
-      if (data?.crisis === true && landing(true) === "send") {
-        const vm = voiceMessage(inputRef.current?.value || "", transcript);
-        // The server already established the crisis card for these words:
-        // drawn now, from this response, as the reply to them. Nothing has
-        // to reach /chat first, so a failed record or a slower judge there
-        // can never lose it.
-        const turn = voiceCrisisTurn(data, vm.text, asCrisisCard);
-        if (turn) {
-          setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);
-          setInput("");
-          lastTranscriptRef.current = null;
-          return;
-        }
-        setInput(vm.text);
-        lastTranscriptRef.current = vm.voiceTranscript;
-        const pending = { text: vm.text, transcript: vm.voiceTranscript, session: spokenIn };
-        if (sendingRef.current) {
-          pendingVoiceRef.current = pending;
-        } else {
-          void sendMessageRef.current(vm.text, { voiceTranscript: vm.voiceTranscript }).then((sent) => {
-            // Refused (another send got there first): wait for it instead.
-            if (sent === false) pendingVoiceRef.current = pending;
-          });
-        }
+        const prev = voiceDraftsRef.current.get(spokenIn);
+        voiceDraftsRef.current.set(spokenIn, prev
+          ? { text: `${prev.text} ${transcript}`, transcript: `${prev.transcript} ${transcript}` }
+          : { text: transcript, transcript });
+        setChatNotice({ kind: "voice_elsewhere", sessionId: activeSessionRef.current, target: spokenIn });
         return;
       }
       lastTranscriptRef.current = transcript;
@@ -1998,7 +1873,7 @@ function ChatPageInner() {
       // Focus so the user can edit before sending.
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch (err: unknown) {
-      if (landing(false) === "drop") return;
+      if (landing() === "drop") return;
       const msg = memberErrorText(err, t, "chat.voice_failed");
       setVoiceError(msg);
     } finally {
@@ -2479,12 +2354,6 @@ function ChatPageInner() {
                 );
               }
 
-              // The fixed crisis or support card: its own card with call and
-              // text buttons, not an Oracle bubble.
-              if (msg.crisis) {
-                return <CrisisCard key={msg.id} card={msg.crisis} />;
-              }
-
               // Error messages render with distinct styling so the user
               // is never misled into thinking transport-level error copy
               // came from the Oracle. Ember-tinted, smaller,
@@ -2690,7 +2559,7 @@ function ChatPageInner() {
                 )}
                 {chatNotice.kind === "voice_elsewhere" && (
                   <p className="font-body text-text-primary text-[15px] leading-relaxed">
-                    {chatNotice.crisis ? t("chat.voice_elsewhere_crisis") : t("chat.voice_elsewhere")}
+                    {t("chat.voice_elsewhere")}
                   </p>
                 )}
                 <div className="flex items-center gap-5 mt-2">

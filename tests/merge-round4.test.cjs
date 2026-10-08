@@ -33,7 +33,7 @@ test("the partner consent refusal is recognised only for its own 403 code", () =
 });
 
 test("an ordinary conversation closed by the refusal starts a fresh one with the unsent message in the composer", () => {
-  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("const sendMessageRef = useRef"));
+  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   const branch = send.slice(send.indexOf("if (isPartnerConsentRefusal(err))"), send.indexOf("// Missing AI consent (the consent sheet"));
   assert.ok(branch.length > 0, "handled before the generic Oracle refusal notes");
   assert.match(branch, /if \(activeSessionRef\.current !== sentSessionId\) return;/);
@@ -42,8 +42,8 @@ test("an ordinary conversation closed by the refusal starts a fresh one with the
   // The unsent turn leaves the closed conversation.
   assert.match(ordinary, /sessionId: sentSessionId,[\s\S]*messages: updatedMessages\.slice\(0, -1\),/);
   assert.match(ordinary, /const freshId = generateSessionId\(\);\n\s+setSessionId\(freshId\);/);
-  // Empty, or opened by the care-turn support card the refusal carried.
-  assert.match(ordinary, /const freshMessages = partnerSupportMsg \? \[partnerSupportMsg\] : \[\];[\s\S]*setMessages\(freshMessages\);/);
+  // The fresh one starts empty.
+  assert.match(ordinary, /persistSession\(\{ sessionId: freshId, date: todayLabel\(\), messages: \[\] \}\);\s*setMessages\(\[\]\);/);
   assert.match(ordinary, /setInput\(\(prev\) => \(prev\.trim\(\) \? `\$\{text\}\\n\\n\$\{prev\}` : text\)\);/);
   assert.match(ordinary, /setChatNotice\(\{ kind: "closed" \}\);/);
   // Never sent on its own, and the closed conversation is not synthesized.
@@ -54,7 +54,7 @@ test("an ordinary conversation closed by the refusal starts a fresh one with the
 });
 
 test("in Dynamics the partner consent copy stays and an ordinary conversation is offered", () => {
-  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("const sendMessageRef = useRef"));
+  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   const dyn = send.slice(send.indexOf("if (sentSoulRef) {"), send.indexOf("// Ordinary conversation"));
   assert.match(dyn, /content: t\(ORACLE_ERROR_KEYS\.partner_ai_consent_required\),/);
   assert.match(dyn, /setChatNotice\(\{ kind: "dynamics", sessionId: sentSessionId \}\);/);

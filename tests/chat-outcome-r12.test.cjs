@@ -1,7 +1,6 @@
-// Round twelve (Codex out8-5):
-// #1 a care turn's 413 message_too_long carries the support card
-//    (detail.support, detail.support_text): drawn in the thread before the
-//    length note, also out of sight (written into the saved conversation);
+// Round twelve (Codex out8-5). (#1, the support card on a length refusal,
+// went with the crisis cards in round twenty-six; the length refusal itself
+// is covered below and in chat-too-long-r9.)
 // #2 pending and refused statuses are stored with the cached conversations:
 //    leaving Chat or restarting while a message is on its way keeps it out
 //    of uploads (interrupted, visible, with Send again), a refused one for
@@ -54,53 +53,22 @@ function server() {
 
 const msg = (id, ts, content = `msg ${id}`) => ({ id, role: "user", content, timestamp: `2026-10-08T10:0${ts}:00Z` });
 const gen = () => session.getAuthGeneration();
-const supportCard = { variant: "support", intro: "You do not have to carry this alone.", steps: ["Talk to someone."] };
 
-// ─── #1 the support card on a length refusal ────────────────────────────────
+// ─── the length refusal ─────────────────────────────────────────────────────
 
-test("refusal: detail.support becomes the support card message, with support_text", () => {
-  const m = outcome.supportFromRefusal(
-    { code: "message_too_long", message: "too long", support: supportCard, support_text: "Here is someone to talk to." },
-    1760000000000,
-  );
-  assert.ok(m);
-  assert.equal(m.role, "assistant");
-  assert.equal(m.content, "Here is someone to talk to.");
-  assert.equal(m.crisis.variant, "support");
-  assert.equal(m.safety, undefined);
-  // No text: the card's own intro.
-  assert.equal(outcome.supportFromRefusal({ support: supportCard }).content, supportCard.intro);
-  // An ordinary refusal carries none.
-  assert.equal(outcome.supportFromRefusal({ code: "message_too_long", message: "x" }), null);
-  assert.equal(outcome.supportFromRefusal({ support: { nope: 1 } }), null);
-  assert.equal(outcome.supportFromRefusal(undefined), null);
-  assert.equal(outcome.supportFromRefusal("too long"), null);
-});
-
-test("chat page: a too-long refusal draws the support card before the note, keeping the composer path", () => {
+test("chat page: a too-long refusal leaves only its note and puts the words back in the composer", () => {
   const src = page();
   const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   const c = send.slice(send.indexOf("} catch (err) {"));
-  // (Round sixteen: every refusal is read by readChatRefusal.)
   assert.ok(c.includes("const refusal = readChatRefusal(err);"));
-  assert.ok(c.includes("const refusalSupport = refusal.support;"));
   const branch = c.slice(c.indexOf("if (tooLong) {", c.indexOf("const known = oracleErrorKey(err)")));
   const filt = branch.indexOf("...prev.filter((m) => m.id !== userMsg.id)");
-  const card = branch.indexOf("...(refusalSupport ? [refusalSupport] : [])");
   const note = branch.indexOf('t("oracle_errors.message_too_long_kept")');
-  assert.ok(filt > 0 && filt < card && card < note);
-  // Composer restoration and the spoken words still travel.
+  assert.ok(filt > 0 && filt < note);
   assert.ok(branch.indexOf("setInput((prev) => composerWithUnsent(text, prev))") > note);
   assert.ok(branch.includes("lastTranscriptRef.current = voiceTranscript ?? null"));
-  // Out of sight, the card goes into the saved conversation.
-  const off = c.slice(c.indexOf("if (offscreen && (tooLong || refusalSupport)) {"));
-  assert.ok(off.slice(0, 700).includes("updateStoredSession(sentSessionId, accountGen"));
-});
-
-test("chat page: voice transcripts take the same send path (and so the same refusal handling)", () => {
-  const src = page();
-  assert.ok(src.includes("sendMessageRef.current(vm.text, { voiceTranscript: vm.voiceTranscript })"));
-  assert.ok(src.includes("void sendMessageRef.current(p.text, { voiceTranscript: p.transcript })"));
+  // Out of sight: nothing drawn, the refusal was recorded.
+  assert.ok(c.includes("if (offscreen && tooLong) {"));
 });
 
 // ─── #2 statuses stored with the cache ──────────────────────────────────────
@@ -205,29 +173,29 @@ test("an answer landing after the member left is written into its conversation, 
   window.addEventListener(sync.CHAT_MERGED_EVENT, (e) => events.push(e.detail));
   sync.saveSession({ sessionId: "r6", date: "", messages: [msg("1", 1), msg("u", 2)] });
   const answer = outcome.answerFromChat({ response: "The Oracle's words." }, "no response", 1760000000000);
-  assert.equal(sync.updateStoredSession("r6", gen(), (saved) => outcome.withAnswer(saved, "u", answer)), true);
+  assert.equal(sync.updateStoredSession("r6", gen(), (saved) => outcome.withAnswer(saved, answer)), true);
   const saved = sync.loadSession("r6").messages;
   assert.deepEqual(saved.map((m) => m.content), ["msg 1", "msg u", "The Oracle's words."]);
   assert.equal(sync.getUnsent().has("r6"), true);
   assert.equal(events.at(-1).sessionId, "r6");
   // Idempotent.
-  sync.updateStoredSession("r6", gen(), (s) => outcome.withAnswer(s, "u", answer));
+  sync.updateStoredSession("r6", gen(), (s) => outcome.withAnswer(s, answer));
   assert.equal(sync.loadSession("r6").messages.length, 3);
   // No saved copy, or another account: nothing written.
   assert.equal(sync.updateStoredSession("missing", gen(), (s) => s), false);
   assert.equal(sync.updateStoredSession("r6", gen() + 1, (s) => s), false);
 });
 
-test("answerFromChat: crisis turns tag the member's message; no words is the honest error", () => {
-  const crisis = outcome.answerFromChat({ response: "Call now.", crisis_card: { variant: "urgent", intro: "x" }, crisis_turn: true }, "none");
-  assert.equal(crisis.crisisTurn, true);
-  assert.equal(crisis.reply.safety, "crisis");
-  assert.equal(crisis.reply.crisis.variant, "urgent");
-  const tagged = outcome.withAnswer([msg("u", 1)], "u", crisis);
-  assert.equal(tagged[0].safety, "crisis");
-  const support = outcome.answerFromChat({ response: "Here.", support_card: supportCard }, "none");
-  assert.equal(support.crisisTurn, false);
-  assert.equal(support.reply.crisis.variant, "support");
+test("answerFromChat: the Oracle's words as plain text; card fields from an older server are ignored; no words is the honest error", () => {
+  const plain = outcome.answerFromChat({ response: "Here I am." }, "none", 1760000000000);
+  assert.deepEqual(plain.reply, { id: "1760000000001", role: "assistant", content: "Here I am.", timestamp: new Date(1760000000000).toISOString() });
+  const old = outcome.answerFromChat({ response: "Call now.", crisis_card: { variant: "urgent", intro: "x" }, crisis_turn: true, support_card: {} }, "none");
+  assert.equal(old.reply.content, "Call now.");
+  assert.equal(old.reply.crisis, undefined);
+  assert.equal(old.reply.safety, undefined);
+  assert.deepEqual(Object.keys(old), ["reply"]);
+  const kept = outcome.withAnswer([msg("u", 1)], old);
+  assert.deepEqual(kept[0], msg("u", 1));
   const empty = outcome.answerFromChat({}, "No reply came.");
   assert.equal(empty.reply.isError, true);
   assert.equal(empty.reply.content, "No reply came.");
@@ -240,7 +208,7 @@ test("chat page: the outcome is recorded before the mounted and conversation gua
   const ok = send.slice(send.indexOf('"/chat",'), send.indexOf("} catch (err) {"));
   assert.ok(ok.indexOf("life.answered();") > 0);
   assert.ok(ok.indexOf("life.answered();") < ok.indexOf("if (!isMountedRef.current || activeSessionRef.current !== sentSessionId)"));
-  assert.ok(ok.includes("updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, userMsg.id, answer))"));
+  assert.ok(ok.includes("updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, answer))"));
   // 413: refused before `if (!isMountedRef.current) return;`.
   const c = send.slice(send.indexOf("} catch (err) {"), send.lastIndexOf("} finally {"));
   assert.ok(c.indexOf("life.refused()") > 0);

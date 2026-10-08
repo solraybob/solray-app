@@ -70,7 +70,7 @@ test("the chat page sends session_id and no client chart when an id is known", (
   assert.ok(!/soul_blueprint:\s*ctx\.soulBlueprint/.test(src));
   // /chat (two sends), the group chat and session-close synthesis.
   assert.equal((src.match(/session_id: (sid|sentSessionId)/g) || []).length, 4);
-  assert.ok(/data\?\.crisis === true/.test(src));
+  assert.ok(!/crisis/.test(src));
   const souls = fs.readFileSync(path.join(root, "app/souls/page.tsx"), "utf8");
   assert.ok(/apiFetch\(`\/souls\/\$\{gone\.connection_id\}`, \{ method: "DELETE" \}/.test(souls));
   assert.ok(!/\/souls\/\$\{[^}]*connection_id\}\/blueprint/.test(souls));

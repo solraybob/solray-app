@@ -1,10 +1,7 @@
-// Crisis tiers, round ten (review7 out7-7 #4 and #6, out7-5 #2):
-// - the crisis card /chat/transcribe established is drawn from that
-//   response at once, as the reply to the spoken words (a failed server
-//   record or a slower judge at /chat can never lose it);
-// - a message whose /chat outcome is not known yet is never uploaded to the
-//   transcript, and one the server refused (too long) never at all;
-// - a care turn's coded refusal carries the support card, drawn first.
+// Round ten (review7 out7-7 #6, out7-5 #2): a message whose /chat outcome
+// is not known yet is never uploaded to the transcript, and one the server
+// refused (too long) never at all. (The voice crisis card tests of this
+// round went with the crisis cards in round twenty-six.)
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -16,47 +13,9 @@ const root = path.join(__dirname, "..");
 const page = () => fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
 const session = load("lib/account-session.js");
 const sync = load("lib/chat-sync.js");
-const { voiceCrisisTurn } = load("lib/voice-result.js");
-const { asCrisisCard } = load("lib/crisis-card.js");
 
-const card = (variant) => ({ variant, intro: "You are not alone.", steps: ["Call 112 now."] });
-
-test("voice: the transcription's crisis card becomes a tagged crisis turn", () => {
-  const data = { transcript: "words", crisis: true, safety_tier: "urgent", crisis_card: card("urgent"),
-                 response: "Please call 112 now.", crisis_turn: true };
-  const turn = voiceCrisisTurn(data, "typed and spoken words", asCrisisCard, 1760000000000);
-  assert.ok(turn);
-  assert.equal(turn.user.role, "user");
-  assert.equal(turn.user.content, "typed and spoken words");
-  assert.equal(turn.user.safety, "crisis");
-  assert.equal(turn.card.role, "assistant");
-  assert.equal(turn.card.content, "Please call 112 now.");
-  assert.equal(turn.card.crisis.variant, "urgent");
-  assert.equal(turn.card.safety, "crisis");
-  assert.notEqual(turn.user.id, turn.card.id);
-  assert.ok(turn.user.timestamp < turn.card.timestamp);
-});
-
-test("voice: no card (care tier, older server, a support card) means the old path", () => {
-  assert.equal(voiceCrisisTurn({ crisis: true, safety_tier: "care" }, "w", asCrisisCard), null);
-  assert.equal(voiceCrisisTurn({ crisis: true, crisis_card: { variant: "support", intro: "x" } }, "w", asCrisisCard),
-    null);
-  assert.equal(voiceCrisisTurn({ crisis: true, crisis_card: { nope: 1 } }, "w", asCrisisCard), null);
-  assert.equal(voiceCrisisTurn(null, "w", asCrisisCard), null);
-  // No reply text: the card's own intro.
-  const t = voiceCrisisTurn({ crisis_card: card("standard") }, "w", asCrisisCard);
-  assert.equal(t.card.content, "You are not alone.");
-});
-
-test("chat page: transcription sends the conversation and draws the card from the response", () => {
-  const src = page();
-  assert.ok(src.includes('form.append("session_id", spokenIn)'));
-  const i = src.indexOf("const turn = voiceCrisisTurn(data, vm.text, asCrisisCard)");
-  assert.ok(i > 0);
-  const block = src.slice(i, src.indexOf("return;", i));
-  assert.ok(block.includes("setMessages((prev) => [...prev, turn.user as Message, turn.card as Message])"));
-  // Drawn before (instead of) any /chat send for these words.
-  assert.ok(i < src.indexOf("sendMessageRef.current(vm.text", i));
+test("chat page: transcription sends the conversation it was spoken in", () => {
+  assert.ok(page().includes('form.append("session_id", spokenIn)'));
 });
 
 /** A merging /chat/sessions server, recording what each PUT carried. */
@@ -127,7 +86,7 @@ test("sync: a refused oversized message never reaches the server, so it can neve
 
 test("chat page: every sent message is pending until /chat settles; a too-long one is refused", () => {
   const src = page();
-  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Latest sendMessage for callbacks"));
+  const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   // Round fifteen: the shared send lifecycle (lib/chat-sync beginSend).
   assert.ok(send.indexOf("const life = beginSend(userMsg.id)") < send.indexOf("setMessages(updatedMessages)"));
   const tooLong = send.slice(send.indexOf("err.code === MESSAGE_TOO_LONG_CODE"));
@@ -136,10 +95,11 @@ test("chat page: every sent message is pending until /chat settles; a too-long o
   assert.ok(fin.includes("life.finish("));
 });
 
-test("chat page: a partner refusal on a care turn draws the support card first", () => {
+test("chat page: a partner refusal in an ordinary conversation opens an empty fresh one", () => {
   const src = page();
   const i = src.indexOf("if (isPartnerConsentRefusal(err))");
   const block = src.slice(i, src.indexOf("const known = oracleErrorKey(err)", i));
-  assert.ok(block.includes("const partnerSupportMsg: Message | null = refusalSupport;"));
-  assert.ok(block.includes("const freshMessages = partnerSupportMsg ? [partnerSupportMsg] : []"));
+  assert.ok(block.includes("persistSession({ sessionId: freshId, date: todayLabel(), messages: [] });"));
+  assert.ok(block.includes("setMessages([]);"));
+  assert.ok(block.includes("setInput((prev) => (prev.trim() ? `${text}\\n\\n${prev}` : text));"));
 });

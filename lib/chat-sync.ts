@@ -26,7 +26,6 @@ import { mergeMessages, sameTranscript } from "./chat-merge";
 import { withSoulBackfill } from "./chat-soul";
 import { accountKey, getAuthGeneration, isCurrentGeneration, onAccountSignOut, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
-import type { CrisisCardData } from "./crisis-card";
 
 export interface ChatMessage {
   id: string;
@@ -42,14 +41,9 @@ export interface ChatMessage {
     // A family reading: everyone else in it, by reference.
     family?: Array<{ name?: string | null; connection_id?: string | null; saved_person_id?: string | null }>;
   };
-  // The fixed crisis or support card (lib/crisis-card.ts), drawn as a card
-  // with call and text buttons. `content` keeps its plain text.
-  crisis?: CrisisCardData;
-  // "crisis" on both messages of a crisis turn (the member's message and
-  // the fixed card). The transcript stays the member's own record, but a
-  // tagged turn is never sent back to the AI (the server drops it and tags
-  // synced transcripts itself too).
-  safety?: "crisis";
+  // Older transcripts may still carry fields this app no longer reads (a
+  // card payload or a tag on a message). They are left as they are: every
+  // message is drawn from its plain `content`.
 }
 
 export interface StoredSession<M extends ChatMessage = ChatMessage> {

@@ -12,19 +12,18 @@ const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
 
 test("F8: a late transcript never auto-sends into another conversation or account", () => {
   const { voiceResultAction: act } = load("lib/voice-result.js");
-  const base = { sameAccount: true, mounted: true, sameConversation: true, crisis: true };
-  assert.equal(act(base), "send");
-  assert.equal(act({ ...base, sameConversation: false }), "fill");
+  // Round twenty-six: no transcript is ever sent on its own any more.
+  const base = { sameAccount: true, mounted: true };
+  assert.equal(act(base), "fill");
   assert.equal(act({ ...base, sameAccount: false }), "drop");
   assert.equal(act({ ...base, mounted: false }), "drop");
-  assert.equal(act({ ...base, crisis: false }), "fill");
   const src = read("app/chat/page.tsx");
   const tb = src.slice(src.indexOf("const transcribeBlob = useCallback"), src.indexOf("const nativeRecordingRef"));
   // (Round nineteen: captured when the microphone was asked for.)
   assert.match(tb, /const acct = origin\?\.acct \?\? captureAccount\(\);/);
   assert.match(tb, /const spokenIn = origin \? origin\.session : activeSessionRef\.current;/);
-  assert.match(tb, /if \(landing\(false\) === "drop"\) return;/);
-  assert.match(tb, /data\?\.crisis === true && landing\(true\) === "send"/);
+  assert.match(tb, /if \(landing\(\) === "drop"\) return;/);
+  assert.ok(!tb.includes("sendMessage"), "a transcript only fills the box");
   assert.match(tb, /trackRequest\(/);
 });
 

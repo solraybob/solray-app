@@ -5,8 +5,7 @@
 //    only what can be rebuilt (old dated forecast/week caches, then the
 //    oldest transcripts the server already holds whole);
 // #2 the automatic chat entries ("Go deeper" seeded question, Dynamics
-//    opening) read /chat answers as an ordinary send does: cards kept whole
-//    and drawn without streaming, crisis turns tagged, refusal support cards.
+//    opening) read /chat answers as an ordinary send does (lib/chat-outcome).
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -172,30 +171,31 @@ test("chat page: the seeded question and the Dynamics opening read /chat as a se
   const src = page();
   const seeded = src.slice(src.indexOf('const data = await apiFetch("/chat", {'), src.indexOf("// fall through"));
   assert.ok(seeded.includes('const answer = answerFromChat(data, t("chat.error_no_response"));'));
-  assert.ok(seeded.includes("const next = withAnswer(seed, userMsg.id, answer);"));
-  assert.ok(seeded.includes("land(next, answer.reply.crisis || answer.reply.isError ? undefined : answer.reply);"));
+  assert.ok(seeded.includes("const next = withAnswer(seed, answer);"));
+  assert.ok(seeded.includes("land(next, answer.reply.isError ? undefined : answer.reply);"));
   // (Round fifteen: failures go through the shared openingFailed.)
   assert.ok(seeded.includes("openingFailed(err, {"));
   assert.ok(!seeded.includes("data.response || data.message"));
   const i = src.indexOf("// Auto-send the compatibility message");
   const dyn = src.slice(i, src.indexOf("// Fall through to normal init", i));
   assert.ok(dyn.includes('const answer = answerFromChat(data, t("chat.error_no_response"));'));
-  assert.ok(dyn.includes("const next = withAnswer(newSession.messages, userMsg.id, answer);"));
-  assert.ok(dyn.includes("land(next, answer.reply.crisis ? undefined : answer.reply);"));
+  assert.ok(dyn.includes("const next = withAnswer(newSession.messages, answer);"));
+  assert.ok(dyn.includes("land(next, answer.reply);"));
   assert.ok(dyn.includes('if (answer.reply.isError) throw new Error("empty souls reply");'));
   assert.ok(dyn.includes("openingFailed(err, {"));
-  assert.ok(src.includes("const { support } = readChatRefusal(err, failedAt);"));
+  assert.ok(src.includes("note: t(readChatRefusal(err).noteKey),"));
   // Every /chat answer in the page goes through the shared reading or the
-  // send's own card handling; none keeps only the text.
+  // send's own handling.
   assert.equal((src.match(/data\.response \|\| data\.message/g) || []).length, 1);
 });
 
-test("withAnswer on an automatic entry: crisis card kept whole and both messages tagged", () => {
+test("withAnswer on an automatic entry: the answer follows the question as plain text, nothing tagged", () => {
   const outcome = load("lib/chat-outcome.js");
   const seed = [msg("q")];
-  const answer = outcome.answerFromChat({ response: "Call 112.", crisis_card: { variant: "standard", intro: "x" }, crisis_turn: true }, "none");
-  const next = outcome.withAnswer(seed, "q", answer);
-  assert.equal(next[0].safety, "crisis");
-  assert.equal(next[1].safety, "crisis");
-  assert.equal(next[1].crisis.variant, "standard");
+  const answer = outcome.answerFromChat({ response: "Here.", crisis_card: { variant: "standard", intro: "x" }, crisis_turn: true }, "none");
+  const next = outcome.withAnswer(seed, answer);
+  assert.deepEqual(next[0], msg("q"));
+  assert.equal(next[1].content, "Here.");
+  assert.equal(next[1].crisis, undefined);
+  assert.equal(next[1].safety, undefined);
 });

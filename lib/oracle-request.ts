@@ -46,48 +46,27 @@ export type HistoryMessage = {
   role: "user" | "assistant";
   content: string;
   isError?: boolean;
-  safety?: string;
-  crisis?: { variant?: string } | null;
 };
-
-/** True for both messages of a crisis turn: tagged, or the fixed card itself. */
-export function isCrisisTurn(m: HistoryMessage): boolean {
-  if (m.safety === "crisis") return true;
-  return m.role === "assistant" && !!m.crisis && (m.crisis.variant === "standard" || m.crisis.variant === "urgent");
-}
 
 /**
  * Conversation history as the server wants it: the opening greeting left
- * out, app-side error bubbles marked isError so the Oracle never reads
- * them back as something she said, and crisis turns marked
- * safety: "crisis" so the server keeps them away from the AI (and knows
- * the conversation is in care mode).
+ * out, and app-side error bubbles marked isError so the Oracle never reads
+ * them back as something she said. Only role, content and isError go:
+ * anything else an older transcript still carries on a message stays on
+ * this device.
  */
 export function historyForServer(
   messages: HistoryMessage[],
-): Array<{ role: string; content: string; isError?: boolean; safety?: "crisis" }> {
+): Array<{ role: string; content: string; isError?: boolean }> {
   return messages
     .filter((m) => m.id !== "greeting")
     .map((m) => {
-      const out: { role: string; content: string; isError?: boolean; safety?: "crisis" } = {
+      const out: { role: string; content: string; isError?: boolean } = {
         role: m.role, content: m.content,
       };
       if (m.isError) out.isError = true;
-      if (isCrisisTurn(m)) out.safety = "crisis";
       return out;
     });
-}
-
-/**
- * A voice message: the text that goes to /chat and the transcript inside
- * it, sent along as voice_transcript so the server classifies the spoken
- * words on their own (typed words around them can never lower their
- * safety class).
- */
-export function voiceMessage(typed: string, transcript: string): { text: string; voiceTranscript: string } {
-  const base = (typed || "").replace(/\s+$/, "");
-  const spoken = (transcript || "").trim();
-  return { text: base ? base + " " + spoken : spoken, voiceTranscript: spoken };
 }
 
 /**

@@ -2,7 +2,7 @@
 // never parked under a dead id. They are offered wherever the member is, to
 // put in this box or discard (never sent on their own); words already
 // waiting for a conversation that is then deleted, here or elsewhere, become
-// the same offer. A crisis card for a gone conversation is still drawn here.
+// the same offer.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -15,15 +15,13 @@ const src = read("app/chat/page.tsx");
 test("a transcript for a deleted conversation is offered, never parked", () => {
   const tb = src.slice(src.indexOf("const transcribeBlob = useCallback("), src.indexOf("const nativeRecordingRef = useRef"));
   const el = tb.slice(tb.indexOf("if (spokenIn && activeSessionRef.current !== spokenIn) {"));
-  const gone = el.indexOf("} else if (!conversationExists(spokenIn)) {");
+  const gone = el.indexOf("if (!conversationExists(spokenIn)) {");
   assert.ok(gone > 0);
   assert.ok(gone < el.indexOf("voiceDraftsRef.current.set(spokenIn,"), "checked before parking");
-  const branch = el.slice(gone, el.indexOf("} else {", gone));
+  const branch = el.slice(gone, el.indexOf("}", el.indexOf("return;", gone)));
   assert.ok(branch.includes("offerOrphanVoice({ text: transcript, transcript });"));
   assert.ok(branch.includes("return;"), "no notice pointing at a dead conversation");
   assert.ok(!branch.includes("sendMessage"), "never sent on its own");
-  // The crisis card for a gone conversation keeps the r19 behaviour.
-  assert.ok(el.includes("if (!kept) {") && el.includes("setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);"));
   assert.ok(src.includes("const conversationExists = (sid: string) => !!loadSession(sid) || !!getEvictedSummary(sid);"));
 });
 
