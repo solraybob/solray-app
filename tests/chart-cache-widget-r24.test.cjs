@@ -75,11 +75,13 @@ test("forecastKind: one reading of an answer for Today and the widget", () => {
 
 test("widget: only a complete reading is shown or cached; consent handled and refetched", () => {
   const w = read("app/widget/page.tsx");
-  assert.ok(w.includes('if (forecastKind(parsed) === "complete") { show("complete", parsed as ForecastData); return; }'));
+  // (Round twenty-five: shown at once, then checked against the current chart.)
+  assert.ok(w.includes('if (forecastKind(parsed) === "complete") {\n            // Shown at once'));
+  assert.ok(w.includes('show("complete", parsed as ForecastData);\n            void chartStillCurrent();'));
   assert.ok(w.includes('if (kind === "complete") writeChartCache(stamp, cacheKey, data);'));
   assert.ok(w.includes('show(isAiConsentError(e) ? "consent" : "failed", null);'));
   assert.ok(w.includes("window.addEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);"));
-  assert.ok(w.includes("}, [token, chartRev, consentNonce]);"));
+  assert.ok(w.includes("}, [token, chartRev, consentNonce, dayKey]);"));
   assert.ok(!w.includes("_pending !== true"));
 });
 

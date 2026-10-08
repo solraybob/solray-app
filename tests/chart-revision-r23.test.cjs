@@ -48,7 +48,7 @@ test("Today: transits and the plain Now card follow the chart (the reading alrea
 test("Widget, First Mirror and the chat's chart-seeded suggestions follow the chart", () => {
   const w = read("app/widget/page.tsx");
   // (Round twenty-four: also refetched after consent; answers land through show().)
-  assert.ok(w.includes("}, [token, chartRev, consentNonce]);") && w.includes("setForecast(null);") && w.includes("const show = (kind:") && w.includes("if (cancelled) return;\n      setForecast(kind === \"complete\" ? data : null);"));
+  assert.ok(w.includes("}, [token, chartRev, consentNonce, dayKey]);") && w.includes("setForecast(null);") && w.includes("const show = (kind:") && w.includes("if (cancelled) return;\n      setForecast(kind === \"complete\" ? data : null);"));
   const f = read("app/first-mirror/page.tsx");
   assert.ok(f.includes("}, [token, router, chartRev]);") && f.includes("setMirror(null);"));
   const c = read("app/chat/page.tsx");

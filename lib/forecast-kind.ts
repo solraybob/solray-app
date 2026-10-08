@@ -16,3 +16,9 @@ export function forecastKind(data: unknown): ForecastKind {
   if (d.day_title && d.reading && d.tags && d.energy) return "complete";
   return "pending";
 }
+
+/** The member's local calendar day ("YYYY-MM-DD"): the day a forecast is
+ *  for, and its cache key. Not toISOString (UTC). */
+export function localDayKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

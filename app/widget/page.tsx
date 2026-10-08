@@ -1,13 +1,13 @@
 "use client";
 
 import { useChartRevision } from "@/lib/use-chart-revision";
-import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { chartWorkStamp, syncBirthRevision, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, isAiConsentError } from "@/lib/api";
 import { accountKey, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT } from "@/lib/ai-consent";
-import { forecastKind } from "@/lib/forecast-kind";
+import { forecastKind, localDayKey } from "@/lib/forecast-kind";
 import { useT } from "@/lib/i18n";
 
 interface ForecastData {
@@ -89,6 +89,28 @@ export default function WidgetPage() {
   // member who has not agreed to AI processing, a reading not written yet,
   // or a failure. Only a complete reading is shown as one, or cached.
   const [state, setState] = useState<"loading" | "complete" | "consent" | "pending" | "failed">("loading");
+  // The day the reading is for. It moves on at local midnight, and on
+  // waking from suspension or coming back into view on a later day, as on
+  // Today (Codex out21-5 #2).
+  const [dayKey, setDayKey] = useState(() => localDayKey());
+  const shownDayRef = useRef(dayKey);
+  useEffect(() => {
+    const check = () => {
+      const k = localDayKey();
+      setDayKey((cur) => (cur === k ? cur : k));
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", check);
+    const now = new Date();
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5).getTime();
+    const timer = window.setTimeout(check, Math.max(1000, nextMidnight - now.getTime()));
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", check);
+      window.clearTimeout(timer);
+    };
+  }, [dayKey]);
   // Agreed in the consent sheet (in the app): ask again for the reading.
   const [consentNonce, setConsentNonce] = useState(0);
   useEffect(() => {
@@ -101,8 +123,11 @@ export default function WidgetPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (shownRevRef.current !== chartRev) {
+    if (shownRevRef.current !== chartRev || shownDayRef.current !== dayKey) {
+      // Another chart or another day: yesterday's (or the old chart's)
+      // reading leaves the screen.
       shownRevRef.current = chartRev;
+      shownDayRef.current = dayKey;
       setForecast(null);
       setLoading(true);
       setState("loading");
@@ -120,12 +145,23 @@ export default function WidgetPage() {
     };
 
     async function fetchForecast() {
-      // Local date parts, not toISOString (which is UTC): the backend now
-      // resolves "today" by the user's local date, so the widget cache key
-      // must agree or it goes stale around UTC midnight.
-      const _d = new Date();
-      const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
-      const cacheKey = accountKey(`solray_forecast_${dateKey}`);
+      // The local day (lib/forecast-kind localDayKey): the backend resolves
+      // "today" by the member's local date, and so does the cache key.
+      const cacheKey = accountKey(`solray_forecast_${dayKey}`);
+      // Whether the chart behind the caches is still the member's current
+      // one: a birth correction on another device is only learnt from
+      // /users/me. On a change the caches are dropped and the chart
+      // revision moves on, which loads this screen again (Codex out21-5 #1).
+      const chartStillCurrent = async (): Promise<boolean> => {
+        try {
+          const me = await apiFetch("/users/me", {}, token);
+          if (cancelled) return false;
+          return !syncBirthRevision(me);
+        } catch (e) {
+          if (isStaleAccountError(e)) return false;
+          return true;   // offline: what is cached stays
+        }
+      };
 
       // Cache first, but only a COMPLETE reading. Anything else (a pending
       // or partial entry, a sky without a reading) is dropped and fetched
@@ -134,7 +170,13 @@ export default function WidgetPage() {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (forecastKind(parsed) === "complete") { show("complete", parsed as ForecastData); return; }
+          if (forecastKind(parsed) === "complete") {
+            // Shown at once, then checked against the current chart; on a
+            // change it is replaced (the reload clears it).
+            show("complete", parsed as ForecastData);
+            void chartStillCurrent();
+            return;
+          }
           localStorage.removeItem(cacheKey);
         }
       } catch (_) {
@@ -143,8 +185,14 @@ export default function WidgetPage() {
 
       try {
         const stamp = chartWorkStamp();
-        const data = await apiFetch("/forecast/today", {}, token, { quietConsent: true });
-        if (cancelled) return;
+        // The reading and the chart check together: a reading for a chart
+        // corrected elsewhere is never shown or cached (the check drops the
+        // caches and moves the revision on, which loads this screen again).
+        const [data, current] = await Promise.all([
+          apiFetch("/forecast/today", {}, token, { quietConsent: true }),
+          chartStillCurrent(),
+        ]);
+        if (cancelled || !current) return;
         const kind = forecastKind(data);
         show(kind, kind === "complete" ? data as ForecastData : null);
         // Cached only when complete, and only under the chart it was
@@ -159,7 +207,7 @@ export default function WidgetPage() {
 
     fetchForecast();
     return () => { cancelled = true; };
-  }, [token, chartRev, consentNonce]);
+  }, [token, chartRev, consentNonce, dayKey]);
 
   const moonPhase = getMoonPhase();
 
