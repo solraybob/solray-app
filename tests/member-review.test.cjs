@@ -20,8 +20,9 @@ test("F8: a late transcript never auto-sends into another conversation or accoun
   assert.equal(act({ ...base, crisis: false }), "fill");
   const src = read("app/chat/page.tsx");
   const tb = src.slice(src.indexOf("const transcribeBlob = useCallback"), src.indexOf("const nativeRecordingRef"));
-  assert.match(tb, /const acct = captureAccount\(\);/);
-  assert.match(tb, /const spokenIn = activeSessionRef\.current;/);
+  // (Round nineteen: captured when the microphone was asked for.)
+  assert.match(tb, /const acct = origin\?\.acct \?\? captureAccount\(\);/);
+  assert.match(tb, /const spokenIn = origin \? origin\.session : activeSessionRef\.current;/);
   assert.match(tb, /if \(landing\(false\) === "drop"\) return;/);
   assert.match(tb, /data\?\.crisis === true && landing\(true\) === "send"/);
   assert.match(tb, /trackRequest\(/);

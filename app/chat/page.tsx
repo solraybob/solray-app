@@ -7,7 +7,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
 import { voiceCrisisTurn, voiceResultAction } from "@/lib/voice-result";
-import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError } from "@/lib/account-session";
+import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError, type AccountGuard } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import {
@@ -384,7 +384,11 @@ function ChatPageInner() {
   // "consent": the member has not agreed to AI processing yet; a calm
   // notice with an Agree button instead of an error bubble in the thread.
   const [chatNotice, setChatNotice] = useState<
-    { kind: "closed" } | { kind: "dynamics"; sessionId: string } | { kind: "consent"; sessionId: string } | null
+    | { kind: "closed" } | { kind: "dynamics"; sessionId: string } | { kind: "consent"; sessionId: string }
+    // A voice message landed after the member moved on: its words (or the
+    // crisis card for them) are in the conversation it was spoken in.
+    | { kind: "voice_elsewhere"; sessionId: string; target: string; crisis: boolean }
+    | null
   >(null);
   // Agreed in the sheet: the consent notice has done its job.
   useEffect(() => {
@@ -401,14 +405,36 @@ function ChatPageInner() {
   // the recording is cancelled or fails. The update reload waits for it
   // (lib/draft-guard), so no recording is lost to a deploy.
   const voiceHoldRef = useRef<(() => void) | null>(null);
+  // Where and for whom the voice message was started, captured when the
+  // microphone is asked for and carried through recording, stopping and
+  // transcription (Codex out15-5 #1): the conversation (sent as session_id,
+  // so care mode lands on it), the account and its token. Switching
+  // conversation while recording never moves the words or a crisis card.
+  const voiceOriginRef = useRef<{ session: string; acct: AccountGuard; token: string | null } | null>(null);
   const holdVoice = () => {
     if (!voiceHoldRef.current) voiceHoldRef.current = beginUnfinishedWork();
   };
   const releaseVoice = () => {
     const release = voiceHoldRef.current;
     voiceHoldRef.current = null;
+    voiceOriginRef.current = null;
     release?.();
   };
+  // Voice words that came back after the member moved to another
+  // conversation, waiting for the one they were spoken in: put in its box
+  // when it is opened again (never sent on their own). Counted as a draft
+  // for the update reload.
+  const voiceDraftsRef = useRef<Map<string, { text: string; transcript: string }>>(new Map());
+  useEffect(() => registerDraftSource(() => voiceDraftsRef.current.size > 0), []);
+  // Back in the conversation the words were spoken in: they go into its box.
+  useEffect(() => {
+    const d = voiceDraftsRef.current.get(sessionId);
+    if (!d) return;
+    voiceDraftsRef.current.delete(sessionId);
+    setInput((prev) => composerWithUnsent(d.text, prev));
+    lastTranscriptRef.current = d.transcript;
+    setChatNotice((n) => (n?.kind === "voice_elsewhere" && n.target === sessionId ? null : n));
+  }, [sessionId]);
   const recordedChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordMimeRef = useRef<string>("audio/webm");
@@ -1796,9 +1822,12 @@ function ChatPageInner() {
     form.append("file", blob, `voice.${ext}`);
 
     setTranscribing(true);
-    // Who and where this was spoken: checked again when the text lands.
-    const acct = captureAccount();
-    const spokenIn = activeSessionRef.current;
+    // Who and where this was spoken: captured when the microphone was asked
+    // for (voiceOriginRef), so a conversation switch while recording or
+    // stopping never moves it. Checked again when the text lands.
+    const origin = voiceOriginRef.current;
+    const acct = origin?.acct ?? captureAccount();
+    const spokenIn = origin ? origin.session : activeSessionRef.current;
     // The conversation it was spoken in: a crisis transcript puts it in
     // care mode on the server straight away.
     if (spokenIn) form.append("session_id", spokenIn);
@@ -1809,7 +1838,7 @@ function ChatPageInner() {
       crisis,
     });
     try {
-      const authToken = tokenRef.current || token;
+      const authToken = origin ? origin.token : (tokenRef.current || token);
       const { res, body } = await trackRequest(async () => {
         const r = await fetch(`${apiUrl}/chat/transcribe`, {
           method: "POST",
@@ -1851,6 +1880,31 @@ function ChatPageInner() {
       const transcript = (data?.transcript || "").trim();
       if (!transcript) {
         setVoiceError(t("chat.voice_nothing_heard"));
+        return;
+      }
+      // The member is in another conversation now: the words, and a crisis
+      // card the server established for them, belong to the one they were
+      // spoken in. The card goes into that conversation's saved copy; the
+      // words wait for its box. A notice here offers to open it.
+      if (spokenIn && activeSessionRef.current !== spokenIn) {
+        const turn = data?.crisis === true ? voiceCrisisTurn(data, transcript, asCrisisCard) : null;
+        if (turn) {
+          const kept = updateStoredSession(spokenIn, acct.generation, (saved) =>
+            saved.some((m) => m.id === turn.user.id) ? saved : [...saved, turn.user as Message, turn.card as Message]);
+          if (!kept) {
+            // That conversation is not on this device (deleted, or evicted
+            // to make room): the crisis card is never dropped, it is drawn
+            // here instead.
+            setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);
+            return;
+          }
+        } else {
+          const prev = voiceDraftsRef.current.get(spokenIn);
+          voiceDraftsRef.current.set(spokenIn, prev
+            ? { text: `${prev.text} ${transcript}`, transcript: `${prev.transcript} ${transcript}` }
+            : { text: transcript, transcript });
+        }
+        setChatNotice({ kind: "voice_elsewhere", sessionId: activeSessionRef.current, target: spokenIn, crisis: !!turn });
         return;
       }
       // The server heard someone in crisis. Send what they said straight
@@ -1961,6 +2015,11 @@ function ChatPageInner() {
     // From here until transcription (or a cancel or failure), a reload
     // would lose the recording.
     holdVoice();
+    voiceOriginRef.current = {
+      session: activeSessionRef.current,
+      acct: captureAccount(),
+      token: tokenRef.current || token,
+    };
 
     // Native (Capacitor) shell: use the proper iOS/Android microphone
     // API via the capacitor-voice-recorder plugin. This is the path
@@ -2556,6 +2615,11 @@ function ChatPageInner() {
                     {t("chat.conversation_closed_partner")}
                   </p>
                 )}
+                {chatNotice.kind === "voice_elsewhere" && (
+                  <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                    {chatNotice.crisis ? t("chat.voice_elsewhere_crisis") : t("chat.voice_elsewhere")}
+                  </p>
+                )}
                 <div className="flex items-center gap-5 mt-2">
                   {chatNotice.kind === "consent" && (
                     <button
@@ -2564,6 +2628,16 @@ function ChatPageInner() {
                       style={{ minHeight: 40, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}
                     >
                       {t("chat.consent_agree")}
+                    </button>
+                  )}
+                  {chatNotice.kind === "voice_elsewhere" && (
+                    <button
+                      onClick={() => { const to = chatNotice.target; setChatNotice(null); loadPastSession(to); }}
+                      disabled={sending}
+                      className="font-body font-bold text-[14px] rounded-full px-5"
+                      style={{ minHeight: 40, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}
+                    >
+                      {t("chat.voice_open_conversation")}
                     </button>
                   )}
                   {chatNotice.kind === "dynamics" && (

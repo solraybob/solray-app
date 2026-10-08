@@ -255,6 +255,9 @@
     "pisces": "Pisces"
   },
   "chat": {
+    "voice_elsewhere": "Your voice message is waiting in the conversation you recorded it in.",
+    "voice_elsewhere_crisis": "What you said in your voice message matters. Support lines are waiting in the conversation you recorded it in.",
+    "voice_open_conversation": "Open it",
     "error_refused": "The Oracle could not answer this one just now. Please try again in a little while.",
     "history_loading": "Opening this conversation from your account.",
     "history_load_failed": "This conversation could not be opened just now. Check your connection and tap it to try again.",
