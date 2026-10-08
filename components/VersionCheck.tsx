@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { apiBusy } from "@/lib/api";
-import { hasTypedDraft, installDraftTracking } from "@/lib/draft-guard";
+import { hasTypedDraft, hasUnfinishedWork, installDraftTracking } from "@/lib/draft-guard";
 
 /**
  * VersionCheck
@@ -61,7 +61,14 @@ export default function VersionCheck() {
       try { return hasTypedDraft(); } catch { return true; }
     };
 
-    const safeToReload = () => !isUserTyping() && !hasDraft() && !apiBusy();
+    // Unfinished work no field shows (a voice recording until its
+    // transcription takes over, a photo being prepared, a store purchase,
+    // a multi-step form): lib/draft-guard.
+    const busyElsewhere = () => {
+      try { return hasUnfinishedWork(); } catch { return true; }
+    };
+
+    const safeToReload = () => !isUserTyping() && !hasDraft() && !busyElsewhere() && !apiBusy();
 
     const doReload = () => {
       if (cancelled) return;

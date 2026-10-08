@@ -1,5 +1,6 @@
 "use client";
 
+import { registerUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -93,6 +94,12 @@ function SubscribeContent() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCardForm, setShowCardForm] = useState(false);
+  // The update reload waits while a payment step is under way here: the
+  // card form open (its fields may be hosted out of reach of the draft
+  // tracking) or a billing action on its way (lib/draft-guard).
+  const paymentBusyRef = useRef(false);
+  paymentBusyRef.current = showCardForm || actionLoading;
+  useEffect(() => registerUnfinishedWork(() => paymentBusyRef.current), []);
   const [cardSavedNote, setCardSavedNote] = useState("");
   // A calm, non-error note from the card form (a store membership ended
   // with paid time left: nothing was charged, the form closes).
@@ -959,6 +966,12 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   // existing subscription through the same verify path as a new purchase.
   // Success is only reported once the server has confirmed access (B5).
   const [restoring, setRestoring] = useState(false);
+  // A store purchase sheet or a restore under way: the update reload waits
+  // (lib/draft-guard), so the purchase listener and its verification are
+  // never torn down mid-purchase.
+  const storeBusyRef = useRef(false);
+  storeBusyRef.current = loading || restoring;
+  useEffect(() => registerUnfinishedWork(() => storeBusyRef.current), []);
   const handleRestore = async () => {
     if (restoring || loading) return;
     setError("");

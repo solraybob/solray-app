@@ -1,5 +1,6 @@
 "use client";
 
+import { beginUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -949,15 +950,21 @@ export default function ProfilePage() {
     // and decoding take time and the account may change meanwhile. Then
     // nothing is shown, cached or sent (Codex out12-5 #3).
     const acct = captureAccount();
+    // Reading and resizing the photo is not a request yet: the update
+    // reload waits for it until the upload ends (lib/draft-guard).
+    const done = beginUnfinishedWork();
     const reader = new FileReader();
+    reader.onerror = () => done();
+    reader.onabort = () => done();
     reader.onload = (ev) => {
-      if (!acct.live) return;
+      if (!acct.live) { done(); return; }
       const rawBase64 = ev.target?.result as string;
 
       // Resize to max 400px on longest side before storing (keeps payload small)
       const img = new Image();
+      img.onerror = () => done();
       img.onload = () => {
-        if (!acct.live) return;
+        if (!acct.live) { done(); return; }
         const MAX = 400;
         const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
         const canvas = document.createElement("canvas");
@@ -987,17 +994,20 @@ export default function ProfilePage() {
           apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, liveToken,
             { generation: acct.generation })
             .then(() => {
+              done();
               if (!acct.live) return;
               setAvatarSaving("saved");
               setTimeout(() => setAvatarSaving("idle"), 3000);
             })
             .catch((err) => {
+              done();
               if (isStaleAccountError(err) || !acct.live) return;
               console.error("[avatar upload] PATCH /users/photo failed:", err);
               setAvatarSaving("error");
               setTimeout(() => setAvatarSaving("idle"), 6000);
             });
         } else {
+          done();
           console.warn("[avatar upload] no token available, photo saved locally only");
           setAvatarSaving("error");
           setTimeout(() => setAvatarSaving("idle"), 6000);
@@ -1005,7 +1015,7 @@ export default function ProfilePage() {
       };
       img.src = rawBase64;
     };
-    reader.readAsDataURL(file);
+    try { reader.readAsDataURL(file); } catch { done(); }
   };
 
   return (

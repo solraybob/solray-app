@@ -44,7 +44,7 @@ import {
   restoreEvicted,
 } from "@/lib/chat-sync";
 import { readSoulCtx, resolveSoulCtx, writeSoulCtx, syncedSoulRef, type SoulCtx } from "@/lib/chat-soul";
-import { registerDraftSource } from "@/lib/draft-guard";
+import { beginUnfinishedWork, registerDraftSource } from "@/lib/draft-guard";
 import ReactMarkdown from "react-markdown";
 import { useT, fill } from "@/lib/i18n";
 import { tx } from "@/lib/astro-i18n";
@@ -395,6 +395,20 @@ function ChatPageInner() {
     return () => window.removeEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
   }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // A voice message under way: held from the moment the microphone is asked
+  // for, through recording and stopping, until transcription has taken over
+  // and finished (its text then sits in the composer, itself a draft) or
+  // the recording is cancelled or fails. The update reload waits for it
+  // (lib/draft-guard), so no recording is lost to a deploy.
+  const voiceHoldRef = useRef<(() => void) | null>(null);
+  const holdVoice = () => {
+    if (!voiceHoldRef.current) voiceHoldRef.current = beginUnfinishedWork();
+  };
+  const releaseVoice = () => {
+    const release = voiceHoldRef.current;
+    voiceHoldRef.current = null;
+    release?.();
+  };
   const recordedChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordMimeRef = useRef<string>("audio/webm");
@@ -1734,6 +1748,8 @@ function ChatPageInner() {
       mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
       mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
+      // Leaving the chat ends the recording: nothing left to protect.
+      releaseVoice();
 
       // Cancel any active native recording. Fire-and-forget; we are on
       // the unmount path and cannot await. The plugin call is
@@ -1771,6 +1787,7 @@ function ChatPageInner() {
   const transcribeBlob = useCallback(async (blob: Blob, mime: string) => {
     if (!blob.size) {
       setTranscribing(false);
+      releaseVoice();
       return;
     }
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
@@ -1885,7 +1902,10 @@ function ChatPageInner() {
       setVoiceError(msg);
     } finally {
       if (isMountedRef.current) setTranscribing(false);
+      // Transcription is done: its text (if any) is in the composer now.
+      releaseVoice();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, t]);
 
   // True while a native (Capacitor) voice recording is active. Distinct
@@ -1906,9 +1926,11 @@ function ChatPageInner() {
         if (result) {
           await transcribeBlob(result.blob, result.mimeType);
         } else {
+          releaseVoice();
           setVoiceError(t("chat.voice_no_audio"));
         }
       } catch (err) {
+        releaseVoice();
         setIsRecording(false);
         console.warn("[chat] native stop failed", err);
         setVoiceError(t("chat.voice_stop_failed"));
@@ -1936,6 +1958,9 @@ function ChatPageInner() {
     }
 
     setVoiceError(null);
+    // From here until transcription (or a cancel or failure), a reload
+    // would lose the recording.
+    holdVoice();
 
     // Native (Capacitor) shell: use the proper iOS/Android microphone
     // API via the capacitor-voice-recorder plugin. This is the path
@@ -1951,12 +1976,14 @@ function ChatPageInner() {
         // leaving a recording running with no screen to end it.
         if (!isMountedRef.current) {
           if (ok) await cancelNativeRecording().catch(() => {});
+          releaseVoice();
           return;
         }
         if (ok) {
           nativeRecordingRef.current = true;
           setIsRecording(true);
         } else {
+          releaseVoice();
           setVoiceError(t("chat.voice_perm_denied_native"));
         }
         return;
@@ -2043,9 +2070,11 @@ function ChatPageInner() {
       // Left the chat while the permission prompt was open: release the mic.
       if (!isMountedRef.current) {
         stream.getTracks().forEach((track) => track.stop());
+        releaseVoice();
         return;
       }
     } catch (err: unknown) {
+      releaseVoice();
       const e = err as { name?: string; message?: string };
       const name = e?.name || "";
       // eslint-disable-next-line no-console
@@ -2096,6 +2125,7 @@ function ChatPageInner() {
       recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
     } catch {
       stream.getTracks().forEach((track) => track.stop());
+      releaseVoice();
       setVoiceError(t("chat.voice_cant_record"));
       return;
     }
@@ -2124,6 +2154,7 @@ function ChatPageInner() {
     };
 
     recorder.onerror = () => {
+      releaseVoice();
       setVoiceError(t("chat.voice_stopped_unexpectedly"));
       stream.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -2138,6 +2169,7 @@ function ChatPageInner() {
       stream.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
       mediaRecorderRef.current = null;
+      releaseVoice();
       setVoiceError(t("chat.voice_start_failed"));
     }
   }, [isRecording, pickRecorderMime, stopRecording, transcribeBlob]);

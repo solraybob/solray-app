@@ -29,22 +29,22 @@ test("settings photo: guard captured at selection, checked in both callbacks, se
   const fn = src.slice(src.indexOf("const onPhotoSelected = async"), src.indexOf("// The \"which one was it\" question"));
   const cap = fn.indexOf("const acct = captureAccount();");
   assert.ok(cap > 0 && cap < fn.indexOf("new FileReader()"));
-  assert.ok(fn.includes("reader.onload = () => {\n      if (!acct.live) return;"));
-  assert.ok(fn.includes("img.onload = async () => {\n        if (!acct.live) return;"));
+  assert.ok(fn.includes("reader.onload = () => {\n      if (!acct.live) { done(); return; }"));
+  assert.ok(fn.includes("img.onload = async () => {\n        if (!acct.live) { done(); return; }"));
   assert.ok(fn.includes("}, token, { generation: acct.generation });"));
   const after = fn.slice(fn.indexOf("{ generation: acct.generation }"));
-  assert.ok(after.indexOf("if (!acct.live) return;") < after.indexOf('localStorage.setItem(accountKey("solray_avatar")'));
+  assert.ok(after.indexOf("if (!acct.live) { done(); return; }") < after.indexOf('localStorage.setItem(accountKey("solray_avatar")'));
   assert.ok(fn.includes("if (isStaleAccountError(err) || !acct.live) return;"));
-  assert.ok(fn.includes("const failPhoto = () => {\n      if (!acct.live) return;"));
+  assert.ok(fn.includes("const failPhoto = () => {\n      done();\n      if (!acct.live) return;"));
 });
 
 test("profile avatar: the same guard around FileReader, decoding, cache writes and the upload", () => {
   const src = read("app/profile/page.tsx");
   const fn = src.slice(src.indexOf("const handleAvatarChange = "), src.indexOf("reader.readAsDataURL(file);"));
   assert.ok(fn.indexOf("const acct = captureAccount();") < fn.indexOf("new FileReader()"));
-  assert.ok(fn.includes("reader.onload = (ev) => {\n      if (!acct.live) return;"));
-  assert.ok(fn.includes("img.onload = () => {\n        if (!acct.live) return;"));
-  assert.ok(fn.indexOf("if (!acct.live) return;\n        const MAX") < fn.indexOf('localStorage.setItem(accountKey("solray_avatar")'));
+  assert.ok(fn.includes("reader.onload = (ev) => {\n      if (!acct.live) { done(); return; }"));
+  assert.ok(fn.includes("img.onload = () => {\n        if (!acct.live) { done(); return; }"));
+  assert.ok(fn.indexOf("if (!acct.live) { done(); return; }\n        const MAX") < fn.indexOf('localStorage.setItem(accountKey("solray_avatar")'));
   assert.ok(fn.includes("{ generation: acct.generation }"));
   assert.ok(fn.includes("if (isStaleAccountError(err) || !acct.live) return;"));
 });

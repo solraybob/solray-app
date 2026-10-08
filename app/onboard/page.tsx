@@ -1,5 +1,6 @@
 "use client";
 
+import { registerUnfinishedWork } from "@/lib/draft-guard";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -198,6 +199,16 @@ export default function OnboardPage() {
   const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
   const askFold = (options: FoldChoice[]) =>
     new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
+
+  // Sign-up keeps earlier steps only in memory: once anything is filled in
+  // (or a later step is reached), the update reload waits until the account
+  // is made (lib/draft-guard). Checkboxes and choice buttons fire no typing.
+  const onboardingDirtyRef = useRef(false);
+  onboardingDirtyRef.current = !calculatingBlueprint && (
+    step > 1 || foldAsk !== null || loading ||
+    !!(name || sex || birthDate || birthTime || timeUnknown || birthPlace || email || password)
+  );
+  useEffect(() => registerUnfinishedWork(() => onboardingDirtyRef.current), []);
 
   const handleSubmit = async () => {
     setError("");

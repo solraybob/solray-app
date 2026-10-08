@@ -18,7 +18,12 @@ type FieldLike = {
   isConnected?: boolean;
 };
 
-const TEXT_TYPES = new Set(["", "text", "email", "search", "password", "tel", "url", "number"]);
+// Fields whose value the member chooses by typing or picking. Date and time
+// pickers count too: a birth date picked and not saved is a draft.
+const TEXT_TYPES = new Set([
+  "", "text", "email", "search", "password", "tel", "url", "number",
+  "date", "time", "datetime-local", "month", "week",
+]);
 
 const typed = new Set<FieldLike>();
 
@@ -26,7 +31,7 @@ export function isTextField(el: unknown): el is FieldLike {
   if (!el || typeof el !== "object") return false;
   const f = el as FieldLike;
   const tag = (f.tagName || "").toUpperCase();
-  if (tag === "TEXTAREA") return true;
+  if (tag === "TEXTAREA" || tag === "SELECT") return true;
   if (tag === "INPUT") return TEXT_TYPES.has((f.type || "").toLowerCase());
   return f.isContentEditable === true;
 }
@@ -79,8 +84,53 @@ export function installDraftTracking(doc: { addEventListener: Document["addEvent
   return () => doc.removeEventListener("input", onInput, true);
 }
 
+// ─── Unfinished work that is not text ──────────────────────────────────────
+//
+// Things a reload would destroy that no field shows: a voice recording from
+// the moment the microphone is asked for until its transcription has taken
+// over (or it is cancelled), a photo being read and resized before upload,
+// a store purchase sheet, a multi-step form whose earlier steps live only
+// in memory. A screen either holds a token for the duration
+// (beginUnfinishedWork) or registers a check (registerUnfinishedWork).
+let held = 0;
+const workSources = new Set<() => boolean>();
+
+/** Hold the update reload until the returned release is called (once;
+ *  later calls do nothing). */
+export function beginUnfinishedWork(): () => void {
+  held += 1;
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    held -= 1;
+  };
+}
+
+/** Register a check for unfinished work a screen holds (true while some).
+ *  Returns the cleanup, to call when the screen goes away. */
+export function registerUnfinishedWork(isBusy: () => boolean): () => void {
+  workSources.add(isBusy);
+  return () => { workSources.delete(isBusy); };
+}
+
+/** True while anything a reload would lose is under way. */
+export function hasUnfinishedWork(): boolean {
+  if (held > 0) return true;
+  for (const busy of Array.from(workSources)) {
+    try {
+      if (busy()) return true;
+    } catch {
+      return true; // unknown: never risk it
+    }
+  }
+  return false;
+}
+
 /** For tests. */
 export function resetDraftTracking(): void {
   typed.clear();
   sources.clear();
+  workSources.clear();
+  held = 0;
 }

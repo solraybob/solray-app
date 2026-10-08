@@ -20,6 +20,7 @@
  * costs trust.
  */
 
+import { beginUnfinishedWork, registerUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -343,12 +344,16 @@ export default function SettingsPage() {
     // and decoding take time, and the account may change meanwhile. Then
     // nothing is sent, shown or cached (Codex out12-5 #3).
     const acct = captureAccount();
+    // Reading and resizing the photo is not a request yet: the update
+    // reload waits for it until the upload ends (lib/draft-guard).
+    const done = beginUnfinishedWork();
     setPhotoStatus("saving");
     setPhotoError(null);
     const prevPhoto = photo;
     // Any failure (unreadable file, undecodable image, upload error) clears
     // the saving state and leaves a retryable message.
     const failPhoto = () => {
+      done();
       if (!acct.live) return;
       setPhoto(prevPhoto);
       setPhotoStatus("error");
@@ -361,11 +366,11 @@ export default function SettingsPage() {
     reader.onerror = failPhoto;
     reader.onabort = failPhoto;
     reader.onload = () => {
-      if (!acct.live) return;
+      if (!acct.live) { done(); return; }
       const img = new Image();
       img.onerror = failPhoto;
       img.onload = async () => {
-        if (!acct.live) return;
+        if (!acct.live) { done(); return; }
         try {
           const canvas = document.createElement("canvas");
           const SIZE = 384;
@@ -386,7 +391,7 @@ export default function SettingsPage() {
           }, token, { generation: acct.generation });
           // Signed out (or another account) while it was on its way: this
           // photo belongs to nobody on this device now.
-          if (!acct.live) return;
+          if (!acct.live) { done(); return; }
           // Sync to local cache so profile page picks it up immediately
           try {
             localStorage.setItem(accountKey("solray_avatar"), dataUrl);
@@ -397,9 +402,11 @@ export default function SettingsPage() {
               localStorage.setItem(accountKey("solray_blueprint"), JSON.stringify(bp));
             }
           } catch {}
+          done();
           setPhotoStatus("saved");
           setTimeout(() => setPhotoStatus("idle"), 1800);
         } catch (err) {
+          done();
           if (isStaleAccountError(err) || !acct.live) return;
           failPhoto();
         }
@@ -415,6 +422,11 @@ export default function SettingsPage() {
 
   // The "which one was it" question for a birth time that happened twice.
   const [foldAsk, setFoldAsk] = useState<{ options: FoldChoice[]; resolve: (f: BirthFold | null) => void } | null>(null);
+  // A birth-time question open mid-save: the update reload waits for the
+  // member's answer (lib/draft-guard).
+  const foldOpenRef = useRef(false);
+  foldOpenRef.current = foldAsk !== null;
+  useEffect(() => registerUnfinishedWork(() => foldOpenRef.current), []);
   const askFold = (options: FoldChoice[]) =>
     new Promise<BirthFold | null>((resolve) => setFoldAsk({ options, resolve }));
 
