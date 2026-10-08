@@ -46,7 +46,12 @@ test("chat page: a crisis voice message waits for a busy send instead of being l
   const src = page();
   const i = src.indexOf('if (data?.crisis === true && landing(true) === "send")');
   assert.ok(i > 0);
-  const block = src.slice(i, src.indexOf("return;", i));
+  // Round ten: a card the transcription already carries is drawn at once
+  // (crisis-r10). Without one, the /chat path below.
+  const k = src.indexOf("if (turn) {", i);
+  assert.ok(k > i);
+  const after = src.indexOf("}", src.indexOf("return;", k));
+  const block = src.slice(after, src.indexOf("return;", after));
   // The words stay in the box until a send is accepted, never cleared first.
   assert.ok(block.includes("setInput(vm.text)"));
   assert.ok(!block.includes('setInput("")'));

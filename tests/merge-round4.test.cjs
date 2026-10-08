@@ -42,7 +42,8 @@ test("an ordinary conversation closed by the refusal starts a fresh one with the
   // The unsent turn leaves the closed conversation.
   assert.match(ordinary, /sessionId: sentSessionId,[\s\S]*messages: updatedMessages\.slice\(0, -1\),/);
   assert.match(ordinary, /const freshId = generateSessionId\(\);\n\s+setSessionId\(freshId\);/);
-  assert.match(ordinary, /setMessages\(\[\]\);/);
+  // Empty, or opened by the care-turn support card the refusal carried.
+  assert.match(ordinary, /const freshMessages = partnerSupportMsg \? \[partnerSupportMsg\] : \[\];[\s\S]*setMessages\(freshMessages\);/);
   assert.match(ordinary, /setInput\(\(prev\) => \(prev\.trim\(\) \? `\$\{text\}\\n\\n\$\{prev\}` : text\)\);/);
   assert.match(ordinary, /setChatNotice\(\{ kind: "closed" \}\);/);
   // Never sent on its own, and the closed conversation is not synthesized.

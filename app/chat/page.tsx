@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError, detailCode, trackRequest } from "@/lib/api";
-import { voiceResultAction } from "@/lib/voice-result";
+import { voiceCrisisTurn, voiceResultAction } from "@/lib/voice-result";
 import { captureAccount, getAuthGeneration, isCurrentGeneration, isStaleAccountError } from "@/lib/account-session";
 import { AI_CONSENT_CHANGED_EVENT, AI_CONSENT_REQUIRED_CODE, openAiConsentSheet } from "@/lib/ai-consent";
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
@@ -16,6 +16,7 @@ import {
   deleteSessionOnServer,
   getSessionIds,
   loadSession,
+  markMessagePending,
   markRenamePending,
   markUnsent,
   noteNewSession,
@@ -23,6 +24,7 @@ import {
   bindChatSyncToAccount,
   saveSession,
   saveSessionIds,
+  settleMessage,
   syncSessionsFromServer,
   type ChatMessage,
   type StoredSession as ChatStoredSession,
@@ -1225,6 +1227,9 @@ function ChatPageInner() {
       content: text,
       timestamp: new Date().toISOString(),
     };
+    // Not uploaded to the transcript until /chat has answered: a message
+    // the server refuses (too long) must never come back through sync.
+    markMessagePending(userMsg.id);
 
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -1338,6 +1343,20 @@ function ChatPageInner() {
       // server closed the conversation.
       if (isPartnerConsentRefusal(err)) {
         if (activeSessionRef.current !== sentSessionId) return;
+        // A care turn: the server sends the soft support card with the
+        // refusal. It goes in the thread first, whatever happens next.
+        const partnerSupport = err instanceof ApiError
+          ? asCrisisCard((err.detail as { support?: unknown } | undefined)?.support)
+          : null;
+        const partnerSupportText = (err as ApiError & { detail?: { support_text?: unknown } }).detail?.support_text;
+        const partnerSupportMsg: Message | null = partnerSupport ? {
+          id: (Date.now() + 3).toString(),
+          role: "assistant",
+          content: typeof partnerSupportText === "string" ? partnerSupportText : partnerSupport.intro,
+          timestamp: new Date().toISOString(),
+          crisis: partnerSupport,
+        } : null;
+        if (partnerSupportMsg && sentSoulRef) setMessages((prev) => [...prev, partnerSupportMsg]);
         if (sentSoulRef) {
           // Dynamics with that partner: the existing partner-consent copy in
           // the thread, and the offer of an ordinary conversation.
@@ -1367,8 +1386,10 @@ function ChatPageInner() {
         setSoulRef(null);
         const freshId = generateSessionId();
         setSessionId(freshId);
-        persistSession({ sessionId: freshId, date: todayLabel(), messages: [] });
-        setMessages([]);
+        // The support card, if the server sent one, opens the fresh one.
+        const freshMessages = partnerSupportMsg ? [partnerSupportMsg] : [];
+        persistSession({ sessionId: freshId, date: todayLabel(), messages: freshMessages });
+        setMessages(freshMessages);
         setShowHistory(false);
         setInput((prev) => (prev.trim() ? `${text}\n\n${prev}` : text));
         setChatNotice({ kind: "closed" });
@@ -1387,6 +1408,8 @@ function ChatPageInner() {
         // thread and go back into the box, whole, to be shortened; the
         // spoken part keeps travelling as voice_transcript.
         if (err instanceof ApiError && err.code === MESSAGE_TOO_LONG_CODE) {
+          // Refused: never uploaded, whatever this device saves meanwhile.
+          settleMessage(userMsg.id, true);
           setMessages((prev) => [
             ...prev.filter((m) => m.id !== userMsg.id),
             {
@@ -1462,6 +1485,9 @@ function ChatPageInner() {
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
+      // The outcome is known: an answered (or failed) message is part of
+      // the transcript from now on; a refused one stays out for good.
+      settleMessage(userMsg.id);
       sendingRef.current = false;
       if (isMountedRef.current) setSending(false);
     }
@@ -1566,6 +1592,9 @@ function ChatPageInner() {
     // Who and where this was spoken: checked again when the text lands.
     const acct = captureAccount();
     const spokenIn = activeSessionRef.current;
+    // The conversation it was spoken in: a crisis transcript puts it in
+    // care mode on the server straight away.
+    if (spokenIn) form.append("session_id", spokenIn);
     const landing = (crisis: boolean) => voiceResultAction({
       sameAccount: acct.live,
       mounted: isMountedRef.current,
@@ -1629,6 +1658,17 @@ function ChatPageInner() {
       // safety class on the server.
       if (data?.crisis === true && landing(true) === "send") {
         const vm = voiceMessage(inputRef.current?.value || "", transcript);
+        // The server already established the crisis card for these words:
+        // drawn now, from this response, as the reply to them. Nothing has
+        // to reach /chat first, so a failed record or a slower judge there
+        // can never lose it.
+        const turn = voiceCrisisTurn(data, vm.text, asCrisisCard);
+        if (turn) {
+          setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);
+          setInput("");
+          lastTranscriptRef.current = null;
+          return;
+        }
         setInput(vm.text);
         lastTranscriptRef.current = vm.voiceTranscript;
         const pending = { text: vm.text, transcript: vm.voiceTranscript, session: spokenIn };
