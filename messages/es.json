@@ -160,6 +160,11 @@
     "consent_card_body": "Acepta el procesamiento con IA para recibir tu lectura del día. El cielo y tus ciclos están aquí de todos modos."
   },
   "chat": {
+    "turn_interrupted": "No llegó respuesta a este mensaje.",
+    "turn_too_long": "Este mensaje era demasiado largo para enviarlo, así que no se envió nada.",
+    "turn_send_again": "Enviar de nuevo",
+    "turn_remove": "Quitar",
+    "turn_edit": "Editar",
     "placeholder": "Habla desde donde estás.",
     "speak_freely": "Habla libremente...",
     "listening_placeholder": "Escuchando...",

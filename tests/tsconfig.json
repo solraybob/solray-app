@@ -37,6 +37,7 @@
     "../lib/push-eligibility.ts",
     "../lib/draft-guard.ts",
     "../lib/chat-sync.ts",
+    "../lib/chat-outcome.ts",
     "../lib/voice-result.ts",
     "../lib/crisis-card.ts",
     "../lib/birth-time-fold.ts",

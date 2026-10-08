@@ -19,13 +19,18 @@ import {
   markMessagePending,
   markRenamePending,
   markUnsent,
+  messageStatuses,
   noteNewSession,
   pushSessionToServer,
   bindChatSyncToAccount,
   saveSession,
   saveSessionIds,
+  releaseMessage,
   settleMessage,
+  forgetMessage,
   syncSessionsFromServer,
+  updateStoredSession,
+  uploadableMessages,
   type ChatMessage,
   type StoredSession as ChatStoredSession,
 } from "@/lib/chat-sync";
@@ -44,6 +49,7 @@ import {
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
 import { asCrisisCard } from "@/lib/crisis-card";
+import { answerFromChat, supportFromRefusal, withAnswer } from "@/lib/chat-outcome";
 import { accountKey, takeHandoff } from "@/lib/account-session";
 
 // isError marks a transport-level error rather than an Oracle reply. It
@@ -970,6 +976,14 @@ function ChatPageInner() {
     });
   }, [messages, sessionId]);
 
+  // Messages without an answer kept on this device (lib/chat-sync): sent
+  // just before the app closed or Chat was left ("interrupted"), or refused
+  // as too long out of sight ("refused"). Read again whenever the thread or
+  // a send changes.
+  const [statusTick, setStatusTick] = useState(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const msgStatuses = useMemo(() => messageStatuses(), [messages, sending, statusTick]);
+
   // ── Auto-scroll (only if user hasn't scrolled up) ────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   // The ref is the source of truth for the streaming tick. State is just
@@ -1203,7 +1217,7 @@ function ChatPageInner() {
   );
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const sendMessage = async (overrideText?: string, opts?: { voiceTranscript?: string }) => {
+  const sendMessage = async (overrideText?: string, opts?: { voiceTranscript?: string; replaceId?: string }) => {
     // overrideText lets a tappable prompt or auto-send path bypass the
     // input state without waiting for setInput to flush. Falls back to
     // the live input value. Resolves false when nothing was sent.
@@ -1229,9 +1243,16 @@ function ChatPageInner() {
     };
     // Not uploaded to the transcript until /chat has answered: a message
     // the server refuses (too long) must never come back through sync.
+    // Stored with the cached conversation, so leaving Chat or closing the
+    // app before the answer keeps it out too (lib/chat-sync).
     markMessagePending(userMsg.id);
+    // Sending an interrupted message again: the new one replaces it.
+    const baseMessages = opts?.replaceId ? messages.filter((m) => m.id !== opts.replaceId) : messages;
+    if (opts?.replaceId) forgetMessage(opts.replaceId);
+    // Whether the outcome was settled below (else `finally` decides).
+    let outcomeSettled = false;
 
-    const updatedMessages = [...messages, userMsg];
+    const updatedMessages = [...baseMessages, userMsg];
     setMessages(updatedMessages);
     setInput("");
     setSending(true);
@@ -1241,12 +1262,13 @@ function ChatPageInner() {
     // conversation is handled below).
     // The partner this conversation is with, also when only its synced
     // transcript names them so far.
-    const sendSoulRef = syncedSoulRef(soulRef, messages)?.ref ?? soulRef;
+    const sendSoulRef = syncedSoulRef(soulRef, baseMessages)?.ref ?? soulRef;
     const sentSoulRef = sendSoulRef;
 
     // Error bubbles go along marked isError, so the server drops them
-    // instead of reading them back as the Oracle's own words.
-    const history = historyForServer(updatedMessages.slice(0, -1));
+    // instead of reading them back as the Oracle's own words. Messages that
+    // never got an answer (interrupted, refused) are not part of it.
+    const history = historyForServer(uploadableMessages(updatedMessages.slice(0, -1)));
 
     try {
       // Build the request body. In a Dynamics chat every message names who
@@ -1268,9 +1290,17 @@ function ChatPageInner() {
         },
         token
       );
-      // The active conversation changed while waiting: do not append this
-      // reply into a different session.
-      if (activeSessionRef.current !== sentSessionId) return;
+      // Answered: part of the transcript from now on.
+      settleMessage(userMsg.id);
+      outcomeSettled = true;
+      // The active conversation changed while waiting, or the member left
+      // Chat: do not append this reply into a different session; it goes
+      // into the saved copy of its own conversation instead of being lost.
+      if (!isMountedRef.current || activeSessionRef.current !== sentSessionId) {
+        const answer = answerFromChat(data, t("chat.error_no_response"));
+        updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, userMsg.id, answer));
+        return;
+      }
       // A conversation that had no id yet gets the one the server issued,
       // and keeps it for every later turn (care mode and provenance live
       // on it server-side).
@@ -1331,6 +1361,29 @@ function ChatPageInner() {
       // A real Oracle reply is the "seen value" moment for the push ask.
       signalOracleReply();
     } catch (err) {
+      // Too long to send: refused, whatever happens on screen below. Recorded
+      // first, before any check of where the member is now, so it can never
+      // be uploaded later (Codex out8-5 #2).
+      const tooLong = err instanceof ApiError && err.code === MESSAGE_TOO_LONG_CODE;
+      // (Under the account it was sent from; after an account change the
+      // old account's copy keeps it as an interrupted message, out of uploads.)
+      if (tooLong && isCurrentGeneration(accountGen)) {
+        settleMessage(userMsg.id, true);
+        outcomeSettled = true;
+      }
+      // The support card a care turn's refusal carries (detail.support).
+      const refusalSupport = tooLong ? supportFromRefusal((err as ApiError).detail) : null;
+      const offscreen = !isMountedRef.current || activeSessionRef.current !== sentSessionId;
+      if (tooLong && offscreen) {
+        // Out of sight: the message stays in its conversation's saved copy,
+        // marked refused (never uploaded) with a way back to the box, and
+        // the support card, if any, goes in after it.
+        if (refusalSupport) {
+          updateStoredSession(sentSessionId, accountGen, (saved) =>
+            saved.some((m) => m.id === refusalSupport.id) ? saved : [...saved, refusalSupport]);
+        }
+        return;
+      }
       // If the user has already navigated away from /chat by the time the
       // response lands, do nothing. Whichever page they're on now will
       // handle its own auth/access state. Specifically, never call
@@ -1407,11 +1460,13 @@ function ChatPageInner() {
         // safety first and nothing else happened. The words leave the
         // thread and go back into the box, whole, to be shortened; the
         // spoken part keeps travelling as voice_transcript.
-        if (err instanceof ApiError && err.code === MESSAGE_TOO_LONG_CODE) {
-          // Refused: never uploaded, whatever this device saves meanwhile.
-          settleMessage(userMsg.id, true);
+        if (tooLong) {
+          // Refused (recorded above): never uploaded, whatever this device
+          // saves meanwhile. A care turn's support card goes in the thread
+          // first, before the note.
           setMessages((prev) => [
             ...prev.filter((m) => m.id !== userMsg.id),
+            ...(refusalSupport ? [refusalSupport] : []),
             {
               id: (Date.now() + 2).toString(),
               role: "assistant",
@@ -1485,13 +1540,51 @@ function ChatPageInner() {
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
-      // The outcome is known: an answered (or failed) message is part of
-      // the transcript from now on; a refused one stays out for good.
-      settleMessage(userMsg.id);
+      // Not settled above: a failure. Shown in this conversation, the
+      // message is part of the transcript from now on (the error note
+      // follows it). Out of sight (the member left Chat or this
+      // conversation, or the account changed), nobody saw it fail: it stays
+      // out of uploads as an interrupted message, kept and shown with a
+      // way to send it again.
+      if (!outcomeSettled) {
+        if (isMountedRef.current && activeSessionRef.current === sentSessionId && isCurrentGeneration(accountGen)) {
+          settleMessage(userMsg.id);
+        } else {
+          releaseMessage(userMsg.id);
+        }
+      }
       sendingRef.current = false;
       if (isMountedRef.current) setSending(false);
     }
     return true;
+  };
+
+  // Takes a message without an answer out of the thread (and the saved
+  // copy, also when it was the last one).
+  const dropUnanswered = (id: string) => {
+    const next = messages.filter((m) => m.id !== id);
+    setMessages(next);
+    if (next.length === 0 && sessionId) {
+      persistSession({ sessionId, date: todayLabel(), customName: loadSession(sessionId)?.customName, messages: next });
+    }
+    setStatusTick((n) => n + 1);
+  };
+  // An interrupted message, sent again: the new message replaces it.
+  const resendInterrupted = (msg: Message) => {
+    if (sending || sendingRef.current) return;
+    void sendMessage(msg.content, { replaceId: msg.id });
+  };
+  // An interrupted message the member does not want: withdrawn for good.
+  const removeInterrupted = (msg: Message) => {
+    settleMessage(msg.id, true);
+    dropUnanswered(msg.id);
+  };
+  // A message refused as too long while Chat was closed: back to the box,
+  // whole, to be shortened (it stays refused, never uploaded).
+  const editRefused = (msg: Message) => {
+    dropUnanswered(msg.id);
+    setInput((prev) => composerWithUnsent(msg.content, prev));
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   // Latest sendMessage for callbacks created once (the voice transcriber).
@@ -2204,6 +2297,38 @@ function ChatPageInner() {
                   >
                     {msg.role === "user" ? t("chat.you") : t("chat.oracle")} · {formatTime(msg.timestamp)}
                   </span>
+                  {msg.role === "user" && (msgStatuses[msg.id] === "interrupted" || msgStatuses[msg.id] === "refused") && (
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-4 -mt-1">
+                      <span className="font-body text-[14px] text-text-secondary w-full">
+                        {msgStatuses[msg.id] === "refused" ? t("chat.turn_too_long") : t("chat.turn_interrupted")}
+                      </span>
+                      {msgStatuses[msg.id] === "refused" ? (
+                        <button
+                          onClick={() => editRefused(msg)}
+                          className="font-body text-[12px] tracking-[0.18em] uppercase font-bold text-text-secondary hover:text-text-primary transition-colors"
+                        >
+                          {t("chat.turn_edit")}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => resendInterrupted(msg)}
+                            disabled={sending}
+                            className="font-body text-[12px] tracking-[0.18em] uppercase font-bold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                          >
+                            {t("chat.turn_send_again")}
+                          </button>
+                          <button
+                            onClick={() => removeInterrupted(msg)}
+                            disabled={sending}
+                            className="font-body text-[12px] tracking-[0.18em] uppercase font-bold text-text-muted hover:text-text-secondary transition-colors disabled:opacity-50"
+                          >
+                            {t("chat.turn_remove")}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {msg.role !== "user" && msg.id !== "greeting" && !isStreaming && !msg.isError && (msg.content || "").trim() && (
                     <div className="flex items-center gap-5 mb-4 -mt-1">
                       <button

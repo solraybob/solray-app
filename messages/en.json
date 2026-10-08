@@ -255,6 +255,11 @@
     "pisces": "Pisces"
   },
   "chat": {
+    "turn_interrupted": "No answer came back for this message.",
+    "turn_too_long": "This message was too long to send, so nothing was sent.",
+    "turn_send_again": "Send again",
+    "turn_remove": "Remove",
+    "turn_edit": "Edit",
     "placeholder": "Speak from where you are.",
     "speak_freely": "Speak freely...",
     "listening_placeholder": "Listening...",
