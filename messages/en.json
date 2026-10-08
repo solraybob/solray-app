@@ -255,6 +255,7 @@
     "pisces": "Pisces"
   },
   "chat": {
+    "error_refused": "The Oracle could not answer this one just now. Please try again in a little while.",
     "history_loading": "Opening this conversation from your account.",
     "history_load_failed": "This conversation could not be opened just now. Check your connection and tap it to try again.",
     "history_gone": "That conversation was deleted on another device.",

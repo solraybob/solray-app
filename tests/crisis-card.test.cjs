@@ -48,7 +48,8 @@ test("crisis card: the thread draws it as a card, never typed out or offered as 
   assert.ok(!src.slice(i, src.indexOf("const reply: Message", i)).includes("setStreamingId"));
   assert.match(src, /if \(msg\.crisis\) \{\s*return <CrisisCard key=\{msg\.id\} card=\{msg\.crisis\} \/>;/);
   // The support card that comes with a consent refusal goes in the thread.
-  assert.match(src, /asCrisisCard\(\(err\.detail as \{ support\?: unknown \} \| undefined\)\?\.support\)/);
+  // (Round sixteen: read for every refusal by lib/chat-outcome readChatRefusal.)
+  assert.match(src, /if \(refusalSupport\) setMessages\(\(prev\) => \[\.\.\.prev, refusalSupport\]\)/);
 });
 
 test("crisis card: chrome strings exist in English and Spanish, plain copy", () => {

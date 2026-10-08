@@ -184,7 +184,7 @@ test("chat page: the seeded question and the Dynamics opening read /chat as a se
   assert.ok(dyn.includes("land(next, answer.reply.crisis ? undefined : answer.reply);"));
   assert.ok(dyn.includes('if (answer.reply.isError) throw new Error("empty souls reply");'));
   assert.ok(dyn.includes("openingFailed(err, {"));
-  assert.ok(src.includes("const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);"));
+  assert.ok(src.includes("const { support } = readChatRefusal(err, failedAt);"));
   // Every /chat answer in the page goes through the shared reading or the
   // send's own card handling; none keeps only the text.
   assert.equal((src.match(/data\.response \|\| data\.message/g) || []).length, 1);

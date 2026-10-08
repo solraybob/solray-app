@@ -140,6 +140,6 @@ test("chat page: a partner refusal on a care turn draws the support card first",
   const src = page();
   const i = src.indexOf("if (isPartnerConsentRefusal(err))");
   const block = src.slice(i, src.indexOf("const known = oracleErrorKey(err)", i));
-  assert.ok(block.includes("(err.detail as { support?: unknown } | undefined)?.support"));
+  assert.ok(block.includes("const partnerSupportMsg: Message | null = refusalSupport;"));
   assert.ok(block.includes("const freshMessages = partnerSupportMsg ? [partnerSupportMsg] : []"));
 });

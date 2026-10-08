@@ -5,18 +5,23 @@
 // that conversation's saved copy instead of being dropped).
 
 import { asCrisisCard } from "./crisis-card";
+import { ApiError } from "./api";
+import { oracleErrorKey } from "./oracle-errors";
 import type { ChatMessage } from "./chat-sync";
 
 /** The soft support card a refusal carries on a care turn (detail.support,
  *  detail.support_text), as the assistant message drawn before the
- *  refusal's own note. Null when the refusal carries none. */
+ *  refusal's own note. Null when the refusal carries none. Any refusal
+ *  after the server's safety gate may carry one, also those whose detail
+ *  used to be a plain sentence (they now arrive as {message, support,
+ *  support_text}). Its id never collides with the note drawn after it. */
 export function supportFromRefusal(detail: unknown, now: number = Date.now()): ChatMessage | null {
   if (!detail || typeof detail !== "object") return null;
   const d = detail as { support?: unknown; support_text?: unknown };
   const card = asCrisisCard(d.support);
   if (!card) return null;
   return {
-    id: (now + 1).toString(),
+    id: `${now}-support`,
     role: "assistant",
     content: typeof d.support_text === "string" && d.support_text ? d.support_text : card.intro,
     timestamp: new Date(now).toISOString(),
@@ -58,4 +63,30 @@ export function withAnswer(
     : messages;
   if (tagged.some((m) => m.id === answer.reply.id)) return tagged;
   return [...tagged, answer.reply];
+}
+
+/**
+ * How one failed /chat request reads, for every path that sends one (an
+ * ordinary send, voice, the "Go deeper" question, a Dynamics opening):
+ *  - `support`: the support card it carries, drawn first (or null);
+ *  - `noteKey`: the translation key of the note after it. A known coded
+ *    refusal has its own words; any other refusal from the server (a 4xx,
+ *    whatever shape its detail has: a sentence or an object) says the
+ *    Oracle could not answer this; anything else (offline, a 5xx) says it
+ *    could not be reached. The server's raw detail text is never shown.
+ *  - `paywall`: only a bare 403 with no code and no support card is the
+ *    old subscription refusal; one carrying a support card never is.
+ */
+export function readChatRefusal(err: unknown, now: number = Date.now()): {
+  support: ChatMessage | null; noteKey: string; paywall: boolean;
+} {
+  const api = err instanceof ApiError ? err : null;
+  const support = api ? supportFromRefusal(api.detail, now) : null;
+  const known = oracleErrorKey(err);
+  const refused = !!api && api.status >= 400 && api.status < 500 && api.status !== 401;
+  return {
+    support,
+    noteKey: known ?? (refused ? "chat.error_refused" : "chat.error_unreachable"),
+    paywall: !!api && api.status === 403 && !known && !support && !api.code,
+  };
 }

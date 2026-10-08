@@ -58,7 +58,7 @@ import {
 import { Orb, Wordmark } from "@/components/Wordmark";
 import CrisisCard from "@/components/CrisisCard";
 import { asCrisisCard } from "@/lib/crisis-card";
-import { answerFromChat, supportFromRefusal, withAnswer } from "@/lib/chat-outcome";
+import { answerFromChat, readChatRefusal, withAnswer } from "@/lib/chat-outcome";
 import { accountKey, takeHandoff } from "@/lib/account-session";
 
 // isError marks a transport-level error rather than an Oracle reply. It
@@ -710,7 +710,7 @@ function ChatPageInner() {
     // The account changed while waiting: nothing to show or store.
     if (isStaleAccountError(err)) return;
     const failedAt = Date.now();
-    const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
+    const { support } = readChatRefusal(err, failedAt);
     const cards = support ? [support] : [];
     const visible = isMountedRef.current && activeSessionRef.current === o.sid;
     const note = (content: string): Message => ({
@@ -812,7 +812,7 @@ function ChatPageInner() {
             // that anything failed.
             openingFailed(err, {
               sid, life, userMsg, before: [], land,
-              note: t(oracleErrorKey(err) ?? "chat.error_unreachable"),
+              note: t(readChatRefusal(err).noteKey),
             });
           } finally {
             life.finish(isMountedRef.current && activeSessionRef.current === sid && isCurrentGeneration(accountGen));
@@ -1437,13 +1437,18 @@ function ChatPageInner() {
       if (tooLong && isCurrentGeneration(accountGen)) {
         life.refused();
       }
-      // The support card a care turn's refusal carries (detail.support).
-      const refusalSupport = tooLong ? supportFromRefusal((err as ApiError).detail) : null;
+      // How this failure reads (lib/chat-outcome readChatRefusal): the
+      // support card any refusal after the safety gate may carry (also one
+      // whose detail used to be a plain sentence and is now an object), the
+      // note after it, and whether it is the subscription refusal.
+      const refusal = readChatRefusal(err);
+      const refusalSupport = refusal.support;
       const offscreen = !isMountedRef.current || activeSessionRef.current !== sentSessionId;
-      if (tooLong && offscreen) {
-        // Out of sight: the message stays in its conversation's saved copy,
-        // marked refused (never uploaded) with a way back to the box, and
-        // the support card, if any, goes in after it.
+      if (offscreen && (tooLong || refusalSupport)) {
+        // Out of sight: the message stays in its conversation's saved copy
+        // (a length refusal marked refused, with a way back to the box;
+        // another failure as interrupted, with Send again), and the support
+        // card, if any, goes in after it.
         if (refusalSupport) {
           updateStoredSession(sentSessionId, accountGen, (saved) =>
             saved.some((m) => m.id === refusalSupport.id) ? saved : [...saved, refusalSupport]);
@@ -1464,17 +1469,7 @@ function ChatPageInner() {
         if (activeSessionRef.current !== sentSessionId) return;
         // A care turn: the server sends the soft support card with the
         // refusal. It goes in the thread first, whatever happens next.
-        const partnerSupport = err instanceof ApiError
-          ? asCrisisCard((err.detail as { support?: unknown } | undefined)?.support)
-          : null;
-        const partnerSupportText = (err as ApiError & { detail?: { support_text?: unknown } }).detail?.support_text;
-        const partnerSupportMsg: Message | null = partnerSupport ? {
-          id: (Date.now() + 3).toString(),
-          role: "assistant",
-          content: typeof partnerSupportText === "string" ? partnerSupportText : partnerSupport.intro,
-          timestamp: new Date().toISOString(),
-          crisis: partnerSupport,
-        } : null;
+        const partnerSupportMsg: Message | null = refusalSupport;
         if (partnerSupportMsg && sentSoulRef) setMessages((prev) => [...prev, partnerSupportMsg]);
         if (sentSoulRef) {
           // Dynamics with that partner: the existing partner-consent copy in
@@ -1549,21 +1544,8 @@ function ChatPageInner() {
         // A member without AI consent who may be struggling: the server
         // sends a short support card with their line alongside the consent
         // prompt. It goes in the thread first.
-        const support = err instanceof ApiError
-          ? asCrisisCard((err.detail as { support?: unknown } | undefined)?.support)
-          : null;
         const noteAt = Date.now();
-        if (support) {
-          const supportText = (err as ApiError & { detail?: { support_text?: unknown } }).detail?.support_text;
-          const supportMsg: Message = {
-            id: (noteAt + 1).toString(),
-            role: "assistant",
-            content: typeof supportText === "string" ? supportText : support.intro,
-            timestamp: new Date().toISOString(),
-            crisis: support,
-          };
-          setMessages((prev) => [...prev, supportMsg]);
-        }
+        if (refusalSupport) setMessages((prev) => [...prev, refusalSupport]);
         // Missing AI consent is not an error: the sheet is open, and if it
         // is put aside a quiet notice over the composer offers it again.
         if (err instanceof ApiError && err.code === AI_CONSENT_REQUIRED_CODE) {
@@ -1580,7 +1562,10 @@ function ChatPageInner() {
         setMessages((prev) => [...prev, note]);
         return;
       }
-      if (err instanceof ApiError && err.status === 403) {
+      // Only the bare subscription refusal goes to the paywall; a 403 that
+      // carries a support card (a connection not accepted, say) is a
+      // refusal of this reading, said in the thread below.
+      if (refusal.paywall) {
         router.replace("/subscribe");
         return;
       }
@@ -1597,14 +1582,17 @@ function ChatPageInner() {
       // the failure mode this product cannot ship. We now surface a
       // visible error message in the thread, marked as an error so it
       // renders distinctly from genuine Oracle replies.
+      // A refusal from the server (any shape of detail) says the Oracle
+      // could not answer this; offline or a server error says it could not
+      // be reached. Never the server's raw text. A support card goes first.
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: t("chat.error_unreachable"),
+        content: t(refusal.noteKey),
         timestamp: new Date().toISOString(),
         isError: true,
       };
-      setMessages((prev) => [...prev, errMsg]);
+      setMessages((prev) => [...prev, ...(refusalSupport ? [refusalSupport] : []), errMsg]);
     } finally {
       // Not settled above: a failure. Shown in this conversation, the
       // message is part of the transcript from now on (the error note

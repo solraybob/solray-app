@@ -81,7 +81,9 @@ test("chat page: a too-long refusal draws the support card before the note, keep
   const src = page();
   const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   const c = send.slice(send.indexOf("} catch (err) {"));
-  assert.ok(c.includes("const refusalSupport = tooLong ? supportFromRefusal((err as ApiError).detail) : null;"));
+  // (Round sixteen: every refusal is read by readChatRefusal.)
+  assert.ok(c.includes("const refusal = readChatRefusal(err);"));
+  assert.ok(c.includes("const refusalSupport = refusal.support;"));
   const branch = c.slice(c.indexOf("if (tooLong) {", c.indexOf("const known = oracleErrorKey(err)")));
   const filt = branch.indexOf("...prev.filter((m) => m.id !== userMsg.id)");
   const card = branch.indexOf("...(refusalSupport ? [refusalSupport] : [])");
@@ -91,8 +93,8 @@ test("chat page: a too-long refusal draws the support card before the note, keep
   assert.ok(branch.indexOf("setInput((prev) => composerWithUnsent(text, prev))") > note);
   assert.ok(branch.includes("lastTranscriptRef.current = voiceTranscript ?? null"));
   // Out of sight, the card goes into the saved conversation.
-  const off = c.slice(c.indexOf("if (tooLong && offscreen) {"));
-  assert.ok(off.slice(0, 600).includes("updateStoredSession(sentSessionId, accountGen"));
+  const off = c.slice(c.indexOf("if (offscreen && (tooLong || refusalSupport)) {"));
+  assert.ok(off.slice(0, 700).includes("updateStoredSession(sentSessionId, accountGen"));
 });
 
 test("chat page: voice transcripts take the same send path (and so the same refusal handling)", () => {
