@@ -1298,7 +1298,14 @@ export default function TodayPage() {
 
   // The long-range transits, fetched here rather than inside a card component,
   // because on this screen they ARE the cards.
+  // Transits to the member's own chart: a birth correction clears them and
+  // asks again; an answer for the old chart never lands (Codex out19-5).
+  const cyclesRevRef = useRef(chartRev);
   useEffect(() => {
+    if (cyclesRevRef.current !== chartRev) {
+      cyclesRevRef.current = chartRev;
+      setCycles([]);
+    }
     if (!token) return;
     let off = false;
     (async () => {
@@ -1308,7 +1315,7 @@ export default function TodayPage() {
       } catch (_) { /* the deck simply carries one card */ }
     })();
     return () => { off = true; };
-  }, [token, dayKey]);
+  }, [token, dayKey, chartRev]);
 
   const askOracle = (topic: string, question: string) => {
     try {
@@ -1819,7 +1826,7 @@ export default function TodayPage() {
       .then((p) => { if (live) setPlainCard(p as PlainNowCard); })
       .catch(() => { /* the card keeps today's words */ });
     return () => { live = false; };
-  }, [token, plainReading]);
+  }, [token, plainReading, chartRev]);
 
   // Staggered section reveal
   useEffect(() => {

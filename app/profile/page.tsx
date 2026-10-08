@@ -1,5 +1,6 @@
 "use client";
 
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { memberErrorText } from "@/lib/member-error";
 import { beginUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useState, useRef } from "react";
@@ -772,6 +773,12 @@ export default function ProfilePage() {
   // "no birth data yet": show an error with Retry instead.
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  // The birth chart behind everything this page shows (astrology, Human
+  // Design, Gene Keys, the Soul Map). A correction here or in another tab
+  // changes it: the chart on screen is cleared and loaded again, and a load
+  // started for the old chart never lands (Codex out19-5).
+  const chartRev = useChartRevision();
+  const shownRevRef = useRef(chartRev);
 
   const handleSoulMapShare = async () => {
     if (soulMapSharing || !soulMapRef.current) return;
@@ -798,6 +805,15 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!token) return;
     setLoadError(false);
+    // A load superseded by a newer one (a chart change, a retry, another
+    // account) drops its answer.
+    let cancelled = false;
+    if (shownRevRef.current !== chartRev) {
+      // The chart changed: what is on screen was built from the old one.
+      shownRevRef.current = chartRev;
+      setProfile(null);
+      setLoading(true);
+    }
 
     const BP_CACHE_KEY = accountKey("solray_blueprint");
     // Bump when blueprint schema changes. v4 adds _profile_photo to cache.
@@ -805,6 +821,7 @@ export default function ProfilePage() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function loadFromBlueprint(bp: any) {
+      if (cancelled) return;
       // Load avatar: prefer cache entry, fall back to solray_avatar key
       const photo = bp._profile_photo || (() => {
         try { return localStorage.getItem(accountKey("solray_avatar")); } catch { return null; }
@@ -832,6 +849,7 @@ export default function ProfilePage() {
         } else if (!bp._name) {
           apiFetch("/users/me", {}, token)
             .then((data) => {
+              if (cancelled) return;
               // Birth details changed since this cache was built: rebuild.
               if (syncBirthRevision(data)) { setLoadAttempt((n) => n + 1); return; }
               const bpWithUser = {
@@ -844,16 +862,16 @@ export default function ProfilePage() {
               loadFromBlueprint(bpWithUser);
             })
             .catch(() => loadFromBlueprint(bp));
-          return;
+          return () => { cancelled = true; };
         } else {
           loadFromBlueprint(bp);
           // Paint from cache, then check in the background that the cache
           // was built from the current birth details (an edit on another
           // device leaves it stale); if not, rebuild from the server.
           apiFetch("/users/me", {}, token)
-            .then((data) => { if (syncBirthRevision(data)) setLoadAttempt((n) => n + 1); })
+            .then((data) => { if (!cancelled && syncBirthRevision(data)) setLoadAttempt((n) => n + 1); })
             .catch(() => { /* offline: the cached chart stays */ });
-          return;
+          return () => { cancelled = true; };
         }
       }
     } catch (_) {}
@@ -861,6 +879,7 @@ export default function ProfilePage() {
     // No cache, fetch full blueprint (first load or after cache bust)
     apiFetch("/users/me", {}, token)
       .then((data) => {
+        if (cancelled) return;
         syncBirthRevision(data);
         if (data.blueprint) {
           const bpWithUser = {
@@ -879,11 +898,13 @@ export default function ProfilePage() {
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setLoadError(true);
         setLoading(false);
         setTimeout(() => setVisible(true), 50);
       });
-  }, [token, loadAttempt]);
+    return () => { cancelled = true; };
+  }, [token, loadAttempt, chartRev]);
 
   const handleSignOut = () => {
     logout();

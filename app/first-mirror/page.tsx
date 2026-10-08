@@ -20,7 +20,8 @@
  * either real or absent.
  */
 
-import { useEffect, useState } from "react";
+import { useChartRevision } from "@/lib/use-chart-revision";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
@@ -70,7 +71,16 @@ function FirstMirrorContent() {
     router.replace("/chat");
   };
 
+  // Read from the member's chart: a birth correction (here or in another
+  // tab) clears it and asks again for the new chart.
+  const chartRev = useChartRevision();
+  const shownRevRef = useRef(chartRev);
   useEffect(() => {
+    if (shownRevRef.current !== chartRev) {
+      shownRevRef.current = chartRev;
+      setMirror(null);
+      setLoading(true);
+    }
     if (!token) return;
     let cancelled = false;
     (async () => {
@@ -112,7 +122,7 @@ function FirstMirrorContent() {
       }
     })();
     return () => { cancelled = true; };
-  }, [token, router]);
+  }, [token, router, chartRev]);
 
   // Stagger the reveal of the three lines so each one lands on its own
   // breath. Tuned to feel like a slow inhale across the page.

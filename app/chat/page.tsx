@@ -1,5 +1,6 @@
 "use client";
 
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { memberErrorText, MemberError } from "@/lib/member-error";
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -221,6 +222,7 @@ function ChatPageInner() {
   // under a finger mid-tap and auto-send. Chips now ignore interactions for
   // their first 450ms on screen (and never render during streaming).
   const suggestionsArmedAt = useRef(0);
+  const chartRev = useChartRevision();
   useEffect(() => {
     void (async () => {
       try {
@@ -278,7 +280,9 @@ function ChatPageInner() {
       suggestionsArmedAt.current = Date.now();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  // Rebuilt when the chart changes (a birth correction here or in
+  // another tab), so no chip names the old Moon or Human Design type.
+  }, [lang, chartRev]);
   const [sending, setSending] = useState(false);
   // Read synchronously by the voice path: set the moment a send is
   // accepted, cleared when it settles.

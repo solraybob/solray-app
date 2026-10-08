@@ -13,7 +13,8 @@
 
 import { memberErrorText } from "@/lib/member-error";
 import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { useParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NatalWheel from "@/components/NatalWheel";
@@ -439,8 +440,17 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
   const _viewerHash = token ? simpleHash(token) : "anon";
   const cacheKey = `solray_compat_${_viewerHash}_${soulId}`;
 
-  const load = (force = false) => {
-    if (!token || loading) return;
+  // Compatibility is read from the member's own chart too: a birth
+  // correction (here or in another tab) clears the reading on screen and
+  // asks again, and an answer for the old chart never lands (Codex out19-5).
+  const chartRev = useChartRevision();
+  const shownRevRef = useRef(chartRev);
+  const reqRef = useRef(0);
+
+  const load = (force = false, replace = false) => {
+    if (!token || (loading && !replace)) return;
+    const req = ++reqRef.current;
+    const current = () => reqRef.current === req;
     if (!force) {
       try {
         const raw = sessionStorage.getItem(cacheKey);
@@ -459,6 +469,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
     const stamp = chartWorkStamp();
     apiFetch(`/souls/${soulId}/compatibility`, {}, token)
       .then((d) => {
+        if (!current()) return;
         const parsed = d as { reading: CompatReading; signals: CompatSignals; index: ResonanceIndex };
         setReading(parsed.reading || null);
         setSignals(parsed.signals || null);
@@ -466,6 +477,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
         writeChartCache(stamp, cacheKey, parsed, "session");
       })
       .catch((e: unknown) => {
+        if (!current()) return;
         if (e instanceof ApiError && e.status === 402) {
           setPaywall(true);
         } else if (oracleErrorKey(e)) {
@@ -482,11 +494,22 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
           setError(memberErrorText(e, t, "compat.error_load"));
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (current()) setLoading(false); });
   };
 
-  useEffect(() => { load(false); /* try cache, then fetch */ // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [soulId, token]);
+  useEffect(() => {
+    // The chart changed: the reading on screen was for the old one.
+    const chartChanged = shownRevRef.current !== chartRev;
+    if (chartChanged) {
+      shownRevRef.current = chartRev;
+      setReading(null);
+      setSignals(null);
+      setIndex(null);
+      setError(null);
+    }
+    load(false, chartChanged); /* try cache, then fetch */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soulId, token, chartRev]);
 
   return (
     <div style={FOLD}>

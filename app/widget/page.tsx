@@ -1,7 +1,8 @@
 "use client";
 
+import { useChartRevision } from "@/lib/use-chart-revision";
 import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { accountKey } from "@/lib/account-session";
@@ -73,8 +74,18 @@ export default function WidgetPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+  // A birth correction (here or in another tab) replaces the reading: the
+  // old one leaves the screen and an answer for the old chart never lands.
+  const chartRev = useChartRevision();
+  const shownRevRef = useRef(chartRev);
 
   useEffect(() => {
+    let cancelled = false;
+    if (shownRevRef.current !== chartRev) {
+      shownRevRef.current = chartRev;
+      setForecast(null);
+      setLoading(true);
+    }
     if (!token) {
       setLoading(false);
       return;
@@ -97,6 +108,7 @@ export default function WidgetPage() {
           if (cached) {
             const parsed: ForecastData = JSON.parse(cached);
             if (parsed && (parsed as { _pending?: boolean })._pending !== true) {
+              if (cancelled) return;
               setForecast(parsed);
               setLoading(false);
               return;
@@ -110,6 +122,7 @@ export default function WidgetPage() {
         // Fetch from API
         const stamp = chartWorkStamp();
         const data = await apiFetch("/forecast/today", {}, token);
+        if (cancelled) return;
         setForecast(data);
         setLoading(false);
 
@@ -119,12 +132,13 @@ export default function WidgetPage() {
           writeChartCache(stamp, cacheKey, data);
         }
       } catch {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchForecast();
-  }, [token]);
+    return () => { cancelled = true; };
+  }, [token, chartRev]);
 
   const moonPhase = getMoonPhase();
 
