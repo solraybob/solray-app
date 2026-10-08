@@ -105,9 +105,12 @@ test("chat page: History lists evicted rows and opens them with loading and fail
   const i = src.indexOf("const loadPastSession = useCallback(");
   const lp = src.slice(i, src.indexOf("// ── Open history panel", i));
   assert.ok(lp.includes("if (!session && getEvictedSummary(sid))"));
-  assert.ok(lp.includes("fetchSessionFromServer(sid, tok, gen)"));
-  assert.ok(lp.includes('setHistoryError(t("chat.history_gone"))'));
-  assert.ok(lp.includes("{ id: sid, failed: true }"));
+  // (Round seventeen: through readBackEvicted, with a request identity.)
+  assert.ok(lp.includes("readBackEvicted(sid, (id) => openLoadedRef.current(id))"));
+  const rb = src.slice(src.indexOf("const readBackEvicted = "), src.indexOf("// History closed by any means"));
+  assert.ok(rb.includes("fetchSessionFromServer(sid, tok, gen)"));
+  assert.ok(rb.includes('setHistoryError(t("chat.history_gone"))'));
+  assert.ok(rb.includes("setHistoryOpening({ id: sid, failed: true })"));
   assert.ok(src.includes('t("chat.history_load_failed") : t("chat.history_loading")'));
   assert.ok(src.includes("restoreEvicted(sid, evictedSnap)"));
   const en = JSON.parse(fs.readFileSync(path.join(root, "messages/en.json"), "utf8")).chat;

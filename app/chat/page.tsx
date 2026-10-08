@@ -295,6 +295,48 @@ function ChatPageInner() {
   // A conversation evicted from this device's cache being read back from
   // the server as it is opened from History.
   const [historyOpening, setHistoryOpening] = useState<{ id: string; failed: boolean } | null>(null);
+  // Which read-back is current: every History selection, rename read-back,
+  // panel close and New Chat moves it on, so a late answer is cached but
+  // never opens over a newer choice (Codex out13-5 #2).
+  const historyReqRef = useRef(0);
+  const cancelHistoryReadBack = useCallback(() => {
+    historyReqRef.current += 1;
+    setHistoryOpening(null);
+  }, []);
+  // Read an evicted conversation back from the server for `then` (open it,
+  // or rename it), with its loading and failure line in History. The
+  // transcript is cached whatever happens; `then` runs only while this is
+  // still the current request.
+  const readBackEvicted = (sid: string, then: (sid: string) => void) => {
+    const tok = tokenRef.current;
+    if (!tok) return;
+    const gen = accountGen;
+    const req = ++historyReqRef.current;
+    const current = () => historyReqRef.current === req && isMountedRef.current && isCurrentGeneration(gen);
+    setHistoryOpening({ id: sid, failed: false });
+    void fetchSessionFromServer(sid, tok, gen).then((got) => {
+      if (got.kind === "gone" && isMountedRef.current && isCurrentGeneration(gen)) {
+        // Gone on the server: the row goes whichever row is current.
+        setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
+      }
+      if (!current()) return;
+      if (got.kind === "found") {
+        setHistoryOpening(null);
+        setPastSessions((prev) => prev.map((s) => (s.sessionId === sid ? got.session : s)));
+        then(sid);
+      } else if (got.kind === "gone") {
+        setHistoryOpening(null);
+        setHistoryError(t("chat.history_gone"));
+      } else {
+        setHistoryOpening({ id: sid, failed: true });
+      }
+    });
+  };
+  // History closed by any means: a read-back still on its way no longer
+  // opens anything.
+  useEffect(() => {
+    if (!showHistory) cancelHistoryReadBack();
+  }, [showHistory, cancelHistoryReadBack]);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   // (forecast-seeded prompts now feed the unified `suggestions` above)
@@ -1115,6 +1157,8 @@ function ChatPageInner() {
   const startNewChat = useCallback(async () => {
     // Never switch sessions while a reply is in flight.
     if (!token || sending) return;
+    // A History read-back still on its way no longer opens anything.
+    cancelHistoryReadBack();
     // Synthesize the session we're leaving so memory carries forward into
     // the new one. Without this, clicking "+ New" loses everything that
     // wasn't already checkpointed in-session.
@@ -1138,7 +1182,7 @@ function ChatPageInner() {
     persistSession(newSession);
     setMessages([]);
     setShowHistory(false);
-  }, [token, sending, buildGreeting, triggerSessionSynthesis]);
+  }, [token, sending, buildGreeting, triggerSessionSynthesis, cancelHistoryReadBack]);
 
   // ── Load past session ─────────────────────────────────────────────────────
   const loadPastSession = useCallback((sid: string) => {
@@ -1150,26 +1194,12 @@ function ChatPageInner() {
       // Evicted from this device to make room: read it back from the
       // server first, with its own loading and failure state in History.
       // (No synthesis yet: the conversation on screen stays open until
-      // this one is here.)
-      const tok = tokenRef.current;
-      if (!tok) return;
-      const gen = accountGen;
-      setHistoryOpening({ id: sid, failed: false });
-      void fetchSessionFromServer(sid, tok, gen).then((got) => {
-        if (!isMountedRef.current || !isCurrentGeneration(gen)) return;
-        if (got.kind === "found") {
-          setHistoryOpening((cur) => (cur?.id === sid ? null : cur));
-          openLoadedRef.current(sid);
-        } else if (got.kind === "gone") {
-          setHistoryOpening((cur) => (cur?.id === sid ? null : cur));
-          setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
-          setHistoryError(t("chat.history_gone"));
-        } else {
-          setHistoryOpening((cur) => (cur?.id === sid ? { id: sid, failed: true } : cur));
-        }
-      });
+      // this one is here, and only if it is still the one chosen.)
+      readBackEvicted(sid, (id) => openLoadedRef.current(id));
       return;
     }
+    // Any other choice supersedes a read-back still on its way.
+    cancelHistoryReadBack();
     triggerSessionSynthesis();
     if (session) {
       setChatNotice(null);
@@ -1185,7 +1215,8 @@ function ChatPageInner() {
       setRenamingId(null);
       setHistoryOpening(null);
     }
-  }, [triggerSessionSynthesis, sending, accountGen, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSessionSynthesis, sending, accountGen, t, cancelHistoryReadBack]);
   // The newest loadPastSession, for a read-back that lands later.
   const openLoadedRef = useRef(loadPastSession);
   openLoadedRef.current = loadPastSession;
@@ -1206,16 +1237,34 @@ function ChatPageInner() {
   const startRename = useCallback(
     (e: React.MouseEvent, sid: string, currentName: string) => {
       e.stopPropagation();
+      // An evicted conversation is read back first (its rename travels
+      // with the transcript, through the pending-rename upload); the
+      // editor opens once it is here, if still wanted.
+      if (!loadSession(sid) && getEvictedSummary(sid)) {
+        setRenamingId(null);
+        readBackEvicted(sid, (id) => {
+          setRenamingId(id);
+          setRenameValue(currentName);
+        });
+        return;
+      }
+      cancelHistoryReadBack();
       setRenamingId(sid);
       setRenameValue(currentName);
     },
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [accountGen, t, cancelHistoryReadBack]
   );
 
   const commitRename = useCallback(
     (sid: string) => {
       const session = loadSession(sid);
-      if (!session) return;
+      if (!session) {
+        // Never a silent no-op: the editor closes and says why.
+        setRenamingId(null);
+        setHistoryError(t("chat.history_load_failed"));
+        return;
+      }
       const newName = renameValue.trim();
       const updated: StoredSession = {
         ...session,
@@ -1229,7 +1278,7 @@ function ChatPageInner() {
       );
       setRenamingId(null);
     },
-    [renameValue]
+    [renameValue, t]
   );
 
   // ── Delete session ────────────────────────────────────────────────────────
