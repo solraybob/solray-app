@@ -12,7 +12,7 @@
 // /_next/static/ build assets from cache for speed (those are content-hashed,
 // so they can never go stale). Push notifications are preserved.
 
-const STATIC_CACHE = 'solray-v58';
+const STATIC_CACHE = 'solray-v59';
 const META_CACHE = 'solray-meta';        // survives wipes; tracks the one-time heal
 const HEAL_KEY = '/__healed_v58';
 
