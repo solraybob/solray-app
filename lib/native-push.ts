@@ -35,7 +35,7 @@
 
 import type { PluginListenerHandle } from "@capacitor/core";
 import { apiFetch } from "./api";
-import { onAccountSignOut } from "./account-session";
+import { getAuthGeneration, onAccountSignOut } from "./account-session";
 
 // Legacy per-user "registered" flags from the old flow; swept on logout.
 const LEGACY_REGISTERED_PREFIX = "solray_native_push_registered";
@@ -400,7 +400,10 @@ async function obtainDeviceToken(): Promise<string | null> {
   }
 }
 
-async function registerAndBind(authToken: string, epoch: number): Promise<boolean> {
+// `gen` is the account generation captured when the sync or the permission
+// request started, before any OS or permission await: the bind request is
+// sent for that account or not at all (lib/api StaleAccountError).
+async function registerAndBind(authToken: string, epoch: number, gen: number): Promise<boolean> {
   // A previous member's release must be confirmed before this install
   // registers with the OS again; until then it stays silent.
   if (!(await flushPendingReleases())) return false;
@@ -441,6 +444,7 @@ async function registerAndBind(authToken: string, epoch: number): Promise<boolea
       }),
     },
     authToken,
+    { generation: gen },
   );
   bindRequest = request;
   let res: { subscribed?: unknown } | null = null;
@@ -469,10 +473,10 @@ async function registerAndBind(authToken: string, epoch: number): Promise<boolea
   return true;
 }
 
-function runRegistration(authToken: string, epoch: number): Promise<boolean> {
+function runRegistration(authToken: string, epoch: number, gen: number): Promise<boolean> {
   if (epoch !== sessionEpoch) return Promise.resolve(false);
   if (inflight && inflight.authToken === authToken && inflight.epoch === epoch) return inflight.promise;
-  const promise: Promise<boolean> = registerAndBind(authToken, epoch)
+  const promise: Promise<boolean> = registerAndBind(authToken, epoch, gen)
     .catch((err) => {
       // Missing entitlement, simulator, network blip, 503 from the
       // backend: nothing is cached, so the next launch/resume retries.
@@ -496,11 +500,12 @@ export async function syncNativePush(authToken: string, force = false): Promise<
   // The session this sync belongs to, captured before any await: a logout
   // during the permission check must not start a registration for it.
   const epoch = sessionEpoch;
+  const gen = getAuthGeneration();
   if (!force && Date.now() - lastSyncAt < RESUME_SYNC_MIN_INTERVAL_MS) return false;
   if ((await getNativePushPermission()) !== "granted") return false;
   if (epoch !== sessionEpoch) return false;
   lastSyncAt = Date.now();
-  return runRegistration(authToken, epoch);
+  return runRegistration(authToken, epoch, gen);
 }
 
 /**
@@ -510,6 +515,7 @@ export async function syncNativePush(authToken: string, force = false): Promise<
 export async function requestNativePushPermission(authToken: string): Promise<boolean> {
   if (!authToken || !isNativePushSupported()) return false;
   const epoch = sessionEpoch;
+  const gen = getAuthGeneration();
   try {
     const PushNotifications = await loadPlugin();
     const perm = await PushNotifications.requestPermissions();
@@ -519,7 +525,7 @@ export async function requestNativePushPermission(authToken: string): Promise<bo
   }
   if (epoch !== sessionEpoch) return false;
   lastSyncAt = Date.now();
-  return runRegistration(authToken, epoch);
+  return runRegistration(authToken, epoch, gen);
 }
 
 // ------------------------------------------------------------ value signal

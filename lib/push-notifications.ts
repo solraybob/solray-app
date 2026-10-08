@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import { accountKey } from "./account-session";
+import { accountKey, captureAccount } from "./account-session";
 
 const PUSH_ENABLED_KEY = "solray_push_enabled";
 
@@ -15,6 +15,10 @@ export function isPushEnabled(): boolean {
  * Request notification permission and subscribe to push
  */
 export async function subscribeToPushNotifications(token: string): Promise<boolean> {
+  // The account this belongs to, captured before the permission prompt and
+  // the service worker awaits: the subscription is sent and recorded for it
+  // or not at all.
+  const acct = captureAccount();
   try {
     // Check if the browser supports service workers and push notifications
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -47,8 +51,10 @@ export async function subscribeToPushNotifications(token: string): Promise<boole
           subscription: subscription.toJSON(),
         }),
       },
-      token
+      token,
+      { generation: acct.generation },
     );
+    if (!acct.live) return false;
 
     // Mark as enabled in localStorage
     localStorage.setItem(accountKey(PUSH_ENABLED_KEY), "true");

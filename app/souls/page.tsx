@@ -655,14 +655,18 @@ export default function SoulsPage() {
       return;
     }
     setSearching(true);
+    // The account the search is typed under: the debounced request is sent
+    // for it or not at all.
+    const searchGen = getAuthGeneration();
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token);
+        const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`, {}, token, { generation: searchGen });
         if (seq !== searchSeqRef.current) return;
         setSearchResults(data?.results || []);
         setSearchDone(true);
-      } catch {
+      } catch (e) {
         if (seq !== searchSeqRef.current) return;
+        if (isStaleAccountError(e)) return;
         setSearchResults([]);
         setSearchFailed(true);
       } finally {

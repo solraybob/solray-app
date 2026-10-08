@@ -14,7 +14,7 @@ import { cardShareAvailable } from "@/lib/share-available";
 import { tx, ES_HD_TYPE_MEANINGS, ES_HD_AUTHORITY_MEANINGS, ES_HD_PROFILE_MEANINGS, ES_CORE_SUBTITLES } from "@/lib/astro-i18n";
 import { Wordmark } from "@/components/Wordmark";
 import { syncBirthRevision } from "@/lib/chart-revision";
-import { accountKey } from "@/lib/account-session";
+import { accountKey, captureAccount, isStaleAccountError } from "@/lib/account-session";
 
 // Astrocartography ships a ~60KB world-path module plus mapping libs. It lives
 // inside a collapsed section that rarely opens, so code-split it into its own
@@ -945,13 +945,19 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // The account this photo belongs to, captured as it is chosen: reading
+    // and decoding take time and the account may change meanwhile. Then
+    // nothing is shown, cached or sent (Codex out12-5 #3).
+    const acct = captureAccount();
     const reader = new FileReader();
     reader.onload = (ev) => {
+      if (!acct.live) return;
       const rawBase64 = ev.target?.result as string;
 
       // Resize to max 400px on longest side before storing (keeps payload small)
       const img = new Image();
       img.onload = () => {
+        if (!acct.live) return;
         const MAX = 400;
         const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
         const canvas = document.createElement("canvas");
@@ -978,12 +984,15 @@ export default function ProfilePage() {
         const liveToken = token || (typeof localStorage !== "undefined" ? localStorage.getItem("solray_token") : null);
         if (liveToken) {
           setAvatarSaving("saving");
-          apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, liveToken)
+          apiFetch("/users/photo", { method: "PATCH", body: JSON.stringify({ photo: resized }) }, liveToken,
+            { generation: acct.generation })
             .then(() => {
+              if (!acct.live) return;
               setAvatarSaving("saved");
               setTimeout(() => setAvatarSaving("idle"), 3000);
             })
             .catch((err) => {
+              if (isStaleAccountError(err) || !acct.live) return;
               console.error("[avatar upload] PATCH /users/photo failed:", err);
               setAvatarSaving("error");
               setTimeout(() => setAvatarSaving("idle"), 6000);

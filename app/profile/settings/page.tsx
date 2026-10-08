@@ -339,12 +339,17 @@ export default function SettingsPage() {
 
   const onPhotoSelected = async (file: File) => {
     if (!token) return;
+    // The account this photo belongs to, captured as it is chosen: reading
+    // and decoding take time, and the account may change meanwhile. Then
+    // nothing is sent, shown or cached (Codex out12-5 #3).
+    const acct = captureAccount();
     setPhotoStatus("saving");
     setPhotoError(null);
     const prevPhoto = photo;
     // Any failure (unreadable file, undecodable image, upload error) clears
     // the saving state and leaves a retryable message.
     const failPhoto = () => {
+      if (!acct.live) return;
       setPhoto(prevPhoto);
       setPhotoStatus("error");
       setPhotoError(t("settings.photo_failed"));
@@ -356,9 +361,11 @@ export default function SettingsPage() {
     reader.onerror = failPhoto;
     reader.onabort = failPhoto;
     reader.onload = () => {
+      if (!acct.live) return;
       const img = new Image();
       img.onerror = failPhoto;
       img.onload = async () => {
+        if (!acct.live) return;
         try {
           const canvas = document.createElement("canvas");
           const SIZE = 384;
@@ -376,7 +383,10 @@ export default function SettingsPage() {
           await apiFetch("/users/photo", {
             method: "PATCH",
             body: JSON.stringify({ photo: dataUrl }),
-          }, token);
+          }, token, { generation: acct.generation });
+          // Signed out (or another account) while it was on its way: this
+          // photo belongs to nobody on this device now.
+          if (!acct.live) return;
           // Sync to local cache so profile page picks it up immediately
           try {
             localStorage.setItem(accountKey("solray_avatar"), dataUrl);
@@ -389,7 +399,8 @@ export default function SettingsPage() {
           } catch {}
           setPhotoStatus("saved");
           setTimeout(() => setPhotoStatus("idle"), 1800);
-        } catch {
+        } catch (err) {
+          if (isStaleAccountError(err) || !acct.live) return;
           failPhoto();
         }
       };
