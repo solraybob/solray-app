@@ -36,7 +36,8 @@
     "tap_to_open": "Toca para abrir",
     "done": "Listo",
     "dismiss": "Descartar",
-    "share_failed": "No se pudo compartir esta vez. Inténtalo de nuevo en un momento."
+    "share_failed": "No se pudo compartir esta vez. Inténtalo de nuevo en un momento.",
+    "error_too_many": "Demasiados intentos ahora mismo. Espera un poco e inténtalo de nuevo."
   },
   "language": {
     "picker_title": "Elige tu idioma",
@@ -57,7 +58,8 @@
     "error_no_signal": "No se pudo conectar. Inténtalo de nuevo.",
     "error_failed": "No se pudo iniciar sesión. Revisa tu correo y tu contraseña.",
     "session_expired": "Tu sesión terminó, vuelve a iniciar sesión.",
-    "tagline": "vivir por diseño"
+    "tagline": "vivir por diseño",
+    "error_invalid": "Ese correo y esa contraseña no coinciden con ninguna cuenta."
   },
   "install": {
     "cta": "Añade Solray a tu pantalla de inicio",
@@ -102,7 +104,9 @@
     "step_of": "Paso {n} de {total}",
     "ai_consent": "Acepto que Solray envíe mis datos de nacimiento y lo que escribo o digo en la app a sus proveedores de IA, Anthropic, OpenAI, Groq y ElevenLabs (voz), para que escriban mis lecturas y las respuestas del Oráculo y conviertan mi voz en texto. Solo los procesan en nombre de Solray.",
     "ai_consent_link": "Política de privacidad",
-    "under_age": "Solray está hecho para personas de 16 años o más, así que todavía no podemos abrirte una cuenta. Nos encantará recibirte cuando cumplas 16."
+    "under_age": "Solray está hecho para personas de 16 años o más, así que todavía no podemos abrirte una cuenta. Nos encantará recibirte cuando cumplas 16.",
+    "email_exists": "Ya existe una cuenta con este correo. Prueba a iniciar sesión.",
+    "details_invalid": "Algunos datos no parecen correctos. Revisa tu fecha y hora de nacimiento."
   },
   "today": {
     "title": "Hoy",
@@ -274,7 +278,9 @@
     "crisis_show": "Mostrar",
     "crisis_hide": "Ocultar",
     "consent_notice": "El Oráculo responde con IA, así que primero espera tu permiso. Acepta cuando quieras.",
-    "consent_agree": "Aceptar"
+    "consent_agree": "Aceptar",
+    "voice_too_long": "Esa grabación es demasiado larga. Mantenla por debajo de unos 10 minutos.",
+    "voice_empty": "No se grabó nada. Inténtalo de nuevo."
   },
   "souls": {
     "title": "ALMAS",
@@ -395,7 +401,11 @@
     "compat_hd": "Diseño Humano: {type}",
     "compat_intro": "Quiero entender la dinámica entre {name} y yo. ¿Cómo interactúan nuestras energías?",
     "compat_intro_chart": "Quiero entender la dinámica entre {name} y yo. Su carta: {chart}. ¿Cómo interactúan nuestras energías?",
-    "view_profile_sub_private": "{name} mantiene su carta en privado. Ver su nombre y foto."
+    "view_profile_sub_private": "{name} mantiene su carta en privado. Ver su nombre y foto.",
+    "invite_self": "No puedes invitarte a ti mismo.",
+    "invite_already": "Ya has invitado a esta persona.",
+    "invite_no_account": "Todavía no hay una cuenta de Solray con ese nombre o correo. Pídele que se registre primero.",
+    "invite_gone": "Esta invitación ya no está."
   },
   "profile": {
     "title": "Perfil",
@@ -445,7 +455,8 @@
     "astro_no_data": "No hay datos de astrocartografía disponibles.",
     "share_soul_map_title": "Mi Mapa del Alma, Solray",
     "share_soul_map_text": "Mi Mapa del Alma en Solray. solray.ai",
-    "bodygraph_label": "Gráfico corporal de Diseño Humano"
+    "bodygraph_label": "Gráfico corporal de Diseño Humano",
+    "username_unavailable": "Ese nombre de usuario no se puede usar. Prueba otro."
   },
   "settings": {
     "title": "Ajustes",
@@ -534,7 +545,8 @@
     "private_switch": "Perfil privado",
     "private_state_on": "Perfil privado, activado. Tu carta es privada.",
     "private_state_off": "Perfil privado, desactivado. Tus conexiones de almas pueden ver tu carta.",
-    "switch_state": "{label}, {state}"
+    "switch_state": "{label}, {state}",
+    "birth_invalid": "Revisa la fecha y la hora de nacimiento."
   },
   "nav": {
     "today": "Ahora",
@@ -627,7 +639,8 @@
     "set_password": "Guardar contraseña",
     "error_too_short": "La contraseña debe tener al menos 8 caracteres.",
     "error_mismatch": "Las contraseñas no coinciden.",
-    "error_failed": "No se pudo restablecer la contraseña."
+    "error_failed": "No se pudo restablecer la contraseña.",
+    "link_invalid": "Este enlace ha caducado o ya se usó. Pide uno nuevo desde la página de inicio de sesión."
   },
   "verify": {
     "missing_token": "Falta el token de verificación.",

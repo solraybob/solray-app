@@ -1,5 +1,7 @@
 "use client";
 
+import { ApiError, detailCode } from "@/lib/api";
+import { memberErrorText } from "@/lib/member-error";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BirthWheels from "@/components/BirthWheels";
@@ -85,7 +87,7 @@ export default function PreviewPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(errorText(err?.detail, t("preview.error_forming")));
+        throw new ApiError(errorText(err?.detail, ""), res.status, detailCode(err?.detail), err?.detail);
       }
 
       const data = await res.json();
@@ -100,8 +102,7 @@ export default function PreviewPage() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setStep(3);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : t("preview.error_generic");
+      const msg = memberErrorText(err, t, "preview.error_forming", { byStatus: { 400: "settings.birth_invalid", 422: "settings.birth_invalid" } });
       setError(msg);
       setStep(1);
     } finally {

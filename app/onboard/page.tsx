@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { registerUnfinishedWork } from "@/lib/draft-guard";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -269,7 +270,7 @@ export default function OnboardPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new ApiError(errorText(err?.detail, t("onboard.registration_failed")), res.status, detailCode(err?.detail), err?.detail);
+        throw new ApiError(errorText(err?.detail, ""), res.status, detailCode(err?.detail), err?.detail);
       }
       return res.json();
     });
@@ -313,7 +314,10 @@ export default function OnboardPage() {
         setCalculatingBlueprint(false);
         return;
       }
-      const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : t("common.error_generic");
+      const msg = memberErrorText(err, t, "onboard.registration_failed", {
+        byStatus: { 409: "onboard.email_exists", 400: "onboard.details_invalid", 422: "onboard.details_invalid" },
+        network: "login.error_no_signal",
+      });
       setError(msg);
       setCalculatingBlueprint(false);
     } finally {

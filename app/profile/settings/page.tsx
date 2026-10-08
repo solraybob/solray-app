@@ -20,6 +20,7 @@
  * costs trust.
  */
 
+import { memberErrorText } from "@/lib/member-error";
 import { beginUnfinishedWork, registerUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -234,7 +235,7 @@ export default function SettingsPage() {
       } catch {}
       setTimeout(() => setIdentityStatus("idle"), 1800);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("settings.could_not_save");
+      const msg = memberErrorText(e, t, "settings.could_not_save", { byStatus: { 400: "profile.username_unavailable", 409: "profile.username_unavailable" } });
       setIdentityError(msg);
       setIdentityStatus("error");
     }
@@ -556,7 +557,7 @@ export default function SettingsPage() {
       // Under 16 by the new date: the server refuses and the chart stays.
       const msg = isUnderMinimumAgeError(e)
         ? t("settings.birth_under_age")
-        : e instanceof Error ? e.message : t("settings.could_not_save");
+        : memberErrorText(e, t, "settings.could_not_save", { byStatus: { 400: "settings.birth_invalid", 422: "settings.birth_invalid" } });
       setBirthError(msg);
       setBirthStatus("error");
     }
@@ -590,7 +591,7 @@ export default function SettingsPage() {
       setTimeout(() => setBirthStatus("idle"), 1800);
     } catch (e: unknown) {
       if (isStaleAccountError(e)) return;
-      setBirthError(e instanceof Error ? e.message : t("settings.could_not_save"));
+      setBirthError(memberErrorText(e, t, "settings.could_not_save", { byStatus: { 400: "settings.birth_invalid", 422: "settings.birth_invalid" } }));
       setBirthStatus("error");
     }
   };
@@ -641,7 +642,7 @@ export default function SettingsPage() {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
         setDeleteError(t("settings.delete_wrong_password"));
       } else {
-        setDeleteError(e instanceof Error ? e.message : t("settings.delete_failed"));
+        setDeleteError(memberErrorText(e, t, "settings.delete_failed"));
       }
       setDeleteBusy(false);
     }

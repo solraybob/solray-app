@@ -9,6 +9,8 @@
  * it on the login page.
  */
 
+import { ApiError, detailCode } from "@/lib/api";
+import { memberErrorText } from "@/lib/member-error";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -54,7 +56,7 @@ export default function ResetPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(errorText(e?.detail, t("reset.error_failed")));
+        throw new ApiError(errorText(e?.detail, ""), res.status, detailCode(e?.detail), e?.detail);
       }
       const data = await res.json();
       // Backend issues a fresh JWT so we land the user straight into
@@ -71,7 +73,7 @@ export default function ResetPasswordPage() {
         router.replace("/login");
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t("common.error_generic"));
+      setError(memberErrorText(e, t, "reset.error_failed", { byStatus: { 400: "reset.link_invalid" }, network: "login.error_no_signal" }));
       setLoading(false);
     }
   };

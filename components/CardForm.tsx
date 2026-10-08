@@ -9,6 +9,7 @@
  * the SecurePay redirect so every saved card is chargeable monthly.
  */
 
+import { memberErrorText } from "@/lib/member-error";
 import { useState } from "react";
 import { ApiError } from "@/lib/api";
 import { billingFetch, DeadlineError, storeEndedCardNotice } from "@/lib/subscription";
@@ -107,9 +108,7 @@ export default function CardForm({
         setError(
           e instanceof CardTokenError
             ? (e.code === "network" ? t("subscribe.card_network_error") : t("subscribe.card_error"))
-            : e instanceof Error && e.message
-              ? e.message
-              : t("subscribe.card_error")
+            : memberErrorText(e, t, "subscribe.card_error", { byStatus: { 402: "subscribe.payment_failed" } })
         );
       }
     } finally {

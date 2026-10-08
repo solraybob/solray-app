@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { beginUnfinishedWork, registerUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -89,7 +90,8 @@ function SubscribeContent() {
     if (e instanceof ApiError && e.code === "store_managed") return t("subscribe.store_managed_card");
     const storeEnded = storeEndedCardNotice(e, t, lang);
     if (storeEnded !== null) return storeEnded;
-    return e instanceof Error && e.message ? e.message : t("subscribe.purchase_failed");
+    // Never the server's own text: its words for a known case, else ours.
+    return memberErrorText(e, t, "subscribe.purchase_failed", { byStatus: { 402: "subscribe.payment_failed" } });
   };
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");

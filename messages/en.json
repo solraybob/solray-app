@@ -36,7 +36,8 @@
     "tap_to_collapse": "Tap to collapse",
     "tap_to_open": "Tap to open",
     "dismiss": "Dismiss",
-    "share_failed": "Sharing did not work this time. Try again in a moment."
+    "share_failed": "Sharing did not work this time. Try again in a moment.",
+    "error_too_many": "Too many tries just now. Please wait a little and try again."
   },
   "language": {
     "picker_title": "Choose your language",
@@ -57,7 +58,8 @@
     "error_no_signal": "The signal didn't reach. Try again.",
     "error_failed": "Could not sign in. Check your email and password.",
     "session_expired": "Your session ended, please sign in again.",
-    "tagline": "living by design"
+    "tagline": "living by design",
+    "error_invalid": "That email and password don't match an account."
   },
   "install": {
     "cta": "Add Solray to your home screen",
@@ -84,7 +86,8 @@
     "set_password": "Set password",
     "error_too_short": "Password should be at least 8 characters.",
     "error_mismatch": "Passwords don't match.",
-    "error_failed": "Could not reset password."
+    "error_failed": "Could not reset password.",
+    "link_invalid": "This reset link has expired or was already used. Request a new one from the login page."
   },
   "verify": {
     "missing_token": "Missing verification token.",
@@ -134,7 +137,9 @@
     "step_of": "Step {n} of {total}",
     "ai_consent": "I agree that Solray sends my birth details and what I write or say in the app to its AI providers, Anthropic, OpenAI, Groq and ElevenLabs (voice), so they can write my readings and the Oracle's replies and turn my voice into text. They process it only on Solray's behalf.",
     "ai_consent_link": "Privacy policy",
-    "under_age": "Solray is made for people aged 16 and over, so we cannot open an account for you yet. We would love to welcome you when you turn 16."
+    "under_age": "Solray is made for people aged 16 and over, so we cannot open an account for you yet. We would love to welcome you when you turn 16.",
+    "email_exists": "An account with this email already exists. Try signing in instead.",
+    "details_invalid": "Some details don't look right. Please check your birth date and time."
   },
   "first_mirror": {
     "title": "The First Mirror",
@@ -369,7 +374,9 @@
     "crisis_show": "Show",
     "crisis_hide": "Hide",
     "consent_notice": "The Oracle answers with AI, so she waits for your permission first. Agree whenever you are ready.",
-    "consent_agree": "Agree"
+    "consent_agree": "Agree",
+    "voice_too_long": "That recording is too long. Keep it under about 10 minutes.",
+    "voice_empty": "Nothing was recorded. Please try again."
   },
   "souls": {
     "title": "SOULS",
@@ -490,7 +497,11 @@
     "compat_hd": "Human Design: {type}",
     "compat_intro": "I want to understand the dynamic between me and {name}. How do our energies interact?",
     "compat_intro_chart": "I want to understand the dynamic between me and {name}. Their chart: {chart}. How do our energies interact?",
-    "view_profile_sub_private": "{name} keeps their chart private. See their name and photo."
+    "view_profile_sub_private": "{name} keeps their chart private. See their name and photo.",
+    "invite_self": "You can't invite yourself.",
+    "invite_already": "You've already invited this person.",
+    "invite_no_account": "There is no Solray account with that name or email yet. Ask them to sign up first.",
+    "invite_gone": "This invite is no longer there."
   },
   "profile": {
     "title": "Profile",
@@ -540,7 +551,8 @@
     "astro_no_data": "No astrocartography data available.",
     "share_soul_map_title": "My Soul Map, Solray",
     "share_soul_map_text": "My Soul Map on Solray. solray.ai",
-    "bodygraph_label": "Human Design bodygraph"
+    "bodygraph_label": "Human Design bodygraph",
+    "username_unavailable": "That username can't be used. Try another one."
   },
   "settings": {
     "title": "Settings",
@@ -629,7 +641,8 @@
     "private_switch": "Private profile",
     "private_state_on": "Private profile, on. Your chart is private.",
     "private_state_off": "Private profile, off. Your soul connections can view your chart.",
-    "switch_state": "{label}, {state}"
+    "switch_state": "{label}, {state}",
+    "birth_invalid": "Please check the birth date and time."
   },
   "nav": {
     "today": "Now",

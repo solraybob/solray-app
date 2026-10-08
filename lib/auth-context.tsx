@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiError, detailCode } from "./api";
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { clearUserScopedCaches } from "./local-cache";
 import { errorText } from "./errors";
@@ -146,7 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(errorText(err?.detail, failMessage));
+      // Status and code travel with it; the login screen words it.
+      throw new ApiError(errorText(err?.detail, failMessage), res.status, detailCode(err?.detail), err?.detail);
     }
     const data = await res.json();
     const userObj = data.user || data.profile || { id: data.user_id || data.id, email, name: data.name || email };

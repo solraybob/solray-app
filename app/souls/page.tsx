@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -693,7 +694,9 @@ export default function SoulsPage() {
       }, token);
       setInviteSent(prev => new Set(prev).add(identifier));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("souls.error_signal");
+      const msg = memberErrorText(e, t, "souls.error_signal", {
+        byStatus: { 400: "souls.invite_self", 404: "souls.invite_no_account", 409: "souls.invite_already" },
+      });
       setErrorMessage(msg);
     } finally {
       setSendingInvite(null);
@@ -713,7 +716,7 @@ export default function SoulsPage() {
         setConnectedSouls(dedupeSouls(souls?.souls || []));
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("souls.error_drifted");
+      const msg = memberErrorText(e, t, "souls.error_drifted", { byStatus: { 404: "souls.invite_gone" } });
       setErrorMessage(msg);
     } finally {
       setRespondingInvite(null);
@@ -2121,7 +2124,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
         });
         if (!stillHere()) return null;
         if (!ok) {
-          throw new ApiError(errorText(data?.detail, t("souls.error_read_chart")), status, detailCode(data?.detail), data?.detail);
+          throw new ApiError(errorText(data?.detail, ""), status, detailCode(data?.detail), data?.detail);
         }
         return data;
       };
@@ -2159,7 +2162,7 @@ function AddPersonSheet({ onClose, onAdded }: AddPersonSheetProps) {
       onAdded(person);
     } catch (e: unknown) {
       if (!stillHere()) return;
-      const msg = e instanceof Error ? e.message : t("souls.error_drifted_short");
+      const msg = memberErrorText(e, t, "souls.error_read_chart", { byStatus: { 400: "settings.birth_invalid", 422: "settings.birth_invalid" } });
       setError(msg);
     } finally {
       if (sheetMountedRef.current) setSubmitting(false);

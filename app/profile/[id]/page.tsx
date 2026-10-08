@@ -11,6 +11,7 @@
  * pointing back to /souls so the user can send an invite.
  */
 
+import { memberErrorText } from "@/lib/member-error";
 import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -478,7 +479,7 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
           // since the public-profile fetch above already 403'd.
           setError(t("compat.only_connections"));
         } else {
-          setError(e instanceof Error ? e.message : t("compat.error_load"));
+          setError(memberErrorText(e, t, "compat.error_load"));
         }
       })
       .finally(() => setLoading(false));

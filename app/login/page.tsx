@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -83,7 +84,7 @@ export default function LoginPage() {
       }
       router.replace(nextPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("login.error_no_signal"));
+      setError(memberErrorText(err, t, "login.error_failed", { byStatus: { 401: "login.error_invalid", 400: "login.error_invalid" }, network: "login.error_no_signal" }));
     } finally {
       setLoading(false);
     }

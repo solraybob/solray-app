@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { beginUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -910,7 +911,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingName(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : t("profile.error_save"));
+      setSaveError(memberErrorText(e, t, "profile.error_save"));
     } finally {
       setSavingName(false);
     }
@@ -935,7 +936,7 @@ export default function ProfilePage() {
       } catch (_) {}
       setEditingHandle(false);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : t("profile.error_save"));
+      setSaveError(memberErrorText(e, t, "profile.error_save", { byStatus: { 400: "profile.username_unavailable", 409: "profile.username_unavailable" } }));
     } finally {
       setSavingHandle(false);
     }

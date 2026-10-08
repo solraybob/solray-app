@@ -11,6 +11,8 @@
  * UX cost; attackers can't probe for valid emails.
  */
 
+import { ApiError, detailCode } from "@/lib/api";
+import { memberErrorText } from "@/lib/member-error";
 import { useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
@@ -37,11 +39,11 @@ export default function ForgotPasswordPage() {
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(errorText(e?.detail, t("forgot.error_request")));
+        throw new ApiError(errorText(e?.detail, ""), res.status, detailCode(e?.detail), e?.detail);
       }
       setSubmitted(true);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t("common.error_generic"));
+      setError(memberErrorText(e, t, "forgot.error_request", { network: "login.error_no_signal" }));
     } finally {
       setLoading(false);
     }

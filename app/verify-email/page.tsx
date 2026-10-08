@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText } from "@/lib/member-error";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
@@ -47,7 +48,7 @@ function VerifyEmailInner() {
       })
       .catch((e) => {
         setStatus("error");
-        setMessage(e.message || t("verify.failed_message"));
+        setMessage(memberErrorText(e, t, "verify.failed_message"));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, router]);

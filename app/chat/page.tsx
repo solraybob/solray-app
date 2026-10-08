@@ -1,5 +1,6 @@
 "use client";
 
+import { memberErrorText, MemberError } from "@/lib/member-error";
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -1902,18 +1903,16 @@ function ChatPageInner() {
         // server refuses, and the consent sheet explains why.
         if (res.status === 403 && code === AI_CONSENT_REQUIRED_CODE) {
           openAiConsentSheet();
-          throw new Error(t("chat.consent_needed"));
+          throw new MemberError(t("chat.consent_needed"));
         }
-        // Today's voice limit and the other known refusals: plain words.
-        if (code && ORACLE_ERROR_KEYS[code]) {
-          throw new Error(t(ORACLE_ERROR_KEYS[code]));
-        }
-        // If the backend says transcription isn't configured, show a calm
-        // user-facing line instead of the raw server string.
-        if (res.status === 503 && /configured|GROQ|OPENAI/i.test(detail)) {
-          throw new Error(t("chat.voice_warming_up"));
-        }
-        throw new Error(detail || `${t("chat.voice_transcription_failed")} (${res.status})`);
+        // Today's voice limit and the other known refusals, and the
+        // transcription's own coded refusals (too long, empty, not set up,
+        // failed): plain words in the member's language. The server's text
+        // is never shown (Codex out18-5).
+        throw new MemberError(memberErrorText(
+          new ApiError(detail, res.status, code || undefined, body?.detail), t, "chat.voice_transcription_failed",
+          { byStatus: { 400: "chat.voice_empty", 413: "chat.voice_too_long", 503: "chat.voice_warming_up" } },
+        ));
       }
       const data = body;
       const transcript = (data?.transcript || "").trim();
@@ -1996,7 +1995,7 @@ function ChatPageInner() {
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch (err: unknown) {
       if (landing(false) === "drop") return;
-      const msg = err instanceof Error ? err.message : t("chat.voice_failed");
+      const msg = memberErrorText(err, t, "chat.voice_failed");
       setVoiceError(msg);
     } finally {
       if (isMountedRef.current) setTranscribing(false);
