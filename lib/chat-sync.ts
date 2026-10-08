@@ -24,7 +24,7 @@
 
 import { mergeMessages, sameTranscript } from "./chat-merge";
 import { withSoulBackfill } from "./chat-soul";
-import { accountKey, isCurrentGeneration, StaleAccountError } from "./account-session";
+import { accountKey, getAuthGeneration, isCurrentGeneration, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
 import type { CrisisCardData } from "./crisis-card";
 
@@ -265,7 +265,33 @@ function readStatuses(): StatusMap {
   return out;
 }
 
+/** Fired (window event) when a message's status changes (sent, answered,
+ *  refused, released as interrupted, resolved), so an open Chat page
+ *  redraws its notes and buttons, also for a send that started on a page
+ *  since left. Bound to the account whose statuses changed. */
+export const CHAT_STATUS_EVENT = "solray:chat-msg-status";
+
+function announceStatus(): void {
+  try {
+    window.dispatchEvent(new CustomEvent(CHAT_STATUS_EVENT, {
+      detail: { key: accountKey(MSG_STATUS_KEY), generation: getAuthGeneration() },
+    }));
+  } catch { /* no window (tests without one) */ }
+}
+
+/** Whether a status event concerns the account signed in now. */
+export function isOwnStatusEvent(e: Event): boolean {
+  const d = (e as CustomEvent).detail as { key?: unknown; generation?: unknown } | undefined;
+  return !!d && d.key === accountKey(MSG_STATUS_KEY)
+    && typeof d.generation === "number" && isCurrentGeneration(d.generation);
+}
+
 function writeStatus(id: string, status: StoredStatus | null): void {
+  writeStatusQuiet(id, status);
+  announceStatus();
+}
+
+function writeStatusQuiet(id: string, status: StoredStatus | null): void {
   if (status) memStatus.set(id, status); else memStatus.delete(id);
   try {
     const all = readStatuses();
@@ -302,7 +328,7 @@ export function settleMessage(id: string, refused = false): void {
  *  the member (they left Chat, or it failed out of sight): the message
  *  stays out of uploads as an interrupted turn, to be sent again. */
 export function releaseMessage(id: string): void {
-  inFlightIds.delete(id);
+  if (inFlightIds.delete(id)) announceStatus();
 }
 
 /** The member sent an interrupted message again (a new message replaces

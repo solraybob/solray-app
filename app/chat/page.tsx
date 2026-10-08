@@ -12,6 +12,8 @@ import { AI_CONSENT_CHANGED_EVENT, AI_CONSENT_REQUIRED_CODE, openAiConsentSheet 
 import { mergeMessages, sameTranscript } from "@/lib/chat-merge";
 import {
   CHAT_MERGED_EVENT,
+  CHAT_STATUS_EVENT,
+  isOwnStatusEvent,
   ChatSyncUnavailable,
   deleteSessionOnServer,
   getSessionIds,
@@ -492,7 +494,10 @@ function ChatPageInner() {
     const sid = activeSessionRef.current;
     if (!tok || !msgs.length || !sid) return;
 
-    const history = historyForServer(msgs);
+    // Only what belongs to the transcript: a message still waiting for its
+    // outcome, interrupted or refused (too long, withdrawn) never reaches
+    // memory synthesis, and does not count towards its minimum.
+    const history = historyForServer(uploadableMessages(msgs));
     const userCount = history.filter((m) => m.role === "user").length;
     // Match the backend threshold: any 2+ turn exchange is worth synthesizing
     if (userCount < 2) return;
@@ -981,6 +986,13 @@ function ChatPageInner() {
   // as too long out of sight ("refused"). Read again whenever the thread or
   // a send changes.
   const [statusTick, setStatusTick] = useState(0);
+  // A status changed out of sight (a send from a page since left was
+  // refused, or released as interrupted): redraw, for this account only.
+  useEffect(() => {
+    const onStatus = (e: Event) => { if (isOwnStatusEvent(e)) setStatusTick((n) => n + 1); };
+    window.addEventListener(CHAT_STATUS_EVENT, onStatus);
+    return () => window.removeEventListener(CHAT_STATUS_EVENT, onStatus);
+  }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const msgStatuses = useMemo(() => messageStatuses(), [messages, sending, statusTick]);
 
