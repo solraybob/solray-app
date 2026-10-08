@@ -4,8 +4,11 @@ import { useChartRevision } from "@/lib/use-chart-revision";
 import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch } from "@/lib/api";
-import { accountKey } from "@/lib/account-session";
+import { apiFetch, isAiConsentError } from "@/lib/api";
+import { accountKey, isStaleAccountError } from "@/lib/account-session";
+import { AI_CONSENT_CHANGED_EVENT } from "@/lib/ai-consent";
+import { forecastKind } from "@/lib/forecast-kind";
+import { useT } from "@/lib/i18n";
 
 interface ForecastData {
   day_title: string;
@@ -33,7 +36,7 @@ interface ForecastData {
 // Moon phase calculation helpers. The lunar glyphs are the single
 // documented exception to Solray's no-emoji rule, see the note on
 // MoonCycleBar in app/today/page.tsx.
-function getMoonPhase(): { phase: number; label: string; emoji: string } {
+function getMoonPhase(): { phase: number; labelKey: string; emoji: string } {
   const now = new Date();
   const jd = (now.getTime() / 86400000) + 2440587.5;
   const lunarCycle = 29.53058867;
@@ -41,15 +44,16 @@ function getMoonPhase(): { phase: number; label: string; emoji: string } {
   let phase = ((jd - knownNewMoon) % lunarCycle) / lunarCycle;
   if (phase < 0) phase += 1;
 
+  // Translation keys (moon.phase_*), worded in the member's language.
   const getMoonPhaseLabel = (p: number): string => {
-    if (p < 0.03 || p > 0.97) return "New Moon";
-    if (p < 0.25) return "Waxing Crescent";
-    if (p < 0.27) return "First Quarter";
-    if (p < 0.48) return "Waxing Gibbous";
-    if (p < 0.52) return "Full Moon";
-    if (p < 0.73) return "Waning Gibbous";
-    if (p < 0.77) return "Third Quarter";
-    return "Waning Crescent";
+    if (p < 0.03 || p > 0.97) return "moon.phase_new_moon";
+    if (p < 0.25) return "moon.phase_waxing_crescent";
+    if (p < 0.27) return "moon.phase_first_quarter";
+    if (p < 0.48) return "moon.phase_waxing_gibbous";
+    if (p < 0.52) return "moon.phase_full_moon";
+    if (p < 0.73) return "moon.phase_waning_gibbous";
+    if (p < 0.77) return "moon.phase_third_quarter";
+    return "moon.phase_waning_crescent";
   };
 
   const getMoonEmoji = (p: number): string => {
@@ -65,7 +69,7 @@ function getMoonPhase(): { phase: number; label: string; emoji: string } {
 
   return {
     phase,
-    label: getMoonPhaseLabel(phase),
+    labelKey: getMoonPhaseLabel(phase),
     emoji: getMoonEmoji(phase),
   };
 }
@@ -74,10 +78,26 @@ export default function WidgetPage() {
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+  const { t } = useT();
   // A birth correction (here or in another tab) replaces the reading: the
   // old one leaves the screen and an answer for the old chart never lands.
   const chartRev = useChartRevision();
   const shownRevRef = useRef(chartRev);
+
+  // What the widget shows besides the reading (lib/forecast-kind, the same
+  // reading of an answer as Today's): the sky without a reading for a
+  // member who has not agreed to AI processing, a reading not written yet,
+  // or a failure. Only a complete reading is shown as one, or cached.
+  const [state, setState] = useState<"loading" | "complete" | "consent" | "pending" | "failed">("loading");
+  // Agreed in the consent sheet (in the app): ask again for the reading.
+  const [consentNonce, setConsentNonce] = useState(0);
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      if ((e as CustomEvent).detail?.granted) setConsentNonce((n) => n + 1);
+    };
+    window.addEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(AI_CONSENT_CHANGED_EVENT, onChanged);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,71 +105,75 @@ export default function WidgetPage() {
       shownRevRef.current = chartRev;
       setForecast(null);
       setLoading(true);
+      setState("loading");
     }
     if (!token) {
       setLoading(false);
+      setState("failed");
       return;
     }
+    const show = (kind: "complete" | "consent" | "pending" | "failed", data: ForecastData | null) => {
+      if (cancelled) return;
+      setForecast(kind === "complete" ? data : null);
+      setState(kind);
+      setLoading(false);
+    };
 
     async function fetchForecast() {
+      // Local date parts, not toISOString (which is UTC): the backend now
+      // resolves "today" by the user's local date, so the widget cache key
+      // must agree or it goes stale around UTC midnight.
+      const _d = new Date();
+      const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
+      const cacheKey = accountKey(`solray_forecast_${dateKey}`);
+
+      // Cache first, but only a COMPLETE reading. Anything else (a pending
+      // or partial entry, a sky without a reading) is dropped and fetched
+      // again, so a recovered backend or a fresh consent replaces it.
       try {
-        // Local date parts, not toISOString (which is UTC): the backend now
-        // resolves "today" by the user's local date, so the widget cache key
-        // must agree or it goes stale around UTC midnight.
-        const _d = new Date();
-        const dateKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
-        const cacheKey = accountKey(`solray_forecast_${dateKey}`);
-
-        // Try cache first, but only a COMPLETE reading. A pending/partial
-        // cached entry must not be shown: fall through to the network so a
-        // recovered backend replaces it instead of being masked by it.
-        try {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            const parsed: ForecastData = JSON.parse(cached);
-            if (parsed && (parsed as { _pending?: boolean })._pending !== true) {
-              if (cancelled) return;
-              setForecast(parsed);
-              setLoading(false);
-              return;
-            }
-            localStorage.removeItem(cacheKey);
-          }
-        } catch (_) {
-          // ignore cache errors
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (forecastKind(parsed) === "complete") { show("complete", parsed as ForecastData); return; }
+          localStorage.removeItem(cacheKey);
         }
+      } catch (_) {
+        // ignore cache errors
+      }
 
-        // Fetch from API
+      try {
         const stamp = chartWorkStamp();
-        const data = await apiFetch("/forecast/today", {}, token);
+        const data = await apiFetch("/forecast/today", {}, token, { quietConsent: true });
         if (cancelled) return;
-        setForecast(data);
-        setLoading(false);
-
-        // Cache for next load, complete readings only, and only under the
-        // chart it was fetched for.
-        if (data && (data as { _pending?: boolean })._pending !== true) {
-          writeChartCache(stamp, cacheKey, data);
-        }
-      } catch {
-        if (!cancelled) setLoading(false);
+        const kind = forecastKind(data);
+        show(kind, kind === "complete" ? data as ForecastData : null);
+        // Cached only when complete, and only under the chart it was
+        // fetched for.
+        if (kind === "complete") writeChartCache(stamp, cacheKey, data);
+      } catch (e) {
+        if (isStaleAccountError(e)) return;
+        // Not agreed to AI processing: said so, never as a failure.
+        show(isAiConsentError(e) ? "consent" : "failed", null);
       }
     }
 
     fetchForecast();
     return () => { cancelled = true; };
-  }, [token, chartRev]);
+  }, [token, chartRev, consentNonce]);
 
   const moonPhase = getMoonPhase();
 
   if (!loading && !forecast) {
+    const note = state === "consent" ? t("widget.consent_needed")
+      : state === "pending" ? t("widget.pending")
+      : t("widget.load_failed");
     return (
       <div
         className="flex items-center justify-center min-h-screen"
         style={{ backgroundColor: "var(--bg-deep)" }}
       >
         <p className="text-text-secondary text-xs text-center px-4">
-          Unable to load forecast. Please check your connection.
+          {note}
         </p>
       </div>
     );
@@ -198,7 +222,7 @@ export default function WidgetPage() {
                   color: "rgb(var(--rgb-text-secondary))",
                 }}
               >
-                {moonPhase.label}
+                {t(moonPhase.labelKey)}
               </span>
             </div>
 

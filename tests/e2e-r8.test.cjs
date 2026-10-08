@@ -33,7 +33,7 @@ test("every new string exists in English and Spanish, with no long dash", () => 
 
 test("Today without AI consent: the sky and the cycles, and a quiet card that opens the sheet", () => {
   const src = read("app/today/page.tsx");
-  assert.match(src, /if \(data\.ai_consent_required === true\) \{\s*return \{ _pending: true, _consent: true/);
+  assert.match(src, /if \(kind === "consent"\) \{\s*return \{ _pending: true, _consent: true/);
   // Not the preparing screen, not the error screen: the deck, with the consent card first.
   assert.match(src, /forecast\._pending === true && !forecast\._consent \? \(\s*<PendingTodayState/);
   assert.match(src, /title=\{t\("today\.consent_card_title"\)\}[\s\S]{0,200}onAction=\{\(\) => openAiConsentSheet\(\)\}/);

@@ -30,7 +30,7 @@ test("Profile/[id]: compatibility (read from the member's own chart too) follows
   const c = src.slice(src.indexOf("function CompatibilitySection("), src.indexOf("function Lens("));
   assert.ok(c.includes("const chartRev = useChartRevision();"));
   assert.ok(c.includes("}, [soulId, token, chartRev]);"));
-  assert.ok(c.includes("load(false, chartChanged);"));
+  assert.ok(c.includes("load(chartChanged, chartChanged);"));
   assert.ok(c.includes("setReading(null);"));
   assert.ok(c.includes("const current = () => reqRef.current === req;"));
   assert.ok(c.includes(".then((d) => {\n        if (!current()) return;"));
@@ -47,7 +47,8 @@ test("Today: transits and the plain Now card follow the chart (the reading alrea
 
 test("Widget, First Mirror and the chat's chart-seeded suggestions follow the chart", () => {
   const w = read("app/widget/page.tsx");
-  assert.ok(w.includes("}, [token, chartRev]);") && w.includes("setForecast(null);") && w.includes("if (cancelled) return;\n        setForecast(data);"));
+  // (Round twenty-four: also refetched after consent; answers land through show().)
+  assert.ok(w.includes("}, [token, chartRev, consentNonce]);") && w.includes("setForecast(null);") && w.includes("const show = (kind:") && w.includes("if (cancelled) return;\n      setForecast(kind === \"complete\" ? data : null);"));
   const f = read("app/first-mirror/page.tsx");
   assert.ok(f.includes("}, [token, router, chartRev]);") && f.includes("setMirror(null);"));
   const c = read("app/chat/page.tsx");

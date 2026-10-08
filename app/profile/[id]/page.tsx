@@ -12,7 +12,7 @@
  */
 
 import { memberErrorText } from "@/lib/member-error";
-import { chartWorkStamp, writeChartCache } from "@/lib/chart-revision";
+import { chartWorkStamp, readSessionChartCache, writeChartCache } from "@/lib/chart-revision";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useChartRevision } from "@/lib/use-chart-revision";
 import { useParams, useRouter } from "next/navigation";
@@ -452,16 +452,16 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
     const req = ++reqRef.current;
     const current = () => reqRef.current === req;
     if (!force) {
-      try {
-        const raw = sessionStorage.getItem(cacheKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setReading(parsed.reading || null);
-          setSignals(parsed.signals || null);
-          setIndex(parsed.index || null);
-          return;
-        }
-      } catch (_) {}
+      // Only a reading built under the current birth chart (the entry
+      // carries its revision): never one from before a correction made in
+      // another tab, which cannot clear this tab's sessionStorage.
+      const parsed = readSessionChartCache<{ reading?: CompatReading; signals?: CompatSignals; index?: ResonanceIndex }>(cacheKey);
+      if (parsed) {
+        setReading(parsed.reading || null);
+        setSignals(parsed.signals || null);
+        setIndex(parsed.index || null);
+        return;
+      }
     }
     setLoading(true);
     setError(null);
@@ -507,7 +507,8 @@ function CompatibilitySection({ token, soulId, soulName }: { token: string | nul
       setIndex(null);
       setError(null);
     }
-    load(false, chartChanged); /* try cache, then fetch */
+    // After a chart change: straight to the network, never a cached copy.
+    load(chartChanged, chartChanged); /* else try cache, then fetch */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [soulId, token, chartRev]);
 

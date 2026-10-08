@@ -97,15 +97,77 @@ export function chartStampCurrent(stamp: ChartStamp): boolean {
   return stamp.epoch === chartEpoch && stamp.rev === currentBirthRevision();
 }
 
-/** Writes a chart-derived cache entry only if the chart has not changed since `stamp`. */
+/**
+ * Writes a chart-derived cache entry only if the chart has not changed since
+ * `stamp`. A per-tab (session) entry carries the birth revision it was built
+ * under, and readChartCache serves it only under that same revision: another
+ * tab's birth correction cannot clear this tab's sessionStorage, so the entry
+ * itself has to prove which chart it describes (Codex out20-5 #1).
+ */
 export function writeChartCache(stamp: ChartStamp, key: string, value: unknown, store: "local" | "session" = "local"): boolean {
   if (!chartStampCurrent(stamp)) return false;
   try {
-    (store === "local" ? localStorage : sessionStorage).setItem(key, JSON.stringify(value));
+    if (store === "session") {
+      if (!stamp.rev) return false;   // no known chart: nothing to prove it by
+      sessionStorage.setItem(key, JSON.stringify({ [SESSION_REV_FIELD]: stamp.rev, value }));
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
     return true;
   } catch {
     return false;
   }
+}
+
+const SESSION_REV_FIELD = "__chart_rev";
+
+/** A per-tab chart-derived entry, only when built under the current birth
+ *  revision; anything else (another chart, an unstamped older entry) is
+ *  removed and null is returned. */
+export function readSessionChartCache<T = unknown>(key: string): T | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, unknown> | null;
+    const rev = currentBirthRevision();
+    if (parsed && rev && parsed[SESSION_REV_FIELD] === rev && "value" in parsed) return parsed.value as T;
+    sessionStorage.removeItem(key);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** This tab's own per-tab chart-derived entries (another tab cannot reach
+ *  them). */
+function clearSessionChartCaches(): void {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k && isDerivedKey(k)) sessionStorage.removeItem(k);
+    }
+  } catch { /* nothing cached */ }
+}
+
+/**
+ * A birth correction made in another tab: that tab dropped the shared
+ * (localStorage) caches and stored the new fingerprint, which fires
+ * `storage` here. This tab drops its own per-tab caches and starts a new
+ * chart epoch, so work in flight here for the old chart is never cached or
+ * called current. The shared caches are left alone: the other tab may
+ * already have written fresh ones for the new chart.
+ */
+export function onBirthRevisionChangedElsewhere(): void {
+  chartEpoch += 1;
+  clearSessionChartCaches();
+  // (Screens hear the same storage event through useChartRevision; no
+  // second announcement, so they load once.)
+}
+
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("storage", (e: StorageEvent) => {
+    if (e.key === accountKey(REV_KEY)) onBirthRevisionChangedElsewhere();
+  });
 }
 
 /**

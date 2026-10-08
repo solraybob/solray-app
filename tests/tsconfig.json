@@ -39,6 +39,7 @@
     "../lib/chat-sync.ts",
     "../lib/chat-outcome.ts",
     "../lib/member-error.ts",
+    "../lib/forecast-kind.ts",
     "../lib/voice-result.ts",
     "../lib/crisis-card.ts",
     "../lib/birth-time-fold.ts",

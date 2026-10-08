@@ -1086,5 +1086,10 @@
     "settings_choose": "Elegir",
     "settings_nonexistent": "La hora de nacimiento guardada no existió donde naciste: esa noche se adelantaron los relojes. Corrígela abajo y guarda.",
     "confirmed": "Gracias. Tu carta ya usa la hora que elegiste."
+  },
+  "widget": {
+    "load_failed": "No se pudo cargar la lectura de hoy. Revisa tu conexión.",
+    "consent_needed": "Abre Solray para aceptar las lecturas con IA y la lectura de hoy aparecerá aquí.",
+    "pending": "La lectura de hoy aún se está escribiendo. Estará aquí pronto."
   }
 }

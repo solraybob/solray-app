@@ -1,5 +1,6 @@
 "use client";
 
+import { forecastKind } from "@/lib/forecast-kind";
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -643,7 +644,9 @@ function extractPlanets(data: any): Planet[] {
 // yet. Never returns invented content under any circumstance.
 function parseForecastData(data: any): ForecastView {
   const planets = extractPlanets(data);
-  if (data.day_title && data.reading && data.tags && data.energy) {
+  // The same reading of an answer as the widget's (lib/forecast-kind).
+  const kind = forecastKind(data);
+  if (kind === "complete") {
     return {
       ...data,
       planets,
@@ -652,7 +655,7 @@ function parseForecastData(data: any): ForecastView {
       _pending: false,
     };
   }
-  if (data.ai_consent_required === true) {
+  if (kind === "consent") {
     return { _pending: true, _consent: true, planets, lunar_event: data.lunar_event ?? undefined };
   }
   return { _pending: true, planets };
@@ -1594,7 +1597,7 @@ export default function TodayPage() {
         // failures. A pending state must always re-fetch fresh next time.
         // And only under the chart it was fetched for.
         try {
-          if (parsed && parsed._pending !== true) {
+          if (forecastKind(parsed) === "complete") {
             writeChartCache(stamp, cacheKey, parsed);
           } else {
             localStorage.removeItem(cacheKey);
@@ -1674,7 +1677,7 @@ export default function TodayPage() {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached) as ForecastView;
-        if (parsed && parsed._pending !== true) {
+        if (forecastKind(parsed) === "complete") {
           setForecast(parsed);
           setLoading(false);
           // Still fetch fresh in background
@@ -1790,7 +1793,7 @@ export default function TodayPage() {
             return;
           }
           const parsed = parseForecastData(data);
-          if (parsed && parsed._pending !== true) writeChartCache(stamp, cacheKey, parsed);
+          if (forecastKind(parsed) === "complete") writeChartCache(stamp, cacheKey, parsed);
           setForecast(parsed);
           setError("");
           setLoading(false);

@@ -1086,5 +1086,10 @@
     "settings_choose": "Choose",
     "settings_nonexistent": "Your saved birth time did not happen where you were born: the clocks jumped forward that night. Please correct it below and save.",
     "confirmed": "Thank you. Your chart now uses the time you chose."
+  },
+  "widget": {
+    "load_failed": "Today's reading could not be loaded. Please check your connection.",
+    "consent_needed": "Open Solray to agree to AI readings, and today's reading will appear here.",
+    "pending": "Today's reading is still being written. It will be here soon."
   }
 }
