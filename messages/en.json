@@ -255,6 +255,9 @@
     "pisces": "Pisces"
   },
   "chat": {
+    "history_loading": "Opening this conversation from your account.",
+    "history_load_failed": "This conversation could not be opened just now. Check your connection and tap it to try again.",
+    "history_gone": "That conversation was deleted on another device.",
     "turn_interrupted": "No answer came back for this message.",
     "turn_too_long": "This message was too long to send, so nothing was sent.",
     "turn_send_again": "Send again",

@@ -113,6 +113,8 @@ export function loadSession(sessionId: string): StoredSession | null {
  *  (freeStorageSpace) and tries once more. Returns true when stored. */
 export function storeTranscript(session: StoredSession, opts: { evict?: boolean } = {}): boolean {
   const key = transcriptKey(session.sessionId);
+  // A whole copy again (memory or storage): no longer only a summary.
+  clearEvicted(session.sessionId);
   // Memory first: whatever happens to storage, the newest copy is readable.
   memTranscripts.set(key, session);
   const raw = JSON.stringify(session);
@@ -132,9 +134,84 @@ export function storeTranscript(session: StoredSession, opts: { evict?: boolean 
 
 /** Forget one cached transcript (memory and storage). */
 export function removeCachedSession(sessionId: string): void {
+  clearEvicted(sessionId);
   const key = transcriptKey(sessionId);
   memTranscripts.delete(key);
   try { localStorage.removeItem(key); } catch { /* gone is gone */ }
+}
+
+// ─── Conversations evicted from the device cache ─────────────────────────
+//
+// A transcript freed to make room (freeStorageSpace) is on the server whole.
+// History keeps listing it from a small summary; opening it reads it back
+// from the server (fetchSessionFromServer). Account-scoped, with the same
+// memory fallback as the other sync records.
+const EVICTED_KEY = "solray_chat_evicted";
+export interface EvictedSummary { customName?: string; date: string; preview: string; updatedAt: string }
+const memEvicted = new Map<string, Record<string, EvictedSummary>>();
+onAccountSignOut(() => { memEvicted.clear(); });
+
+function readEvicted(): Record<string, EvictedSummary> {
+  const k = accountKey(EVICTED_KEY);
+  const mem = memEvicted.get(k);
+  if (mem) return { ...mem };
+  try {
+    const v = JSON.parse(localStorage.getItem(k) || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, EvictedSummary> : {};
+  } catch {
+    return {};
+  }
+}
+function writeEvicted(all: Record<string, EvictedSummary>): void {
+  const k = accountKey(EVICTED_KEY);
+  try {
+    localStorage.setItem(k, JSON.stringify(all));
+    memEvicted.delete(k);
+  } catch {
+    memEvicted.set(k, { ...all });
+  }
+}
+function noteEvicted(session: StoredSession): void {
+  const msgs = session.messages || [];
+  const all = readEvicted();
+  all[session.sessionId] = {
+    ...(session.customName ? { customName: session.customName } : {}),
+    date: session.date || "",
+    preview: (msgs.find((m) => m.role === "user")?.content || "").slice(0, 160),
+    updatedAt: msgs.length ? msgs[msgs.length - 1].timestamp : "",
+  };
+  writeEvicted(all);
+}
+function clearEvicted(sessionId: string): void {
+  const all = readEvicted();
+  if (sessionId in all) { delete all[sessionId]; writeEvicted(all); }
+}
+
+/** The summary History shows for a conversation evicted from this device. */
+export function getEvictedSummary(sessionId: string): EvictedSummary | null {
+  return readEvicted()[sessionId] || null;
+}
+
+/** Put a summary back (a failed delete of an evicted conversation). */
+export function restoreEvicted(sessionId: string, summary: EvictedSummary): void {
+  const all = readEvicted();
+  all[sessionId] = summary;
+  writeEvicted(all);
+}
+
+/** One History row: the cached transcript, or the summary of one evicted
+ *  from this device (`evicted` set, `messages` empty until it is opened). */
+export type HistoryEntry = StoredSession & { evicted?: EvictedSummary };
+
+export function historySessions(): HistoryEntry[] {
+  const out: HistoryEntry[] = [];
+  for (const id of getSessionIds()) {
+    const s = loadSession(id);
+    if (s) { out.push(s); continue; }
+    const e = getEvictedSummary(id);
+    if (e) out.push({ sessionId: id, date: e.date, customName: e.customName, messages: [], evicted: e });
+  }
+  return out;
 }
 
 export function saveSession(session: StoredSession, opts: { evict?: boolean } = {}) {
@@ -201,6 +278,9 @@ function freeStorageSpace(writingId: string, retry: () => boolean): boolean {
     if (!held) continue;
     if ((held.messages || []).some((m) => m && m.id in statuses)) continue;
     try { localStorage.removeItem(key); } catch { continue; }
+    // Still listed in History: its name, date and first line stay here
+    // (a few bytes), and opening it reads it back from the server.
+    noteEvicted(held);
     dropSessionLocalMeta(id);
     evicted++;
     if (retry()) return true;
@@ -868,6 +948,39 @@ function storeServerCopy(sessionId: string, full: Record<string, unknown>): bool
   }
   // An interrupted or refused message kept here is not owed to the server.
   return !sameTranscript(mergeMessages(serverMsgs, owedMessages(merged)), serverMsgs);
+}
+
+/**
+ * Read one conversation back from the server into the cache (an evicted
+ * one being opened from History). "found" with the transcript, "gone" when
+ * the server no longer has it (deleted on another device: forgotten here
+ * too), "failed" when the answer is unclear (offline, an error) or the
+ * account changed meanwhile.
+ */
+export async function fetchSessionFromServer(
+  sessionId: string, token: string, gen: number,
+): Promise<{ kind: "found"; session: StoredSession } | { kind: "gone" } | { kind: "failed" }> {
+  if (!isCurrentGeneration(gen)) return { kind: "failed" };
+  const live = () => { if (!isCurrentGeneration(gen)) throw new StaleAccountError(); };
+  try {
+    const got = await readServerSession(apiUrl(), { Authorization: `Bearer ${token}` }, sessionId, live);
+    if (!isCurrentGeneration(gen) || deletedHere.has(sessionId)) return { kind: "failed" };
+    if (got.kind === "gone") {
+      removeCachedSession(sessionId);
+      dropSessionLocalMeta(sessionId);
+      unmarkServerConfirmed(sessionId);
+      clearUnsent(sessionId);
+      clearRenamePending(sessionId);
+      saveSessionIds(getSessionIds().filter((x) => x !== sessionId));
+      return { kind: "gone" };
+    }
+    if (got.kind !== "found") return { kind: "failed" };
+    storeServerCopy(sessionId, got.full);
+    const session = loadSession(sessionId);
+    return session ? { kind: "found", session } : { kind: "failed" };
+  } catch {
+    return { kind: "failed" };
+  }
 }
 
 /**

@@ -160,6 +160,9 @@
     "consent_card_body": "Acepta el procesamiento con IA para recibir tu lectura del día. El cielo y tus ciclos están aquí de todos modos."
   },
   "chat": {
+    "history_loading": "Abriendo esta conversación desde tu cuenta.",
+    "history_load_failed": "No se pudo abrir esta conversación ahora mismo. Revisa tu conexión y tócala para intentarlo de nuevo.",
+    "history_gone": "Esa conversación se eliminó en otro dispositivo.",
     "turn_interrupted": "No llegó respuesta a este mensaje.",
     "turn_too_long": "Este mensaje era demasiado largo para enviarlo, así que no se envió nada.",
     "turn_send_again": "Enviar de nuevo",

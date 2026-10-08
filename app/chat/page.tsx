@@ -37,6 +37,11 @@ import {
   uploadableMessages,
   type ChatMessage,
   type StoredSession as ChatStoredSession,
+  type HistoryEntry,
+  fetchSessionFromServer,
+  getEvictedSummary,
+  historySessions,
+  restoreEvicted,
 } from "@/lib/chat-sync";
 import { readSoulCtx, resolveSoulCtx, writeSoulCtx, syncedSoulRef, type SoulCtx } from "@/lib/chat-soul";
 import { registerDraftSource } from "@/lib/draft-guard";
@@ -286,7 +291,10 @@ function ChatPageInner() {
   // voice_transcript so the server reads the spoken words on their own.
   const lastTranscriptRef = useRef<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [pastSessions, setPastSessions] = useState<StoredSession[]>([]);
+  const [pastSessions, setPastSessions] = useState<HistoryEntry[]>([]);
+  // A conversation evicted from this device's cache being read back from
+  // the server as it is opened from History.
+  const [historyOpening, setHistoryOpening] = useState<{ id: string; failed: boolean } | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   // (forecast-seeded prompts now feed the unified `suggestions` above)
@@ -1137,8 +1145,32 @@ function ChatPageInner() {
     if (sending) return;
     // Synthesize the session we're leaving so recent context is not lost
     // when we hop back into an older one.
-    triggerSessionSynthesis();
     const session = loadSession(sid);
+    if (!session && getEvictedSummary(sid)) {
+      // Evicted from this device to make room: read it back from the
+      // server first, with its own loading and failure state in History.
+      // (No synthesis yet: the conversation on screen stays open until
+      // this one is here.)
+      const tok = tokenRef.current;
+      if (!tok) return;
+      const gen = accountGen;
+      setHistoryOpening({ id: sid, failed: false });
+      void fetchSessionFromServer(sid, tok, gen).then((got) => {
+        if (!isMountedRef.current || !isCurrentGeneration(gen)) return;
+        if (got.kind === "found") {
+          setHistoryOpening((cur) => (cur?.id === sid ? null : cur));
+          openLoadedRef.current(sid);
+        } else if (got.kind === "gone") {
+          setHistoryOpening((cur) => (cur?.id === sid ? null : cur));
+          setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
+          setHistoryError(t("chat.history_gone"));
+        } else {
+          setHistoryOpening((cur) => (cur?.id === sid ? { id: sid, failed: true } : cur));
+        }
+      });
+      return;
+    }
+    triggerSessionSynthesis();
     if (session) {
       setChatNotice(null);
       setSessionId(session.sessionId);
@@ -1151,16 +1183,19 @@ function ChatPageInner() {
       setSoulRef(soulRefOf(sc));
       setShowHistory(false);
       setRenamingId(null);
+      setHistoryOpening(null);
     }
-  }, [triggerSessionSynthesis, sending]);
+  }, [triggerSessionSynthesis, sending, accountGen, t]);
+  // The newest loadPastSession, for a read-back that lands later.
+  const openLoadedRef = useRef(loadPastSession);
+  openLoadedRef.current = loadPastSession;
 
   // ── Open history panel ────────────────────────────────────────────────────
   const openHistory = useCallback(() => {
-    const ids = getSessionIds();
-    const sessions = ids
-      .map((id) => loadSession(id))
-      .filter((s): s is StoredSession => s !== null);
-    setPastSessions(sessions);
+    // Cached conversations, and those evicted from this device's cache
+    // (listed from their summary, read back from the server on opening).
+    setPastSessions(historySessions());
+    setHistoryOpening(null);
     setHistoryError(null);
     setShowHistory(true);
     setRenamingId(null);
@@ -1205,6 +1240,7 @@ function ChatPageInner() {
       setHistoryError(null);
       // Snapshot so a failed server delete can be undone locally.
       const snapshot = loadSession(sid);
+      const evictedSnap = snapshot ? null : getEvictedSummary(sid);
       const prevIds = getSessionIds();
       // Local removal first (instant UX), then propagate to server so the
       // session doesn't reappear on the next sync from another device.
@@ -1223,19 +1259,17 @@ function ChatPageInner() {
           if (snapshot) {
             storeTranscript(snapshot);
             markUnsent(sid);
+          } else if (evictedSnap) {
+            restoreEvicted(sid, evictedSnap);
           }
           const current = getSessionIds();
-          if (snapshot && !current.includes(sid)) {
+          if ((snapshot || evictedSnap) && !current.includes(sid)) {
             const at = Math.max(0, prevIds.indexOf(sid));
             current.splice(Math.min(at, current.length), 0, sid);
             saveSessionIds(current);
           }
           if (!isMountedRef.current) return;
-          setPastSessions(
-            getSessionIds()
-              .map((id) => loadSession(id))
-              .filter((s): s is StoredSession => s !== null)
-          );
+          setPastSessions(historySessions());
           setHistoryError(t("chat.delete_failed"));
         };
         // Runs after any upload already queued for this conversation, so a
@@ -2718,8 +2752,19 @@ function ChatPageInner() {
                                 {s.customName || s.date}
                               </p>
                               <p className="font-body text-text-secondary text-[15px] truncate">
-                                {s.messages.find((m) => m.role === "user")?.content || t("chat.no_messages")}
+                                {s.evicted
+                                  ? (s.evicted.preview || t("chat.no_messages"))
+                                  : (s.messages.find((m) => m.role === "user")?.content || t("chat.no_messages"))}
                               </p>
+                              {historyOpening?.id === s.sessionId && (
+                                <p
+                                  role={historyOpening.failed ? "alert" : "status"}
+                                  className="font-body text-[14px] mt-1"
+                                  style={historyOpening.failed ? { color: "rgb(var(--rgb-ember))" } : undefined}
+                                >
+                                  {historyOpening.failed ? t("chat.history_load_failed") : t("chat.history_loading")}
+                                </p>
+                              )}
                             </button>
                             {/* Rename pencil */}
                             <button
