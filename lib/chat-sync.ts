@@ -223,6 +223,32 @@ export function noteNewSession(sessionId: string): void {
   startedHere.add(sessionId);
 }
 
+// Messages whose /chat outcome is not known yet, and messages the server
+// refused (too long to send, restored to the composer): kept out of every
+// upload, so a refused message can never come back through the server's
+// merged transcript (Codex out7-5 #2). A pending one goes up once its
+// outcome is known; a refused one never. In memory only: after a reload
+// nothing is in flight any more.
+const pendingIds = new Set<string>();
+const refusedIds = new Set<string>();
+
+/** A message was just sent to /chat: not uploaded until it settles. */
+export function markMessagePending(id: string): void {
+  pendingIds.add(id);
+}
+
+/** Its outcome is known: uploaded from now on, unless it was refused. */
+export function settleMessage(id: string, refused = false): void {
+  pendingIds.delete(id);
+  if (refused) refusedIds.add(id);
+}
+
+/** The messages of a transcript that may go to the server. */
+export function uploadableMessages<T extends { id: string }>(messages: T[]): T[] {
+  if (pendingIds.size === 0 && refusedIds.size === 0) return messages;
+  return messages.filter((m) => !pendingIds.has(m.id) && !refusedIds.has(m.id));
+}
+
 /**
  * Upload one conversation. Resolves true when the server holds it.
  * `gen` is the account generation the write was made under.
@@ -289,7 +315,7 @@ async function pushSessionNow(sessionId: string, token: string, gen: number): Pr
           latest = { ...latest, messages: backfilled };
           saveSession(latest);
         }
-        const sent = latest.messages || [];
+        const sent = uploadableMessages(latest.messages || []);
         const baseRevision = getLocalMeta()[sessionId]?.revision;
         const renaming = getPendingRenames().has(sessionId);
         const putRes = await fetch(url, {
