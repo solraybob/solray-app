@@ -1,6 +1,6 @@
 "use client";
 
-import { registerUnfinishedWork } from "@/lib/draft-guard";
+import { beginUnfinishedWork, registerUnfinishedWork } from "@/lib/draft-guard";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -876,6 +876,22 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     }
   };
   useEffect(() => () => clearPurchaseTimer(), []);
+  // A store purchase not resolved yet: held from the tap until the store
+  // cancels or fails it or the server has verified it, whatever the
+  // timeout below does to the spinner (it only shows the pending note).
+  // The update reload waits for it (lib/draft-guard), so the purchase
+  // listener is never torn down while the purchase can still land.
+  const purchaseHoldRef = useRef<(() => void) | null>(null);
+  const holdPurchase = () => {
+    if (!purchaseHoldRef.current) purchaseHoldRef.current = beginUnfinishedWork();
+  };
+  const endPurchaseHold = () => {
+    const release = purchaseHoldRef.current;
+    purchaseHoldRef.current = null;
+    release?.();
+  };
+  // Leaving this screen removes its listener: nothing left to protect here.
+  useEffect(() => () => endPurchaseHold(), []);
   // Store-localized recurring prices per plan (null until the store is ready).
   const [prices, setPrices] = useState<{ monthly: string | null; yearly: string | null }>({ monthly: null, yearly: null });
   const [plan, setPlanChoice] = useState<"monthly" | "yearly">("monthly");
@@ -948,6 +964,8 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
   useEffect(() => {
     setPurchaseListener((outcome) => {
       clearPurchaseTimer();
+      // Verified or failed: the purchase is resolved.
+      endPurchaseHold();
       setPendingNote("");
       if (outcome.ok) {
         void refresh();
@@ -998,6 +1016,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     setError("");
     setPendingNote("");
     setLoading(true);
+    holdPurchase();
     const productId = plan === "yearly" ? YEARLY_PRODUCT_ID : MONTHLY_PRODUCT_ID;
     const release = () => { void releaseStorePurchase(token).catch(() => { /* lapses on its own */ }); };
 
@@ -1014,6 +1033,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
       strict = gate.strict_cross_channel_trial === true;
     } catch (e) {
       setLoading(false);
+      endPurchaseHold();
       const code = e instanceof ApiError ? storeGateErrorCode(e.status, e.code) : "check_failed";
       setError(t(`subscribe.iap_${code}`));
       void refresh();
@@ -1030,6 +1050,7 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     if (state !== "trial" && state !== "paid" && state !== "store_intro") {
       release();
       setLoading(false);
+      endPurchaseHold();
       setError(state === "unavailable" ? t("subscribe.iap_trial_used") : t("subscribe.iap_loading"));
       readPrices();
       return;
@@ -1039,6 +1060,8 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
     clearPurchaseTimer();
     purchaseTimer.current = setTimeout(() => {
       purchaseTimer.current = null;
+      // The spinner stops and the pending note shows; the purchase hold
+      // stays until the purchase is resolved.
       setLoading(false);
       setPendingNote(t("subscribe.purchase_pending"));
       // The purchase may still land; pick up whatever the backend knows.
@@ -1053,11 +1076,13 @@ function NativeMembershipView({ onSignOut, onAccountSettings, onContinue }: { on
         // Closing the store sheet is a choice, not an error.
         clearPurchaseTimer();
         setLoading(false);
+        endPurchaseHold();
         release();
       }
     } catch (e) {
       clearPurchaseTimer();
       setLoading(false);
+      endPurchaseHold();
       release();
       setError(e instanceof NativeIAPError ? t(`subscribe.iap_${e.code}`) : t("subscribe.purchase_not_started"));
     }
