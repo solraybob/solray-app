@@ -1095,10 +1095,27 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
     try { localStorage.setItem(MIGRATION_FLAG, "1"); } catch { /* retry next sync */ }
   }
 
-  // 4. Save the unified id list, server order first, without anything
-  //    deleted here meanwhile (deletion marks are read now, at the end).
+  // 4. Conversations started on this device while this sync was reading
+  //    (not in the snapshot it began from): kept, and their unsent turns
+  //    uploaded now, whether or not Chat is still open to flush them
+  //    (Codex out13-5 #1). Never one deleted here meanwhile.
+  const fetchedSet = new Set(fetched);
+  const addedSince = () => getSessionIds().filter((id) =>
+    !localIds.has(id) && !fetchedSet.has(id) && !deletedHere.has(id) && !!loadSession(id));
+  const unsentNow = getUnsent();
+  for (const id of addedSince()) {
+    if (!unsentNow.has(id)) continue;
+    const local = loadSession(id);
+    if (!local) continue;
+    await pushSessionToServer(local, token, gen);
+    live();
+  }
+
+  // 5. Save the unified id list: what was added meanwhile first (newest),
+  //    then server order, without anything deleted here meanwhile
+  //    (deletion marks are read now, at the end).
   live();
-  const allIds = Array.from(new Set(fetched)).filter((id) => !deletedHere.has(id));
+  const allIds = Array.from(new Set([...addedSince(), ...fetched])).filter((id) => !deletedHere.has(id));
   saveSessionIds(allIds);
   return allIds;
 }
