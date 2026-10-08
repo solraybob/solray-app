@@ -174,7 +174,8 @@ test("chat page: the seeded question and the Dynamics opening read /chat as a se
   assert.ok(seeded.includes('const answer = answerFromChat(data, t("chat.error_no_response"));'));
   assert.ok(seeded.includes("const next = withAnswer(seed, userMsg.id, answer);"));
   assert.ok(seeded.includes("land(next, answer.reply.crisis || answer.reply.isError ? undefined : answer.reply);"));
-  assert.ok(seeded.includes("supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt)"));
+  // (Round fifteen: failures go through the shared openingFailed.)
+  assert.ok(seeded.includes("openingFailed(err, {"));
   assert.ok(!seeded.includes("data.response || data.message"));
   const i = src.indexOf("// Auto-send the compatibility message");
   const dyn = src.slice(i, src.indexOf("// Fall through to normal init", i));
@@ -182,7 +183,8 @@ test("chat page: the seeded question and the Dynamics opening read /chat as a se
   assert.ok(dyn.includes("const next = withAnswer(newSession.messages, userMsg.id, answer);"));
   assert.ok(dyn.includes("land(next, answer.reply.crisis ? undefined : answer.reply);"));
   assert.ok(dyn.includes('if (answer.reply.isError) throw new Error("empty souls reply");'));
-  assert.ok(dyn.includes("supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt)"));
+  assert.ok(dyn.includes("openingFailed(err, {"));
+  assert.ok(src.includes("const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);"));
   // Every /chat answer in the page goes through the shared reading or the
   // send's own card handling; none keeps only the text.
   assert.equal((src.match(/data\.response \|\| data\.message/g) || []).length, 1);

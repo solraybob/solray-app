@@ -462,6 +462,42 @@ export function forgetMessage(id: string): void {
   if (cur?.st === "pending") writeStatus(id, null);
 }
 
+/**
+ * The life of one message sent to /chat, the same for every path that sends
+ * one (an ordinary send, the "Go deeper" question, a Dynamics opening), so
+ * they cannot drift apart (Codex out12-5 #1):
+ *  - begun before the message is shown or saved: pending, never uploaded;
+ *  - `answered()` when /chat answers: part of the transcript from then on;
+ *  - `refused()` on a length refusal: never uploaded, whatever happens next;
+ *  - `finish(visible)` in a finally block: a message neither answered nor
+ *    refused failed. Shown failing in its open conversation it joins the
+ *    transcript (the error note follows it); out of sight it stays out of
+ *    uploads as an interrupted message, kept, with Send again.
+ */
+export interface SendLifecycle {
+  readonly id: string;
+  readonly settled: boolean;
+  answered(): void;
+  refused(): void;
+  finish(visible: boolean): void;
+}
+
+export function beginSend(id: string): SendLifecycle {
+  markMessagePending(id);
+  let settled = false;
+  return {
+    id,
+    get settled() { return settled; },
+    answered() { if (settled) return; settled = true; settleMessage(id); },
+    refused() { settled = true; settleMessage(id, true); },
+    finish(visible: boolean) {
+      if (settled) return;
+      settled = true;
+      if (visible) settleMessage(id); else releaseMessage(id);
+    },
+  };
+}
+
 export type MessageStatus = "sending" | "interrupted" | "refused";
 
 /** The status of every marked message, for drawing the transcript. */

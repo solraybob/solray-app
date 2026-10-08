@@ -32,7 +32,8 @@ test("chat page: a too-long message returns to the composer with its transcript"
   assert.ok(src.indexOf("err.code === MESSAGE_TOO_LONG_CODE") > 0);
   // The branch drawn in the open conversation (round twelve: the refusal
   // itself is recorded first, before any screen check).
-  const i = src.indexOf("if (tooLong) {");
+  const send = src.indexOf("const sendMessage = async");
+  const i = src.indexOf("if (tooLong) {", send);
   assert.ok(i > 0);
   const block = src.slice(i, src.indexOf("return;", i));
   assert.ok(block.includes("prev.filter((m) => m.id !== userMsg.id)"));

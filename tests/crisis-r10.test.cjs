@@ -128,11 +128,12 @@ test("sync: a refused oversized message never reaches the server, so it can neve
 test("chat page: every sent message is pending until /chat settles; a too-long one is refused", () => {
   const src = page();
   const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Latest sendMessage for callbacks"));
-  assert.ok(send.indexOf("markMessagePending(userMsg.id)") < send.indexOf("setMessages(updatedMessages)"));
+  // Round fifteen: the shared send lifecycle (lib/chat-sync beginSend).
+  assert.ok(send.indexOf("const life = beginSend(userMsg.id)") < send.indexOf("setMessages(updatedMessages)"));
   const tooLong = send.slice(send.indexOf("err.code === MESSAGE_TOO_LONG_CODE"));
-  assert.ok(tooLong.indexOf("settleMessage(userMsg.id, true)") < tooLong.indexOf("prev.filter((m) => m.id !== userMsg.id)"));
+  assert.ok(tooLong.indexOf("life.refused()") < tooLong.indexOf("prev.filter((m) => m.id !== userMsg.id)"));
   const fin = send.slice(send.lastIndexOf("} finally {"));
-  assert.ok(fin.includes("settleMessage(userMsg.id)"));
+  assert.ok(fin.includes("life.finish("));
 });
 
 test("chat page: a partner refusal on a care turn draws the support card first", () => {

@@ -236,17 +236,17 @@ test("chat page: the outcome is recorded before the mounted and conversation gua
   const send = src.slice(src.indexOf("const sendMessage = async"), src.indexOf("// Takes a message without an answer"));
   // Success: settled before the conversation check, answer kept out of sight.
   const ok = send.slice(send.indexOf('"/chat",'), send.indexOf("} catch (err) {"));
-  assert.ok(ok.indexOf("settleMessage(userMsg.id);") < ok.indexOf("if (!isMountedRef.current || activeSessionRef.current !== sentSessionId)"));
+  assert.ok(ok.indexOf("life.answered();") > 0);
+  assert.ok(ok.indexOf("life.answered();") < ok.indexOf("if (!isMountedRef.current || activeSessionRef.current !== sentSessionId)"));
   assert.ok(ok.includes("updateStoredSession(sentSessionId, accountGen, (saved) => withAnswer(saved, userMsg.id, answer))"));
   // 413: refused before `if (!isMountedRef.current) return;`.
   const c = send.slice(send.indexOf("} catch (err) {"), send.lastIndexOf("} finally {"));
-  assert.ok(c.indexOf("settleMessage(userMsg.id, true)") > 0);
-  assert.ok(c.indexOf("settleMessage(userMsg.id, true)") < c.indexOf("if (!isMountedRef.current) return;"));
+  assert.ok(c.indexOf("life.refused()") > 0);
+  assert.ok(c.indexOf("life.refused()") < c.indexOf("if (!isMountedRef.current) return;"));
   // Finally: a failure out of sight is released (interrupted), not uploaded.
   const fin = send.slice(send.lastIndexOf("} finally {"));
-  assert.ok(fin.includes("if (!outcomeSettled)"));
-  assert.ok(fin.includes("releaseMessage(userMsg.id)"));
-  assert.ok(fin.indexOf("settleMessage(userMsg.id)") < fin.indexOf("releaseMessage(userMsg.id)"));
+  // (lib/chat-sync beginSend: finish(visible) settles or releases.)
+  assert.ok(fin.includes("life.finish(isMountedRef.current && activeSessionRef.current === sentSessionId && isCurrentGeneration(accountGen))"));
   // History to /chat leaves unanswered messages out; a resend replaces the old copy.
   assert.ok(send.includes("historyForServer(uploadableMessages(updatedMessages.slice(0, -1)))"));
   assert.ok(send.includes("messages.filter((m) => m.id !== opts.replaceId)"));

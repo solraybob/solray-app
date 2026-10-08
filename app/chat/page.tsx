@@ -18,7 +18,8 @@ import {
   deleteSessionOnServer,
   getSessionIds,
   loadSession,
-  markMessagePending,
+  beginSend,
+  type SendLifecycle,
   markRenamePending,
   markUnsent,
   messageStatuses,
@@ -29,7 +30,6 @@ import {
   bindChatSyncToAccount,
   saveSession,
   saveSessionIds,
-  releaseMessage,
   settleMessage,
   forgetMessage,
   syncSessionsFromServer,
@@ -687,6 +687,44 @@ function ChatPageInner() {
   );
 
   // ── Initialise session on mount ───────────────────────────────────────────
+  // A failed automatic opening (the "Go deeper" question, a Dynamics
+  // opening), handled as an ordinary send's failure: a length refusal is
+  // refused (never uploaded) and, in the open conversation, goes back to the
+  // box; a care turn's support card is drawn first; any other failure gets
+  // its note after the message. Out of sight, everything is kept in the
+  // conversation's saved copy (the refused message with Edit).
+  const openingFailed = (err: unknown, o: {
+    sid: string; life: SendLifecycle; userMsg: Message; before: Message[];
+    land: (next: Message[]) => void; note: string;
+  }) => {
+    const tooLong = err instanceof ApiError && err.code === MESSAGE_TOO_LONG_CODE;
+    if (tooLong && isCurrentGeneration(accountGen)) o.life.refused();
+    // The account changed while waiting: nothing to show or store.
+    if (isStaleAccountError(err)) return;
+    const failedAt = Date.now();
+    const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
+    const cards = support ? [support] : [];
+    const visible = isMountedRef.current && activeSessionRef.current === o.sid;
+    const note = (content: string): Message => ({
+      id: (failedAt + 2).toString(),
+      role: "assistant",
+      content,
+      timestamp: new Date().toISOString(),
+      isError: true,
+    });
+    if (tooLong && visible) {
+      o.land([...o.before, ...cards, note(t("oracle_errors.message_too_long_kept"))]);
+      setInput((prev) => composerWithUnsent(o.userMsg.content, prev));
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+    if (tooLong) {
+      o.land([...o.before, o.userMsg, ...cards]);
+      return;
+    }
+    o.land([...o.before, o.userMsg, ...cards, note(o.note)]);
+  };
+
   useEffect(() => {
     if (!token) return;
 
@@ -719,6 +757,9 @@ function ChatPageInner() {
             customName: ctx.topic,
             messages: seed,
           };
+          // The same life as an ordinary send: pending (never uploaded)
+          // until /chat answers, before it is shown or saved.
+          const life = beginSend(userMsg.id);
           persistSession(newSession);
           setMessages(seed);
           // A seeded question is never a Dynamics conversation.
@@ -744,6 +785,7 @@ function ChatPageInner() {
               method: "POST",
               body: JSON.stringify({ message: ctx.question, conversation_history: [], session_id: sid }),
             }, token);
+            life.answered();
             // Honest empty-response handling, parallel to sendMessage.
             // The previous version of this branch fell back to "I
             // hear you." which is invented Oracle copy. Caught by
@@ -756,24 +798,16 @@ function ChatPageInner() {
             const next = withAnswer(seed, userMsg.id, answer);
             land(next, answer.reply.crisis || answer.reply.isError ? undefined : answer.reply);
           } catch (err) {
-            // The account changed while waiting: nothing to show or store.
-            if (isStaleAccountError(err)) return;
             // Surface the failure as a visible error message rather
             // than silently swallowing it. Previous version left the
             // user with their seeded question and no honest signal
-            // that anything failed. A care turn's refusal carries the
-            // support card: drawn first.
-            const failedAt = Date.now();
-            const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
-            const errMsg: Message = {
-              id: (failedAt + 2).toString(),
-              role: "assistant",
-              content: t(oracleErrorKey(err) ?? "chat.error_unreachable"),
-              timestamp: new Date().toISOString(),
-              isError: true,
-            };
-            land([...seed, ...(support ? [support] : []), errMsg]);
+            // that anything failed.
+            openingFailed(err, {
+              sid, life, userMsg, before: [], land,
+              note: t(oracleErrorKey(err) ?? "chat.error_unreachable"),
+            });
           } finally {
+            life.finish(isMountedRef.current && activeSessionRef.current === sid && isCurrentGeneration(accountGen));
             if (isMountedRef.current) setSending(false);
           }
           return;
@@ -848,6 +882,8 @@ function ChatPageInner() {
               customName: fill(t("prompts.compat_session"), { name: ctx.soulName }),
               messages: [greeting, userMsg],
             };
+            // The same life as an ordinary send (see the seeded question).
+            const life = beginSend(userMsg.id);
             // The partner's chart belongs to this conversation only.
             // An unconfirmed saved person's local id is kept too: once the
             // server confirms them, the upload writes their id into this
@@ -892,6 +928,7 @@ function ChatPageInner() {
                 },
                 token
               );
+              life.answered();
               // Read as an ordinary send reads it (lib/chat-outcome): a
               // crisis or support card is kept whole and drawn without
               // streaming; a crisis turn tags the opening message too.
@@ -901,7 +938,6 @@ function ChatPageInner() {
               const next = withAnswer(newSession.messages, userMsg.id, answer);
               land(next, answer.reply.crisis ? undefined : answer.reply);
             } catch (err) {
-              if (isStaleAccountError(err)) return;
               // The previous version of this branch shipped an
               // Oracle-flavored fallback string for the souls compat
               // flow that asserted vague mirror-energy-grow content
@@ -910,20 +946,14 @@ function ChatPageInner() {
               // readings as chart-grounded. Now surfaces a visible
               // error message in the same isError style as the main
               // chat path. Caught by Codex audit P1.1.
-              // A care turn's refusal carries the support card: drawn first.
-              const failedAt = Date.now();
-              const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
-              const errMsg: Message = {
-                id: (failedAt + 2).toString(),
-                role: "assistant",
-                content: oracleErrorKey(err)
+              openingFailed(err, {
+                sid, life, userMsg, before: [greeting], land,
+                note: oracleErrorKey(err)
                   ? t(oracleErrorKey(err) as string)
                   : fill(t("prompts.compat_failed"), { name: ctx.soulName }),
-                timestamp: new Date().toISOString(),
-                isError: true,
-              };
-              land([...newSession.messages, ...(support ? [support] : []), errMsg]);
+              });
             } finally {
+              life.finish(isMountedRef.current && activeSessionRef.current === sid && isCurrentGeneration(accountGen));
               if (isMountedRef.current) setSending(false);
             }
             return;
@@ -1251,12 +1281,10 @@ function ChatPageInner() {
     // the server refuses (too long) must never come back through sync.
     // Stored with the cached conversation, so leaving Chat or closing the
     // app before the answer keeps it out too (lib/chat-sync).
-    markMessagePending(userMsg.id);
+    const life = beginSend(userMsg.id);
     // Sending an interrupted message again: the new one replaces it.
     const baseMessages = opts?.replaceId ? messages.filter((m) => m.id !== opts.replaceId) : messages;
     if (opts?.replaceId) forgetMessage(opts.replaceId);
-    // Whether the outcome was settled below (else `finally` decides).
-    let outcomeSettled = false;
 
     const updatedMessages = [...baseMessages, userMsg];
     setMessages(updatedMessages);
@@ -1297,8 +1325,7 @@ function ChatPageInner() {
         token
       );
       // Answered: part of the transcript from now on.
-      settleMessage(userMsg.id);
-      outcomeSettled = true;
+      life.answered();
       // The active conversation changed while waiting, or the member left
       // Chat: do not append this reply into a different session; it goes
       // into the saved copy of its own conversation instead of being lost.
@@ -1374,8 +1401,7 @@ function ChatPageInner() {
       // (Under the account it was sent from; after an account change the
       // old account's copy keeps it as an interrupted message, out of uploads.)
       if (tooLong && isCurrentGeneration(accountGen)) {
-        settleMessage(userMsg.id, true);
-        outcomeSettled = true;
+        life.refused();
       }
       // The support card a care turn's refusal carries (detail.support).
       const refusalSupport = tooLong ? supportFromRefusal((err as ApiError).detail) : null;
@@ -1552,13 +1578,7 @@ function ChatPageInner() {
       // conversation, or the account changed), nobody saw it fail: it stays
       // out of uploads as an interrupted message, kept and shown with a
       // way to send it again.
-      if (!outcomeSettled) {
-        if (isMountedRef.current && activeSessionRef.current === sentSessionId && isCurrentGeneration(accountGen)) {
-          settleMessage(userMsg.id);
-        } else {
-          releaseMessage(userMsg.id);
-        }
-      }
+      life.finish(isMountedRef.current && activeSessionRef.current === sentSessionId && isCurrentGeneration(accountGen));
       sendingRef.current = false;
       if (isMountedRef.current) setSending(false);
     }
