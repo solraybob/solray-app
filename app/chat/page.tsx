@@ -24,6 +24,8 @@ import {
   messageStatuses,
   noteNewSession,
   pushSessionToServer,
+  removeCachedSession,
+  storeTranscript,
   bindChatSyncToAccount,
   saveSession,
   saveSessionIds,
@@ -746,40 +748,31 @@ function ChatPageInner() {
             // The previous version of this branch fell back to "I
             // hear you." which is invented Oracle copy. Caught by
             // Codex audit P2.4.
-            const content = data.response || data.message;
-            if (!content) {
-              const errMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content: t("chat.error_no_response"),
-                timestamp: new Date().toISOString(),
-                isError: true,
-              };
-              land([...seed, errMsg]);
-              return;
-            }
-            const reply: Message = {
-              id: (Date.now() + 1).toString(),
-              role: "assistant",
-              content,
-              timestamp: new Date().toISOString(),
-            };
-            land([...seed, reply], reply);
+            // The same reading of the answer as an ordinary send
+            // (lib/chat-outcome): a crisis or support card is kept whole,
+            // with its call and text buttons, and a crisis turn tags the
+            // question too. Only the Oracle's own words stream.
+            const answer = answerFromChat(data, t("chat.error_no_response"));
+            const next = withAnswer(seed, userMsg.id, answer);
+            land(next, answer.reply.crisis || answer.reply.isError ? undefined : answer.reply);
           } catch (err) {
             // The account changed while waiting: nothing to show or store.
             if (isStaleAccountError(err)) return;
             // Surface the failure as a visible error message rather
             // than silently swallowing it. Previous version left the
             // user with their seeded question and no honest signal
-            // that anything failed.
+            // that anything failed. A care turn's refusal carries the
+            // support card: drawn first.
+            const failedAt = Date.now();
+            const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
             const errMsg: Message = {
-              id: (Date.now() + 1).toString(),
+              id: (failedAt + 2).toString(),
               role: "assistant",
               content: t(oracleErrorKey(err) ?? "chat.error_unreachable"),
               timestamp: new Date().toISOString(),
               isError: true,
             };
-            land([...seed, errMsg]);
+            land([...seed, ...(support ? [support] : []), errMsg]);
           } finally {
             if (isMountedRef.current) setSending(false);
           }
@@ -873,13 +866,12 @@ function ChatPageInner() {
             // Same guard as a normal send: if another conversation is open by
             // the time the reading arrives, it is stored with its own
             // conversation, never appended to the one on screen.
-            const land = (extra: Message, stream: boolean) => {
-              const next = [...newSession.messages, extra];
+            const land = (next: Message[], stream?: Message) => {
               if (activeSessionRef.current === sid) {
                 setMessages(next);
                 if (stream) {
                   setStreamedLength(0);
-                  setStreamingId(extra.id);
+                  setStreamingId(stream.id);
                 }
               }
               persistSession({ ...newSession, messages: next });
@@ -900,15 +892,14 @@ function ChatPageInner() {
                 },
                 token
               );
-              const reply: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content: data.response || data.message || "",
-                timestamp: new Date().toISOString(),
-              };
+              // Read as an ordinary send reads it (lib/chat-outcome): a
+              // crisis or support card is kept whole and drawn without
+              // streaming; a crisis turn tags the opening message too.
+              const answer = answerFromChat(data, t("chat.error_no_response"));
               // An empty reply is a failure, not a license to invent one.
-              if (!reply.content) throw new Error("empty souls reply");
-              land(reply, true);
+              if (answer.reply.isError) throw new Error("empty souls reply");
+              const next = withAnswer(newSession.messages, userMsg.id, answer);
+              land(next, answer.reply.crisis ? undefined : answer.reply);
             } catch (err) {
               if (isStaleAccountError(err)) return;
               // The previous version of this branch shipped an
@@ -919,8 +910,11 @@ function ChatPageInner() {
               // readings as chart-grounded. Now surfaces a visible
               // error message in the same isError style as the main
               // chat path. Caught by Codex audit P1.1.
+              // A care turn's refusal carries the support card: drawn first.
+              const failedAt = Date.now();
+              const support = supportFromRefusal(err instanceof ApiError ? err.detail : null, failedAt);
               const errMsg: Message = {
-                id: (Date.now() + 1).toString(),
+                id: (failedAt + 2).toString(),
                 role: "assistant",
                 content: oracleErrorKey(err)
                   ? t(oracleErrorKey(err) as string)
@@ -928,7 +922,7 @@ function ChatPageInner() {
                 timestamp: new Date().toISOString(),
                 isError: true,
               };
-              land(errMsg, false);
+              land([...newSession.messages, ...(support ? [support] : []), errMsg]);
             } finally {
               if (isMountedRef.current) setSending(false);
             }
@@ -1184,7 +1178,7 @@ function ChatPageInner() {
       const prevIds = getSessionIds();
       // Local removal first (instant UX), then propagate to server so the
       // session doesn't reappear on the next sync from another device.
-      try { localStorage.removeItem(accountKey(`solray_chat_${sid}`)); } catch { /* ignore */ }
+      removeCachedSession(sid);
       setSoulCtx(sid, null);
       const ids = prevIds.filter((id) => id !== sid);
       saveSessionIds(ids);
@@ -1197,7 +1191,7 @@ function ChatPageInner() {
         const restore = () => {
           if (!acct.live) return;
           if (snapshot) {
-            try { localStorage.setItem(accountKey(`solray_chat_${sid}`), JSON.stringify(snapshot)); } catch { /* ignore */ }
+            storeTranscript(snapshot);
             markUnsent(sid);
           }
           const current = getSessionIds();
