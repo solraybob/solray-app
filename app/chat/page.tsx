@@ -426,6 +426,40 @@ function ChatPageInner() {
   // for the update reload.
   const voiceDraftsRef = useRef<Map<string, { text: string; transcript: string }>>(new Map());
   useEffect(() => registerDraftSource(() => voiceDraftsRef.current.size > 0), []);
+  // Voice words whose conversation is gone (deleted here or elsewhere
+  // before they arrived, or while they waited): offered to the member
+  // wherever they are, to put in this box or to discard, never sent on
+  // their own (Codex out16-5 #1). A draft until one of the two is chosen.
+  const [voiceOrphan, setVoiceOrphan] = useState<{ text: string; transcript: string } | null>(null);
+  const voiceOrphanRef = useRef<{ text: string; transcript: string } | null>(null);
+  voiceOrphanRef.current = voiceOrphan;
+  useEffect(() => registerDraftSource(() => voiceOrphanRef.current !== null), []);
+  const offerOrphanVoice = (w: { text: string; transcript: string }) => {
+    setVoiceOrphan((prev) => (prev
+      ? { text: `${prev.text} ${w.text}`, transcript: `${prev.transcript} ${w.transcript}` }
+      : w));
+  };
+  // A conversation that is still somewhere the member can open it: cached
+  // here, or evicted to make room (read back from the server on opening).
+  const conversationExists = (sid: string) => !!loadSession(sid) || !!getEvictedSummary(sid);
+  // Words waiting for a conversation that is gone become the offer above.
+  const parkedToOrphan = (sid: string) => {
+    const parked = voiceDraftsRef.current.get(sid);
+    if (!parked) return false;
+    voiceDraftsRef.current.delete(sid);
+    offerOrphanVoice(parked);
+    setChatNotice((n) => (n?.kind === "voice_elsewhere" && n.target === sid ? null : n));
+    return true;
+  };
+  const recoverOrphanVoice = () => {
+    const w = voiceOrphanRef.current;
+    if (!w) return;
+    setVoiceOrphan(null);
+    setInput((prev) => composerWithUnsent(w.text, prev));
+    lastTranscriptRef.current = w.transcript;
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+  const discardOrphanVoice = () => setVoiceOrphan(null);
   // Back in the conversation the words were spoken in: they go into its box.
   useEffect(() => {
     const d = voiceDraftsRef.current.get(sessionId);
@@ -1335,6 +1369,8 @@ function ChatPageInner() {
       // session doesn't reappear on the next sync from another device.
       removeCachedSession(sid);
       setSoulCtx(sid, null);
+      // Voice words waiting for this conversation: offered to keep or discard.
+      parkedToOrphan(sid);
       const ids = prevIds.filter((id) => id !== sid);
       saveSessionIds(ids);
       setPastSessions((prev) => prev.filter((s) => s.sessionId !== sid));
@@ -1898,6 +1934,11 @@ function ChatPageInner() {
             setMessages((prev) => [...prev, turn.user as Message, turn.card as Message]);
             return;
           }
+        } else if (!conversationExists(spokenIn)) {
+          // Deleted before the words arrived: nowhere to park them. Offered
+          // here instead, to put in this box or discard.
+          offerOrphanVoice({ text: transcript, transcript });
+          return;
         } else {
           const prev = voiceDraftsRef.current.get(spokenIn);
           voiceDraftsRef.current.set(spokenIn, prev
@@ -2593,6 +2634,32 @@ function ChatPageInner() {
         {/* Input */}
         <div className="fixed bottom-0 left-0 right-0 border-t px-5 pt-3" style={{ paddingBottom: "calc(80px + var(--sab, 0px))", background: "rgb(var(--rgb-bg-deep))", borderColor: "rgb(var(--rgb-border))" }}>
           <div className="max-w-lg lg:max-w-[620px] mx-auto">
+            {voiceOrphan && (
+              <div
+                role="status"
+                className="mb-3 rounded-2xl px-4 py-3"
+                style={{ background: "rgb(var(--rgb-card))", border: "1px solid rgb(var(--rgb-border))" }}
+              >
+                <p className="font-body text-text-primary text-[15px] leading-relaxed">
+                  {t("chat.voice_orphan")}
+                </p>
+                <div className="flex items-center gap-5 mt-2">
+                  <button
+                    onClick={recoverOrphanVoice}
+                    className="font-body font-bold text-[14px] rounded-full px-5"
+                    style={{ minHeight: 40, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}
+                  >
+                    {t("chat.voice_orphan_use")}
+                  </button>
+                  <button
+                    onClick={discardOrphanVoice}
+                    className="font-body text-[15px] text-text-secondary hover:opacity-80 transition-opacity"
+                  >
+                    {t("chat.voice_orphan_discard")}
+                  </button>
+                </div>
+              </div>
+            )}
             {chatNotice && (chatNotice.kind === "closed" || chatNotice.sessionId === sessionId) && (
               <div
                 role="status"
@@ -2632,7 +2699,14 @@ function ChatPageInner() {
                   )}
                   {chatNotice.kind === "voice_elsewhere" && (
                     <button
-                      onClick={() => { const to = chatNotice.target; setChatNotice(null); loadPastSession(to); }}
+                      onClick={() => {
+                        const to = chatNotice.target;
+                        setChatNotice(null);
+                        // Gone meanwhile (deleted on another device): its
+                        // words become the offer to keep or discard.
+                        if (!conversationExists(to)) { parkedToOrphan(to); return; }
+                        loadPastSession(to);
+                      }}
                       disabled={sending}
                       className="font-body font-bold text-[14px] rounded-full px-5"
                       style={{ minHeight: 40, background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))" }}

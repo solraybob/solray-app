@@ -160,6 +160,9 @@
     "consent_card_body": "Acepta el procesamiento con IA para recibir tu lectura del día. El cielo y tus ciclos están aquí de todos modos."
   },
   "chat": {
+    "voice_orphan": "La conversación en la que grabaste tu mensaje de voz ya no existe. Puedes poner las palabras en la caja de mensaje de aquí o descartarlas.",
+    "voice_orphan_use": "Poner en la caja de mensaje",
+    "voice_orphan_discard": "Descartar",
     "voice_elsewhere": "Tu mensaje de voz te espera en la conversación en la que lo grabaste.",
     "voice_elsewhere_crisis": "Lo que dijiste en tu mensaje de voz importa. Las líneas de apoyo te esperan en la conversación en la que lo grabaste.",
     "voice_open_conversation": "Abrirla",

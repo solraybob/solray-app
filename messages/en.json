@@ -255,6 +255,9 @@
     "pisces": "Pisces"
   },
   "chat": {
+    "voice_orphan": "The conversation you recorded your voice message in is gone. You can put the words in the message box here, or discard them.",
+    "voice_orphan_use": "Put in the message box",
+    "voice_orphan_discard": "Discard",
     "voice_elsewhere": "Your voice message is waiting in the conversation you recorded it in.",
     "voice_elsewhere_crisis": "What you said in your voice message matters. Support lines are waiting in the conversation you recorded it in.",
     "voice_open_conversation": "Open it",
