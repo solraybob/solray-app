@@ -24,7 +24,7 @@
 
 import { mergeMessages, sameTranscript } from "./chat-merge";
 import { withSoulBackfill } from "./chat-soul";
-import { accountKey, getAuthGeneration, isCurrentGeneration, StaleAccountError } from "./account-session";
+import { accountKey, getAuthGeneration, isCurrentGeneration, onAccountSignOut, StaleAccountError } from "./account-session";
 import { trackRequest } from "./api";
 import type { CrisisCardData } from "./crisis-card";
 
@@ -63,7 +63,21 @@ const apiUrl = () => (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // ─── Device cache ──────────────────────────────────────────────────────────
 
+// Transcripts (and the id list) whose newest write could not be stored
+// (quota exhausted, storage disabled): kept here, by their account-scoped
+// key, and read before storage, so the open conversation and every queued
+// upload still see the newest turns (Codex out11-5 #1). An entry is dropped
+// as soon as a write of it reaches storage again. Keys carry the account,
+// and everything is forgotten when an account signs out.
+const memTranscripts = new Map<string, StoredSession>();
+const memSessionIds = new Map<string, string[]>();
+onAccountSignOut(() => { memTranscripts.clear(); memSessionIds.clear(); });
+
+const transcriptKey = (sessionId: string) => accountKey(`solray_chat_${sessionId}`);
+
 export function getSessionIds(): string[] {
+  const mem = memSessionIds.get(accountKey("solray_chat_sessions"));
+  if (mem) return [...mem];
   try {
     const v = JSON.parse(localStorage.getItem(accountKey("solray_chat_sessions")) || "[]");
     return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
@@ -73,29 +87,125 @@ export function getSessionIds(): string[] {
 }
 
 export function saveSessionIds(ids: string[]) {
-  try { localStorage.setItem(accountKey("solray_chat_sessions"), JSON.stringify(ids)); } catch { /* best-effort */ }
+  const key = accountKey("solray_chat_sessions");
+  try {
+    localStorage.setItem(key, JSON.stringify(ids));
+    memSessionIds.delete(key);
+  } catch {
+    memSessionIds.set(key, [...ids]);
+  }
 }
 
 export function loadSession(sessionId: string): StoredSession | null {
+  const key = transcriptKey(sessionId);
+  const mem = memTranscripts.get(key);
+  if (mem) return mem;
   try {
-    const raw = localStorage.getItem(accountKey(`solray_chat_${sessionId}`));
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function saveSession(session: StoredSession) {
-  // Best-effort: quota exhaustion or disabled storage must never break the
-  // conversation itself; in-memory state and the server sync still work.
-  try {
-    localStorage.setItem(accountKey(`solray_chat_${session.sessionId}`), JSON.stringify(session));
-    const ids = getSessionIds();
-    if (!ids.includes(session.sessionId)) {
-      ids.unshift(session.sessionId);
-      saveSessionIds(ids);
+/** Write one transcript (memory first, then storage), without touching the
+ *  id list. With `evict`, a full storage first frees space it can rebuild
+ *  (freeStorageSpace) and tries once more. Returns true when stored. */
+export function storeTranscript(session: StoredSession, opts: { evict?: boolean } = {}): boolean {
+  const key = transcriptKey(session.sessionId);
+  // Memory first: whatever happens to storage, the newest copy is readable.
+  memTranscripts.set(key, session);
+  const raw = JSON.stringify(session);
+  const attempt = () => {
+    try {
+      localStorage.setItem(key, raw);
+      memTranscripts.delete(key);
+      return true;
+    } catch {
+      return false;
     }
-  } catch { /* memory + server only */ }
+  };
+  if (attempt()) return true;
+  if (opts.evict === false) return false;
+  return freeStorageSpace(session.sessionId, attempt);
+}
+
+/** Forget one cached transcript (memory and storage). */
+export function removeCachedSession(sessionId: string): void {
+  const key = transcriptKey(sessionId);
+  memTranscripts.delete(key);
+  try { localStorage.removeItem(key); } catch { /* gone is gone */ }
+}
+
+export function saveSession(session: StoredSession, opts: { evict?: boolean } = {}) {
+  // Best-effort storage: quota exhaustion or disabled storage must never
+  // break the conversation itself or its upload (memory holds the newest).
+  storeTranscript(session, opts);
+  const ids = getSessionIds();
+  if (!ids.includes(session.sessionId)) {
+    ids.unshift(session.sessionId);
+    saveSessionIds(ids);
+  }
+}
+
+/**
+ * Storage is full. Frees only what can be rebuilt, retrying the write after
+ * each step, and stops as soon as it fits:
+ *  1. this account's daily forecast and week caches from before yesterday
+ *     (dated copies the app never reads again; today's are kept);
+ *  2. this account's oldest cached transcripts that the server already holds
+ *     whole: confirmed there, nothing unsent, no rename waiting, no message
+ *     kept only here (pending, interrupted, refused), not being deleted, and
+ *     not the one being written. Their sync record is dropped too, so the
+ *     next sync reads them back from the server (into memory if storage is
+ *     still full). At most eight per write.
+ * Nothing else is touched: charts, other members' namespaces and anything
+ * not yet on the server stay.
+ */
+const EVICT_MAX_TRANSCRIPTS = 8;
+function freeStorageSpace(writingId: string, retry: () => boolean): boolean {
+  try {
+    const now = new Date();
+    const y = new Date(now.getTime() - 86_400_000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const localY = `${y.getFullYear()}-${pad(y.getMonth() + 1)}-${pad(y.getDate())}`;
+    const utcY = y.toISOString().split("T")[0];
+    const cutoff = localY < utcY ? localY : utcY;
+    const suffix = accountKey("");
+    const stale: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.endsWith(suffix)) continue;
+      const base = k.slice(0, k.length - suffix.length);
+      const m = /^solray_(?:forecast|week_[a-z]+)_(\d{4}-\d{2}-\d{2})$/.exec(base);
+      if (m && m[1] < cutoff) stale.push(k);
+    }
+    for (const k of stale) { try { localStorage.removeItem(k); } catch { /* ignore */ } }
+    if (stale.length && retry()) return true;
+  } catch { /* storage unreadable: nothing to free */ }
+
+  const unsent = getUnsent();
+  const renames = getPendingRenames();
+  const confirmed = getServerConfirmed();
+  const statuses = readStatuses();
+  const ids = getSessionIds();
+  let evicted = 0;
+  // The list runs newest first: the oldest are at its end.
+  for (let i = ids.length - 1; i >= 0 && evicted < EVICT_MAX_TRANSCRIPTS; i--) {
+    const id = ids[i];
+    if (id === writingId || !confirmed.has(id) || unsent.has(id) || renames.has(id) || deletedHere.has(id)) continue;
+    const key = transcriptKey(id);
+    if (memTranscripts.has(key)) continue;   // its newest copy is not in storage
+    let held: StoredSession | null = null;
+    try { const raw = localStorage.getItem(key); held = raw ? JSON.parse(raw) : null; } catch { held = null; }
+    if (!held) continue;
+    if ((held.messages || []).some((m) => m && m.id in statuses)) continue;
+    try { localStorage.removeItem(key); } catch { continue; }
+    dropSessionLocalMeta(id);
+    evicted++;
+    if (retry()) return true;
+  }
+  return false;
 }
 
 // Ids the server has confirmed holding (an upload succeeded, or the id
@@ -104,7 +214,14 @@ export function saveSession(session: StoredSession) {
 // upload failed was never confirmed, so it is re-uploaded, never deleted.
 const SERVER_CONFIRMED_KEY = "solray_chat_server_confirmed";
 
+// Same rule for the small sync records (unsent, confirmed, renames): a
+// write storage refuses is kept in memory for this app session.
+const memSets = new Map<string, string[]>();
+onAccountSignOut(() => { memSets.clear(); });
+
 function readSet(key: string): Set<string> {
+  const mem = memSets.get(accountKey(key));
+  if (mem) return new Set(mem);
   try {
     const arr = JSON.parse(localStorage.getItem(accountKey(key)) || "[]");
     return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
@@ -113,7 +230,13 @@ function readSet(key: string): Set<string> {
   }
 }
 function writeSet(key: string, ids: Set<string>) {
-  try { localStorage.setItem(accountKey(key), JSON.stringify(Array.from(ids))); } catch { /* best-effort */ }
+  const k = accountKey(key);
+  try {
+    localStorage.setItem(k, JSON.stringify(Array.from(ids)));
+    memSets.delete(k);
+  } catch {
+    memSets.set(k, Array.from(ids));
+  }
 }
 
 export function getServerConfirmed(): Set<string> { return readSet(SERVER_CONFIRMED_KEY); }
@@ -695,12 +818,15 @@ function storeServerCopy(sessionId: string, full: Record<string, unknown>): bool
   const serverMsgs: ChatMessage[] = Array.isArray(full.messages) ? full.messages as ChatMessage[] : [];
   resolveFromServer(serverMsgs);
   const merged = mergeMessages(serverMsgs, local?.messages || []);
+  // A copy read from the server never pushes other cached copies out (they
+  // would only be read back on the next sync): when storage is full it is
+  // kept in memory.
   saveSession({
     sessionId: typeof full.session_id === "string" && full.session_id ? full.session_id : sessionId,
     date: (typeof full.date_label === "string" && full.date_label) || local?.date || "",
     customName: serverName(sessionId, full, local?.customName),
     messages: merged,
-  });
+  }, { evict: false });
   if (typeof full.last_message_at === "string" && full.last_message_at) {
     setSessionLocalMeta(sessionId, full.last_message_at, typeof full.revision === "number" ? full.revision : undefined);
   }
@@ -789,7 +915,7 @@ export async function syncSessionsFromServer(token: string, gen: number): Promis
       const got = await readServerSession(base, headers, localId, live);
       if (deletedHere.has(localId)) continue;
       if (got.kind === "gone") {
-        try { localStorage.removeItem(accountKey(`solray_chat_${localId}`)); } catch { /* ignore */ }
+        removeCachedSession(localId);
         dropSessionLocalMeta(localId);
         unmarkServerConfirmed(localId);
         clearUnsent(localId);
