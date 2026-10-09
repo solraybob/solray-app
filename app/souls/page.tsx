@@ -762,9 +762,8 @@ export default function SoulsPage() {
       name: c.soul.name,
       photo: c.soul.profile_photo || null,
       connected: true,
-      detail: [c.soul.sun_sign ? `☉ ${tx(c.soul.sun_sign, lang)}` : null, c.soul.hd_type ? tx(c.soul.hd_type, lang) : null]
-        .filter(Boolean)
-        .join(" · ") || t("souls.connected"),
+      // The card names the person only; their sign and type wait inside (9 Oct 2026).
+      detail: t("souls.connected"),
       onOpen: () => setActiveSoul(c),
     })),
     ...savedPeople.map((person) => ({
@@ -772,9 +771,7 @@ export default function SoulsPage() {
       name: person.name,
       photo: null as string | null,
       connected: false,
-      detail: [person.profile?.sun_sign ? `☉ ${tx(person.profile.sun_sign, lang)}` : null, person.profile?.hd_type ? tx(person.profile.hd_type, lang) : null]
-        .filter(Boolean)
-        .join(" · ") || t("souls.saved"),
+      detail: t("souls.saved"),
       onOpen: () => {
         const partner: BondPartner = { kind: "saved", person };
         if (bondLens === "family") {
