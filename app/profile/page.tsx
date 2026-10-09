@@ -248,7 +248,13 @@ function IconStar({ color = "currentColor" }: { color?: string }) {
 // Soul Map Radar, 7 axes, heptagonal polygon
 
 const SOUL_AXIS_KEYS: (keyof RadarValues)[] = ["fire", "earth", "air", "water", "cardinal", "fixed", "mutable"];
-const SOUL_AXIS_LABELS = ["Fire", "Earth", "Air", "Water", "Cardinal", "Fixed", "Mutable"] as const;
+// Plain names for the seven axes (9 Oct 2026). The values are the same
+// element and modality balance as before; only the words changed.
+const SOUL_AXIS_LABELS = ["Drive", "Grounding", "Thought", "Feeling", "Starting", "Holding", "Adapting"] as const;
+const SOUL_AXIS_ES: Record<string, string> = {
+  Drive: "Impulso", Grounding: "Arraigo", Thought: "Pensamiento", Feeling: "Sentimiento",
+  Starting: "Iniciar", Holding: "Sostener", Adapting: "Adaptar",
+};
 
 function getPoint7(cx: number, cy: number, radius: number, index: number): [number, number] {
   const angle = (Math.PI * 2 * index) / 7 - Math.PI / 2;
@@ -442,7 +448,7 @@ function SoulMapRadarChart({ radar, radarDisplay }: SoulMapRadarChartProps) {
               letterSpacing="0.16em"
               style={{ textTransform: "uppercase" }}
             >
-              {tx(label, lang)}
+              {lang && lang.startsWith("es") ? SOUL_AXIS_ES[label] : label}
             </text>
             <text
               x={lx}
@@ -1207,26 +1213,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {profile && (() => {
-                  // mundane keeps identity to one quiet line. Three coloured
-                  // pills read as three competing objects; the same three facts
-                  // separated by middots read as one sentence about a person.
-                  const marks = [
-                    profile.sunSign ? `${t(`signs.${profile.sunSign.toLowerCase()}`)} ${t("planets.sun")}` : null,
-                    profile.hdType ? tx(profile.hdType, lang) : null,
-                    profile.hdProfile || null,
-                  ].filter(Boolean) as string[];
-                  if (!marks.length) return null;
-                  return (
-                    <p
-                      className="font-body"
-                      style={{ fontSize: 14.5, lineHeight: 1.5, marginTop: 14,
-                               color: "rgb(var(--rgb-text-secondary))" }}
-                    >
-                      {marks.join(" · ")}
-                    </p>
-                  );
-                })()}
 
                 <p
                   className="font-body"

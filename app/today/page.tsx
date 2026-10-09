@@ -137,7 +137,7 @@ interface DeckCycle {
   summary: string | null;
 }
 
-// One line naming the day: the aspect the reading is built on, and where the
+// Unused since 9 Oct 2026 (plain Now card). One line naming the day: the aspect the reading is built on, and where the
 // Moon is. This replaces a separate moon card and a separate tag chip.
 function skyLine(f: { tags?: { astrology?: string }; planets: Planet[] }, t: (key: string) => string): string {
   const moon = f.planets.find((pl) => pl.name === "Moon");
@@ -1937,20 +1937,9 @@ export default function TodayPage() {
                   the dots under the bar. Sky Now sits after this box, which is
                   what puts it below the fold. */}
               <div ref={deckBoxRef} className="sol-today-box" style={{ display: "flex", flexDirection: "column" }}>
-              <p
-                className="font-body"
-                style={{
-                  fontSize: 15,
-                  lineHeight: 1.45,
-                  color: "rgb(var(--rgb-text-muted))",
-                  margin: "12px auto 0",
-                  textAlign: "center",
-                  maxWidth: "26em",
-                  textWrap: "balance",
-                } as React.CSSProperties}
-              >
-                {skyLine(forecast, t)}
-              </p>
+              {/* The sky line (the day's aspect and the Moon's sign) used to sit
+                  here. The Now card speaks in plain words, so the line above it
+                  does too: nothing. Sky Now below still carries the positions. */}
 
               {/* .deckwrap{flex:1 1 auto;min-height:0;display:flex;
                   flex-direction:column;justify-content:center} */}

@@ -10,7 +10,7 @@
 // shows the plain words when they arrive; until then, and whenever the plain
 // card is missing or was rejected, the card keeps today's words. "Go deeper"
 // always hands the Oracle the FULL reading either way.
-export const PLAIN_NOW_CARD_FOR_MEMBERS = false;
+export const PLAIN_NOW_CARD_FOR_MEMBERS = true;
 
 export type PlainNowCardStatus = "ok" | "no_reading" | "pending" | "rejected" | "unavailable";
 

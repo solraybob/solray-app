@@ -58,11 +58,11 @@ test("subscribe: a trial waiting for the email does not wear the Trial badge; da
   for (const l of ["en", "es"]) assert.ok(JSON.parse(read(`messages/${l}.json`)).subscribe.badge_awaiting_email, l);
 });
 
-test("Today's sky line names the Moon in the member's language", () => {
+test("Today's sky line (kept for its helper, no longer shown above the card) names the Moon in the member's language", () => {
   const src = read("app/today/page.tsx");
   assert.doesNotMatch(src, /`Moon in \$\{moon\.sign\}`/);
   assert.match(src, /t\("moon\.moon_in"\)\} \$\{t\(`signs\.\$\{moon\.sign\.toLowerCase\(\)\}`\)\}/);
-  assert.match(src, /\{skyLine\(forecast, t\)\}/);
+  assert.doesNotMatch(src, /\{skyLine\(forecast, t\)\}/);
   assert.equal(JSON.parse(read("messages/es.json")).moon.moon_in, "Luna en");
 });
 

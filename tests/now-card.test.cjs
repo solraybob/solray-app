@@ -18,9 +18,9 @@ const forecast = {
 const plain = { status: "ok", date: "2026-10-07", language: "en",
   card_title: "Slow is the fast way", card_body: "You may feel pushed to answer. Take one breath first." };
 
-test("flag is off: members keep today's title and the reading's opening", () => {
-  assert.equal(nc.PLAIN_NOW_CARD_FOR_MEMBERS, false);
-  const c = nc.nowCardContent(forecast, plain);
+test("flag is on for members (9 Oct 2026); off, members keep today's title and the reading's opening", () => {
+  assert.equal(nc.PLAIN_NOW_CARD_FOR_MEMBERS, true);
+  const c = nc.nowCardContent(forecast, plain, false);
   assert.deepEqual(c, { title: forecast.day_title, body: nc.firstLines(forecast.reading), plain: false });
   assert.equal(c.body, "Your Virgo Sun wants every detail settled. Mars squares your Moon today.");
 });
