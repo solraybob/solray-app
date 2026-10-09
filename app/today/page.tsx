@@ -1295,6 +1295,9 @@ export default function TodayPage() {
         localStorage.setItem(accountKey(`solray_bt_dismissed_${insight.id}`), "1");
         localStorage.removeItem(accountKey("solray_bt_active"));
       } catch (_) {}
+      // The server is the record (9 Oct 2026): X used to be remembered on this
+      // device only, so signing in again or on another phone brought it back.
+      markInsightSeen(insight.id);
     }
     setShowBreakthrough(false);
   };
