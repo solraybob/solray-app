@@ -279,6 +279,37 @@ input, textarea {
   background: transparent;
 }
 
+/* iOS zooms the page into any input under 16px and never zooms back out.
+   Body text is 17px so inputs inherit enough today; this is the floor so a
+   future smaller input can never trigger the zoom. */
+@media (pointer: coarse) {
+  input, textarea, select { font-size: max(16px, 1em); }
+}
+
+/* Native feel on touch.
+   touch-action: manipulation drops the double-tap-zoom wait, so a tap fires
+   the moment the finger lifts instead of up to 300ms later.
+   user-select / touch-callout: holding a finger on a control must not select
+   its label or pop the copy/share callout. Content text stays selectable;
+   this is controls only. */
+button, a, [role="button"], summary, label {
+  touch-action: manipulation;
+}
+button, [role="button"], summary {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Motion tokens. Strong curves: the built-in CSS easings are too weak for UI.
+   --ease-out for anything entering or responding to a touch,
+   --ease-in-out for things moving on screen, --ease-drawer for sheets. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;

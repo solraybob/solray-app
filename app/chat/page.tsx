@@ -2714,7 +2714,7 @@ function ChatPageInner() {
                   disabled={sending || transcribing}
                   aria-label={isRecording ? t("chat.stop_voice") : t("chat.start_voice")}
                   aria-pressed={isRecording}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-50 shrink-0 self-end"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition duration-200 active:scale-95 disabled:opacity-50 shrink-0 self-end"
                   style={{
                     background: isRecording ? "rgb(var(--rgb-ember) / 0.12)" : "transparent",
                     border: "1px solid rgb(var(--rgb-border))",
@@ -2743,7 +2743,7 @@ function ChatPageInner() {
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || sending}
-                className="h-11 px-2 flex items-center justify-center transition-all duration-200 hover:opacity-70 active:scale-95 disabled:opacity-30 shrink-0 self-end font-body text-[17px] font-bold bg-transparent"
+                className="h-11 px-2 flex items-center justify-center transition duration-200 hover:opacity-70 active:scale-95 disabled:opacity-30 shrink-0 self-end font-body text-[17px] font-bold bg-transparent"
                 style={{ color: "rgb(var(--rgb-ember))" }}
               >
                 {sending ? <LoadingSpinner size="sm" /> : t("chat.send")}

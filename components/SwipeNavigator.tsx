@@ -214,10 +214,12 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
           committed.current = true;
 
           // Continue the motion from where the page already is, no jump.
-          // Use a short, sharp ease-in so it feels like the finger threw it.
+          // Strong ease-out: the page leaves at the speed the finger threw
+          // it and settles. An ease-in here stalled for a beat right after
+          // release, the moment the user is watching.
           const flyTo = goForward ? "-58%" : "58%";
           el.style.transition =
-            "transform 0.19s cubic-bezier(0.4, 0, 1, 1), opacity 0.15s ease";
+            "transform 0.19s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.15s ease";
           el.style.transform = `translateX(${flyTo})`;
           el.style.opacity   = "0.5";
 

@@ -150,7 +150,7 @@ function CycleCard({ cycle }: { cycle: Cycle }) {
 
   return (
     <div
-      className="rounded-2xl cursor-pointer transition-all duration-300 active:scale-[0.99] overflow-hidden"
+      className="rounded-2xl cursor-pointer transition duration-300 active:scale-[0.99] overflow-hidden"
       style={{ border: "1px solid rgb(var(--rgb-border))" }}
       onClick={() => setExpanded((v) => !v)}
     >
@@ -232,7 +232,7 @@ function UpcomingCycleCard({ cycle }: { cycle: UpcomingCycle }) {
 
   return (
     <div
-      className="border border-forest-border/40 rounded-xl px-4 py-4 cursor-pointer transition-all duration-200 hover:border-amber-sun/20 active:scale-[0.99]"
+      className="border border-forest-border/40 rounded-xl px-4 py-4 cursor-pointer transition duration-200 hover:border-amber-sun/20 active:scale-[0.99]"
       style={{ background: "rgb(var(--rgb-card) / 0.6)" }}
       onClick={() => setExpanded((v) => !v)}
     >

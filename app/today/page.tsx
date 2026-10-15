@@ -764,7 +764,7 @@ function BreakthroughModal({ insight, onAsk, onLater, onDismiss }: { insight: Pe
 
         <button
           onClick={onAsk}
-          className="w-full rounded-full transition-all active:scale-[0.98]"
+          className="w-full rounded-full transition active:scale-[0.98]"
           style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
@@ -918,7 +918,7 @@ function SkyEchoModal({ echo, onGoDeeper, onLater, onDismiss }: { echo: SkyEcho;
 
         <button
           onClick={() => onGoDeeper(sentence, echo.excerpt)}
-          className="w-full rounded-full transition-all active:scale-[0.98]"
+          className="w-full rounded-full transition active:scale-[0.98]"
           style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
@@ -1017,7 +1017,7 @@ function LunarMomentModal({ event, onGoDeeper, onLater, onDismiss }: { event: Lu
 
         <button
           onClick={onGoDeeper}
-          className="w-full rounded-full transition-all active:scale-[0.98]"
+          className="w-full rounded-full transition active:scale-[0.98]"
           style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}
@@ -1135,7 +1135,7 @@ function BirthdayModal({ birthDate, onGoDeeper, onLater, onDismiss }: { birthDat
 
         <button
           onClick={onGoDeeper}
-          className="w-full rounded-full transition-all active:scale-[0.98]"
+          className="w-full rounded-full transition active:scale-[0.98]"
           style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", padding: "15px", fontSize: 17, fontWeight: 700, letterSpacing: "-.01em", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
         >
           {t("insight.go_deeper")}

@@ -84,7 +84,7 @@ export default function TodayAlertCard({ aspect, tagDetails }: TodayAlertCardPro
   return (
     <div
       onClick={handleCardTap}
-      className="cursor-pointer px-4 py-3 rounded-xl border border-amber-sun/40 bg-amber-sun/5 hover:bg-amber-sun/10 transition-all mb-4"
+      className="cursor-pointer px-4 py-3 rounded-xl border border-amber-sun/40 bg-amber-sun/5 hover:bg-amber-sun/10 transition mb-4"
     >
       {/* One-line header with planet symbols and aspect */}
       <div className="flex items-center gap-2 mb-2">

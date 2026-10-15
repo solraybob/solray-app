@@ -620,7 +620,7 @@ export default function OnboardPage() {
             <button
               onClick={next}
               disabled={!canProceed()}
-              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {t("common.continue")}
             </button>
@@ -628,7 +628,7 @@ export default function OnboardPage() {
             <button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
+              className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition duration-200 hover:opacity-90 active:scale-95 disabled:opacity-30 entry-cta flex items-center justify-center gap-2" style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
             >
               {loading ? <LoadingSpinner size="sm" /> : t("onboard.begin_journey")}
             </button>

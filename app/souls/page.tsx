@@ -286,7 +286,7 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: 
         <div className="space-y-3">
           <button
             onClick={onViewProfile}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition hover:border-mist/30"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -298,7 +298,7 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: 
           </button>
           <button
             onClick={onSoloReading}
-            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
+            className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition hover:border-mist/30"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -311,7 +311,7 @@ function SoulActions({ soul, onClose, onSoloReading, onViewProfile, onRemove }: 
           {!confirmRemove ? (
             <button
               onClick={() => { setConfirmRemove(true); setRemoveFailed(false); }}
-              className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition-all hover:border-mist/30"
+              className="w-full text-left px-5 py-4 bg-forest-card border border-forest-border rounded-2xl transition hover:border-mist/30"
               style={{ minHeight: 44 }}
             >
               <p className="font-body text-text-primary font-semibold text-[17px]">{t("souls.remove_connection")}</p>
@@ -1756,7 +1756,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
           <button
             type="button"
             onClick={onPickPartner}
-            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition-all hover:border-mist/60"
+            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0 transition hover:border-mist/60"
             style={{
               background: "transparent",
               border: "1px dashed rgb(var(--rgb-text-primary) / 0.25)",
@@ -1817,7 +1817,7 @@ function BondCard({ myName, myAvatar, partners, lens, onPickPartner, onRemovePar
         type="button"
         onClick={onRead}
         disabled={partners.length === 0 || reading}
-        className="w-full font-body transition-all active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed"
+        className="w-full font-body transition active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed"
         style={{
           border: "1.5px solid rgb(var(--rgb-text-primary))",
           borderRadius: 999,
@@ -2356,7 +2356,7 @@ function SoulCard({ connection, onOpen }: SoulCardProps) {
   return (
     <button
       onClick={onOpen}
-      className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99]"
+      className="w-full text-left rounded-2xl p-5 transition active:scale-[0.99]"
       style={{
         background: "linear-gradient(135deg, rgb(var(--rgb-indigo) / 0.06) 0%, rgb(var(--rgb-card)) 60%)",
         border: "1px solid rgb(var(--rgb-indigo) / 0.25)",

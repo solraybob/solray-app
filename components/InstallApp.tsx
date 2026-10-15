@@ -99,7 +99,7 @@ export default function InstallApp({ variant = "ghost" }: { variant?: Variant })
   };
 
   const base =
-    "w-full font-body text-sm tracking-wider py-3 rounded-lg transition-all duration-200 active:scale-95 flex items-center justify-center gap-2";
+    "w-full font-body text-sm tracking-wider py-3 rounded-lg transition duration-200 active:scale-95 flex items-center justify-center gap-2";
   const styles =
     variant === "primary"
       ? "bg-amber-sun text-forest-deep font-semibold hover:opacity-90"

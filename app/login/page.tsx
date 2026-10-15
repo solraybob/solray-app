@@ -176,7 +176,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
+            className="w-full font-body font-bold py-4 rounded-full text-[14px] uppercase tracking-[0.3em] transition duration-200 hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 entry-cta"
             style={{ background: "rgb(var(--rgb-text-primary))", color: "rgb(var(--rgb-bg-deep))", border: "1.5px solid rgb(var(--rgb-text-primary))" }}
           >
             {loading ? <LoadingSpinner size="sm" /> : t("login.enter")}

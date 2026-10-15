@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // hover: styles only apply on devices that can really hover. On a phone a
+  // tap otherwise leaves the hover state stuck on until the next tap.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -8,6 +11,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Default curve for every `transition` utility: a strong ease-out, so
+      // feedback starts fast instead of easing in.
+      transitionTimingFunction: { DEFAULT: "cubic-bezier(0.23, 1, 0.32, 1)" },
       colors: {
         // All tokens point at theme-aware CSS variables defined in
         // app/globals.css. Each var is an "R G B" triplet so Tailwind's

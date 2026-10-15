@@ -150,7 +150,7 @@ export default function SolarReturnCard({ birthDate }: SolarReturnCardProps) {
     <button
       onClick={handleTapCard}
       disabled={loading}
-      className="w-full mb-4 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50"
+      className="w-full mb-4 transition duration-300 hover:scale-105 active:scale-95 disabled:opacity-50"
     >
       {/* Card with dark amber gradient background */}
       <div
