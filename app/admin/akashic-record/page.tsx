@@ -770,6 +770,8 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     const CORE_REST = 180;
     const DAMPING = 0.86;
     const BREATH = 0.06;
+    const SWIRL = 0.035;   // slow circulation of the whole field
+    const WANDER = 0.09;   // each soul's own drift
 
     const edgeData = edges.map((e) => ({ a: e.a, b: e.b, weight: e.weight }));
 
@@ -957,9 +959,23 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       // is the considerate behavior that matters.)
       const avgSpeed = ns.length ? totalSpeed / ns.length : 0;
       const breathScale = avgSpeed < 0.5 ? 1.0 : 0.4;
-      for (const n of ns) {
+      // Flow: every soul, joined or not, drifts. Without shared-chart lines
+      // to pull on them the springs settle into still rings, so the field
+      // gets a slow circulation around the core plus each soul's own
+      // unhurried wander (smooth, phase-shifted per soul, never jittery).
+      const t = performance.now() / 1000;
+      for (let i = 0; i < ns.length; i++) {
+        const n = ns[i];
         n.vx += (Math.random() - 0.5) * BREATH * breathScale;
         n.vy += (Math.random() - 0.5) * BREATH * breathScale;
+        const dx = n.x - cx;
+        const dy = n.y - cy;
+        const d = Math.sqrt(dx * dx + dy * dy) + 0.01;
+        n.vx += (-dy / d) * SWIRL;
+        n.vy += (dx / d) * SWIRL;
+        const ph = ((i * 2654435761) % 6283) / 1000;
+        n.vx += Math.sin(t * 0.55 + ph) * WANDER;
+        n.vy += Math.cos(t * 0.43 + ph * 1.7) * WANDER;
       }
       } // end physics (skipped while hovering)
 
