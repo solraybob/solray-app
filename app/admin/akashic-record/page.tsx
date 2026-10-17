@@ -770,8 +770,8 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
     const CORE_REST = 180;
     const DAMPING = 0.86;
     const BREATH = 0.06;
-    const SWIRL = 0.035;   // slow circulation of the whole field
-    const WANDER = 0.09;   // each soul's own drift
+    const SWIRL = 0.09;   // slow circulation of the whole field
+    const WANDER = 0.16;   // each soul's own drift
 
     const edgeData = edges.map((e) => ({ a: e.a, b: e.b, weight: e.weight }));
 
@@ -842,9 +842,9 @@ function HiveGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] })
       const showAllLabels = ns.length <= 120;
       for (const n of ns) {
         if (n.data.ghost) {
-          ctx.fillStyle = "rgba(168,184,171,0.22)";
-          ctx.beginPath(); ctx.arc(n.x, n.y, 3.5, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = "rgba(168,184,171,0.12)";
+          ctx.fillStyle = "rgba(120,104,160,0.42)";
+          ctx.beginPath(); ctx.arc(n.x, n.y, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "rgba(120,104,160,0.18)";
           ctx.lineWidth = 0.5;
           ctx.beginPath(); ctx.arc(n.x, n.y, 7, 0, Math.PI * 2); ctx.stroke();
           continue;
