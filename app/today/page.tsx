@@ -424,6 +424,9 @@ function TheDay({
   );
 }
 
+const LUNAR_AUTO_OPEN = false;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SkyNowFold({ planets }: { planets: Planet[] }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -1392,7 +1395,10 @@ export default function TodayPage() {
     try { consumed = localStorage.getItem(accountKey(`solray_lunar_seen_${key}`)) === "1"; } catch (_) {}
     try { dismissed = localStorage.getItem(accountKey(`solray_lunar_dismissed_${key}`)) === "1"; } catch (_) {}
     try { later = sessionStorage.getItem(`solray_lunar_later_${key}`) === "1"; } catch (_) {}
-    if (!consumed && !dismissed && !later) setShowLunar(true);
+    // Never opens on its own (23 Oct 2026): a moon pop-up as the first thing
+    // on Now made the app read as an astrology app. The moon stays available
+    // in conversation with the Oracle.
+    if (LUNAR_AUTO_OPEN && !consumed && !dismissed && !later) setShowLunar(true);
   }, [forecast]);
 
   const goDeeperLunar = () => {
@@ -2003,12 +2009,8 @@ export default function TodayPage() {
                   the content underneath only when it is asked for. */}
               </div>
 
-              <div
-                className="transition-opacity duration-700"
-                style={{ marginTop: 18, flex: "0 0 auto", opacity: visibleSections >= 2 ? 1 : 0 }}
-              >
-                <SkyNowFold planets={forecast.planets} />
-              </div>
+              {/* The planet list ("Sky now") left Now on 23 Oct 2026: Now is the
+                  companion's reflection only. SkyNowFold is kept for the You page. */}
             </div>
           </>
         ) : (
