@@ -426,6 +426,7 @@ function TheDay({
 
 const LUNAR_AUTO_OPEN = false;
 const BREAKTHROUGH_AUTO_OPEN = false;
+const SKY_ECHO_AUTO_OPEN = false;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SkyNowFold({ planets }: { planets: Planet[] }) {
@@ -1280,7 +1281,9 @@ export default function TodayPage() {
           try { consumed = localStorage.getItem(accountKey(`solray_echo_seen_${key}`)) === "1"; } catch (_) {}
           try { dismissed = localStorage.getItem(accountKey(`solray_echo_dismissed_${key}`)) === "1"; } catch (_) {}
           try { later = sessionStorage.getItem(`solray_echo_later_${key}`) === "1"; } catch (_) {}
-          if (!consumed && !dismissed && !later) setShowSkyEcho(true);
+          // Held back while Apple reviews the app (23 Oct 2026), like the
+          // breakthrough: it covered the Now reflection and spoke moon phases.
+          if (SKY_ECHO_AUTO_OPEN && !consumed && !dismissed && !later) setShowSkyEcho(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
