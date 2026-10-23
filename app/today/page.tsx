@@ -425,6 +425,7 @@ function TheDay({
 }
 
 const LUNAR_AUTO_OPEN = false;
+const BREAKTHROUGH_AUTO_OPEN = false;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SkyNowFold({ planets }: { planets: Planet[] }) {
@@ -1247,7 +1248,9 @@ export default function TodayPage() {
           let dismissed = false, later = false;
           try { dismissed = localStorage.getItem(accountKey(`solray_bt_dismissed_${ins.id}`)) === "1"; } catch (_) {}
           try { later = sessionStorage.getItem(`solray_bt_later_${ins.id}`) === "1"; } catch (_) {}
-          if (!dismissed && !later) setShowBreakthrough(true);
+          // Held back while Apple reviews the app (23 Oct 2026): the pop-up
+          // covered the Now reflection, the first thing a new member sees.
+          if (BREAKTHROUGH_AUTO_OPEN && !dismissed && !later) setShowBreakthrough(true);
         }
       } catch (_) { /* non-fatal */ }
     })();
