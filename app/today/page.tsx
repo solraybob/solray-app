@@ -511,7 +511,10 @@ function Deck({ children, count }: { children: React.ReactNode; count: number })
         {children}
       </div>
       {count > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 11, marginTop: 2 }}>
+        // The lit dot grows (scale 1.15) and wears a 3.5px halo; the deck box
+        // above clips its overflow, so the row carries room for both or the
+        // halo is cut flat along the bottom.
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 11, padding: "6px 0 8px" }}>
           {Array.from({ length: count }).map((_, i) => (
             <i
               key={i}
