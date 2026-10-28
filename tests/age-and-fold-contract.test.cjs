@@ -5,11 +5,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+const read = (f) => splitSource(f);
 const api = load("lib/api.js");
 const { oracleErrorKey, ORACLE_ERROR_KEYS } = load("lib/oracle-errors.js");
 const consent = load("lib/ai-consent.js");

@@ -9,11 +9,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, deferredFetch, load, tick } = require("./helpers.cjs");
+const { installBrowser, deferredFetch, load, tick, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const messages = (lang) => JSON.parse(read(`messages/${lang}.json`));
 
 test("4: the consent version is 2026-10-07", () => {

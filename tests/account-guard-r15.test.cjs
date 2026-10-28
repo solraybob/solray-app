@@ -7,11 +7,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, deferredFetch, load } = require("./helpers.cjs");
+const { installBrowser, deferredFetch, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const session = load("lib/account-session.js");
 const { apiFetch } = load("lib/api.js");
 

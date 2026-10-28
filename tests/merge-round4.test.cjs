@@ -6,11 +6,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+const read = (f) => splitSource(f);
 const src = read("app/chat/page.tsx");
 
 test("session-close synthesis sends the closing session's id, read from a ref", () => {

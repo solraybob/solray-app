@@ -9,11 +9,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const guard = load("lib/draft-guard.js");
 
 test("holds: the reload waits while one is held; release is once only", () => {

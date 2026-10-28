@@ -3,13 +3,14 @@
 // put in this box or discard (never sent on their own); words already
 // waiting for a conversation that is then deleted, here or elsewhere, become
 // the same offer.
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const src = read("app/chat/page.tsx");
 
 test("a transcript for a deleted conversation is offered, never parked", () => {

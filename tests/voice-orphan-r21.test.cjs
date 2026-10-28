@@ -3,12 +3,13 @@
 // "Open it" reads it back; a confirmed "gone" turns the words into the
 // keep-or-discard offer (even if the read-back was superseded); a failed
 // read keeps the notice so it can be tried again.
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
-const src = fs.readFileSync(path.join(__dirname, "..", "app/chat/page.tsx"), "utf8");
+const src = splitSource("app/chat/page.tsx");
 
 test("a gone read-back always turns parked words into the offer, before the superseded check", () => {
   const rb = src.slice(src.indexOf("const readBackEvicted = "), src.indexOf("// History closed by any means"));

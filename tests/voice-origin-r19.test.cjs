@@ -6,13 +6,14 @@
 //    notice offering to open it;
 // #2 a store purchase holds the update reload until it is cancelled,
 //    failed or verified; the 60 s timeout only shows the pending note.
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 
 test("voice: origin captured with the hold, before either microphone starts", () => {
   const src = read("app/chat/page.tsx");

@@ -6,11 +6,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const { ApiError } = load("lib/api.js");
 const { memberErrorText, MemberError, MEMBER_CODE_KEYS } = load("lib/member-error.js");
 const es = JSON.parse(read("messages/es.json"));

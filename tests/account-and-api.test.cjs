@@ -1,7 +1,7 @@
 // F1 / F3 / A1 / A18: account generation, late responses, consent 403.
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { installBrowser, deferredFetch, load, tick } = require("./helpers.cjs");
+const { installBrowser, deferredFetch, load, tick, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const session = load("lib/account-session.js");
@@ -139,7 +139,7 @@ test("F1: raw callbacks check the account before writing caches or calling back"
   const fs = require("fs");
   const path = require("path");
   const root = path.join(__dirname, "..");
-  const souls = fs.readFileSync(path.join(root, "app/souls/page.tsx"), "utf8");
+  const souls = splitSource("app/souls/page.tsx");
   // Add-person sheet: the chart is only added for the same account, sheet open.
   const sheet = souls.slice(souls.indexOf("function AddPersonSheet"));
   const submit = sheet.slice(sheet.indexOf("const submit = async"), sheet.indexOf("onAdded(person);"));
@@ -205,7 +205,7 @@ test("F7: a typed controlled field is a draft even when defaultValue follows val
 
 test("F1: the birthday question is not handed to the next account's chat", () => {
   const fs = require("fs");
-  const src = fs.readFileSync(require("path").join(__dirname, "..", "app/today/page.tsx"), "utf8");
+  const src = splitSource("app/today/page.tsx");
   const fn = src.slice(src.indexOf("const goDeeperBirthday"), src.indexOf("const laterBirthday"));
   assert.match(fn, /const acct = captureAccount\(\);/);
   assert.ok(fn.indexOf("if (!acct.live) return;") < fn.indexOf('sessionStorage.setItem("solray_chat_prompt"'));

@@ -10,11 +10,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const page = () => fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
+const page = () => splitSource("app/chat/page.tsx");
 const session = load("lib/account-session.js");
 let sync = load("lib/chat-sync.js");
 const outcome = load("lib/chat-outcome.js");
@@ -23,6 +23,9 @@ const outcome = load("lib/chat-outcome.js");
 function restart() {
   const p = require.resolve(path.join(process.env.SOLRAY_TEST_BUILD, "lib/chat-sync.js"));
   delete require.cache[p];
+  // lib/chat-sync.ts re-exports its parts in lib/chat-sync/; their memory goes too.
+  const parts = path.join(path.dirname(p), "chat-sync") + path.sep;
+  for (const k of Object.keys(require.cache)) if (k.startsWith(parts)) delete require.cache[k];
   sync = load("lib/chat-sync.js");
 }
 

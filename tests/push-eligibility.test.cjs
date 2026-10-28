@@ -4,7 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const el = load("lib/push-eligibility.js");
@@ -63,7 +63,7 @@ test("an account switch keeps member-keyed eligibility and pending releases", ()
 
 test("Today signals only a complete reading; the bootstrap does not count route entry", () => {
   const root = path.join(__dirname, "..");
-  const today = fs.readFileSync(path.join(root, "app/today/page.tsx"), "utf8");
+  const today = splitSource("app/today/page.tsx");
   assert.match(today, /if \(!loading && forecast && forecast\._pending !== true\) signalReadingShown\(\);/);
   const boot = fs.readFileSync(path.join(root, "components/NativePushBootstrap.tsx"), "utf8");
   assert.ok(!/FIRST_TODAY_KEY|solray_push_first_today/.test(boot));

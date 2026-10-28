@@ -5,10 +5,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { load } = require("./helpers.cjs");
+const { load, splitSource } = require("./helpers.cjs");
 
 const root = path.join(__dirname, "..");
-const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+const read = (f) => splitSource(f);
 const nc = load("lib/now-card.js");
 
 const forecast = {

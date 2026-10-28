@@ -10,7 +10,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load, MemStorage } = require("./helpers.cjs");
+const { installBrowser, load, MemStorage, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 /** Storage with a size limit (characters of keys and values). */
@@ -30,7 +30,7 @@ global.localStorage = store;
 window.localStorage = store;
 
 const root = path.join(__dirname, "..");
-const page = () => fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
+const page = () => splitSource("app/chat/page.tsx");
 const session = load("lib/account-session.js");
 const sync = load("lib/chat-sync.js");
 

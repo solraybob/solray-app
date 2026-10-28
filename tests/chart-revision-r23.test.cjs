@@ -2,13 +2,14 @@
 // the member's own chart follows useChartRevision(): a birth correction here
 // or in another tab clears what is on screen, loads again, and an answer for
 // the old chart never lands.
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 
 test("Profile: the main loader follows the chart, clears it, and drops superseded loads", () => {
   const src = read("app/profile/page.tsx");

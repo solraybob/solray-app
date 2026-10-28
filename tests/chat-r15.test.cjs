@@ -7,11 +7,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const page = () => fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
+const page = () => splitSource("app/chat/page.tsx");
 const sync = load("lib/chat-sync.js");
 
 const m = (id) => ({ id, role: "user", content: id, timestamp: "2026-10-08T10:00:00Z" });

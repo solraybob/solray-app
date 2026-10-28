@@ -6,7 +6,7 @@
 //     (a rename, a partner reference backfilled elsewhere) pulls it.
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const session = load("lib/account-session.js");
@@ -186,7 +186,7 @@ test("F2: a different revision in the list pulls a metadata-only change (partner
 const sp = load("lib/saved-people-sync.js");
 const fs = require("fs");
 const path = require("path");
-const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+const read = (f) => splitSource(f);
 
 test("F3: a pending saved-person update survives a reload and wins over the server's older copy", () => {
   win.localStorage.clear();

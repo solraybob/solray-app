@@ -11,11 +11,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 const session = load("lib/account-session.js");
 const cr = load("lib/chart-revision.js");
 const { forecastKind } = load("lib/forecast-kind.js");

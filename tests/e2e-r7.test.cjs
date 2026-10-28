@@ -1,10 +1,11 @@
 // Fixes from the first real-browser run of the release (r7 e2e).
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const read = (p) => splitSource(p);
 
 test("Not now holds: a background consent refusal does not reopen the sheet this session", () => {
   const sheet = read("components/AiConsentSheet.tsx");

@@ -5,7 +5,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const sub = load("lib/subscription.js");
@@ -60,7 +60,7 @@ test("the card form closes with a notice and does not retry", () => {
   const src = fs.readFileSync(path.join(__dirname, "../components/CardForm.tsx"), "utf8");
   assert.match(src, /storeEndedCardNotice\(e, t, lang\)/);
   assert.match(src, /onNotice\(storeEnded\)/);
-  const page = fs.readFileSync(path.join(__dirname, "../app/subscribe/page.tsx"), "utf8");
+  const page = splitSource("app/subscribe/page.tsx");
   assert.match(page, /onNotice=\{\(text: string\) => \{\s*setShowCardForm\(false\);/);
   assert.match(page, /const storeEnded = storeEndedCardNotice\(e, t, lang\);/);
   // One attach call only: the form has no retry loop around it.

@@ -6,11 +6,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
-const page = () => fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
+const page = () => splitSource("app/chat/page.tsx");
 
 test("history: an older transcript's crisis card and tags go to the server as plain messages", () => {
   const { historyForServer } = load("lib/oracle-request.js");

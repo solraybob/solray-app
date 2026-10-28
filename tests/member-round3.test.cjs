@@ -5,11 +5,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load, tick } = require("./helpers.cjs");
+const { installBrowser, load, tick, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const root = path.join(__dirname, "..");
-const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+const read = (f) => splitSource(f);
 const session = load("lib/account-session.js");
 const api = load("lib/api.js");
 

@@ -2,7 +2,7 @@
 // the device has reconciled with the server.
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { installBrowser, load, tick } = require("./helpers.cjs");
+const { installBrowser, load, tick, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const session = load("lib/account-session.js");
@@ -133,7 +133,7 @@ test("an upload for a signed-out account is dropped", async () => {
 
 test("F1: the chat page restores a deleted conversation only for the same account", () => {
   const fs = require("fs");
-  const src = fs.readFileSync(require("path").join(__dirname, "..", "app/chat/page.tsx"), "utf8");
+  const src = splitSource("app/chat/page.tsx");
   const del = src.slice(src.indexOf("const deleteSession = useCallback"), src.indexOf("// ── Send message"));
   assert.match(del, /const acct = captureAccount\(\);/);
   assert.match(del, /const restore = \(\) => \{\n\s+if \(!acct\.live\) return;/);

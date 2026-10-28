@@ -12,13 +12,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 const win = installBrowser();
 const session = load("lib/account-session.js");
 const sync = load("lib/chat-sync.js");
 const root = path.join(__dirname, "..");
-const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
+const read = (f) => splitSource(f);
 
 function signIn(id, token) {
   win.localStorage.setItem("solray_user", JSON.stringify({ id, email: `${id}@x`, name: id }));

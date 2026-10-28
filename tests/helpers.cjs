@@ -54,4 +54,99 @@ function load(mod) {
 
 const tick = () => new Promise((r) => setImmediate(r));
 
-module.exports = { installBrowser, deferredFetch, load, tick, MemStorage };
+// Pages and libs that were split into co-located files. Source checks read
+// the entry file followed by its parts, in the order the code used to sit.
+const SPLITS = {
+  "app/chat/page.tsx": [
+    "app/chat/page.tsx",
+    "app/chat/_lib/chat-helpers.ts",
+    "app/chat/_components/MessageContent.tsx",
+    "app/chat/_hooks/useChatState.ts",
+    "app/chat/_hooks/useChatOpening.ts",
+    "app/chat/_hooks/useChatSessions.ts",
+    "app/chat/_hooks/useChatSend.ts",
+    "app/chat/_hooks/useChatVoice.ts",
+    "app/chat/_components/ChatView.tsx",
+    "app/chat/_components/ChatMessages.tsx",
+    "app/chat/_components/ChatComposer.tsx",
+    "app/chat/_components/ChatHistorySheet.tsx",
+    "app/chat/_components/ThinkingIndicator.tsx"
+  ],
+  "app/souls/page.tsx": [
+    "app/souls/page.tsx",
+    "app/souls/_lib/souls-data.ts",
+    "app/souls/_components/SoulActions.tsx",
+    "app/souls/_hooks/useSoulsState.ts",
+    "app/souls/_hooks/useSoulsPeople.ts",
+    "app/souls/_hooks/useSoulsBond.ts",
+    "app/souls/_components/SoulsView.tsx",
+    "app/souls/_components/BondCard.tsx",
+    "app/souls/_components/PartnerPicker.tsx",
+    "app/souls/_components/PermissionSheet.tsx",
+    "app/souls/_components/AddPersonSheet.tsx",
+    "app/souls/_components/SoulCard.tsx"
+  ],
+  "app/today/page.tsx": [
+    "app/today/page.tsx",
+    "app/today/_lib/today-data.ts",
+    "app/today/_components/PlanetCard.tsx",
+    "app/today/_components/SkeletonToday.tsx",
+    "app/today/_components/TheDay.tsx",
+    "app/today/_components/SkyNowFold.tsx",
+    "app/today/_components/Deck.tsx",
+    "app/today/_components/PendingTodayState.tsx",
+    "app/today/_components/BreakthroughModal.tsx",
+    "app/today/_components/SkyEchoModal.tsx",
+    "app/today/_components/LunarMomentModal.tsx",
+    "app/today/_components/BirthdayModal.tsx",
+    "app/today/_hooks/useTodayState.ts",
+    "app/today/_hooks/useTodayData.ts",
+    "app/today/_components/TodayView.tsx",
+    "app/today/_components/MoonCycleBar.tsx"
+  ],
+  "app/profile/page.tsx": [
+    "app/profile/page.tsx",
+    "app/profile/_lib/profile-data.ts",
+    "app/profile/_components/icons.tsx",
+    "app/profile/_components/SoulMapRadarChart.tsx",
+    "app/profile/_components/NatalAspects.tsx",
+    "app/profile/_components/CollapsibleSection.tsx",
+    "app/profile/_components/ProfileSkeleton.tsx",
+    "app/profile/_components/BlueprintSections.tsx",
+    "app/profile/_lib/blueprint-chart.ts"
+  ],
+  "app/subscribe/page.tsx": [
+    "app/subscribe/page.tsx",
+    "app/subscribe/_components/PendingTrialView.tsx",
+    "app/subscribe/_components/ResendVerification.tsx",
+    "app/subscribe/_components/PlanPicker.tsx",
+    "app/subscribe/_components/subscribe-ui.tsx",
+    "app/subscribe/_components/NativeMembershipView.tsx",
+    "app/subscribe/_components/TrialOffer.tsx"
+  ],
+  "app/profile/settings/page.tsx": [
+    "app/profile/settings/page.tsx",
+    "app/profile/settings/_components/settings-ui.tsx",
+    "app/profile/settings/_hooks/useSettingsState.ts",
+    "app/profile/settings/_hooks/useSettingsActions.ts",
+    "app/profile/settings/_components/SettingsView.tsx"
+  ],
+  "lib/chat-sync.ts": [
+    "lib/chat-sync.ts",
+    "lib/chat-sync/store.ts",
+    "lib/chat-sync/marks.ts",
+    "lib/chat-sync/status.ts",
+    "lib/chat-sync/push.ts",
+    "lib/chat-sync/pull.ts"
+  ]
+};
+
+/** Source text of a repo file; a split file reads as its entry plus parts. */
+function splitSource(rel) {
+  const fs = require("fs");
+  const root = path.join(__dirname, "..");
+  const files = (SPLITS[rel] || [rel]).filter((f) => f === rel || fs.existsSync(path.join(root, f)));
+  return files.map((f) => fs.readFileSync(path.join(root, f), "utf8")).join("\n");
+}
+
+module.exports = { installBrowser, deferredFetch, load, tick, MemStorage, splitSource, SPLITS };

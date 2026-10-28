@@ -1,5 +1,6 @@
 // Static checks on source and copy: B8 body graph map, B4/A5 copy parity,
 // house rules (no em dash, no emoji in the new copy).
+const { splitSource } = require("./helpers.cjs");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -63,12 +64,12 @@ test("A1: signup sends ai_consent and its version; A9: Collective starts uncheck
 });
 
 test("A18: account deletion sends the password", () => {
-  const src = fs.readFileSync(path.join(root, "app/profile/settings/page.tsx"), "utf8");
+  const src = splitSource("app/profile/settings/page.tsx");
   assert.match(src, /JSON\.stringify\(\{ confirm: "DELETE", password: deletePassword \}\)/);
 });
 
 test("review 2 finding 2: the native paywall asks the server before it opens the store sheet", () => {
-  const src = fs.readFileSync(path.join(root, "app/subscribe/page.tsx"), "utf8");
+  const src = splitSource("app/subscribe/page.tsx");
   const start = src.indexOf("const handleSubscribe = async");
   assert.ok(start > 0);
   const body = src.slice(start, src.indexOf("\n  };\n", start));
@@ -79,7 +80,7 @@ test("review 2 finding 2: the native paywall asks the server before it opens the
 });
 
 test("round 3: a plan sold on the store's intro after a used trial never promises a free trial", () => {
-  const src = fs.readFileSync(path.join(root, "app/subscribe/page.tsx"), "utf8");
+  const src = splitSource("app/subscribe/page.tsx");
   const en = JSON.parse(fs.readFileSync(path.join(root, "messages/en.json"), "utf8"));
   const es = JSON.parse(fs.readFileSync(path.join(root, "messages/es.json"), "utf8"));
   // The free-trial wording is tied to the "trial" state only.

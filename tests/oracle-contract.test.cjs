@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { installBrowser, load } = require("./helpers.cjs");
+const { installBrowser, load, splitSource } = require("./helpers.cjs");
 
 installBrowser();
 const root = path.join(__dirname, "..");
@@ -65,13 +65,13 @@ test("history drops the greeting and marks error bubbles", () => {
 });
 
 test("the chat page sends session_id and no client chart when an id is known", () => {
-  const src = fs.readFileSync(path.join(root, "app/chat/page.tsx"), "utf8");
+  const src = splitSource("app/chat/page.tsx");
   assert.ok(!/body\.soul_blueprint\s*=/.test(src));
   assert.ok(!/soul_blueprint:\s*ctx\.soulBlueprint/.test(src));
   // /chat (two sends), the group chat and session-close synthesis.
   assert.equal((src.match(/session_id: (sid|sentSessionId)/g) || []).length, 4);
   assert.ok(!/crisis/.test(src));
-  const souls = fs.readFileSync(path.join(root, "app/souls/page.tsx"), "utf8");
+  const souls = splitSource("app/souls/page.tsx");
   assert.ok(/apiFetch\(`\/souls\/\$\{gone\.connection_id\}`, \{ method: "DELETE" \}/.test(souls));
   assert.ok(!/\/souls\/\$\{[^}]*connection_id\}\/blueprint/.test(souls));
 });
@@ -89,7 +89,7 @@ test("F6: a Dynamics conversation names its partner from the transcript on any d
   assert.equal(soulFromTranscript([{ id: "1", content: "hi" }]), null);
   assert.equal(soulFromTranscript([{ soul: { name: "only a name" } }]), null);
   // The chat page stamps the opening message and reads it back.
-  const src = fs.readFileSync(path.join(__dirname, "..", "app/chat/page.tsx"), "utf8");
+  const src = splitSource("app/chat/page.tsx");
   assert.match(src, /soul: \{\n\s+name: ctx\.soulName \?\? null,\n\s+connection_id: ctx\.soulConnectionId \?\? null,/);
   assert.match(src, /getSoulCtx\(last\.sessionId, last\.messages\)/);
   assert.match(src, /getSoulCtx\(session\.sessionId, session\.messages\)/);
